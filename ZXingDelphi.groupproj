@@ -6,6 +6,9 @@
         <Projects Include="aTestApp\aTestApp.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="UnitTest\dUnitXTest.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -23,14 +26,23 @@
     <Target Name="aTestApp:Make">
         <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Make"/>
     </Target>
+    <Target Name="dUnitXTest">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
+    </Target>
+    <Target Name="dUnitXTest:Clean">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dUnitXTest:Make">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="aTestApp"/>
+        <CallTarget Targets="aTestApp;dUnitXTest"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="aTestApp:Clean"/>
+        <CallTarget Targets="aTestApp:Clean;dUnitXTest:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="aTestApp:Make"/>
+        <CallTarget Targets="aTestApp:Make;dUnitXTest:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
