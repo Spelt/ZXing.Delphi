@@ -50,6 +50,7 @@ contains
   BitArray in 'Classes\Common\BitArray.pas',
   Code128Reader in 'Classes\1D Barcodes\Code128Reader.pas',
   MultiFormatReader in 'Classes\Common\MultiFormatReader.pas',
-  MultiFormatOneDReader in 'Classes\1D Barcodes\MultiFormatOneDReader.pas';
+  MultiFormatOneDReader in 'Classes\1D Barcodes\MultiFormatOneDReader.pas',
+  ScanManager in 'Classes\ScanManager.pas';
 
 end.

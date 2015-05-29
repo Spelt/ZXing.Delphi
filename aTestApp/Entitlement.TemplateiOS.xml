@@ -3,8 +3,6 @@
 <plist version="1.0">
 <dict>
 	<%getTaskAllowKey%>
-    <key>application-identifier</key>
-    <string>FZRAYS6PHS.$(ModuleName)</string>
 	<%applicationIdentifier%>
 	<%pushNotificationKey%>
 	<%keychainAccessGroups%>

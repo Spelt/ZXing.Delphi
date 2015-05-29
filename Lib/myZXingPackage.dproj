@@ -6,7 +6,7 @@
         <FrameworkType>FMX</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Platform Condition="'$(Platform)'==''">iOSDevice32</Platform>
         <TargetedPlatforms>1097</TargetedPlatforms>
         <AppType>Package</AppType>
     </PropertyGroup>
@@ -161,6 +161,7 @@
         <DCCReference Include="Classes\1D Barcodes\Code128Reader.pas"/>
         <DCCReference Include="Classes\Common\MultiFormatReader.pas"/>
         <DCCReference Include="Classes\1D Barcodes\MultiFormatOneDReader.pas"/>
+        <DCCReference Include="Classes\ScanManager.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -192,7 +193,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\..\..\..\..\..\Public\Documents\Embarcadero\Studio\15.0\Bpl\myZXingPackage.bpl" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="C:\Users\Public\Documents\Embarcadero\Studio\16.0\Bpl\myZXingPackage.bpl" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>myZXingPackage.bpl</RemoteName>
                         <Overwrite>true</Overwrite>
@@ -527,19 +528,19 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <Platforms>
                 <Platform value="Android">False</Platform>
-                <Platform value="iOSDevice32">True</Platform>
-                <Platform value="iOSDevice64">True</Platform>
-                <Platform value="iOSSimulator" ActiveMobileDevice="iPad">True</Platform>
+                <Platform value="iOSDevice32" ActiveMobileDevice="%iosdevice%c04f4482f18f01a9d0660bf68095ebb9d8555032">True</Platform>
+                <Platform value="iOSDevice64" ActiveMobileDevice="%iosdevice%c04f4482f18f01a9d0660bf68095ebb9d8555032">True</Platform>
+                <Platform value="iOSSimulator" ActiveMobileDevice="%iossimulator%3229F1B1-131E-48D8-8D90-5AF9996A8F33">True</Platform>
                 <Platform value="OSX32">False</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">False</Platform>

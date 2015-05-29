@@ -1,57 +1,32 @@
 ﻿[Closed Files]
-File_0=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Reader.pas',0,1,6,1,20,0,0,,
-File_1=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas',0,1,130,43,145,0,0,,
-File_2=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',0,1,30,35,60,0,0,,
-File_3=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BitArray.pas',0,1,1,18,77,0,0,{{90,54}
-File_4=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BarcodeFormat.pas',0,1,66,3,6,0,0,,
-File_5=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MathUtils.pas',0,1,11,29,34,0,0,,
-File_6=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\RGBLuminanceSource.Pas',0,1,48,24,57,0,0,,
-File_7=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\LuminanceSource.pas',0,1,48,49,71,0,0,,
-File_8=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\HybridBinarizer.pas',0,1,42,3,59,0,0,,
-File_9=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas',0,1,32,23,53,0,0,,
+File_0=TSourceModule,'C:\Dev\Delphi\ActiveTickets Mobile Barcode\ATScannerMain.pas',0,1,191,31,195,0,0,,
+File_1=TSourceModule,'C:\Dev\Delphi\ActiveTickets Mobile Barcode\udmMain.pas',0,1,1,1,1,0,0,,
+File_2=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\ScanManager.pas',0,1,6,23,16,0,0,,
+File_3=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas',0,1,1,1,1,0,0,,
+File_4=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultMetadataType.pas',0,1,1,1,1,0,0,,
+File_5=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas',0,1,1,1,1,0,0,,
+File_6=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas',0,1,1,1,1,0,0,,
+File_7=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MathUtils.pas',0,1,1,1,1,0,0,,
+File_8=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\DecodeHintType.pas',0,1,1,1,1,0,0,,
+File_9=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BitArray.pas',0,1,1,1,1,0,0,,
+File_10=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BarcodeFormat.pas',0,1,1,1,1,0,0,,
+File_11=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Reader.pas',0,1,1,1,1,0,0,,
+File_12=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas',0,1,1,1,1,0,0,,
+File_13=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',0,1,1,1,1,0,0,,
+File_14=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas',0,1,1,1,1,0,0,,
 
 [Modules]
-Module0=C:\Dev\Delphi\ZXing\TestProject\Main.pas
-Module1=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas
-Module2=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas
-Module3=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas
-Module4=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas
-Count=5
+Module0=C:\Dev\Delphi\ZXing\Lib\Test\myZXingPackageTests.dproj
+Count=1
 EditWindowCount=1
 
-[C:\Dev\Delphi\ZXing\TestProject\Main.pas]
-ModuleType=TSourceModule
-FormState=1
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
+[C:\Dev\Delphi\ZXing\Lib\Test\myZXingPackageTests.dproj]
+ModuleType=TBaseProject
 
 [EditWindow0]
-ViewCount=5
-CurrentEditView=C:\Dev\Delphi\ZXing\TestProject\Main.pas
+ViewCount=1
+CurrentEditView=C:\Dev\Delphi\ZXing\Lib\Test\myZXingPackageTests.dpr
 View0=0
-View1=1
-View2=2
-View3=3
-View4=4
 PercentageSizes=1
 Create=1
 Visible=1
@@ -66,7 +41,6 @@ MaxTop=-1
 ClientWidth=10000
 ClientHeight=9086
 DockedToMainForm=1
-BorlandEditorCodeExplorer=BorlandEditorCodeExplorer@EditWindow0
 TopPanelSize=0
 LeftPanelSize=1896
 LeftPanelClients=PropertyInspector,DockSite3
@@ -83,62 +57,17 @@ BottomMiddelPanelData=0000080001020200000009000000446F636B5369746530100000004772
 
 [View0]
 CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\TestProject\Main.pas
-CursorX=10
-CursorY=202
-TopLine=170
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\TestProject\Main.pas
-
-[View1]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas
-CursorX=3
-CursorY=672
-TopLine=657
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas
-
-[View2]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas
-CursorX=43
-CursorY=31
-TopLine=99
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas
-
-[View3]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas
-CursorX=17
+Module=C:\Dev\Delphi\ZXing\Lib\Test\myZXingPackageTests.dpr
+CursorX=1
 CursorY=1
 TopLine=1
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas
-
-[View4]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas
-CursorX=23
-CursorY=130
-TopLine=102
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas
+EditViewName=C:\Dev\Delphi\ZXing\Lib\Test\myZXingPackageTests.dpr
 
 [Watches]
-Count=1
-Watch0='ResultImage.Scale',256,0,18,1,0,'Watches',1
+Count=0
 
 [WatchWindow]
 WatchColumnWidth=120
@@ -757,7 +686,7 @@ LRDockWidth=3660
 Dockable=1
 StayOnTop=0
 
-[Item__C74C7DBB_4D99_4FF4_BABE_F02A005254E6_]
+[Item__CE401FF6_F956_4BDB_9F54_088BD85F0CF4_]
 PercentageSizes=1
 Create=1
 Visible=0
@@ -776,7 +705,7 @@ LRDockWidth=3660
 Dockable=1
 StayOnTop=0
 
-[Item__CE401FF6_F956_4BDB_9F54_088BD85F0CF4_]
+[Item__C74C7DBB_4D99_4FF4_BABE_F02A005254E6_]
 PercentageSizes=1
 Create=1
 Visible=0
@@ -811,25 +740,6 @@ ClientWidth=1722
 ClientHeight=5486
 TBDockHeight=5938
 LRDockWidth=1833
-Dockable=1
-StayOnTop=0
-
-[BorlandEditorCodeExplorer@EditWindow0]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=1826
-Height=6169
-MaxLeft=-7
-MaxTop=-12
-ClientWidth=1715
-ClientHeight=5718
-TBDockHeight=6169
-LRDockWidth=1826
 Dockable=1
 StayOnTop=0
 
@@ -955,7 +865,4 @@ StayOnTop=0
 TabPosition=1
 ActiveTabID=ToolForm
 TabDockClients=ToolForm,TemplateView
-
-[ActiveProject]
-ActiveProject=1
 

@@ -1,27 +1,50 @@
 ﻿[Closed Files]
-File_0=TSourceModule,'C:\Dev\Delphi\ZXing\TestProject\Main.pas',0,1,93,105,106,0,0,,
-File_1=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas',0,1,102,23,130,0,0,,
-File_2=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas',0,1,1,17,1,0,0,,
-File_3=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas',0,1,99,43,31,0,0,,
-File_4=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas',0,1,657,3,672,0,0,,
-File_5=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Reader.pas',0,1,6,1,20,0,0,,
-File_6=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas',0,1,130,43,145,0,0,,
-File_7=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',0,1,30,35,60,0,0,,
-File_8=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BitArray.pas',0,1,1,18,77,0,0,{{90,54}
-File_9=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BarcodeFormat.pas',0,1,66,3,6,0,0,,
-File_10=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MathUtils.pas',0,1,11,29,34,0,0,,
-File_11=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\RGBLuminanceSource.Pas',0,1,48,24,57,0,0,,
-File_12=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\LuminanceSource.pas',0,1,48,49,71,0,0,,
-File_13=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\HybridBinarizer.pas',0,1,42,3,59,0,0,,
-File_14=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas',0,1,32,23,53,0,0,,
+File_0=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Reader.pas',0,1,6,1,20,0,0,,
+File_1=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas',0,1,130,43,145,0,0,,
+File_2=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',0,1,30,35,60,0,0,,
+File_3=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BitArray.pas',0,1,1,18,77,0,0,{{90,54}
+File_4=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\BarcodeFormat.pas',0,1,66,3,6,0,0,,
+File_5=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MathUtils.pas',0,1,11,29,34,0,0,,
+File_6=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\RGBLuminanceSource.Pas',0,1,48,24,57,0,0,,
+File_7=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\LuminanceSource.pas',0,1,48,49,71,0,0,,
+File_8=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\HybridBinarizer.pas',0,1,42,3,59,0,0,,
+File_9=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas',0,1,32,23,53,0,0,,
 
 [Modules]
-Count=0
+Module0=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas
+Module1=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas
+Module2=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas
+Module3=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas
+Count=4
 EditWindowCount=1
 
+[C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas]
+ModuleType=TSourceModule
+FormState=0
+FormOnTop=0
+
+[C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas]
+ModuleType=TSourceModule
+FormState=0
+FormOnTop=0
+
+[C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas]
+ModuleType=TSourceModule
+FormState=0
+FormOnTop=0
+
+[C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas]
+ModuleType=TSourceModule
+FormState=0
+FormOnTop=0
+
 [EditWindow0]
-ViewCount=0
-CurrentView=-1
+ViewCount=4
+CurrentEditView=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas
+View0=0
+View1=1
+View2=2
+View3=3
 PercentageSizes=1
 Create=1
 Visible=1
@@ -50,6 +73,50 @@ BottomPanelData=0000080001020200000009000000446F636B53697465310F0000004D65737361
 BottomMiddlePanelSize=0
 BottomMiddlePanelClients=DockSite0,GraphDrawingModel
 BottomMiddelPanelData=0000080001020200000009000000446F636B536974653010000000477261706844726177696E67566965779A1D00000000000002F206000000000000FFFFFFFF
+
+[View0]
+CustomEditViewType=TEditView
+Module=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas
+CursorX=3
+CursorY=672
+TopLine=657
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas
+
+[View1]
+CustomEditViewType=TEditView
+Module=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas
+CursorX=43
+CursorY=31
+TopLine=99
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas
+
+[View2]
+CustomEditViewType=TEditView
+Module=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas
+CursorX=17
+CursorY=1
+TopLine=1
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas
+
+[View3]
+CustomEditViewType=TEditView
+Module=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas
+CursorX=23
+CursorY=130
+TopLine=102
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas
 
 [Watches]
 Count=1

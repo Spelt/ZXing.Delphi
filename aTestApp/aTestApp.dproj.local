@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2015-05-29 20:57:44.909,=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Unit13.pas</Transaction>
+    <Transaction>2015-05-29 20:58:52.677,C:\Users\Edward\Documents\Embarcadero\Studio\Projects\aTestApp.dproj=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Project11.dproj</Transaction>
+    <Transaction>2015-05-29 20:59:44.404,C:\Dev\Delphi\ZXing\aTestApp\Unit1.fmx=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Unit13.fmx</Transaction>
+    <Transaction>2015-05-29 20:59:44.404,C:\Dev\Delphi\ZXing\aTestApp\Unit1.pas=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Unit13.pas</Transaction>
+    <Transaction>2015-05-29 20:59:49.157,C:\Dev\Delphi\ZXing\aTestApp\aTestApp.dproj=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\aTestApp.dproj</Transaction>
+    <Transaction>2015-05-29 21:02:13.388,=C:\Dev\Delphi\ZXing\aTestApp\main.pas</Transaction>
+    <Transaction>2015-05-29 21:02:55.732,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas</Transaction>
+    <Transaction>2015-05-29 21:02:55.763,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas</Transaction>
+    <Transaction>2015-05-29 21:02:55.786,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas</Transaction>
+    <Transaction>2015-05-29 21:02:55.810,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Reader.pas</Transaction>
+    <Transaction>2015-05-29 21:03:25.835,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\BarcodeFormat.pas</Transaction>
+    <Transaction>2015-05-29 21:03:25.863,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\BitArray.pas</Transaction>
+    <Transaction>2015-05-29 21:03:25.898,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\DecodeHintType.pas</Transaction>
+    <Transaction>2015-05-29 21:03:25.923,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\MathUtils.pas</Transaction>
+    <Transaction>2015-05-29 21:03:25.950,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas</Transaction>
+    <Transaction>2015-05-29 21:03:25.975,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas</Transaction>
+    <Transaction>2015-05-29 21:03:26.000,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultMetadataType.pas</Transaction>
+    <Transaction>2015-05-29 21:03:26.028,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas</Transaction>
+    <Transaction>2015-05-29 21:03:45.532,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\Binarizer.pas</Transaction>
+    <Transaction>2015-05-29 21:03:45.562,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\BinaryBitmap.pas</Transaction>
+    <Transaction>2015-05-29 21:03:45.600,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas</Transaction>
+    <Transaction>2015-05-29 21:03:45.625,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\HybridBinarizer.pas</Transaction>
+    <Transaction>2015-05-29 21:03:45.652,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\LuminanceSource.pas</Transaction>
+    <Transaction>2015-05-29 21:03:45.683,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\RGBLuminanceSource.Pas</Transaction>
+    <Transaction>2015-05-29 21:03:45.712,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\ZXingCommon.pas</Transaction>
+    <Transaction>2015-05-29 21:04:23.866,=C:\Dev\Delphi\ZXing\Lib\Classes\ScanManager.pas</Transaction>
+    <Transaction>2015-05-29 22:55:08.025,C:\Dev\Delphi\ZXing\aTestApp\Unit1.pas=</Transaction>
+  </Transactions>
+</BorlandProject>

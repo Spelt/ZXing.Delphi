@@ -1,9 +1,9 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{49C39A36-83E2-40AD-A351-A48F4F77CCC9}</ProjectGuid>
+        <ProjectGuid>{72263279-BD40-4924-B404-E92C43F54569}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="Lib\myZXingPackage.dproj">
+        <Projects Include="aTestApp\aTestApp.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -14,23 +14,23 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="myZXingPackage">
-        <MSBuild Projects="Lib\myZXingPackage.dproj"/>
+    <Target Name="aTestApp">
+        <MSBuild Projects="aTestApp\aTestApp.dproj"/>
     </Target>
-    <Target Name="myZXingPackage:Clean">
-        <MSBuild Projects="Lib\myZXingPackage.dproj" Targets="Clean"/>
+    <Target Name="aTestApp:Clean">
+        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="myZXingPackage:Make">
-        <MSBuild Projects="Lib\myZXingPackage.dproj" Targets="Make"/>
+    <Target Name="aTestApp:Make">
+        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="myZXingPackage"/>
+        <CallTarget Targets="aTestApp"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="myZXingPackage:Clean"/>
+        <CallTarget Targets="aTestApp:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="myZXingPackage:Make"/>
+        <CallTarget Targets="aTestApp:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

@@ -1,4 +1,4 @@
-program TestApp;
+program aTestApp;
 
 uses
   System.StartUpCopy,

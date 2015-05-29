@@ -1,0 +1,103 @@
+object MainForm: TMainForm
+  Left = 0
+  Top = 0
+  Caption = 'Delphi Camera Scanner'
+  ClientHeight = 576
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 2
+  object Layout2: TLayout
+    Align = Client
+    Size.Width = 640.000000000000000000
+    Size.Height = 576.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    object ToolBar1: TToolBar
+      Size.Width = 640.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object btnMenu: TButton
+        Align = Left
+        Padding.Bottom = 4.000000000000000000
+        Size.Width = 44.000000000000000000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = 'detailstoolbutton'
+        TabOrder = 0
+        Text = 'btnMenu'
+        Visible = False
+      end
+      object lblScanStatus: TLabel
+        Align = FitRight
+        StyledSettings = [Size, Style, FontColor]
+        Margins.Right = 5.000000000000000000
+        Position.X = 457.000000000000000000
+        Size.Width = 178.000000000000000000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Family = 'Default'
+        TextSettings.HorzAlign = Trailing
+        Text = 'ScanStatus'
+      end
+    end
+    object imgCamera: TImage
+      MultiResBitmap = <
+        item
+        end>
+      Align = Client
+      Size.Width = 640.000000000000000000
+      Size.Height = 280.000000000000000000
+      Size.PlatformDefault = False
+      WrapMode = Stretch
+    end
+    object Memo1: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      Align = Bottom
+      Position.Y = 324.000000000000000000
+      Size.Width = 640.000000000000000000
+      Size.Height = 208.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Viewport.Width = 632.000000000000000000
+      Viewport.Height = 200.000000000000000000
+    end
+    object ToolBar3: TToolBar
+      Align = MostBottom
+      Position.Y = 532.000000000000000000
+      Size.Width = 640.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      object btnStopCamera: TButton
+        Align = Left
+        Size.Width = 151.000000000000000000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Text = 'Stop Camera'
+        OnClick = btnStopCameraClick
+      end
+      object btnStartCamera: TButton
+        Align = Left
+        Position.X = 151.000000000000000000
+        Size.Width = 183.000000000000000000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        Text = 'Start Camera'
+        OnClick = btnStartCameraClick
+      end
+    end
+  end
+  object CameraComponent1: TCameraComponent
+    OnSampleBufferReady = CameraComponent1SampleBufferReady
+    Left = 552
+    Top = 88
+  end
+end
