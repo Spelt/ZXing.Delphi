@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.534,C:\Users\Edward\Documents\Embarcadero\Studio\Projects\ProjectGroup2.groupproj=C:\Dev\Delphi\ZXing\ZXing.groupproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.869,C:\Dev\Delphi\ZXing\ZXing.groupproj=C:\Dev\Delphi\ZXing\ZXing Project group.groupproj</Transaction>
+  </Transactions>
+	<Default.Personality>
+		<Projects ActiveProject="C:\Dev\Delphi\ZXing\Lib\myZXingPackage.dproj"/>
+	</Default.Personality>
+</BorlandProject>

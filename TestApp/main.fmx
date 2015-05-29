@@ -1,0 +1,473 @@
+object MainForm: TMainForm
+  Left = 0
+  Top = 0
+  Caption = 'Delphi Camera Scanner'
+  ClientHeight = 576
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 2
+  object CameraComponent1: TCameraComponent
+    OnSampleBufferReady = CameraComponent1SampleBufferReady
+    Left = 560
+    Top = 104
+  end
+  object Layout2: TLayout
+    Align = Client
+    Size.Width = 415.000000000000000000
+    Size.Height = 576.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 7
+    object ToolBar1: TToolBar
+      Size.Width = 415.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object btnMenu: TButton
+        Align = Left
+        Padding.Bottom = 4.000000000000000000
+        Size.Width = 44.000000000000000000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = 'detailstoolbutton'
+        TabOrder = 0
+        Text = 'btnMenu'
+        Visible = False
+      end
+      object lblScanStatus: TLabel
+        Align = FitRight
+        StyledSettings = [Size, Style, FontColor]
+        Margins.Right = 5.000000000000000000
+        Position.X = 232.000000000000000000
+        Size.Width = 178.000000000000000000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Family = 'Default'
+        TextSettings.HorzAlign = Trailing
+        Text = 'ScanStatus'
+      end
+    end
+    object TabControl1: TTabControl
+      Touch.InteractiveGestures = [Pan]
+      Align = Client
+      FullSize = True
+      Size.Width = 415.000000000000000000
+      Size.Height = 532.000000000000000000
+      Size.PlatformDefault = False
+      TabHeight = 49.000000000000000000
+      TabIndex = 0
+      TabOrder = 1
+      TabPosition = None
+      object TabItem1: TTabItem
+        CustomIcon = <
+          item
+          end>
+        IsSelected = True
+        Size.Width = 8.000000000000000000
+        Size.Height = 8.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = 'TabItem1'
+        object imgCamera: TImage
+          MultiResBitmap = <
+            item
+            end>
+          Align = Client
+          Size.Width = 415.000000000000000000
+          Size.Height = 532.000000000000000000
+          Size.PlatformDefault = False
+          WrapMode = Stretch
+          object ToolBar3: TToolBar
+            Align = Bottom
+            Position.Y = 488.000000000000000000
+            Size.Width = 415.000000000000000000
+            Size.Height = 44.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 0
+            object Button1: TButton
+              Action = ChangeTabAction2
+              Align = Right
+              Enabled = True
+              ImageIndex = -1
+              Position.X = 335.000000000000000000
+              Size.Width = 80.000000000000000000
+              Size.Height = 44.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 1
+              Text = 'Tab 2'
+              Visible = True
+            end
+            object btnStopCamera: TButton
+              Align = Left
+              Size.Width = 151.000000000000000000
+              Size.Height = 44.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 2
+              Text = 'Stop Camera'
+              OnClick = btnStopCameraClick
+            end
+            object btnStartCamera: TButton
+              Align = Left
+              Position.X = 151.000000000000000000
+              Size.Width = 183.000000000000000000
+              Size.Height = 44.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 3
+              Text = 'Start Camera'
+              OnClick = btnStartCameraClick
+            end
+          end
+          object lblScanResults: TLabel
+            StyledSettings = [Size, Style, FontColor]
+            Position.X = 8.000000000000000000
+            Position.Y = 48.000000000000000000
+            Size.Width = 393.000000000000000000
+            Size.Height = 92.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Family = 'Default'
+            TextSettings.VertAlign = Leading
+            Text = 'ScanResults'
+          end
+        end
+      end
+      object TabItem2: TTabItem
+        CustomIcon = <
+          item
+          end>
+        IsSelected = False
+        Size.Width = 8.000000000000000000
+        Size.Height = 8.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = 'TabItem2'
+        object ListBox2: TListBox
+          Align = Client
+          Size.Width = 415.000000000000000000
+          Size.Height = 488.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          DisableFocusEffect = True
+          ItemHeight = 50.000000000000000000
+          DefaultItemStyles.ItemStyle = ''
+          DefaultItemStyles.GroupHeaderStyle = ''
+          DefaultItemStyles.GroupFooterStyle = ''
+          Viewport.Width = 410.000000000000000000
+          Viewport.Height = 488.000000000000000000
+          object ListBoxItem4: TListBoxItem
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 0
+            Text = 'ListBoxItem4'
+          end
+          object ListBoxItem5: TListBoxItem
+            Position.Y = 50.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 1
+            Text = 'ListBoxItem5'
+          end
+          object ListBoxItem6: TListBoxItem
+            Position.Y = 100.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 2
+            Text = 'ListBoxItem6'
+          end
+          object ListBoxItem7: TListBoxItem
+            Position.Y = 150.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 3
+            Text = 'ListBoxItem7'
+          end
+          object ListBoxItem8: TListBoxItem
+            Position.Y = 200.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 4
+            Text = 'ListBoxItem8'
+          end
+          object ListBoxItem9: TListBoxItem
+            Position.Y = 250.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 5
+            Text = 'ListBoxItem9'
+          end
+          object ListBoxItem10: TListBoxItem
+            Position.Y = 300.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 6
+            Text = 'ListBoxItem10'
+          end
+          object ListBoxItem11: TListBoxItem
+            Position.Y = 350.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 7
+            Text = 'ListBoxItem11'
+          end
+          object ListBoxItem12: TListBoxItem
+            Position.Y = 400.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 8
+            Text = 'ListBoxItem12'
+          end
+          object ListBoxItem13: TListBoxItem
+            Position.Y = 450.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 9
+            Text = 'ListBoxItem13'
+          end
+          object ListBoxItem14: TListBoxItem
+            Position.Y = 500.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 10
+            Text = 'ListBoxItem14'
+          end
+          object ListBoxItem15: TListBoxItem
+            Position.Y = 550.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 11
+            Text = 'ListBoxItem15'
+          end
+          object ListBoxItem16: TListBoxItem
+            Position.Y = 600.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 12
+            Text = 'ListBoxItem16'
+          end
+          object ListBoxItem17: TListBoxItem
+            Position.Y = 650.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 13
+            Text = 'ListBoxItem17'
+          end
+          object ListBoxItem18: TListBoxItem
+            Position.Y = 700.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 14
+            Text = 'ListBoxItem18'
+          end
+          object ListBoxItem19: TListBoxItem
+            Position.Y = 750.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 15
+            Text = 'ListBoxItem19'
+          end
+          object ListBoxItem20: TListBoxItem
+            Position.Y = 800.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 16
+            Text = 'ListBoxItem20'
+          end
+          object ListBoxItem21: TListBoxItem
+            Position.Y = 850.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 17
+            Text = 'ListBoxItem21'
+          end
+          object ListBoxItem22: TListBoxItem
+            Position.Y = 900.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 18
+            Text = 'ListBoxItem22'
+          end
+          object ListBoxItem23: TListBoxItem
+            Position.Y = 950.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 19
+            Text = 'ListBoxItem23'
+          end
+          object ListBoxItem24: TListBoxItem
+            Position.Y = 1000.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 20
+            Text = 'ListBoxItem24'
+          end
+          object ListBoxItem25: TListBoxItem
+            Position.Y = 1050.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 21
+            Text = 'ListBoxItem25'
+          end
+          object ListBoxItem26: TListBoxItem
+            Position.Y = 1100.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 22
+            Text = 'ListBoxItem26'
+          end
+          object ListBoxItem27: TListBoxItem
+            Position.Y = 1150.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 23
+            Text = 'ListBoxItem27'
+          end
+          object ListBoxItem28: TListBoxItem
+            Position.Y = 1200.000000000000000000
+            Size.Width = 410.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 24
+            Text = 'ListBoxItem28'
+          end
+        end
+        object ToolBar2: TToolBar
+          Align = Bottom
+          Position.Y = 488.000000000000000000
+          Size.Width = 415.000000000000000000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 5
+          object Button2: TButton
+            Action = ChangeTabAction1
+            Align = Right
+            Enabled = True
+            ImageIndex = -1
+            Position.X = 335.000000000000000000
+            Size.Width = 80.000000000000000000
+            Size.Height = 44.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 2
+            Text = 'Tab 1'
+            Visible = True
+          end
+        end
+      end
+    end
+  end
+  object MultiView1: TMultiView
+    MasterButton = btnMenu
+    Size.Width = 225.000000000000000000
+    Size.Height = 576.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    object ListBox1: TListBox
+      Align = Client
+      Size.Width = 224.000000000000000000
+      Size.Height = 576.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      CanFocus = False
+      DisableFocusEffect = True
+      ItemHeight = 40.000000000000000000
+      DefaultItemStyles.ItemStyle = ''
+      DefaultItemStyles.GroupHeaderStyle = ''
+      DefaultItemStyles.GroupFooterStyle = ''
+      Viewport.Width = 224.000000000000000000
+      Viewport.Height = 576.000000000000000000
+      object ListBoxItem1: TListBoxItem
+        Size.Width = 224.000000000000000000
+        Size.Height = 40.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = 'ListBoxItem1'
+      end
+      object ListBoxItem2: TListBoxItem
+        Position.Y = 40.000000000000000000
+        Size.Width = 224.000000000000000000
+        Size.Height = 40.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Text = 'ListBoxItem2'
+      end
+      object ListBoxItem3: TListBoxItem
+        Position.Y = 80.000000000000000000
+        Size.Width = 224.000000000000000000
+        Size.Height = 40.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        Text = 'ListBoxItem3'
+      end
+      object ListBoxItem29: TListBoxItem
+        Position.Y = 120.000000000000000000
+        Size.Width = 224.000000000000000000
+        Size.Height = 40.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Text = 'ListBoxItem29'
+      end
+      object ListBoxItem30: TListBoxItem
+        Position.Y = 160.000000000000000000
+        Size.Width = 224.000000000000000000
+        Size.Height = 40.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 4
+        Text = 'ListBoxItem30'
+      end
+      object ListBoxItem31: TListBoxItem
+        Position.Y = 200.000000000000000000
+        Size.Width = 224.000000000000000000
+        Size.Height = 40.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 5
+        Text = 'ListBoxItem31'
+      end
+    end
+  end
+  object ActionList1: TActionList
+    Left = 354
+    Top = 341
+    object ChangeTabAction1: TChangeTabAction
+      Category = 'Tab'
+      CustomText = 'Tab 2'
+      Tab = TabItem1
+    end
+    object ChangeTabAction2: TChangeTabAction
+      Category = 'Tab'
+      Tab = TabItem2
+    end
+    object ChangeTabActionNext: TChangeTabAction
+      Category = 'Tab'
+      CustomText = 'Next'
+    end
+    object PreviousTabActionPrev: TPreviousTabAction
+      Category = 'Tab'
+      CustomText = 'Vorige'
+    end
+  end
+end

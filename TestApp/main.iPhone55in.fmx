@@ -1,0 +1,30 @@
+inherited MainForm_iPhone55in: TMainForm_iPhone55in
+  ClientHeight = 716
+  ClientWidth = 414
+  DesignerMasterStyle = 2
+  inherited Layout2: TLayout [1]
+    Size.Width = 414.000000000000000000
+    Size.Height = 716.000000000000000000
+    inherited ToolBar1: TToolBar
+      Size.Width = 414.000000000000000000
+    end
+    inherited TabControl1: TTabControl
+      Size.Width = 414.000000000000000000
+      Size.Height = 672.000000000000000000
+      inherited TabItem2: TTabItem
+        inherited ListBox2: TListBox
+          Size.Width = 414.000000000000000000
+          Size.Height = 623.000000000000000000
+        end
+      end
+    end
+  end
+  inherited MultiView1: TMultiView [2]
+    Padding.Left = 10.000000000000000000
+    Padding.Top = 10.000000000000000000
+    Padding.Right = 10.000000000000000000
+    Padding.Bottom = 10.000000000000000000
+    Size.Height = 716.000000000000000000
+    Visible = False
+  end
+end

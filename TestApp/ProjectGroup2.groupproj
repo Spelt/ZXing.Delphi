@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{FA0EFD2B-72A4-4C6F-BD57-88EA87B7E9DC}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="TestApp.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Test\TabbedwithNavigation.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="TestApp">
+        <MSBuild Projects="TestApp.dproj"/>
+    </Target>
+    <Target Name="TestApp:Clean">
+        <MSBuild Projects="TestApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TestApp:Make">
+        <MSBuild Projects="TestApp.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="TabbedwithNavigation">
+        <MSBuild Projects="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Test\TabbedwithNavigation.dproj"/>
+    </Target>
+    <Target Name="TabbedwithNavigation:Clean">
+        <MSBuild Projects="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Test\TabbedwithNavigation.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TabbedwithNavigation:Make">
+        <MSBuild Projects="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Test\TabbedwithNavigation.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="TestApp;TabbedwithNavigation"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="TestApp:Clean;TabbedwithNavigation:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="TestApp:Make;TabbedwithNavigation:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

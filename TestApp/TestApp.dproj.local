@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.813,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\OneDReader.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.683,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\Binarizer.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.699,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\BinaryBitmap.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.287,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.802,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.762,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\RGBLuminanceSource.Pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.335,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.273,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\MathUtils.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.219,C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Unit11.fmx=C:\Dev\Delphi\ZXing\TestApp\main.fmx</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.745,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\LuminanceSource.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.317,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultMetadataType.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.824,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Reader.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.778,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\ZXingCommon.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.229,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\BarcodeFormat.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.260,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\DecodeHintType.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.730,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\HybridBinarizer.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.453,C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Project9.dproj=C:\Dev\Delphi\ZXing\TestApp\TestApp.dproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.511,=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Unit11.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.219,C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Unit11.pas=C:\Dev\Delphi\ZXing\TestApp\main.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.791,=C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.714,=C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.461,C:\Dev\Delphi\ZXing\TestApp\Unit1.pas=C:\Dev\Delphi\ZXing\Lib\Classes\ScanManager.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.243,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\BitArray.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.302,=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.093,=C:\Dev\Delphi\ZXing\TestApp\Entitlement.TemplateiOS.xml</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.003,C:\Dev\Delphi\ZXing\TestApp\Entitlement.TemplateiOS.xml=</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.400,=C:\Dev\Delphi\ZXing\TestApp\Unit1.pas</Transaction>
+  </Transactions>
+	<MobileDevice>%iossimulator%B396380A-A14D-4B49-8A17-B2FCC332F883-iOSSimulator</MobileDevice>
+</BorlandProject>
