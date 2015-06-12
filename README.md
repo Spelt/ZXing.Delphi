@@ -11,7 +11,7 @@ Its compatible with in Delphi XE7, XE8 and AppMethod and tested with IOS 8.1 32/
 The goal of ZXing.Delphi is to make scanning barcodes as effortless, painless, fast and build within your FireMonkey or native Windows applications.  Just include the source files or create a .bpl and add it in your existings projects and build the ZXing.Delphi source with your projects.
 
 #HELP NEEDED
-Although it works extremely well, it works currently only with one type barcode (Code 128). I only needed one barcode so for me there is no need yet for me to implement more types but I like to add all of them! For that I need your help! 
+Although it works extremely well, it works currently only with one type barcode (Code 128). I only needed one barcode so for me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
 
 Its a good start for an awesome community effort!  
 
@@ -19,8 +19,11 @@ The 1D barcode base classes I already implemented so if you need to have another
 
 Only with your help we can get all the barcodes here! A unit test project is included and all barcodes must be unit tested!
 
+**If you want to help. Let us/me know which barcode you want to implement. There is no point in converting barcodes multiple times!**
+
 ###What is different compared to the original source and what do I need to know if I implement a barcode?
 - I made use of generic array lists. This is easier and strongly typed.
+- I stayed at the architecture as implemented in the .Net source. Debugging 
 - There is a lot of bit shifting going around. Right bit shifting is the same as in C# but Left bit shifing is not! I made a helper for this: TMathUtils.Asr 
 - You can convert c# files to pascal with CS2Pas2 (somewhere on the Internet) it can give you a good start! Or just convert it yourself.
 
@@ -44,6 +47,7 @@ Of course the real world is not that simple.  To leave your app responsive while
 
 ###Features
 - Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
+- FREE. No ridiculous licence fees. Just FREE.
 - Speed
 - Barcodes: Code 128.
 - Simple API
