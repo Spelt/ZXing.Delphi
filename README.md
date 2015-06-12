@@ -19,7 +19,7 @@ The 1D barcode base classes I already implemented so if you need to have another
 
 Only with your help we can get all the barcodes here! A unit test project is included and all barcodes must be unit tested!
 
-**If you want to help. Let us/me know which barcode you want to implement. There is no point in converting barcodes multiple times!**
+**If you want to help:** Let us/me know which barcode you planning to implement. There is no point in converting barcodes multiple times :-)
 
 ###What is different compared to the original source and what do I need to know if I implement a barcode?
 - I made use of generic array lists. This is easier and strongly typed.
