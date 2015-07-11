@@ -80,6 +80,11 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.1.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <Manifest_File>None</Manifest_File>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
@@ -113,74 +118,7 @@
         <DCCReference Include="..\Lib\Classes\1D Barcodes\OneDReader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\Code128Reader.pas"/>
-        <RcItem Include="Images\aztec.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_1</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\codabar.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_2</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\code39.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_3</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\code93.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_4</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\code128.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_5</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\code128-custom.bmp">
-            <ResourceType>BITMAP</ResourceType>
-            <ResourceId>Bitmap_1</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\datamatrix.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_6</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\ean8.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_7</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\ean13.gif">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>GifImage_1</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\itf.gif">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>GifImage_2</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\itf.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_8</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\l2of5small.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_9</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\l2of5verysmall.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_10</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\pdf417.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_11</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\qrcode.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_12</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\upca.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_13</ResourceId>
-        </RcItem>
-        <RcItem Include="Images\upce.png">
-            <ResourceType>RCDATA</ResourceType>
-            <ResourceId>PngImage_14</ResourceId>
-        </RcItem>
+        <DCCReference Include="..\Lib\Classes\1D Barcodes\Code93Reader.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -201,11 +139,15 @@
                 <Source>
                     <Source Name="MainSource">dUnitXTest.dpr</Source>
                 </Source>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\DUnitXRuntime220.bpl">Embarcadero Unit Testing IDE Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k220.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp220.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="2">
-                <DeployFile LocalName="Win32\Debug\dUnitXTest.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win32">
-                        <RemoteName>dUnitXTest.exe</RemoteName>
+                <DeployFile LocalName="$(BDS)\Redist\iossimulator\libPCRE.dylib" Class="DependencyModule">
+                    <Platform Name="iOSSimulator">
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -215,6 +157,17 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\iossim32\libcgunwind.1.0.dylib" Class="DependencyModule">
+                    <Platform Name="iOSSimulator">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win32\Debug\dUnitXTest.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>dUnitXTest.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="iOSSimulator">
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -537,13 +490,13 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
-                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <Platforms>
                 <Platform value="OSX32">False</Platform>

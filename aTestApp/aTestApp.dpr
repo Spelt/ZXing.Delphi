@@ -23,7 +23,8 @@ uses
   LuminanceSource in '..\Lib\Classes\Filtering\LuminanceSource.pas',
   RGBLuminanceSource in '..\Lib\Classes\Filtering\RGBLuminanceSource.Pas',
   ZXingCommon in '..\Lib\Classes\Filtering\ZXingCommon.pas',
-  ScanManager in '..\Lib\Classes\ScanManager.pas';
+  ScanManager in '..\Lib\Classes\ScanManager.pas',
+  Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas';
 
 {$R *.res}
 

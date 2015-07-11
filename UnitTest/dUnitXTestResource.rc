@@ -1,6 +1,5 @@
 PngImage_1 RCDATA "Images\\aztec.png"
 PngImage_2 RCDATA "Images\\codabar.png"
-PngImage_3 RCDATA "Images\\code39.png"
 PngImage_4 RCDATA "Images\\code93.png"
 PngImage_5 RCDATA "Images\\code128.png"
 Bitmap_1 BITMAP "Images\\code128-custom.bmp"

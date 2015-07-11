@@ -17,6 +17,9 @@ type
     [Test]
     procedure Code128();
 
+    [Test]
+    procedure Code93();
+
   end;
 
 implementation
@@ -27,9 +30,32 @@ var
   result: TReadResult;
 begin
   result := Decode('Code128.png', BarcodeFormat.CODE_128);
-  Assert.IsNotNull(result, ' NULL result ');
-  Assert.IsTrue(result.Text.Equals('1234567'), 'result Text Incorrect: ' + result.Text);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('1234567'), 'Code 128 result Text Incorrect: ' + result.Text);
 end;
+
+procedure TZXingDelphiTest.Code93();
+var
+  result: TReadResult;
+begin
+  result := Decode('Code93-1.png', BarcodeFormat.CODE_93);
+  Assert.IsNotNull(result, ' nil result ');
+  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'), 'Code 93 - 1 result Text Incorrect: ' + result.Text);
+
+	result := Decode('Code93-2.png', BarcodeFormat.CODE_93);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('ABC CODE93-2'), 'Code 93 - 2 result Text Incorrect: ' + result.Text);
+
+  result := Decode('Code93-3.png', BarcodeFormat.CODE_93);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('ABC CODE96'), 'Code 93 - 3 result Text Incorrect: ' + result.Text);
+
+  result := Decode('Code93-3.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('ABC CODE96'), 'Auto Code 93 - 3 result Text Incorrect: ' + result.Text);
+end;
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //// Helpers below                                                         /////

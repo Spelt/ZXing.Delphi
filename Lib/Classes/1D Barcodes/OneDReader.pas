@@ -59,18 +59,6 @@ type
     class function RecordPatternInReverse(row: TBitArray; start: Integer;
       counters: TArray<Integer>): Boolean; Static;
 
-    /// <summary>
-    /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
-    /// The values are recorded in the given array, and the number of runs recorded is equal to the size
-    /// of the array. If the row starts on a white pixel at the given start point, then the first count
-    /// recorded is the run of white pixels starting from that point; likewise it is the count of a run
-    /// of black pixels if the row begin on a black pixels at that point.
-    /// </summary>
-    /// <param name="row">row to count from</param>
-    /// <param name="start">offset into row to start at</param>
-    /// <param name="counters">array into which to record counts</param>
-    class function recordPattern(row: TBitArray; start: Integer;
-      counters: TArray<Integer>): Boolean; overload; static;
 
     /// <summary>
     /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
@@ -116,6 +104,20 @@ type
     function Decode(image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       overload; virtual;
+
+        /// <summary>
+    /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
+    /// The values are recorded in the given array, and the number of runs recorded is equal to the size
+    /// of the array. If the row starts on a white pixel at the given start point, then the first count
+    /// recorded is the run of white pixels starting from that point; likewise it is the count of a run
+    /// of black pixels if the row begin on a black pixels at that point.
+    /// </summary>
+    /// <param name="row">row to count from</param>
+    /// <param name="start">offset into row to start at</param>
+    /// <param name="counters">array into which to record counts</param>
+    class function recordPattern(row: TBitArray; start: Integer;
+      counters: TArray<Integer>): Boolean; overload; static;
+
 
     /// <summary>
     /// Attempts to decode a one-dimensional barcode format given a single row of

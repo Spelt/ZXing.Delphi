@@ -10,6 +10,15 @@ With this library you can scan with native speed without the use of linking in e
 Its compatible with in Delphi XE7, XE8 and AppMethod and tested with IOS 8.1 32/64bit, Windows 32/64 and OSX. Not yet tested it with Android but that should work too.  
 The goal of ZXing.Delphi is to make scanning barcodes as effortless, painless, fast and build within your FireMonkey or native Windows applications.  Just include the source files or create a .bpl and add it in your existings projects and build the ZXing.Delphi source with your projects.
 
+
+###Changes
+ - v1.1 Date: 2015/7/11
+	- Implemented Code93 + unit test
+ - v1.0
+ 	- Init upload
+ 	- Base classes 1D barcode implemented.	
+ 	- Code 128 format is implemented.
+
 #HELP NEEDED
 Although it works extremely well, it works currently only with one type barcode (Code 128). I only needed one barcode so for me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
 
@@ -49,16 +58,12 @@ Of course the real world is not that simple.  To leave your app responsive while
 - Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
 - FREE. No ridiculous licence fees. Just FREE.
 - Speed
-- Barcodes: Code 128.
+- Barcodes: Code 128, Code93
 - Simple API
 - Unit tests provided
 
 
-###Changes
- - v1.0
- 	- Init upload
- 	- Base classes 1D barcode implemented.	
- 	- Code 128 format is implemented.
+
  	
 
 ###Barcode Formats

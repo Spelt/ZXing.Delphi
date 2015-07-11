@@ -3,7 +3,7 @@ program dUnitXTest;
 {$IFNDEF TESTINSIGHT}
 {$APPTYPE CONSOLE}
 {$ENDIF}{$STRONGLINKTYPES ON}
-{$R *.dres}
+
 
 uses
   SysUtils,
@@ -33,7 +33,8 @@ uses
   Reader in '..\Lib\Classes\1D Barcodes\Reader.pas',
   OneDReader in '..\Lib\Classes\1D Barcodes\OneDReader.pas',
   MultiFormatOneDReader in '..\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',
-  Code128Reader in '..\Lib\Classes\1D Barcodes\Code128Reader.pas';
+  Code128Reader in '..\Lib\Classes\1D Barcodes\Code128Reader.pas',
+  Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas';
 
 var
   runner : ITestRunner;
