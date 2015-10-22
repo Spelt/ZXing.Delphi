@@ -19,7 +19,7 @@ interface
 
 uses SysUtils, rtti, Generics.Collections,
   ReadResult, Reader, DecodeHintType, BinaryBitmap, BarcodeFormat,
-  MultiFormatOneDReader, ResultPoint, OneDReader;
+  MultiFormatOneDReader, ResultPoint, OneDReader, QRCodeReader;
 
 /// <summary>
 /// MultiFormatReader is a convenience class and the main entry point into the library for most uses.
@@ -205,7 +205,7 @@ begin
     end;
     if formats.Contains(BarcodeFormat.QR_CODE) then
     begin
-      // readers.Add(new QRCodeReader())
+       readers.Add(TQRCodeReader.Create())
     end;
     if formats.Contains(BarcodeFormat.DATA_MATRIX) then
     begin

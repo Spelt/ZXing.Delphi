@@ -3,7 +3,7 @@ ZXing Barcode Scanning Library for Delphi XE7/XE8 and Appmethod.
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/master/zxing.Delphi.picture1.png )
 
-ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib.  It is aimed at all of the Firmonkey mobile platforms.
+ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib.  It is aimed at all of the FireMonkey mobile platforms.
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compability issues and dependencies. It is fast.
 

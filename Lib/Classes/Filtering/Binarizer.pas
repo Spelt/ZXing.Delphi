@@ -20,7 +20,7 @@ unit Binarizer;
 interface
 
 uses
-  System.SysUtils, LuminanceSource, BitArray;
+  System.SysUtils, LuminanceSource, BitArray, BitMatrixx;
 
 type
 
@@ -37,12 +37,13 @@ type
     function GetWidth: Integer;
     function GetHeight: Integer;
 
+
   protected
     /// <summary>
     /// Initializes a new instance of the <see cref="Binarizer"/> class.
     /// </summary>
     /// <param name="source">The source.</param>
-    constructor Binarizer(source: TLuminanceSource);
+    constructor Create(source: TLuminanceSource);
 
     /// <summary> Converts one row of luminance data to 1 bit data. May actually do the conversion, or return
     /// cached data. Callers should assume this method is expensive and call it as seldom as possible.
@@ -61,6 +62,9 @@ type
     function GetBlackRow(y: Integer; row: TBitArray): TBitArray;
       virtual; abstract;
 
+    function BlackMatrix: TBitmatrix; virtual; abstract;
+
+
     /// <summary> Creates a new object with the same type as this Binarizer implementation, but with pristine
     /// state. This is needed because Binarizer implementations may be stateful, e.g. keeping a cache
     /// of 1 bit data. See Effective Java for why we can't use Java's clone() method.
@@ -73,13 +77,15 @@ type
     property Width: Integer read GetWidth;
     property Height: Integer read GetHeight;
 
+
+
   end;
 
 implementation
 
 { TBinarizer }
 
-constructor TBinarizer.Binarizer(source: TLuminanceSource);
+constructor TBinarizer.Create(source: TLuminanceSource);
 begin
 
   if (source = nil) then

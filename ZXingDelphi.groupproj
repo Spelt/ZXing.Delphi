@@ -3,10 +3,10 @@
         <ProjectGuid>{72263279-BD40-4924-B404-E92C43F54569}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="aTestApp\aTestApp.dproj">
+        <Projects Include="UnitTest\dUnitXTest.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="UnitTest\dUnitXTest.dproj">
+        <Projects Include="aTestApp\aTestApp.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -17,15 +17,6 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="aTestApp">
-        <MSBuild Projects="aTestApp\aTestApp.dproj"/>
-    </Target>
-    <Target Name="aTestApp:Clean">
-        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="aTestApp:Make">
-        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Make"/>
-    </Target>
     <Target Name="dUnitXTest">
         <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
     </Target>
@@ -35,14 +26,23 @@
     <Target Name="dUnitXTest:Make">
         <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
     </Target>
+    <Target Name="aTestApp">
+        <MSBuild Projects="aTestApp\aTestApp.dproj"/>
+    </Target>
+    <Target Name="aTestApp:Clean">
+        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="aTestApp:Make">
+        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="aTestApp;dUnitXTest"/>
+        <CallTarget Targets="dUnitXTest;aTestApp"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="aTestApp:Clean;dUnitXTest:Clean"/>
+        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="aTestApp:Make;dUnitXTest:Make"/>
+        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

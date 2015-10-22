@@ -2,19 +2,20 @@ unit BinaryBitmap;
 
 interface
 
-uses SysUtils, Binarizer, LuminanceSource, BitArray;
+uses SysUtils, Binarizer, LuminanceSource, BitArray, BitMatrixx;
 
 type
   TBinaryBitmap = class
 
   private
     Binarizer: TBinarizer;
+    Matrix: TBitMatrix;
     function GetWidth: Integer;
     function GetHeight: Integer;
-
+    function GetBlackMatrix: TBitMatrix;
   public
     constructor BinaryBitmap(Binarizer: TBinarizer);
-     /// <summary>
+    /// <summary>
     /// Converts one row of luminance data to 1 bit data. May actually do the conversion, or return
     /// cached data. Callers should assume this method is expensive and call it as seldom as possible.
     /// This method is intended for decoding 1D barcodes and may choose to apply sharpening.
@@ -30,6 +31,7 @@ type
 
     property Width: Integer read GetWidth;
     property Height: Integer read GetHeight;
+    property BlackMatrix: TBitMatrix read GetBlackMatrix;
   end;
 
 implementation
@@ -48,15 +50,25 @@ begin
 
 end;
 
-function TBinaryBitmap.getBlackRow(y: Integer; row: TBitArray)
-  : TBitArray;
+function TBinaryBitmap.GetBlackMatrix: TBitMatrix;
 begin
-  Result := Binarizer.getBlackRow(y, row);
+  if (Matrix = nil) then
+  begin
+    Matrix := Binarizer.BlackMatrix();
+  end;
+
+  result := Matrix;
+
+end;
+
+function TBinaryBitmap.getBlackRow(y: Integer; row: TBitArray): TBitArray;
+begin
+  result := Binarizer.getBlackRow(y, row);
 end;
 
 function TBinaryBitmap.GetHeight: Integer;
 begin
-  Result := Binarizer.Height;
+  result := Binarizer.Height;
 end;
 
 function TBinaryBitmap.GetWidth: Integer;
@@ -69,12 +81,12 @@ var
   newSource: TLuminanceSource;
 begin
   newSource := Binarizer.LuminanceSource.rotateCounterClockwise();
-  Result := TBinaryBitmap.BinaryBitmap(Binarizer.createBinarizer(newSource));
+  result := TBinaryBitmap.BinaryBitmap(Binarizer.createBinarizer(newSource));
 end;
 
 function TBinaryBitmap.RotateSupported: Boolean;
 begin
-  Result := Binarizer.LuminanceSource.RotateSupported();
+  result := Binarizer.LuminanceSource.RotateSupported();
 end;
 
 end.

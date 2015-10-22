@@ -19,7 +19,7 @@ unit HybridBinarizer;
 
 interface
 
-uses SysUtils, GlobalHistogramBinarizer, LuminanceSource;
+uses SysUtils, GlobalHistogramBinarizer, LuminanceSource, Bitmatrixx, binarizer;
 
 /// <summary> This class implements a local thresholding algorithm, which while slower than the
 /// GlobalHistogramBinarizer, is fairly efficient for what it does. It is designed for
@@ -44,19 +44,275 @@ uses SysUtils, GlobalHistogramBinarizer, LuminanceSource;
 /// </author>
 
 type
+
+  TArrayIntOfInt = TArray<TArray<Integer>>;
+
   THybridBinarizer = class(TGlobalHistogramBinarizer)
+  private
+    matrix: TBitMatrix;
+    procedure BinarizeEntireImage;
+    procedure calculateThresholdForBlock(luminances: TArray<Byte>;
+      subWidth: Integer; subHeight: Integer; width: Integer; height: Integer;
+      blackPoints: TArrayIntOfInt; matrix: TBitMatrix);
+    function calculateBlackPoints(luminances: TArray<Byte>; subWidth: Integer;
+      subHeight: Integer; width: Integer; height: Integer): TArrayIntOfInt;
+    procedure thresholdBlock(luminances: TArray<Byte>; xoffset: Integer;
+      yoffset: Integer; threshold: Integer; stride: Integer;
+      matrix: TBitMatrix);
+    function cap(value: Integer; min: Integer; max: Integer): Integer;
 
   public
-    constructor HybridBinarizer(source: TLuminanceSource);
+    constructor Create(source: TLuminanceSource);
+    function BlackMatrix: TBitMatrix; override;
+    function createBinarizer(source: TLuminanceSource): TBinarizer;
+
   end;
 
 implementation
 
 { THybridBinarizer }
 
-constructor THybridBinarizer.HybridBinarizer(source: TLuminanceSource);
+function THybridBinarizer.BlackMatrix: TBitMatrix;
 begin
-  Inherited GlobalHistogramBinarizer(source);
+  BinarizeEntireImage();
+  result := matrix;
+end;
+
+function THybridBinarizer.createBinarizer(source: TLuminanceSource): TBinarizer;
+begin
+  result := THybridBinarizer.Create(source)
+end;
+
+procedure THybridBinarizer.BinarizeEntireImage;
+var
+  source: TLuminanceSource;
+  luminances: TArray<Byte>;
+  subWidth, subHeight, width, height: Integer;
+  blackPoints: TArrayIntOfInt;
+  newMatrix: TBitMatrix;
+begin
+  if (self.matrix <> nil) then
+  begin
+    inherited BlackMatrix;
+    Exit;
+  end;
+
+  source := self.LuminanceSource;
+  width := source.width;
+  height := source.height;
+
+  if ((width >= 40) and (height >= 40)) then
+  begin
+    luminances := source.matrix;
+    subWidth := (width shr 3);
+
+    if ((width and 7) <> 0) then
+      inc(subWidth);
+
+    subHeight := (height shr 3);
+
+    if ((height and 7) <> 0) then
+      inc(subHeight);
+
+    blackPoints := calculateBlackPoints(luminances, subWidth, subHeight,
+      width, height);
+
+    newMatrix := TBitMatrix.Create(width, height);
+    calculateThresholdForBlock(luminances, subWidth, subHeight, width, height,
+      blackPoints, newMatrix);
+
+    self.matrix := newMatrix
+  end;
+
+end;
+
+function THybridBinarizer.calculateBlackPoints(luminances: TArray<Byte>;
+  subWidth: Integer; subHeight: Integer; width: Integer; height: Integer)
+  : TArrayIntOfInt;
+var
+  blackPoints: TArrayIntOfInt;
+  i, x, y, yoffset, maxYOffset, xoffset, maxXOffset, sum, min, max, yy, offset,
+    xx, pixel, average, averageNeighborBlackPoint: Integer;
+
+begin
+  blackPoints := TArrayIntOfInt.Create();
+  SetLength(blackPoints, subHeight);
+  i := 0;
+
+  while ((i < subHeight)) do
+  begin
+
+    blackPoints[i] := TArray<Integer>.Create();
+    SetLength(blackPoints[i], subWidth);
+    inc(i)
+  end;
+
+  y := 0;
+
+  while ((y < subHeight)) do
+  begin
+
+    yoffset := (y shl 3);
+    maxYOffset := (height - 8);
+
+    if (yoffset > maxYOffset) then
+      yoffset := maxYOffset;
+    x := 0;
+
+    while ((x < subWidth)) do
+    begin
+      xoffset := (x shl 3);
+      maxXOffset := (width - 8);
+      if (xoffset > maxXOffset) then
+        xoffset := maxXOffset;
+      sum := 0;
+      min := $FF;
+      max := 0;
+      yy := 0;
+      offset := ((yoffset * width) + xoffset);
+
+      while ((yy < 8)) do
+      begin
+        xx := 0;
+        while ((xx < 8)) do
+        begin
+          pixel := (luminances[(offset + xx)] and $FF);
+          inc(sum, pixel);
+          if (pixel < min) then
+            min := pixel;
+          if (pixel > max) then
+            max := pixel;
+          inc(xx)
+        end;
+
+        if ((max - min) > $18) then
+        begin
+          inc(yy);
+          inc(offset, width);
+          while ((yy < 8)) do
+          begin
+            xx := 0;
+            while ((xx < 8)) do
+            begin
+              inc(sum, (luminances[(offset + xx)] and $FF));
+              inc(xx)
+            end;
+            inc(yy);
+            inc(offset, width)
+          end
+        end;
+        inc(yy);
+        inc(offset, width)
+      end;
+
+      average := (sum shr 6);
+      if ((max - min) <= $18) then
+      begin
+        average := (min shr 1);
+        if ((y > 0) and (x > 0)) then
+        begin
+          averageNeighborBlackPoint :=
+            (((blackPoints[(y - 1)][x] + (2 * blackPoints[y][(x - 1)])) +
+            blackPoints[(y - 1)][(x - 1)]) shr 2);
+          if (min < averageNeighborBlackPoint) then
+            average := averageNeighborBlackPoint
+        end
+      end;
+      blackPoints[y][x] := average;
+      inc(x)
+    end;
+    inc(y)
+  end;
+
+  result := blackPoints;
+  Exit
+end;
+
+procedure THybridBinarizer.calculateThresholdForBlock(luminances: TArray<Byte>;
+  subWidth: Integer; subHeight: Integer; width: Integer; height: Integer;
+  blackPoints: TArrayIntOfInt; matrix: TBitMatrix);
+var
+  y, yoffset, maxYOffset, x, xoffset, maxXOffset, left, top, sum, z,
+    average: Integer;
+  blackRow: TArray<Integer>;
+begin
+  y := 0;
+  while ((y < subHeight)) do
+  begin
+    yoffset := (y shl 3);
+    maxYOffset := (height - 8);
+    if (yoffset > maxYOffset) then
+      yoffset := maxYOffset;
+    x := 0;
+    while ((x < subWidth)) do
+    begin
+      xoffset := (x shl 3);
+      maxXOffset := (width - 8);
+      if (xoffset > maxXOffset) then
+        xoffset := maxXOffset;
+      left := cap(x, 2, (subWidth - 3));
+      top := cap(y, 2, (subHeight - 3));
+      sum := 0;
+      z := -2;
+      while ((z <= 2)) do
+      begin
+        blackRow := blackPoints[(top + z)];
+        inc(sum, blackRow[(left - 2)]);
+        inc(sum, blackRow[(left - 1)]);
+        inc(sum, blackRow[left]);
+        inc(sum, blackRow[(left + 1)]);
+        inc(sum, blackRow[(left + 2)]);
+        inc(z)
+      end;
+      average := (sum div $19);
+      thresholdBlock(luminances, xoffset, yoffset, average, width, matrix);
+      inc(x)
+    end;
+    inc(y)
+  end
+end;
+
+constructor THybridBinarizer.Create(source: TLuminanceSource);
+begin
+  inherited Create(source);
+end;
+
+procedure THybridBinarizer.thresholdBlock(luminances: TArray<Byte>;
+  xoffset: Integer; yoffset: Integer; threshold: Integer; stride: Integer;
+  matrix: TBitMatrix);
+var
+  offset, x, y, pixel: Integer;
+begin
+  offset := ((yoffset * stride) + xoffset);
+  y := 0;
+  while ((y < 8)) do
+  begin
+    x := 0;
+    while ((x < 8)) do
+    begin
+      pixel := (luminances[(offset + x)] and $FF);
+      matrix[(xoffset + x), (yoffset + y)] := (pixel <= threshold);
+      inc(x)
+    end;
+    inc(y);
+    inc(offset, stride)
+  end
+end;
+
+function THybridBinarizer.cap(value: Integer; min: Integer;
+  max: Integer): Integer;
+begin
+
+  if (value < min) then
+  begin
+    result := min
+  end
+  else if (value > max) then
+  begin
+    result := max
+  end
+  else
+    result := value
 end;
 
 end.

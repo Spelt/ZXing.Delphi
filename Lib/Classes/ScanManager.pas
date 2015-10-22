@@ -32,8 +32,6 @@ var
   HybridBinarizer: THybridBinarizer;
   BinaryBitmap: TBinaryBitmap;
 
-  vBitMapData: TBitmapData;
-  BarcodeRead: string;
 
 begin
 
@@ -42,7 +40,7 @@ begin
     RGBLuminanceSource := TRGBLuminanceSource.RGBLuminanceSource(pBitmapForScan,
       pBitmapForScan.Width, pBitmapForScan.Height);
 
-    HybridBinarizer := THybridBinarizer.HybridBinarizer(RGBLuminanceSource);
+    HybridBinarizer := THybridBinarizer.Create(RGBLuminanceSource);
 
     BinaryBitmap := TBinaryBitmap.BinaryBitmap(HybridBinarizer);
 

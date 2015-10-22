@@ -23,12 +23,15 @@ type
     function SizeInBytes: Integer;
 
     property Self[i: Integer]: Boolean read GetBit write SetBit; default;
+    property Bits: TArray<Integer> read FBits;
+
 
     constructor Create(); overload;
     constructor Create(Size: Integer); overload;
     function getNextSet(from: Integer): Integer;
     function getNextUnset(from: Integer): Integer;
 
+    procedure setBulk(i, newBits: Integer);
     procedure Reverse();
     procedure Clear();
     /// <summary> Efficient method to check if a range of bits is set, or not set.
@@ -319,6 +322,11 @@ end;
 function TBitArray.SizeInBytes: Integer;
 begin
   Result := TMathUtils.Asr(Size + 7, 3);
+end;
+
+procedure TBitArray.setBulk(i: Integer; newBits: Integer);
+begin
+  FBits[(i shr 5)] := newBits
 end;
 
 end.

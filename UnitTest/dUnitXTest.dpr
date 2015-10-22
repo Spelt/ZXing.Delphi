@@ -34,7 +34,27 @@ uses
   OneDReader in '..\Lib\Classes\1D Barcodes\OneDReader.pas',
   MultiFormatOneDReader in '..\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',
   Code128Reader in '..\Lib\Classes\1D Barcodes\Code128Reader.pas',
-  Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas';
+  Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas',
+  QRCodeReader in '..\Lib\Classes\2D Barcodes\QRCodeReader.pas',
+  Decoder in '..\Lib\Classes\2D Barcodes\Decoder\Decoder.pas',
+  Bitmatrixx in '..\Lib\Classes\Common\Bitmatrixx.pas',
+  Helpers in '..\Lib\Classes\Common\Helpers.pas',
+  BitMatrixParser in '..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas',
+  Version in '..\Lib\Classes\2D Barcodes\Decoder\Version.pas',
+  ErrorCorrectionLevel in '..\Lib\Classes\2D Barcodes\Decoder\ErrorCorrectionLevel.pas',
+  FormatInformation in '..\Lib\Classes\2D Barcodes\Decoder\FormatInformation.pas',
+  DecoderResult in '..\Lib\Classes\Common\DecoderResult.pas',
+  Detector in '..\Lib\Classes\2D Barcodes\Detector\Detector.pas',
+  DetectorResult in '..\Lib\Classes\Common\DetectorResult.pas',
+  AlignmentPattern in '..\Lib\Classes\2D Barcodes\Detector\AlignmentPattern.pas',
+  PerspectiveTransform in '..\Lib\Classes\Common\PerspectiveTransform.pas',
+  FinderPatternInfo in '..\Lib\Classes\2D Barcodes\Detector\FinderPatternInfo.pas',
+  FinderPattern in '..\Lib\Classes\2D Barcodes\Detector\FinderPattern.pas',
+  QRCodeDecoderMetadata in '..\Lib\Classes\2D Barcodes\Decoder\QRCodeDecoderMetadata.pas',
+  FinderPatternFinder in '..\Lib\Classes\2D Barcodes\Detector\FinderPatternFinder.pas',
+  NullableType in '..\Lib\Classes\Common\NullableType.pas',
+  AlignmentPatternFinder in '..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas',
+  GridSampler in '..\Lib\Classes\Common\GridSampler.pas';
 
 var
   runner : ITestRunner;

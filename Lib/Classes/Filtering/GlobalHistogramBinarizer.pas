@@ -24,6 +24,7 @@ uses SysUtils, Binarizer, LuminanceSource, BitArray, MathUtils;
 type
   TGlobalHistogramBinarizer = class(TBinarizer)
   private
+
     LUMINANCE_BITS, LUMINANCE_SHIFT, LUMINANCE_BUCKETS: Integer;
     luminances: TArray<Byte>;
     buckets: TArray<Integer>;
@@ -32,6 +33,8 @@ type
       var blackPoint: Integer): Boolean;
 
   public
+    constructor Create(source: TLuminanceSource);
+
     constructor GlobalHistogramBinarizer(source: TLuminanceSource);
     function GetBlackRow(y: Integer; row: TBitArray): TBitArray; override;
   end;
@@ -39,18 +42,23 @@ type
 implementation
 
 { TGlobalHistogramBinarizer }
+constructor TGlobalHistogramBinarizer.Create(source: TLuminanceSource);
+begin
+  inherited Create(source);
+  self.luminances := TArray<Byte>.Create();
+  SetLength(self.luminances, 0);
+
+  self.buckets := TArray<Integer>.Create();
+  SetLength(self.buckets, $20);
+end;
 
 function TGlobalHistogramBinarizer.GetBlackRow(y: Integer; row: TBitArray)
   : TBitArray;
-
 var
-
   localLuminances: TArray<Byte>;
   localBuckets: TArray<Integer>;
   i, w, blackPoint, x, pixel, left, right, center, luminance: Integer;
-
 begin
-
   w := width;
   if ((row = nil) or (row.Size < w)) then
   begin
@@ -84,13 +92,11 @@ begin
   for x := 1 to w - 1 do
   begin
 
-
-
     right := localLuminances[x + 1] and $FF;
     // A simple -1 4 -1 box filter with a weight of 2.
 
     luminance := (center shl 2) - left - right;
-    luminance := TMathUtils.Asr(luminance,1);
+    luminance := TMathUtils.Asr(luminance, 1);
     row[x] := (luminance < blackPoint);
     left := center;
     center := right;
@@ -103,7 +109,7 @@ end;
 constructor TGlobalHistogramBinarizer.GlobalHistogramBinarizer
   (source: TLuminanceSource);
 begin
-  Inherited Binarizer(source);
+  Inherited Create(source);
 
   LUMINANCE_BITS := 5;
   LUMINANCE_SHIFT := 8 - LUMINANCE_BITS;

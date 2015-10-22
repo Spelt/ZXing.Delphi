@@ -10,9 +10,15 @@ type
 
   [TestFixture]
   TZXingDelphiTest = class(TObject)
+  private
+
   public
     function GetImage(Filename: string): TBitmap;
     function Decode(Filename: String; CodeFormat: TBarcodeFormat): TReadResult;
+
+
+    [Test]
+    procedure QRCode;
 
     [Test]
     procedure Code128();
@@ -24,6 +30,15 @@ type
 
 implementation
 
+
+procedure TZXingDelphiTest.QRCode();
+var
+  result: TReadResult;
+begin
+  result := Decode('qrcode.png', BarcodeFormat.QR_CODE);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://google.com'), 'QR code result Text Incorrect: ' + result.Text);
+end;
 
 procedure TZXingDelphiTest.Code128();
 var
