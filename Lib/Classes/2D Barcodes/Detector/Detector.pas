@@ -5,7 +5,7 @@ interface
 uses SysUtils, Generics.Collections, Bitmatrixx, Resultpoint,
   DetectorResult, DecodeHintType, AlignmentPattern, perspectiveTransform,
   finderpatternInfo, math, FinderPatternFinder, FinderPattern,
-  AlignmentPatternFinder, Version, GridSampler, MathUtils;
+  AlignmentPatternFinder, Version, DefaultGridSampler, MathUtils;
 
 type
 
@@ -193,7 +193,7 @@ begin
     // self.resultPointCallback :=  hints[DecodeHintType.NEED_RESULT_POINT_CALLBACK] as TResultPointCallback;
   end;
 
-  info := TFinderPatternFinder.Create(Fimage, ResultPointCallback).find(hints);
+  info := TFinderPatternFinder.Create(FImage, ResultPointCallback).find(hints);
 
   if (info = nil) then
   begin
@@ -213,9 +213,9 @@ var
   alignmentFinder: TAlignmentPatternFinder;
 begin
 
-  allowance := round(allowanceFactor * overallEstModuleSize);
+  allowance := trunc(allowanceFactor * overallEstModuleSize);
   alignmentAreaLeftX := math.Max(0, (estAlignmentX - allowance));
-  alignmentAreaRightX := math.Min((Fimage.Width - 1),
+  alignmentAreaRightX := math.Min((FImage.Width - 1),
     (estAlignmentX + allowance));
   if ((alignmentAreaRightX - alignmentAreaLeftX) < (overallEstModuleSize * 3))
   then
@@ -226,12 +226,11 @@ begin
 
   alignmentAreaTopY := math.Max(0, (estAlignmentY - allowance));
 
-  alignmentAreaBottomY := math.Min((Fimage.Height - 1),
+  alignmentAreaBottomY := math.Min((FImage.Height - 1),
     (estAlignmentY + allowance));
 
-  alignmentFinder := TAlignmentPatternFinder.Create(Fimage,
-    alignmentAreaLeftX, alignmentAreaTopY,
-    (alignmentAreaRightX - alignmentAreaLeftX),
+  alignmentFinder := TAlignmentPatternFinder.Create(FImage, alignmentAreaLeftX,
+    alignmentAreaTopY, (alignmentAreaRightX - alignmentAreaLeftX),
     (alignmentAreaBottomY - alignmentAreaTopY), overallEstModuleSize,
     self.ResultPointCallback);
 
@@ -283,11 +282,11 @@ begin
   begin
     bottomRightX := ((topRight.X - topLeft.X) + bottomLeft.X);
     bottomRightY := ((topRight.Y - topLeft.Y) + bottomLeft.Y);
-    correctionToTopLeft := (1 - (3 div modulesBetweenFPCenters));
+    correctionToTopLeft := (1 - (3 / modulesBetweenFPCenters));
     estAlignmentX :=
-      round(topLeft.X + (correctionToTopLeft * (bottomRightX - topLeft.X)));
+      trunc(topLeft.X + (correctionToTopLeft * (bottomRightX - topLeft.X)));
     estAlignmentY :=
-      round(topLeft.Y + (correctionToTopLeft * (bottomRightY - topLeft.Y)));
+      trunc(topLeft.Y + (correctionToTopLeft * (bottomRightY - topLeft.Y)));
     i := 4;
     while ((i <= $10)) do
     begin
@@ -302,7 +301,7 @@ begin
   transform := TDetector.createTransform(topLeft, topRight, bottomLeft,
     AlignmentPattern, dimension);
 
-  bits := TDetector.sampleGrid(Fimage, transform, dimension);
+  bits := TDetector.sampleGrid(FImage, transform, dimension);
 
   if (bits = nil) then
   begin
@@ -323,7 +322,7 @@ end;
 class function TDetector.sampleGrid(image: TBitMatrix;
   transform: TPerspectiveTransform; dimension: Integer): TBitMatrix;
 begin
-  Result := TGridSampler.sampleGrid(image, dimension, dimension, transform)
+  Result := TDefaultGridSampler.sampleGrid(image, dimension, dimension, transform)
 end;
 
 function TDetector.sizeOfBlackWhiteBlackRun(fromX: Integer; fromY: Integer;
@@ -346,7 +345,7 @@ begin
 
   dx := Abs(toX - fromX);
   dy := Abs(toY - fromY);
-  error := (-dx shr 1);
+  error := TMathUtils.Asr(-dx, 1);
   if (fromX < toX) then
     xstep := 1
   else
@@ -372,7 +371,7 @@ begin
     else
       realy := Y;
 
-    if ((state = 1) = Fimage[realx, realy]) then
+    if ((state = 1) = FImage[realx, realy]) then
     begin
       if (state = 2) then
       begin
@@ -404,7 +403,8 @@ end;
 
 function TDetector.sizeOfBlackWhiteBlackRunBothWays(fromX: Integer;
   fromY: Integer; toX: Integer; toY: Integer): Single;
-var scale, otherToX, otherToY : integer;
+var
+  scale, otherToX, otherToY: Integer;
 begin
   Result := self.sizeOfBlackWhiteBlackRun(fromX, fromY, toX, toY);
   scale := 1;
@@ -414,11 +414,10 @@ begin
     scale := (fromX div (fromX - otherToX));
     otherToX := 0
   end
-  else if (otherToX >= Fimage.Width) then
+  else if (otherToX >= FImage.Width) then
   begin
-    scale := (((Fimage.Width - 1) - fromX)
-      div (otherToX - fromX));
-    otherToX := (Fimage.Width - 1)
+    scale := (((FImage.Width - 1) - fromX) div (otherToX - fromX));
+    otherToX := (FImage.Width - 1)
   end;
   otherToY := (fromY - ((toY - fromY) * scale));
   scale := 1;
@@ -427,14 +426,14 @@ begin
     scale := fromY div (fromY - otherToY);
     otherToY := 0
   end
-  else if (otherToY >= Fimage.Height) then
+  else if (otherToY >= FImage.Height) then
   begin
-    scale := (((Fimage.Height - 1) - fromY)
-      div (otherToY - fromY));
-    otherToY := (Fimage.Height - 1)
+    scale := (((FImage.Height - 1) - fromY) div (otherToY - fromY));
+    otherToY := (FImage.Height - 1)
   end;
   otherToX := (fromX + (otherToX - fromX) * scale);
-  result := Result + self.sizeOfBlackWhiteBlackRun(fromX, fromY, otherToX, otherToY);
+  Result := Result + self.sizeOfBlackWhiteBlackRun(fromX, fromY, otherToX,
+    otherToY);
 
   Result := (Result - 1);
 end;

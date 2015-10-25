@@ -18,14 +18,14 @@ type
 
   public
     constructor Create(pX, pY: single);
-    function x: single; virtual;
-    function y: single; virtual;
     function Equals(other: TObject): Boolean; override;
     function GetHashCode(): Integer; override;
     function ToString(): String; override;
     class procedure OrderBestPatterns(patterns: TArray<TResultPoint>); static;
     class function Distance(pattern1, pattern2: TResultPoint): single; static;
 
+    property x:single read FX write Fx;
+    property y:single read Fy write Fy;
   end;
 
   /// <summary> Callback which is invoked when a possible result point (significant
@@ -151,14 +151,5 @@ begin
   result := FToString;
 end;
 
-function TResultPoint.x: single;
-begin
-  result := Fx;
-end;
-
-function TResultPoint.y: single;
-begin
-  result := Fy;
-end;
 
 end.

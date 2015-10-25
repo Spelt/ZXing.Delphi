@@ -36,7 +36,7 @@ uses
   Code128Reader in '..\Lib\Classes\1D Barcodes\Code128Reader.pas',
   Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas',
   QRCodeReader in '..\Lib\Classes\2D Barcodes\QRCodeReader.pas',
-  Decoder in '..\Lib\Classes\2D Barcodes\Decoder\Decoder.pas',
+  QRDecoder in '..\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas',
   Bitmatrixx in '..\Lib\Classes\Common\Bitmatrixx.pas',
   Helpers in '..\Lib\Classes\Common\Helpers.pas',
   BitMatrixParser in '..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas',
@@ -54,7 +54,9 @@ uses
   FinderPatternFinder in '..\Lib\Classes\2D Barcodes\Detector\FinderPatternFinder.pas',
   NullableType in '..\Lib\Classes\Common\NullableType.pas',
   AlignmentPatternFinder in '..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas',
-  GridSampler in '..\Lib\Classes\Common\GridSampler.pas';
+  DefaultGridSampler in '..\Lib\Classes\Common\DefaultGridSampler.pas',
+  ReedSolomonDecoder in '..\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas',
+  GenericGF in '..\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas';
 
 var
   runner : ITestRunner;

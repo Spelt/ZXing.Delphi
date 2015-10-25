@@ -3,7 +3,7 @@ unit AlignmentPatternFinder;
 interface
 
 uses sysutils, BitMatrixx, nullableType, AlignmentPattern,
-  ResultPoint, generics.collections;
+  ResultPoint, generics.collections, MathUtils;
 
 type
 
@@ -19,7 +19,7 @@ type
     resultPointCallback: TResultPointCallback;
 
     class function centerFromEnd(stateCount: TArray<Integer>; pEnd: Integer)
-      : Nullable<Single>; static;
+      : Single; static;
     function crossCheckVertical(startI: Integer; centerJ: Integer;
       maxCount: Integer; originalStateCountTotal: Integer): Nullable<Single>;
     function foundPatternCross(stateCount: TArray<Integer>): boolean;
@@ -39,21 +39,9 @@ implementation
 { TAlignmentPatternFinder }
 
 class function TAlignmentPatternFinder.centerFromEnd
-  (stateCount: TArray<Integer>; pEnd: Integer): Nullable<Single>;
-var
-  aResult: Single;
+  (stateCount: TArray<Integer>; pEnd: Integer): Single;
 begin
-
-  result := (pEnd - stateCount[2]) - (stateCount[1] div 2);
-  if (Single.NaN = result) then
-  begin
-    result := nil;
-    exit
-  end;
-
-  // this causes a compiler error
-  // result := Nullable<Single>.Create(result);
-
+  result := (pEnd - stateCount[2]) - (stateCount[1] / 2);
 end;
 
 constructor TAlignmentPatternFinder.Create(image: TBitMatrix;
@@ -164,8 +152,8 @@ var
 begin
   startX := self.startX;
   height := self.height;
-  maxJ := (startX + self.width);
-  middleI := (self.startY + (height shr 1));
+  maxJ := startX + self.width;
+  middleI := self.startY + (TMathUtils.Asr(height, 1));
   SetLength(stateCount, 3);
   iGen := 0;
 
@@ -174,11 +162,11 @@ begin
 
     if ((iGen and 1) = 0) then
     begin
-      i := middleI + ((iGen + 1) shr 1);
+      i := middleI + (TMathUtils.Asr(iGen + 1, 1));
     end
     else
     begin
-      i := middleI + ((iGen + 1) shr 1);
+      i := middleI + (-1 * TMathUtils.Asr(iGen + 1, 1));
     end;
 
     stateCount[0] := 0;
@@ -220,7 +208,8 @@ begin
         end
         else
         begin
-          inc(stateCount[+ + currentState]);
+          inc(currentState);
+          inc(stateCount[currentState]);
         end;
 
       end
@@ -228,6 +217,7 @@ begin
       begin
         if (currentState = 1) then
           inc(currentState);
+
         inc(stateCount[currentState])
       end;
 
@@ -283,7 +273,8 @@ function TAlignmentPatternFinder.handlePossibleCenter
   (stateCount: TArray<Integer>; i, j: Integer): TAlignmentPattern;
 var
   center, point: TAlignmentPattern;
-  stateCountTotal, estimatedModuleSize: Integer;
+  stateCountTotal: Integer;
+  estimatedModuleSize: Single;
   centerJ, centerI: Nullable<Single>;
 
 begin
@@ -293,14 +284,14 @@ begin
   if (centerJ.HasValue) then
   begin
 
-    centerI := self.crossCheckVertical(i, round(centerJ.Value),
+    centerI := self.crossCheckVertical(i, trunc(centerJ.Value),
       (2 * stateCount[1]), stateCountTotal);
 
     if (centerI.HasValue) then
     begin
 
       estimatedModuleSize :=
-        (stateCount[0] + stateCount[1] + stateCount[2]) div 3;
+        (stateCount[0] + stateCount[1] + stateCount[2]) / 3;
 
       for center in self.possibleCenters do
       begin

@@ -2,7 +2,7 @@ unit Version;
 
 interface
 
-uses SysUtils, Bitmatrixx, ErrorCorrectionLevel, FormatInformation;
+uses SysUtils, Bitmatrixx, ErrorCorrectionLevel, FormatInformation, MathUtils;
 
 type
 
@@ -25,7 +25,8 @@ type
     private
       ecBlocks: TArray<TECB>;
       ecCodewordsPerBlock: Integer;
-
+      function getTotalECCodeWords: Integer;
+      function get_NumBlocks: Integer;
     public
       constructor Create(ecCodewordsPerBlock: Integer; ecBlocks: TArray<TECB>);
 
@@ -34,21 +35,24 @@ type
         property NumBlocks: Integer read get_NumBlocks;
         property TotalECCodewords: Integer read get_TotalECCodewords;
       }
+      property NumBlocks: Integer read get_NumBlocks;
+      property TotalECCodewords: Integer read getTotalECCodeWords;
+
     end;
 
   private
     FalignmentPatternCenters: TArray<Integer>;
     FecBlocks: TArray<TECBlocks>;
-    FDimensionForVersion, FTotalCodewords: Integer;
+    FTotalCodewords: Integer;
     FversionNumber: Integer;
 
     class var VERSION_DECODE_INFO: TArray<Integer>;
-    class var VERSIONS: TArray<TVersion>;
 
     constructor Create(versionNumber: Integer;
       alignmentPatternCenters: TArray<Integer>; ecBlocks: TArray<TECBlocks>);
 
     function buildFunctionPattern: TBitMatrix;
+    function CalcDimensionForVersion: Integer;
     class function buildVersions: TArray<TVersion>; static;
     class function decodeVersionInformation(versionBits: Integer)
       : TVersion; static;
@@ -60,7 +64,7 @@ type
     class function getVersionForNumber(versionNumber: Integer)
       : TVersion; static;
     function ToString: string; override;
-    property DimensionForVersion: Integer read FDimensionForVersion;
+    property DimensionForVersion: Integer read CalcDimensionForVersion;
     property alignmentPatternCenters: TArray<Integer>
       read FalignmentPatternCenters;
 
@@ -74,6 +78,8 @@ implementation
 
 constructor TVersion.TECB.Create(count, dataCodewords: Integer);
 begin
+  self.count := count;
+  self.dataCodewords := dataCodewords;
 end;
 
 { TVersion.TECBlocks }
@@ -81,12 +87,30 @@ end;
 constructor TVersion.TECBlocks.Create(ecCodewordsPerBlock: Integer;
   ecBlocks: TArray<TECB>);
 begin
-
+  self.ecBlocks := ecBlocks;
+  self.ecCodewordsPerBlock := ecCodewordsPerBlock;
 end;
 
 function TVersion.TECBlocks.getECBlocks: TArray<TECB>;
 begin
+  result := self.ecBlocks;
+end;
 
+function TVersion.TECBlocks.getTotalECCodeWords: Integer;
+begin
+  result := ecCodewordsPerBlock * NumBlocks;
+end;
+
+function TVersion.TECBlocks.get_NumBlocks: Integer;
+var
+  total: Integer;
+  ecBlock: TECB;
+begin
+  total := 0;
+  for ecBlock in ecBlocks do
+  begin
+    inc(total, ecBlock.count);
+  end;
 end;
 
 { TVersion }
@@ -96,7 +120,7 @@ var
   dimension, max, x, i, y: Integer;
   Bitmatrix: TBitMatrix;
 begin
-  dimension := FDimensionForVersion;
+  dimension := DimensionForVersion;
   Bitmatrix := TBitMatrix.Create(dimension);
   Bitmatrix.setRegion(0, 0, 9, 9);
   Bitmatrix.setRegion((dimension - 8), 0, 8, 9);
@@ -126,15 +150,21 @@ begin
     Bitmatrix.setRegion(0, (dimension - 11), 6, 3)
   end;
 
-  Result := Bitmatrix;
-  exit
+  result := Bitmatrix;
 end;
 
 class function TVersion.buildVersions: TArray<TVersion>;
 begin
-  Result := TArray<TVersion>.Create(
+  result := TArray<TVersion>.Create(
 
     TVersion.Create(1, TArray<Integer>.Create(),
+
+    { TArray<TECBlocks>.Create(
+      TECBlocks.Create(7,TECB.Create(1, 19)),
+      TECBlocks.Create(10,TECB.Create(1, 16)),
+      TECBlocks.Create(13,TECB.Create(1, 13)),
+      TECBlocks.Create(17,TECB.Create(1, 9))),
+    }
     TArray<TECBlocks>.Create(TECBlocks.Create(7,
     TArray<TECB>.Create(TECB.Create(1, 19))), TECBlocks.Create(10,
     TArray<TECB>.Create(TECB.Create(1, 16))), TECBlocks.Create(13,
@@ -459,6 +489,11 @@ begin
 
 end;
 
+function TVersion.CalcDimensionForVersion: Integer;
+begin
+  result := 17 + 4 * versionNumber;
+end;
+
 constructor TVersion.Create(versionNumber: Integer;
   alignmentPatternCenters: TArray<Integer>; ecBlocks: TArray<TECBlocks>);
 var
@@ -497,7 +532,7 @@ begin
 
     if (targetVersion = versionBits) then
     begin
-      Result := TVersion.getVersionForNumber((i + 7));
+      result := TVersion.getVersionForNumber((i + 7));
       exit
     end;
 
@@ -515,18 +550,17 @@ begin
 
   if (bestDifference <= 3) then
   begin
-    Result := TVersion.getVersionForNumber(bestversion);
+    result := TVersion.getVersionForNumber(bestversion);
     exit
   end;
 
-  Result := nil;
-  exit
+  result := nil;
 end;
 
 function TVersion.getECBlocksForLevel(ecLevel: TErrorCorrectionLevel)
   : TECBlocks;
 begin
-  Result := FecBlocks[ecLevel.ordinal]
+  result := FecBlocks[ecLevel.ordinal]
 end;
 
 class function TVersion.getProvisionalVersionForDimension(dimension: Integer)
@@ -534,19 +568,19 @@ class function TVersion.getProvisionalVersionForDimension(dimension: Integer)
 begin
   if ((dimension mod 4) <> 1) then
   begin
-    Result := nil;
+    result := nil;
     exit
   end;
   try
     begin
-      Result := TVersion.getVersionForNumber(((dimension - $11) shr 2));
+      result := TVersion.getVersionForNumber
+        (TMathUtils.Asr(dimension - $11, 2));
       exit
     end
   except
     on exception1: EArgumentException do
     begin
-      Result := nil;
-      exit
+      result := nil;
     end
   end
 
@@ -555,16 +589,16 @@ end;
 class function TVersion.getVersionForNumber(versionNumber: Integer): TVersion;
 begin
   if ((versionNumber < 1) or (versionNumber > 40)) then
-    raise EArgumentException.Create('version number needs to be between 1 and 40');
-  begin
-    Result := TVersion.VERSIONS[(versionNumber - 1)];
-    exit
-  end
+    raise EArgumentException.Create
+      ('version number needs to be between 1 and 40');
+
+  result := TVersion.buildVersions[(versionNumber - 1)];
+
 end;
 
 function TVersion.ToString: string;
 begin
-  Result := self.versionNumber.ToString();
+  result := self.versionNumber.ToString();
 end;
 
 end.

@@ -94,7 +94,6 @@ var
 
 begin
   img := TImage.Create(nil);
-  result := nil;
   try
 
     fs := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + Filename;

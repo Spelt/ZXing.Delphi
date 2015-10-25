@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Generics.Collections, Math, BitArray, ReadResult, Reader,
-  DecodeHintType, ResultPoint, BarcodeFormat, BinaryBitmap, Decoder, Bitmatrixx,
+  DecodeHintType, ResultPoint, BarcodeFormat, BinaryBitmap, QRDecoder, Bitmatrixx,
   DecoderResult, ResultMetadataType, DetectorResult, QRCodeDecoderMetaData, Detector;
 
 type
@@ -12,7 +12,7 @@ type
   TQRCodeReader = class(TInterfacedObject, IReader)
   private
     // Fields
-    Decoder: TDecoder;
+    Decoder: TQRDecoder;
     NO_POINTS: TArray<TResultPoint>;
 
     class function extractPureBits(image: TBitMatrix): TBitMatrix; static;
@@ -20,7 +20,7 @@ type
       var msize: Single): boolean; static;
 
   protected
-    function getDecoder: TDecoder;
+    function getDecoder: TQRDecoder;
   public
     constructor Create();
     function decode(image: TBinaryBitmap): TReadResult; overload;
@@ -43,7 +43,7 @@ end;
 constructor TQRCodeReader.Create;
 begin
   inherited;
-  Decoder := TDecoder.Create;
+
   NO_POINTS := TArray<TResultPoint>.Create();
 end;
 
@@ -75,7 +75,8 @@ begin
       exit
     end;
 
-    DecoderResult := self.Decoder.decode(bits, hints);
+    Decoder := TQRDecoder.Create;
+    DecoderResult := Decoder.decode(bits, hints);
     points := NO_POINTS
 
   end
@@ -88,7 +89,8 @@ begin
       exit
     end;
 
-    DecoderResult := self.Decoder.decode(detectorResult.bits, hints);
+    Decoder := TQRDecoder.Create;
+    DecoderResult := Decoder.decode(detectorResult.bits, hints);
     points := detectorResult.points;
 
   end;
@@ -135,7 +137,7 @@ begin
 
 end;
 
-function TQRCodeReader.getDecoder: TDecoder;
+function TQRCodeReader.getDecoder: TQRDecoder;
 begin
   Result := self.Decoder
 end;

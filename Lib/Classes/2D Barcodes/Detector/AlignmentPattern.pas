@@ -21,7 +21,9 @@ implementation
 constructor TAlignmentPattern.Create(posX: Single; posY: Single;
   estimatedModuleSize: Single);
 begin
-  self.estimatedModuleSize := estimatedModuleSize
+  self.estimatedModuleSize := estimatedModuleSize;
+  x := posX;
+  y := posY;
 end;
 
 function TAlignmentPattern.aboutEquals(moduleSize: Single; i: Single;
@@ -31,7 +33,7 @@ var
   moduleSizeDiff: Single;
 
 begin
-  if ((Abs(i - self.Y) <= moduleSize) and (Abs(j - self.X) <= moduleSize)) then
+  if ((Abs(i - self.y) <= moduleSize) and (Abs(j - self.x) <= moduleSize)) then
   begin
     moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
     begin
@@ -40,10 +42,8 @@ begin
       exit
     end
   end;
-  begin
-    Result := false;
-    exit
-  end
+
+  Result := false;
 end;
 
 function TAlignmentPattern.combineEstimate(i: Single; j: Single;
@@ -51,8 +51,8 @@ function TAlignmentPattern.combineEstimate(i: Single; j: Single;
 var
   combinedX, combinedY: Single;
 begin
-  combinedX := ((self.X + j) / 2);
-  combinedY := ((self.Y + i) / 2);
+  combinedX := ((self.x + j) / 2);
+  combinedY := ((self.y + i) / 2);
   Result := TAlignmentPattern.Create(combinedX, combinedY,
     ((self.estimatedModuleSize + newModuleSize) / 2))
 end;
