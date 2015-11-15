@@ -4,8 +4,10 @@ interface
 
 uses
   SysUtils, Generics.Collections, Math, BitArray, ReadResult, Reader,
-  DecodeHintType, ResultPoint, BarcodeFormat, BinaryBitmap, QRDecoder, Bitmatrixx,
-  DecoderResult, ResultMetadataType, DetectorResult, QRCodeDecoderMetaData, Detector;
+  DecodeHintType, ResultPoint, BarcodeFormat, BinaryBitmap, QRDecoder,
+  Bitmatrixx,
+  DecoderResult, ResultMetadataType, DetectorResult, QRCodeDecoderMetaData,
+  Detector, DecodedBitStreamParser;
 
 type
 
@@ -53,7 +55,7 @@ var
   DecoderResult: TDecoderResult;
   points: TArray<TResultPoint>;
   bits: TBitMatrix;
-  detectorResult : TDetectorResult;
+  DetectorResult: TDetectorResult;
   data: TQRCodeDecoderMetaData;
   byteSegments: TList<TArray<Byte>>;
   ecLevel: string;
@@ -82,16 +84,16 @@ begin
   end
   else
   begin
-    detectorResult := TDetector.Create(image.BlackMatrix).Detect(hints);
-    if (detectorResult = nil) then
+    DetectorResult := TDetector.Create(image.BlackMatrix).Detect(hints);
+    if (DetectorResult = nil) then
     begin
       Result := nil;
       exit
     end;
 
     Decoder := TQRDecoder.Create;
-    DecoderResult := Decoder.decode(detectorResult.bits, hints);
-    points := detectorResult.points;
+    DecoderResult := Decoder.decode(DetectorResult.bits, hints);
+    points := DetectorResult.points;
 
   end;
 
@@ -115,17 +117,17 @@ begin
     Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
 
   ecLevel := DecoderResult.ecLevel;
- {
-  if (length(ecLevel) = 0) then
+  {
+    if (length(ecLevel) = 0) then
     Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, ecLevel);
 
-  if (DecoderResult.StructuredAppend) then
-  begin
+    if (DecoderResult.StructuredAppend) then
+    begin
     Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
-      DecoderResult.StructuredAppendSequenceNumber);
+    DecoderResult.StructuredAppendSequenceNumber);
     Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
-      DecoderResult.StructuredAppendParity)
-  end;
+    DecoderResult.StructuredAppendParity)
+    end;
   }
 
   Result := Result;

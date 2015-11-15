@@ -14,20 +14,23 @@ type
     BitMatrix: TBitMatrix;
     mirrored: boolean;
     parsedVersion: TVersion;
-    parsedFormatInfo: TFormatInformation;
 
     constructor Create(BitMatrix: TBitMatrix);
     function copyBit(i: Integer; j: Integer; versionBits: Integer): Integer;
 
+  public
+  var
+    parsedFormatInfo: TFormatInformation;
+
     class function createBitMatrixParser(BitMatrix: TBitMatrix)
       : TBitMatrixParser; static;
-
     procedure mirror;
-    function readCodewords: TArray<Byte>;
-    function readFormatInformation: TFormatInformation;
-    function readVersion: TVersion;
     procedure remask;
     procedure setMirror(mirror: boolean);
+    function readFormatInformation: TFormatInformation;
+    function readVersion: TVersion;
+    function readCodewords: TArray<Byte>;
+
   end;
 
 implementation

@@ -10,24 +10,20 @@ type
 
   type
     TECB = class
-    private
+    public
       count: Integer;
       dataCodewords: Integer;
-
-    public
       constructor Create(count: Integer; dataCodewords: Integer);
-
-      // property count: Integer read get_Count;
-      // property dataCodewords: Integer read get_DataCodewords;
     end;
 
     TECBlocks = class sealed
     private
       ecBlocks: TArray<TECB>;
-      ecCodewordsPerBlock: Integer;
+
       function getTotalECCodeWords: Integer;
       function get_NumBlocks: Integer;
     public
+      ecCodewordsPerBlock: Integer;
       constructor Create(ecCodewordsPerBlock: Integer; ecBlocks: TArray<TECB>);
 
       function getECBlocks: TArray<TECB>;

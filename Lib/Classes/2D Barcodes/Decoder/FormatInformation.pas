@@ -18,7 +18,6 @@ type
 
   var
     DataMask: Byte;
-    ErrorCorrectionLevel: TErrorCorrectionLevel;
 
     constructor Create(formatInfo: Integer);
     class function decodeFormatInformation(maskedFormatInfo1: Integer;
@@ -28,6 +27,9 @@ type
       maskedFormatInfo2: Integer): TFormatInformation; static;
 
   public
+  var
+    ErrorCorrectionLevel: TErrorCorrectionLevel;
+
     function Equals(o: TObject): boolean; override;
     function GetHashCode: Integer; override;
 
