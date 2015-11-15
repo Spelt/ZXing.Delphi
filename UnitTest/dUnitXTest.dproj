@@ -243,6 +243,11 @@
         <DCCReference Include="..\Lib\Classes\Common\DefaultGridSampler.pas"/>
         <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas"/>
         <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Datablock.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\DecodedBitStreamParser.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\BitSource.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\CharacterSetECI.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\Eci.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

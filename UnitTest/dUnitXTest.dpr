@@ -56,7 +56,12 @@ uses
   AlignmentPatternFinder in '..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas',
   DefaultGridSampler in '..\Lib\Classes\Common\DefaultGridSampler.pas',
   ReedSolomonDecoder in '..\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas',
-  GenericGF in '..\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas';
+  GenericGF in '..\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas',
+  Datablock in '..\Lib\Classes\2D Barcodes\Decoder\Datablock.pas',
+  DecodedBitStreamParser in '..\Lib\Classes\2D Barcodes\Decoder\DecodedBitStreamParser.pas',
+  BitSource in '..\Lib\Classes\Common\BitSource.pas',
+  CharacterSetECI in '..\Lib\Classes\Common\CharacterSetECI.pas',
+  Eci in '..\Lib\Classes\Common\Eci.pas';
 
 var
   runner : ITestRunner;
