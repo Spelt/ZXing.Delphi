@@ -70,3 +70,5 @@ __history/
 
 # Castalia statistics file
 *.stat
+*.*cache
+*.local
