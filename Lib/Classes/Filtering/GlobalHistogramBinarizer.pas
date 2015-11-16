@@ -35,7 +35,7 @@ type
   public
     constructor Create(source: TLuminanceSource);
 
-    constructor GlobalHistogramBinarizer(source: TLuminanceSource);
+    //constructor GlobalHistogramBinarizer(source: TLuminanceSource);
     function GetBlackRow(y: Integer; row: TBitArray): TBitArray; override;
   end;
 
@@ -51,6 +51,21 @@ begin
   self.buckets := TArray<Integer>.Create();
   SetLength(self.buckets, $20);
 end;
+
+{
+constructor TGlobalHistogramBinarizer.GlobalHistogramBinarizer
+  (source: TLuminanceSource);
+begin
+  Inherited Create(source);
+
+  LUMINANCE_BITS := 5;
+  LUMINANCE_SHIFT := 8 - LUMINANCE_BITS;
+  LUMINANCE_BUCKETS := 1 shl LUMINANCE_BITS;
+
+  SetLength(luminances, 0);
+  SetLength(buckets, LUMINANCE_BUCKETS);
+end;
+ }
 
 function TGlobalHistogramBinarizer.GetBlackRow(y: Integer; row: TBitArray)
   : TBitArray;
@@ -106,18 +121,6 @@ begin
 
 end;
 
-constructor TGlobalHistogramBinarizer.GlobalHistogramBinarizer
-  (source: TLuminanceSource);
-begin
-  Inherited Create(source);
-
-  LUMINANCE_BITS := 5;
-  LUMINANCE_SHIFT := 8 - LUMINANCE_BITS;
-  LUMINANCE_BUCKETS := 1 shl LUMINANCE_BITS;
-
-  SetLength(luminances, 0);
-  SetLength(buckets, LUMINANCE_BUCKETS);
-end;
 
 procedure TGlobalHistogramBinarizer.InitArrays(luminanceSize: Integer);
 var
