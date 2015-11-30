@@ -1,8 +1,25 @@
 unit Detector;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
-uses SysUtils, Generics.Collections, Bitmatrixx, Resultpoint,
+uses SysUtils, Generics.Collections, Bitmatrix, Resultpoint,
   DetectorResult, DecodeHintType, AlignmentPattern, perspectiveTransform,
   finderpatternInfo, math, FinderPatternFinder, FinderPattern,
   AlignmentPatternFinder, Version, DefaultGridSampler, MathUtils;
@@ -89,16 +106,18 @@ var
   moduleSizeEst1, moduleSizeEst2: Single;
 
 begin
-  moduleSizeEst1 := self.sizeOfBlackWhiteBlackRunBothWays(round(pattern.X),
-    round(pattern.Y), round(otherPattern.X), round(otherPattern.Y));
-  moduleSizeEst2 := self.sizeOfBlackWhiteBlackRunBothWays(round(otherPattern.X),
-    round(otherPattern.Y), round(pattern.X), round(pattern.Y));
-  if (Single.IsNaN(moduleSizeEst1)) then
+  moduleSizeEst1 := self.sizeOfBlackWhiteBlackRunBothWays(Floor(pattern.X),
+    Floor(pattern.Y), Floor(otherPattern.X), Floor(otherPattern.Y));
+  moduleSizeEst2 := self.sizeOfBlackWhiteBlackRunBothWays(Floor(otherPattern.X),
+    Floor(otherPattern.Y), Floor(pattern.X), Floor(pattern.Y));
+
+  if (moduleSizeEst1 = -1) then
   begin
     Result := (moduleSizeEst2 / 7);
     exit
   end;
-  if (Single.IsNaN(moduleSizeEst2)) then
+
+  if (moduleSizeEst2 = -1) then
   begin
     Result := (moduleSizeEst1 / 7);
     exit
@@ -118,7 +137,8 @@ begin
     round((TResultpoint.distance(topLeft, topRight) / moduleSize));
   tlblCentersDimension :=
     round((TResultpoint.distance(topLeft, bottomLeft) / moduleSize));
-  dimension := (((tltrCentersDimension + tlblCentersDimension) shr 1) + 7);
+  dimension := TMathUtils.Asr
+    ((tltrCentersDimension + tlblCentersDimension), 1) + 7;
 
   case (dimension and 3) of
     0:
@@ -193,7 +213,8 @@ begin
     // self.resultPointCallback :=  hints[DecodeHintType.NEED_RESULT_POINT_CALLBACK] as TResultPointCallback;
   end;
 
-  info := TFinderPatternFinder.Create(FImage, ResultPointCallback).find(hints);
+  finder := TFinderPatternFinder.Create(FImage, ResultPointCallback);
+  info := finder.find(hints);
 
   if (info = nil) then
   begin
@@ -213,7 +234,7 @@ var
   alignmentFinder: TAlignmentPatternFinder;
 begin
 
-  allowance := trunc(allowanceFactor * overallEstModuleSize);
+  allowance := Floor(allowanceFactor * overallEstModuleSize);
   alignmentAreaLeftX := math.Max(0, (estAlignmentX - allowance));
   alignmentAreaRightX := math.Min((FImage.Width - 1),
     (estAlignmentX + allowance));
@@ -284,9 +305,9 @@ begin
     bottomRightY := ((topRight.Y - topLeft.Y) + bottomLeft.Y);
     correctionToTopLeft := (1 - (3 / modulesBetweenFPCenters));
     estAlignmentX :=
-      trunc(topLeft.X + (correctionToTopLeft * (bottomRightX - topLeft.X)));
+      Floor(topLeft.X + (correctionToTopLeft * (bottomRightX - topLeft.X)));
     estAlignmentY :=
-      trunc(topLeft.Y + (correctionToTopLeft * (bottomRightY - topLeft.Y)));
+      Floor(topLeft.Y + (correctionToTopLeft * (bottomRightY - topLeft.Y)));
     i := 4;
     while ((i <= $10)) do
     begin
@@ -322,7 +343,8 @@ end;
 class function TDetector.sampleGrid(image: TBitMatrix;
   transform: TPerspectiveTransform; dimension: Integer): TBitMatrix;
 begin
-  Result := TDefaultGridSampler.sampleGrid(image, dimension, dimension, transform)
+  Result := TDefaultGridSampler.sampleGrid(image, dimension, dimension,
+    transform)
 end;
 
 function TDetector.sizeOfBlackWhiteBlackRun(fromX: Integer; fromY: Integer;

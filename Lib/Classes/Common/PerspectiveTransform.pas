@@ -1,5 +1,22 @@
 unit PerspectiveTransform;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 type
@@ -73,8 +90,8 @@ begin
 end;
 
 class function TPerspectiveTransform.quadrilateralToQuadrilateral(x0, y0, x1,
-  y1, x2, y2, x3, y3, x0p, y0p, x1p, y1p, x2p, y2p, x3p,
-  y3p: Single): TPerspectiveTransform;
+  y1, x2, y2, x3, y3, x0p, y0p, x1p, y1p, x2p, y2p, x3p, y3p: Single)
+  : TPerspectiveTransform;
 var
   qToS: TPerspectiveTransform;
 begin
@@ -85,19 +102,19 @@ begin
     y2p, x3p, y3p).times(qToS)
 end;
 
-class function TPerspectiveTransform.quadrilateralToSquare(x0: Single; y0: Single; x1: Single;
-      y1: Single; x2: Single; y2: Single; x3: Single; y3: Single)
-      : TPerspectiveTransform;
+class function TPerspectiveTransform.quadrilateralToSquare(x0: Single;
+  y0: Single; x1: Single; y1: Single; x2: Single; y2: Single; x3: Single;
+  y3: Single): TPerspectiveTransform;
 begin
   Result := TPerspectiveTransform.squareToQuadrilateral(x0, y0, x1, y1, x2, y2,
     x3, y3).buildAdjoint
 end;
 
-class function TPerspectiveTransform.squareToQuadrilateral(x0: Single; y0: Single;
-  x1: Single; y1: Single; x2: Single; y2: Single; x3: Single; y3: Single)
-  : TPerspectiveTransform;
+class function TPerspectiveTransform.squareToQuadrilateral(x0: Single;
+  y0: Single; x1: Single; y1: Single; x2: Single; y2: Single; x3: Single;
+  y3: Single): TPerspectiveTransform;
 var
-  dx1, dx2, dx3, dy1, dy2, dy3,a13,a23, denominator: Single;
+  dx1, dx2, dx3, dy1, dy2, dy3, a13, a23, denominator: Single;
 begin
   dx3 := (((x0 - x1) + x2) - x3);
   dy3 := (((y0 - y1) + y2) - y3);
@@ -181,10 +198,10 @@ begin
     x := xValues[i];
     y := yValues[i];
     denominator := (((self.a13 * x) + (self.a23 * y)) + self.a33);
-    xValues[i] := ((((self.a11 * x) + (self.a21 * y)) + self.a31)
-      / denominator);
-    yValues[i] := ((((self.a12 * x) + (self.a22 * y)) + self.a32)
-      / denominator);
+    xValues[i] := ((((self.a11 * x) + (self.a21 * y)) + self.a31) /
+      denominator);
+    yValues[i] := ((((self.a12 * x) + (self.a22 * y)) + self.a32) /
+      denominator);
     inc(i)
   end
 end;

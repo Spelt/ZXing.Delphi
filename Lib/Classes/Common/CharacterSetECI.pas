@@ -1,21 +1,36 @@
 unit CharacterSetECI;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses SysUtils, Generics.Collections;
 
 type
 
-
   TECI = class abstract
   private
     value_Renamed: Integer;
     constructor Create(value_Renamed: Integer);
   public
-    class function getECIByValue(value_Renamed: Integer): TEci; static;
+    class function getECIByValue(value_Renamed: Integer): TECI; static;
     property value: Integer read value_Renamed;
   end;
-
 
   TCharacterSetECI = class sealed(TECI)
   private
@@ -24,12 +39,12 @@ type
     class var VALUE_TO_ECI: TDictionary<Integer, TCharacterSetECI>;
 
     constructor Create; overload;
-    constructor Create(value: Integer; encodingName: string);overload;
+    constructor Create(value: Integer; encodingName: string); overload;
 
     class procedure addCharacterSet(value: Integer; encodingName: string);
-      overload;static;
+      overload; static;
     class procedure addCharacterSet(value: Integer;
-      encodingNames: TArray<string>); overload;static;
+      encodingNames: TArray<string>); overload; static;
 
   public
 
@@ -41,7 +56,6 @@ type
       : TCharacterSetECI; static;
 
   end;
-
 
 implementation
 
@@ -55,7 +69,8 @@ end;
 class function TECI.getECIByValue(value_Renamed: Integer): TECI;
 begin
   if ((value_Renamed < 0) or (value_Renamed > $F423F)) then
-    raise EArgumentException.Create('Bad ECI value: ' + value_Renamed.ToString());
+    raise EArgumentException.Create('Bad ECI value: ' +
+      value_Renamed.ToString());
 
   if (value_Renamed < 900) then
   begin
@@ -110,7 +125,8 @@ begin
     'ISO8859_15'));
   TCharacterSetECI.addCharacterSet($12, TArray<string>.Create('ISO-8859-3',
     'ISO-8859-16', 'ISO8859_16'));
-  TCharacterSetECI.addCharacterSet(20, TArray<string>.Create('SJIS', 'Shift_JIS'));
+  TCharacterSetECI.addCharacterSet(20, TArray<string>.Create('SJIS',
+    'Shift_JIS'));
   TCharacterSetECI.addCharacterSet($15, TArray<string>.Create('WINDOWS-1250',
     'CP1250'));
   TCharacterSetECI.addCharacterSet($16, TArray<string>.Create('WINDOWS-1251',
@@ -125,9 +141,10 @@ begin
   TCharacterSetECI.addCharacterSet($1B, 'US-ASCII');
   TCharacterSetECI.addCharacterSet(170, 'US-ASCII');
   TCharacterSetECI.addCharacterSet($1C, 'BIG5');
-  TCharacterSetECI.addCharacterSet($1D, TArray<string>.Create('GB18030', 'GB2312',
-    'EUC_CN', 'GBK'));
-  TCharacterSetECI.addCharacterSet(30, TArray<string>.Create('EUC-KR', 'EUC_KR'))
+  TCharacterSetECI.addCharacterSet($1D, TArray<string>.Create('GB18030',
+    'GB2312', 'EUC_CN', 'GBK'));
+  TCharacterSetECI.addCharacterSet(30, TArray<string>.Create('EUC-KR',
+    'EUC_KR'))
 
 end;
 

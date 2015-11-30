@@ -14,10 +14,8 @@ type
     function GetMultiFormatReader(format: TBarcodeFormat;
       additionalHints: TDictionary<TDecodeHintType, TObject>)
       : TMultiFormatReader;
-  protected
-    destructor Destroy; override;
-
   public
+    destructor Destroy; override;
     function Scan(pBitmapForScan: TBitmap): TReadResult;
     constructor Create(format: TBarcodeFormat;
       additionalHints: TDictionary<TDecodeHintType, TObject>);
@@ -31,7 +29,6 @@ var
   RGBLuminanceSource: TRGBLuminanceSource;
   HybridBinarizer: THybridBinarizer;
   BinaryBitmap: TBinaryBitmap;
-
 
 begin
 

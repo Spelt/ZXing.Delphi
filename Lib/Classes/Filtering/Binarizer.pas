@@ -20,7 +20,7 @@ unit Binarizer;
 interface
 
 uses
-  System.SysUtils, LuminanceSource, BitArray, BitMatrixx;
+  System.SysUtils, LuminanceSource, BitArray, BitMatrix;
 
 type
 

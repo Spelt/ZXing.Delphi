@@ -1,6 +1,23 @@
 unit GenericGF;
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
 
-// ES: two classes in one unit. This is to avoid circulair refrence.
+  * Implemented by E. Spelt for Delphi
+}
+
+// ES: two classes in one unit. This is to avoid circulair reference.
 
 interface
 
@@ -45,7 +62,7 @@ type
     class var AZTEC_DATA_8: TGenericGF;
 
     constructor Create(primitive: Integer; size: Integer; genBase: Integer);
-    function ToString: string;
+    function ToString: string; override;
 
     class function addOrSubtract(a: Integer; b: Integer): Integer; static;
     function multiply(a: Integer; b: Integer): Integer;
@@ -74,8 +91,9 @@ type
     property coefficients: TArray<Integer> read Fcoefficients;
     property degree: Integer read get_Degree;
     property isZero: boolean read get_isZero;
+    property Field: TGenericGF read Ffield;
 
-    constructor Create(field: TGenericGF; coefficients: TArray<Integer>);
+    constructor Create(Field: TGenericGF; coefficients: TArray<Integer>);
     function addOrSubtract(other: TGenericGFPoly): TGenericGFPoly;
     function divide(other: TGenericGFPoly): TArray<TGenericGFPoly>;
     function evaluateAt(a: Integer): Integer;
@@ -87,7 +105,6 @@ type
     function multiplyByMonomial(degree: Integer; coefficient: Integer)
       : TGenericGFPoly;
 
-  public
     function ToString: string; override;
 
   end;
@@ -149,7 +166,7 @@ begin
   end;
 
   FZero := TGenericGFPoly.Create(self, TArray<Integer>.Create(0));
-  FOne := TGenericGFPoly.Create(self, TArray<Integer>.Create(0));
+  FOne := TGenericGFPoly.Create(self, TArray<Integer>.Create(1));
 end;
 
 class function TGenericGF.addOrSubtract(a, b: Integer): Integer;
@@ -269,7 +286,7 @@ end;
 
 /// /////////////////////////////////////////////////////////////////////////////
 
-constructor TGenericGFPoly.Create(field: TGenericGF;
+constructor TGenericGFPoly.Create(Field: TGenericGF;
   coefficients: TArray<Integer>);
 var
   coefficientsLength, firstNonZero: Integer;
@@ -280,7 +297,7 @@ begin
   if (coefficientsLength = 0) then
     raise EArgumentException.Create('Wrong arguments');
 
-  self.Ffield := field;
+  self.Ffield := Field;
 
   if ((coefficientsLength > 1) and (coefficients[0] = 0)) then
   begin
@@ -299,7 +316,7 @@ begin
     else
     begin
       SetLength(Fcoefficients, coefficientsLength - firstNonZero);
-      Fcoefficients := Copy(coefficients, 0, Length(Fcoefficients));
+      Fcoefficients := Copy(coefficients, firstNonZero, Length(Fcoefficients));
     end
   end
   else
@@ -308,10 +325,10 @@ end;
 
 function TGenericGFPoly.addOrSubtract(other: TGenericGFPoly): TGenericGFPoly;
 var
-  lengthDiff, i: Integer;
+  lengthDiff, i, y: Integer;
   smallerCoefficients, largerCoefficients, temp, sumDiff: TArray<Integer>;
-
 begin
+
   if (not self.Ffield.Equals(other.Ffield)) then
     raise EArgumentException.Create
       ('GenericGFPolys do not have same GenericGF field');
@@ -341,7 +358,11 @@ begin
   SetLength(sumDiff, Length(largerCoefficients));
   lengthDiff := Length(largerCoefficients) - Length(smallerCoefficients);
 
-  sumDiff := Copy(largerCoefficients, 0, lengthDiff);
+  for y := 0 to lengthDiff - 1 do
+  begin
+    sumDiff[y] := largerCoefficients[y]
+  end;
+
   i := lengthDiff;
   while (i < Length(largerCoefficients)) do
   begin
@@ -387,8 +408,7 @@ end;
 
 function TGenericGFPoly.evaluateAt(a: Integer): Integer;
 var
-  size, coefficient, i: Integer;
-  product: TArray<Integer>;
+  size, coefficient, i, y, l: Integer;
 
 begin
   Result := 0;
@@ -402,12 +422,13 @@ begin
   if (a = 1) then
   begin
 
-    for coefficient in self.coefficients do
+    l := Length(self.coefficients) - 1;
+    for y := 0 to l do
     begin
+      coefficient := coefficients[y];
       Result := TGenericGF.addOrSubtract(Result, coefficient)
     end;
 
-    Result := Result;
     exit
   end;
 
@@ -420,13 +441,11 @@ begin
     inc(i)
   end;
 
-  Result := Result;
-
 end;
 
 function TGenericGFPoly.getCoefficient(degree: Integer): Integer;
 begin
-  Result := Fcoefficients[(Length(Fcoefficients) - 1) - degree]
+  Result := Fcoefficients[Length(Fcoefficients) - 1 - degree]
 end;
 
 function TGenericGFPoly.get_Degree: Integer;

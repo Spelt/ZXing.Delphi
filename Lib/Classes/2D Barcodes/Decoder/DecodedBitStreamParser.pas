@@ -1,10 +1,27 @@
 unit DecodedBitStreamParser;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses BitSource, SysUtils, DecodeHintType, Generics.Collections,
   ErrorCorrectionLevel, version, DecoderResult, CharacterSetECI, StringUtils,
-  Mode;
+  Mode, MathUtils;
 
 type
 
@@ -13,11 +30,11 @@ type
   private
 
     class var ALPHANUMERIC_CHARS: TArray<Char>;
+    class procedure InitializeClass;
 
   const
     GB2312_SUBSET: Integer = 1;
 
-    constructor Create;
     class function decodeAlphanumericSegment(bits: TBitSource;
       res: TStringBuilder; count: Integer; fc1InEffect: boolean)
       : boolean; static;
@@ -49,13 +66,12 @@ implementation
 
 { TDecodedBitStreamParser }
 
-constructor TDecodedBitStreamParser.Create;
+class procedure TDecodedBitStreamParser.InitializeClass;
 begin
   ALPHANUMERIC_CHARS := TArray<Char>.Create('0', '1', '2', '3', '4', '5', '6',
     '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
     'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ',
     '$', '%', '*', '+', '-', '.', '/', ':');
-
 end;
 
 class function TDecodedBitStreamParser.decode(bytes: TArray<Byte>;
@@ -78,104 +94,128 @@ begin
   byteSegments.Capacity := 1;
   symbolSequence := -1;
   parityData := -1;
+  Mode := nil;
+
   try
     currentCharacterSetECI := nil;
     fc1InEffect := false;
     repeat
+
       if (bits.available < 4) then
-        Mode := Mode.TERMINATOR
+      begin
+        Mode := TMode.TERMINATOR;
+      end
       else
+      begin
+
         try
-          Mode := Mode.forBits(bits.readBits(4))
+          Mode := TMode.forBits(bits.readBits(4))
         except
           on exception1: EArgumentException do
           begin
             result := nil;
+            exit;
+          end;
+        end;
+
+      end;
+
+      if (Mode <> TMode.TERMINATOR) then
+      begin
+
+        if ((Mode = TMode.FNC1_FIRST_POSITION) or
+          (Mode = TMode.FNC1_SECOND_POSITION)) then
+        begin
+          fc1InEffect := true;
+        end
+        else if (Mode = TMode.STRUCTURED_APPEND) then
+        begin
+          if (bits.available() < 16) then
+          begin
+            result := nil;
+            exit
+          end;
+
+          symbolSequence := bits.readBits(8);
+          parityData := bits.readBits(8);
+        end
+        else if (Mode = TMode.ECI) then
+        begin
+          currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue
+            (TDecodedBitStreamParser.parseECIValue(bits));
+
+          if (currentCharacterSetECI = nil) then
+          begin
+            result := nil;
             exit
           end
-        end;
-      if (Mode <> Mode.TERMINATOR) then
-        if ((Mode <> Mode.FNC1_FIRST_POSITION) and
-          (Mode <> Mode.FNC1_SECOND_POSITION)) then
-          if (Mode <> Mode.STRUCTURED_APPEND) then
-            if (Mode <> Mode.ECI) then
-              if (Mode <> Mode.HANZI) then
-              begin
-                count := bits.readBits(Mode.getCharacterCountBits(version));
-                if (Mode <> Mode.NUMERIC) then
-                  if (Mode <> Mode.ALPHANUMERIC) then
-                    if (Mode <> Mode.BYTE) then
-                    begin
-                      if (Mode <> Mode.KANJI) then
-                      begin
-                        result := nil;
-                        exit
-                      end;
-                      if (not TDecodedBitStreamParser.decodeKanjiSegment(bits,
-                        res, count)) then
-                      begin
-                        result := nil;
-                        exit
-                      end
-                    end
-                    else if (not TDecodedBitStreamParser.decodeByteSegment(bits,
-                      res, count, currentCharacterSetECI, byteSegments, hints))
-                    then
-                    begin
-                      result := nil;
-                      exit
-                    end
-                    else if (not TDecodedBitStreamParser.
-                      decodeAlphanumericSegment(bits, res, count, fc1InEffect))
-                    then
-                    begin
-                      result := nil;
-                      exit
-                    end
-                    else if (not TDecodedBitStreamParser.decodeNumericSegment
-                      (bits, res, count)) then
-                    begin
-                      result := nil;
-                      exit
-                    end
-              end
-              else
-              begin
 
-                subSet := bits.readBits(4);
-                countHanzi :=
-                  bits.readBits(Mode.getCharacterCountBits(version));
-                if ((subSet = 1) and
-                  not TDecodedBitStreamParser.decodeHanziSegment(bits, res,
-                  countHanzi)) then
-                begin
-                  result := nil;
-                  exit
-                end
-              end
-            else
+        end
+        else
+        begin
+          if (Mode = TMode.HANZI) then
+          begin
+            subSet := bits.readBits(4);
+            countHanzi := bits.readBits(Mode.getCharacterCountBits(version));
+            if (subSet = 1) then
             begin
-              currentCharacterSetECI :=
-                TCharacterSetECI.getCharacterSetECIByValue
-                (TDecodedBitStreamParser.parseECIValue(bits));
-              if (currentCharacterSetECI = nil) then
+              if (not TDecodedBitStreamParser.decodeHanziSegment(bits, res,
+                countHanzi)) then
+              begin
+                result := nil;
+                exit
+              end
+            end;
+          end
+          else
+          begin
+            count := bits.readBits(Mode.getCharacterCountBits(version));
+            if (Mode = TMode.NUMERIC) then
+            begin
+              if (not TDecodedBitStreamParser.decodeNumericSegment(bits, res,
+                count)) then
+              begin
+                result := nil;
+                exit
+              end;
+            end
+            else if (Mode = TMode.ALPHANUMERIC) then
+            begin
+              if (not TDecodedBitStreamParser.decodeAlphanumericSegment(bits,
+                res, count, fc1InEffect)) then
+              begin
+                result := nil;
+                exit
+              end;
+            end
+            else if (Mode = TMode.BYTE) then
+            begin
+              if (not TDecodedBitStreamParser.decodeByteSegment(bits, res,
+                count, currentCharacterSetECI, byteSegments, hints)) then
+              begin
+                result := nil;
+                exit;
+              end
+            end
+            else if (Mode <> TMode.KANJI) then
+            begin
+              if (not TDecodedBitStreamParser.decodeKanjiSegment(bits, res,
+                count)) then
               begin
                 result := nil;
                 exit
               end
             end
-          else
-          begin
-            if (bits.available < $10) then
+            else
             begin
               result := nil;
               exit
-            end;
-            symbolSequence := bits.readBits(8);
-            parityData := bits.readBits(8)
+            end
           end
-        else
-          fc1InEffect := true until (Mode = Mode.TERMINATOR)
+        end
+      end
+      until (Mode = TMode.TERMINATOR)
+
     except
       on exception2: EArgumentException do
       begin
@@ -187,17 +227,13 @@ begin
     if (byteSegments.count = 0) then
       byteSegments := nil;
 
-
     if (ecLevel = nil) then
       ecstring := ''
     else
       ecstring := ecLevel.toString();
 
-    result := TDecoderResult.Create(bytes,
-      res.toString.Replace('#13#10', '#10').Replace('#10', #13),
-      byteSegments,
-      ecstring,
-      symbolSequence, parityData);
+    result := TDecoderResult.Create(bytes, res.toString.Replace('#13#10', '#10')
+      .Replace('#10', #13), byteSegments, ecstring, symbolSequence, parityData);
 
   end;
 
@@ -240,23 +276,25 @@ begin
     end;
 
     if (fc1InEffect) then
-      i := start;
-
-    while ((i < res.Length)) do
     begin
-      if (res.Chars[i] = '%') then
+
+      i := start;
+      while ((i < res.Length)) do
       begin
-        if ((i < (res.Length - 1)) and (res.Chars[(i + 1)] = '%')) then
-          res.Remove((i + 1), 1)
-        else
+        if (res.Chars[i] = '%') then
         begin
-          res.Remove(i, 1);
-          charArray := TArray<Char>.Create(' ');
-          res.Insert(i, charArray);
+          if ((i < (res.Length - 1)) and (res.Chars[(i + 1)] = '%')) then
+            res.Remove((i + 1), 1)
+          else
+          begin
+            res.Remove(i, 1);
+            charArray := TArray<Char>.Create(' ');
+            res.Insert(i, charArray);
+          end;
         end;
+        inc(i)
       end;
 
-      inc(i)
     end;
 
     result := true;
@@ -337,7 +375,7 @@ begin
       else
         inc(assembledTwoBytes, $A6A1);
 
-      buffer[offset] := Byte((assembledTwoBytes shr 8) and $FF);
+      buffer[offset] := Byte(TMathUtils.Asr(assembledTwoBytes, 8) and $FF);
       buffer[(offset + 1)] := Byte(assembledTwoBytes and $FF);
       inc(offset, 2);
       dec(count)
@@ -384,7 +422,7 @@ begin
         inc(assembledTwoBytes, $8140)
       else
         inc(assembledTwoBytes, $C140);
-      buffer[offset] := Byte(assembledTwoBytes shr 8);
+      buffer[offset] := Byte(TMathUtils.Asr(assembledTwoBytes, 8));
       buffer[(offset + 1)] := Byte(assembledTwoBytes);
       inc(offset, 2);
       dec(count)
@@ -524,5 +562,9 @@ begin
     end
 
   end;
+
+Initialization
+
+TDecodedBitStreamParser.InitializeClass;
 
 end.

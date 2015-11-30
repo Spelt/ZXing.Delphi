@@ -1,5 +1,22 @@
 unit FinderPattern;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses Resultpoint;
@@ -41,12 +58,12 @@ end;
 function TFinderPattern.aboutEquals(moduleSize: Single; i: Single;
   j: Single): boolean;
 var
-  moduleSizeDiff,x,y: Single;
+  moduleSizeDiff, x, y: Single;
 
 begin
-  x:=self.x;
-  y:=self.y;
-  if ((Abs(i - self.Y) <= moduleSize) and (Abs(j - self.X) <= moduleSize)) then
+  x := self.x;
+  y := self.y;
+  if ((Abs(i - self.y) <= moduleSize) and (Abs(j - self.x) <= moduleSize)) then
   begin
 
     moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
@@ -68,8 +85,8 @@ var
 
 begin
   combinedCount := (self.count + 1);
-  combinedX := ((self.count * self.X) + j) / combinedCount;
-  combinedY := ((self.count * self.Y) + i) / combinedCount;
+  combinedX := ((self.count * self.x) + j) / combinedCount;
+  combinedY := ((self.count * self.y) + i) / combinedCount;
   Result := TFinderPattern.Create(combinedX, combinedY,
     (((self.count * self.estimatedModuleSize) + newModuleSize) / combinedCount),
     combinedCount)

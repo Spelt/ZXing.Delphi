@@ -1,5 +1,22 @@
 unit ReedSolomonDecoder;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses SysUtils, GenericGF;
@@ -59,43 +76,49 @@ begin
       noError := false;
     inc(i)
   end;
-  if (not noError) then
-  begin
-    syndrome := TGenericGFPoly.Create(self.field, syndromeCoefficients);
-    sigmaOmega := self.runEuclideanAlgorithm(self.field.buildMonomial(twoS, 1),
-      syndrome, twoS);
-    if (sigmaOmega = nil) then
-    begin
-      Result := false;
-      exit
-    end;
-    sigma := sigmaOmega[0];
-    errorLocations := self.findErrorLocations(sigma);
-    if (errorLocations = nil) then
-    begin
-      Result := false;
-      exit
-    end;
-    omega := sigmaOmega[1];
-    errorMagnitudes := self.findErrorMagnitudes(omega, errorLocations);
-    i := 0;
-    while (i < Length(errorLocations)) do
-    begin
-      position := ((Length(received) - 1) - self.field.log(errorLocations[i]));
-      if (position < 0) then
-      begin
-        Result := false;
-        exit
-      end;
-      received[position] := TGenericGF.addOrSubtract(received[position],
-        errorMagnitudes[i]);
-      inc(i)
-    end
-  end;
+
+  if (noError) then
   begin
     Result := true;
-    exit
-  end
+    Exit;
+  end;
+
+  syndrome := TGenericGFPoly.Create(self.field, syndromeCoefficients);
+  sigmaOmega := self.runEuclideanAlgorithm(self.field.buildMonomial(twoS, 1),
+    syndrome, twoS);
+
+  if (sigmaOmega = nil) then
+  begin
+    Result := false;
+    Exit
+  end;
+
+  sigma := sigmaOmega[0];
+  errorLocations := self.findErrorLocations(sigma);
+  if (errorLocations = nil) then
+  begin
+    Result := false;
+    Exit
+  end;
+
+  omega := sigmaOmega[1];
+  errorMagnitudes := self.findErrorMagnitudes(omega, errorLocations);
+  i := 0;
+  while (i < Length(errorLocations)) do
+  begin
+    position := ((Length(received) - 1) - self.field.log(errorLocations[i]));
+    if (position < 0) then
+    begin
+      Result := false;
+      Exit
+    end;
+    received[position] := TGenericGF.addOrSubtract(received[position],
+      errorMagnitudes[i]);
+    inc(i)
+  end;
+
+  Result := true;
+
 end;
 
 function TReedSolomonDecoder.findErrorLocations(errorLocator: TGenericGFPoly)
@@ -109,7 +132,7 @@ begin
   if (numErrors = 1) then
   begin
     Result := TArray<Integer>.Create(errorLocator.getCoefficient(1));
-    exit
+    Exit
   end;
 
   Result := TArray<Integer>.Create();
@@ -177,12 +200,12 @@ begin
 
     Result[i] := self.field.multiply(errorEvaluator.evaluateAt(xiInverse),
       self.field.inverse(denominator));
+
     if (self.field.GeneratorBase <> 0) then
       Result[i] := self.field.multiply(Result[i], xiInverse);
+
     inc(i)
   end;
-
-  Result := Result;
 
 end;
 
@@ -202,9 +225,10 @@ begin
     a := b;
     b := temp
   end;
+
   rLast := a;
   R := b;
-  tLastLast := self.field.Zero;
+  tLast := self.field.Zero;
   t := self.field.One;
 
   while ((R.Degree >= (pR div 2))) do
@@ -217,7 +241,7 @@ begin
     if (rLast.isZero) then
     begin
       Result := nil;
-      exit
+      Exit
     end;
 
     R := rLastLast;
@@ -238,7 +262,7 @@ begin
     if (R.Degree >= rLast.Degree) then
     begin
       Result := nil;
-      exit
+      Exit
     end
   end;
 
@@ -246,7 +270,7 @@ begin
   if (sigmaTildeAtZero = 0) then
   begin
     Result := nil;
-    exit
+    Exit
   end;
 
   inverse := self.field.inverse(sigmaTildeAtZero);

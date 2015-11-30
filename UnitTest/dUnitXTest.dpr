@@ -15,7 +15,6 @@ uses
   DUnitX.TestFramework,
   Test in 'Test.pas',
   ScanManager in '..\Lib\Classes\ScanManager.pas',
-  ZXingCommon in '..\Lib\Classes\Filtering\ZXingCommon.pas',
   RGBLuminanceSource in '..\Lib\Classes\Filtering\RGBLuminanceSource.Pas',
   LuminanceSource in '..\Lib\Classes\Filtering\LuminanceSource.pas',
   HybridBinarizer in '..\Lib\Classes\Filtering\HybridBinarizer.pas',
@@ -37,7 +36,7 @@ uses
   Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas',
   QRCodeReader in '..\Lib\Classes\2D Barcodes\QRCodeReader.pas',
   QRDecoder in '..\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas',
-  Bitmatrixx in '..\Lib\Classes\Common\Bitmatrixx.pas',
+  Bitmatrix in '..\Lib\Classes\Common\Bitmatrix.pas',
   Helpers in '..\Lib\Classes\Common\Helpers.pas',
   BitMatrixParser in '..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas',
   Version in '..\Lib\Classes\2D Barcodes\Decoder\Version.pas',
@@ -52,7 +51,6 @@ uses
   FinderPattern in '..\Lib\Classes\2D Barcodes\Detector\FinderPattern.pas',
   QRCodeDecoderMetadata in '..\Lib\Classes\2D Barcodes\Decoder\QRCodeDecoderMetadata.pas',
   FinderPatternFinder in '..\Lib\Classes\2D Barcodes\Detector\FinderPatternFinder.pas',
-  NullableType in '..\Lib\Classes\Common\NullableType.pas',
   AlignmentPatternFinder in '..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas',
   DefaultGridSampler in '..\Lib\Classes\Common\DefaultGridSampler.pas',
   ReedSolomonDecoder in '..\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas',
@@ -61,7 +59,9 @@ uses
   DecodedBitStreamParser in '..\Lib\Classes\2D Barcodes\Decoder\DecodedBitStreamParser.pas',
   BitSource in '..\Lib\Classes\Common\BitSource.pas',
   CharacterSetECI in '..\Lib\Classes\Common\CharacterSetECI.pas',
-  Eci in '..\Lib\Classes\Common\Eci.pas';
+  StringUtils in '..\Lib\Classes\Common\StringUtils.pas',
+  Mode in '..\Lib\Classes\2D Barcodes\Decoder\Mode.pas',
+  Datamask in '..\Lib\Classes\2D Barcodes\Decoder\Datamask.pas';
 
 var
   runner : ITestRunner;

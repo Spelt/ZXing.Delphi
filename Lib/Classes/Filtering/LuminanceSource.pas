@@ -20,7 +20,7 @@ unit LuminanceSource;
 interface
 
 uses
-  System.SysUtils, ZXingCommon;
+  System.SysUtils;
 
 /// <summary>
 /// The purpose of this class hierarchy is to abstract different bitmap implementations across

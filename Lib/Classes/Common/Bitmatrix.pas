@@ -1,10 +1,26 @@
-unit Bitmatrixx;
+unit Bitmatrix;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses SysUtils, Generics.Collections, BitArray, BarcodeFormat,
-  Fmx.Graphics, Helpers;
-
+  Fmx.Graphics, Helpers, MathUtils;
 
 type
 
@@ -18,8 +34,6 @@ type
     function GetBit(x, y: Integer): Boolean;
     procedure SetBit(x, y: Integer; Value: Boolean);
 
-    constructor Create(width: Integer; height: Integer;
-      bits: TArray<Integer>); overload;
     constructor Create(width: Integer; height: Integer; rowSize: Integer;
       bits: TArray<Integer>); overload;
 
@@ -43,8 +57,8 @@ type
     function ToBitmap(format: TBarcodeFormat; content: string)
       : TBitmap; overload;
 
-    property Width :Integer read FWidth;
-    property Height :Integer read FHeight;
+    property width: Integer read Fwidth;
+    property height: Integer read Fheight;
     property Self[x, y: Integer]: Boolean read GetBit write SetBit; default;
 
   end;
@@ -55,19 +69,24 @@ implementation
 
 function TBitMatrix.GetBit(x, y: Integer): Boolean;
 var
-  offset: Integer;
+  offset, s, shiftOp: Integer;
 begin
-  offset := y * FrowSize + (x shr 5);
-  result := ((Fbits[offset] shr (x and $1F)) and 1) <> 0;
+  s := TMathUtils.Asr(x, 5);
+  offset := y * FrowSize + s;
+
+  shiftOp := TMathUtils.Asr(uint32(Fbits[offset]), (x and $1F));
+
+  result := (shiftOp and 1) <> 0;
 end;
 
 procedure TBitMatrix.SetBit(x, y: Integer; Value: Boolean);
 var
-  offset: Integer;
+  offset, s: Integer;
 begin
   if (Value) then
   begin
-    offset := y * FrowSize + (x shr 5);
+    s := TMathUtils.Asr(x, 5);
+    offset := y * FrowSize + s;
     Fbits[offset] := Fbits[offset] or (1 shl (x and $1F));
   end;
 end;
@@ -105,17 +124,6 @@ begin
   Self.Fbits := bits
 end;
 
-constructor TBitMatrix.Create(width, height: Integer; bits: TArray<Integer>);
-begin
-  if ((width < 1) or (height < 1)) then
-    raise EArgumentException.Create('Both dimensions must be greater than 0');
-
-  Self.Fwidth := width;
-  Self.Fheight := height;
-  Self.FrowSize := ((width + $1F) shr 5);
-  Self.Fbits := bits
-end;
-
 constructor TBitMatrix.Create(width, height: Integer);
 begin
   if ((width < 1) or (height < 1)) then
@@ -123,13 +131,13 @@ begin
 
   Self.Fwidth := width;
   Self.Fheight := height;
-  Self.FrowSize := ((width + $1F) shr 5);
+  Self.FrowSize := TMathUtils.Asr((width + $1F), 5);
   SetLength(Self.Fbits, Self.FrowSize * height);
 end;
 
 constructor TBitMatrix.Create(dimension: Integer);
 begin
-  // nothing here
+  Self.Create(dimension, dimension);
 end;
 
 function TBitMatrix.Equals(obj: TObject): Boolean;
@@ -172,9 +180,10 @@ end;
 
 procedure TBitMatrix.flip(x, y: Integer);
 var
-  offset: Integer;
+  offset, s: Integer;
 begin
-  offset := ((y * FrowSize) + (x shr 5));
+  s := TMathUtils.Asr(x, 5);
+  offset := ((y * FrowSize) + s);
   Fbits[offset] := (Fbits[offset] xor (1 shl x))
 end;
 
@@ -199,7 +208,7 @@ begin
   theBits := Fbits[bitsOffset];
   bit := $1F;
 
-  while (((theBits shr bit) = 0)) do
+  while ((TMathUtils.Asr(theBits, bit) = 0)) do
   begin
     dec(bit);
   end;
@@ -251,7 +260,7 @@ begin
         if (((x32 * $20) + $1F) > right) then
         begin
           bit := $1F;
-          while (((theBits shr bit) = 0)) do
+          while ((TMathUtils.Asr(theBits, bit) = 0)) do
           begin
             dec(bit)
           end;
@@ -402,7 +411,8 @@ begin
     x := left;
     while ((x < right)) do
     begin
-      Fbits[(offset + (x shr 5))] := (Fbits[(offset + (x shr 5))] or (1 shl x));
+      Fbits[(offset + TMathUtils.Asr(x, 5))] :=
+        (Fbits[(offset + TMathUtils.Asr(x, 5))] or (1 shl x));
       inc(x)
     end;
     inc(y)

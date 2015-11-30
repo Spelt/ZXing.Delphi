@@ -1,8 +1,25 @@
 unit DefaultGridSampler;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
-uses SysUtils, BitMatrixx, PerspectiveTransform, mathUtils;
+uses SysUtils, BitMatrix, PerspectiveTransform, mathUtils, Math;
 
 type
   TDefaultGridSampler = class
@@ -45,7 +62,7 @@ class function TDefaultGridSampler.sampleGrid(image: TBitMatrix;
 var
   bits: TBitMatrix;
   points: TArray<Single>;
-  y, x, max: Integer;
+  y, x, max, p1, p2: Integer;
   iValue: Single;
 begin
   if ((dimensionX <= 0) or (dimensionY <= 0)) then
@@ -65,7 +82,7 @@ begin
     x := 0;
     while ((x < max)) do
     begin
-      points[x] := ((x shr 1) + 0.5);
+      points[x] := TMathUtils.Asr(x, 1) + 0.5;
       points[(x + 1)] := iValue;
       inc(x, 2)
     end;
@@ -81,10 +98,10 @@ begin
       x := 0;
       while ((x < max)) do
       begin
+        p1 := Floor(points[x]);
+        p2 := Floor(points[x + 1]);
 
-        bits[(TMathUtils.Asr(x, 1)), y] :=
-          image[trunc(points[x]), trunc(points[x + 1])];
-
+        bits[(TMathUtils.Asr(x, 1)), y] := image[p1, p2];
         inc(x, 2)
       end
     except
@@ -111,8 +128,8 @@ begin
   offset := 0;
   while ((offset < Length(points)) and nudged) do
   begin
-    x := round(points[offset]);
-    y := round(points[(offset + 1)]);
+    x := Floor(points[offset]);
+    y := Floor(points[(offset + 1)]);
     if ((((x < -1) or (x > width)) or (y < -1)) or (y > height)) then
     begin
       Result := false;
@@ -147,8 +164,8 @@ begin
 
   while ((offset >= 0) and nudged) do
   begin
-    x := round(points[offset]);
-    y := round(points[(offset + 1)]);
+    x := Floor(points[offset]);
+    y := Floor(points[(offset + 1)]);
     if ((((x < -1) or (x > width)) or (y < -1)) or (y > height)) then
     begin
       Result := false;
@@ -185,6 +202,7 @@ end;
 class function TDefaultGridSampler.get_Instance: TDefaultGridSampler;
 begin
   GridSampler := TDefaultGridSampler.Create();
+  Result := GridSampler;
 end;
 
 class function TDefaultGridSampler.sampleGrid(image: TBitMatrix;

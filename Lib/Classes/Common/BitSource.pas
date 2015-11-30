@@ -1,5 +1,22 @@
 unit BitSource;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses SysUtils, MathUtils;
@@ -23,7 +40,7 @@ implementation
 
 function TBitSource.available: Integer;
 begin
-  Result := ((8 * (Length(self.bytes) - self.ByteOffset)) - self.BitOffset)
+  Result := 8 * (Length(self.bytes) - self.ByteOffset) - self.BitOffset;
 end;
 
 constructor TBitSource.Create(bytes: TArray<Byte>);
@@ -35,14 +52,14 @@ function TBitSource.readBits(numBits: Integer): Integer;
 var
   bitsToNotRead, bitsLeft, toRead, mask: Integer;
 begin
-  if (((numBits < 1) or (numBits > $20)) or (numBits > self.available)) then
+  if (((numBits < 1) or (numBits > $20)) or (numBits > available())) then
     raise EArgumentException.Create(numBits.ToString + 'numBits');
 
   Result := 0;
-  if (self.BitOffset > 0) then
+  if (BitOffset > 0) then
   begin
 
-    bitsLeft := (8 - self.BitOffset);
+    bitsLeft := 8 - BitOffset;
     if (numBits < bitsLeft) then
       toRead := numBits
     else
@@ -52,13 +69,14 @@ begin
     mask := TMathUtils.Asr($FF, ((8 - toRead) and $1F)) shl bitsToNotRead;
     Result := TMathUtils.Asr((self.bytes[self.ByteOffset] and mask),
       bitsToNotRead);
-    dec(numBits, toRead);
-    inc(self.BitOffset, toRead);
 
-    if (self.BitOffset = 8) then
+    dec(numBits, toRead);
+    inc(BitOffset, toRead);
+
+    if (BitOffset = 8) then
     begin
-      self.BitOffset := 0;
-      inc(self.ByteOffset)
+      BitOffset := 0;
+      inc(ByteOffset)
     end
   end;
 
@@ -74,20 +92,16 @@ begin
 
     if (numBits > 0) then
     begin
-      bitsToNotRead := (8 - numBits);
+      bitsToNotRead := 8 - numBits;
+      mask := TMathUtils.Asr($FF, bitsToNotRead) shl bitsToNotRead;
 
-      mask := TMathUtils.Asr($FF, (bitsToNotRead and $1F)) shl bitsToNotRead;
+      Result := (Result shl numBits) or
+        TMathUtils.Asr((bytes[ByteOffset] and mask), bitsToNotRead);
 
-      Result := TMathUtils.Asr
-        (((Result shl numBits) or (self.bytes[self.ByteOffset] and mask)),
-        bitsToNotRead);
-
-      inc(self.BitOffset, numBits)
+      inc(BitOffset, numBits)
     end
 
   end;
-
-  Result := Result;
 
 end;
 

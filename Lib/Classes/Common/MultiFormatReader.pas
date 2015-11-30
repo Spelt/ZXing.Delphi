@@ -91,7 +91,6 @@ type
 
     procedure FreeReaders();
 
-
   private
     function DecodeInternal(image: TBinaryBitmap): TReadResult;
   end;
@@ -140,7 +139,7 @@ begin
       if (Reader is TOneDReader) then
       begin
         OneDReader := TObject(Reader) as TOneDReader;
-        OneDReader :=nil;
+        OneDReader := nil;
       end;
     end;
   end;
@@ -205,7 +204,7 @@ begin
     end;
     if formats.Contains(BarcodeFormat.QR_CODE) then
     begin
-       readers.Add(TQRCodeReader.Create())
+      readers.Add(TQRCodeReader.Create())
     end;
     if formats.Contains(BarcodeFormat.DATA_MATRIX) then
     begin

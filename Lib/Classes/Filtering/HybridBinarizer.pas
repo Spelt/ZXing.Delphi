@@ -19,7 +19,7 @@ unit HybridBinarizer;
 
 interface
 
-uses SysUtils, GlobalHistogramBinarizer, LuminanceSource, Bitmatrixx, binarizer;
+uses SysUtils, GlobalHistogramBinarizer, LuminanceSource, Bitmatrix, binarizer, MathUtils;
 
 /// <summary> This class implements a local thresholding algorithm, which while slower than the
 /// GlobalHistogramBinarizer, is fairly efficient for what it does. It is designed for
@@ -60,11 +60,14 @@ type
       yoffset: Integer; threshold: Integer; stride: Integer;
       matrix: TBitMatrix);
     function cap(value: Integer; min: Integer; max: Integer): Integer;
+  protected
 
   public
+     function createBinarizer(source: TLuminanceSource): TBinarizer;override;
+
     constructor Create(source: TLuminanceSource);
     function BlackMatrix: TBitMatrix; override;
-    function createBinarizer(source: TLuminanceSource): TBinarizer;
+
 
   end;
 
@@ -104,12 +107,12 @@ begin
   if ((width >= 40) and (height >= 40)) then
   begin
     luminances := source.matrix;
-    subWidth := (width shr 3);
+    subWidth := TMathUtils.Asr(width, 3);
 
     if ((width and 7) <> 0) then
       inc(subWidth);
 
-    subHeight := (height shr 3);
+    subHeight := TMathUtils.Asr(height, 3);
 
     if ((height and 7) <> 0) then
       inc(subHeight);
@@ -205,15 +208,15 @@ begin
         inc(offset, width)
       end;
 
-      average := (sum shr 6);
+      average := TMathUtils.Asr(sum, 6);
       if ((max - min) <= $18) then
       begin
-        average := (min shr 1);
+        average := TMathUtils.Asr(min,1);
         if ((y > 0) and (x > 0)) then
         begin
           averageNeighborBlackPoint :=
-            (((blackPoints[(y - 1)][x] + (2 * blackPoints[y][(x - 1)])) +
-            blackPoints[(y - 1)][(x - 1)]) shr 2);
+            TMathUtils.Asr(((blackPoints[(y - 1)][x] + (2 * blackPoints[y][(x - 1)])) +
+            blackPoints[(y - 1)][(x - 1)]),2);
           if (min < averageNeighborBlackPoint) then
             average := averageNeighborBlackPoint
         end

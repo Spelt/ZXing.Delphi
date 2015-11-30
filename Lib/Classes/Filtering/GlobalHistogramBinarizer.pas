@@ -25,47 +25,56 @@ type
   TGlobalHistogramBinarizer = class(TBinarizer)
   private
 
-    LUMINANCE_BITS, LUMINANCE_SHIFT, LUMINANCE_BUCKETS: Integer;
+    class var LUMINANCE_BITS, LUMINANCE_SHIFT, LUMINANCE_BUCKETS: Integer;
+    EMPTY: TArray<Byte>;
+
     luminances: TArray<Byte>;
     buckets: TArray<Integer>;
     procedure InitArrays(luminanceSize: Integer);
     function estimateBlackPoint(buckets: TArray<Integer>;
       var blackPoint: Integer): Boolean;
+    class procedure ClassInit; static;
 
   public
     constructor Create(source: TLuminanceSource);
 
-    //constructor GlobalHistogramBinarizer(source: TLuminanceSource);
+    // constructor GlobalHistogramBinarizer(source: TLuminanceSource);
     function GetBlackRow(y: Integer; row: TBitArray): TBitArray; override;
   end;
 
 implementation
 
 { TGlobalHistogramBinarizer }
-constructor TGlobalHistogramBinarizer.Create(source: TLuminanceSource);
+
+class procedure TGlobalHistogramBinarizer.ClassInit();
 begin
-  inherited Create(source);
-  self.luminances := TArray<Byte>.Create();
-  SetLength(self.luminances, 0);
-
-  self.buckets := TArray<Integer>.Create();
-  SetLength(self.buckets, $20);
-end;
-
-{
-constructor TGlobalHistogramBinarizer.GlobalHistogramBinarizer
-  (source: TLuminanceSource);
-begin
-  Inherited Create(source);
-
   LUMINANCE_BITS := 5;
   LUMINANCE_SHIFT := 8 - LUMINANCE_BITS;
   LUMINANCE_BUCKETS := 1 shl LUMINANCE_BITS;
+  EMPTY := TArray<Byte>.Create();
+  SetLength(EMPTY, 0);
+end;
+
+constructor TGlobalHistogramBinarizer.Create(source: TLuminanceSource);
+begin
+  inherited Create(source);
+  luminances := EMPTY;
+  buckets := TArray<Integer>.Create();
+  SetLength(self.buckets, LUMINANCE_BUCKETS);
+end;
+
+{
+  constructor TGlobalHistogramBinarizer.GlobalHistogramBinarizer
+  (source: TLuminanceSource);
+  begin
+  Inherited Create(source);
+
+
 
   SetLength(luminances, 0);
   SetLength(buckets, LUMINANCE_BUCKETS);
-end;
- }
+  end;
+}
 
 function TGlobalHistogramBinarizer.GetBlackRow(y: Integer; row: TBitArray)
   : TBitArray;
@@ -120,7 +129,6 @@ begin
   result := row;
 
 end;
-
 
 procedure TGlobalHistogramBinarizer.InitArrays(luminanceSize: Integer);
 var
@@ -228,5 +236,9 @@ begin
   blackPoint := bestValley shl LUMINANCE_SHIFT;
   result := true;
 end;
+
+Initialization
+
+TGlobalHistogramBinarizer.ClassInit();
 
 end.

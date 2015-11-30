@@ -1,62 +1,32 @@
 ﻿[Closed Files]
-File_0=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas',0,1,40,6,60,0,0,,
-File_1=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\NullableType.pas',0,1,166,13,186,0,0,,
-File_2=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MathUtils.pas',0,1,5,26,34,0,0,,
-File_3=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\Version.pas',0,1,486,1,491,0,0,,
-File_4=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas',0,1,15,1,21,0,0,,
-File_5=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Detector\AlignmentPattern.pas',0,1,1,42,9,0,0,,
-File_6=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\PerspectiveTransform.pas',0,1,11,1,1,0,0,,
-File_7=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\DefaultGridSampler.pas',0,1,36,3,51,0,0,,
-File_8=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Detector\Detector.pas',0,1,312,1,306,0,0,,
-File_9=TSourceModule,'C:\Dev\Delphi\ZXing\UnitTest\Test.pas',0,1,20,1,38,0,0,,
-File_10=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\DetectorResult.pas',0,1,1,1,35,0,0,,
-File_11=TSourceModule,'c:\program files (x86)\embarcadero\studio\17.0\SOURCE\RTL\SYS\System.pas',0,1,17498,1,17516,0,0,,
-File_12=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\GridSampler.pas',0,1,116,36,123,0,0,,
-File_13=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\ScanManager.pas',0,1,21,1,47,0,0,,
-File_14=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas',0,1,279,1,302,0,0,,
+File_0=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\ZXingCommon.pas',0,1,1,1,1,0,0,,
+File_1=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\BinaryBitmap.pas',0,1,1,19,1,0,0,,
+File_2=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\MultiFormatReader.pas',0,1,1,1,2,0,0,,
+File_3=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\PerspectiveTransform.pas',0,1,1,27,1,0,0,,
+File_4=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ReadResult.pas',0,1,1,17,1,0,0,,
+File_5=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultMetadataType.pas',0,1,1,25,1,0,0,,
+File_6=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\ResultPoint.pas',0,1,1,18,1,0,0,,
+File_7=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Common\StringUtils.pas',0,1,1,18,1,0,0,,
+File_8=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\Binarizer.pas',0,1,1,1,1,0,0,,
+File_9=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas',0,1,1,1,1,0,0,,
+File_10=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\HybridBinarizer.pas',0,1,1,1,1,0,0,,
+File_11=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\LuminanceSource.pas',0,1,1,1,1,0,0,,
+File_12=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\Filtering\RGBLuminanceSource.Pas',0,1,1,1,1,0,0,,
+File_13=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code128Reader.pas',0,1,1,1,3,0,0,,
+File_14=TSourceModule,'C:\Dev\Delphi\ZXing\Lib\Classes\1D Barcodes\Code93Reader.pas',0,1,1,1,1,0,0,,
 
 [Modules]
-Module0=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGFPoly.pas
-Module1=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas
-Module2=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas
-Module3=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas
-Module4=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\QRCodeReader.pas
-Count=5
+Module0=C:\Dev\Delphi\ZXing\UnitTest\dUnitXTest.dproj
+Count=1
 EditWindowCount=1
 
-[C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGFPoly.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\QRCodeReader.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
+[C:\Dev\Delphi\ZXing\UnitTest\dUnitXTest.dproj]
+ModuleType=TBaseProject
 
 [EditWindow0]
-ViewCount=5
-CurrentEditView=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGFPoly.pas
+ViewCount=1
+CurrentEditView=C:\Dev\Delphi\ZXing\UnitTest\dUnitXTest.dpr
 View0=0
-View1=1
-View2=2
-View3=3
-View4=4
 PercentageSizes=1
 Create=1
 Visible=1
@@ -65,88 +35,48 @@ State=0
 Left=0
 Top=0
 Width=10000
-Height=9081
+Height=9058
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=10000
-ClientHeight=9081
+ClientHeight=9058
 DockedToMainForm=1
 BorlandEditorCodeExplorer=BorlandEditorCodeExplorer@EditWindow0
 TopPanelSize=0
 LeftPanelSize=1896
-LeftPanelClients=PropertyInspector,DockSite3
-LeftPanelData=0000080001010000000048110000000000000168070000000000000100000000530E000009000000446F636B53697465330100000000A61B00001100000050726F7065727479496E73706563746F72FFFFFFFF
-RightPanelSize=2000
-RightPanelClients=DockSite2,DockSite4
-RightPanelData=00000800010100000000481100000000000001D00700000000000001000000004612000009000000446F636B53697465320100000000A61B000009000000446F636B5369746534FFFFFFFF
+LeftPanelClients=PropertyInspector,DockSite2
+LeftPanelData=000008000101000000003A110000000000000168070000000000000100000000530E000009000000446F636B53697465320100000000901B00001100000050726F7065727479496E73706563746F72FFFFFFFF
+RightPanelSize=2424
+RightPanelClients=DockSite1,DockSite3
+RightPanelData=000008000101000000003A1100000000000001780900000000000001000000004612000009000000446F636B53697465310100000000901B000009000000446F636B5369746533FFFFFFFF
 BottomPanelSize=1533
-BottomPanelClients=DockSite1,MessageView
-BottomPanelData=0000080001020100000009000000446F636B5369746531803E00000000000002FD050000000000000100000000803E00000F0000004D65737361676556696577466F726DFFFFFFFF
+BottomPanelClients=DockSite4
+BottomPanelData=00000800010100000000BE030000000000000110270000000000000100000000FD05000009000000446F636B5369746534FFFFFFFF
 BottomMiddlePanelSize=0
 BottomMiddlePanelClients=DockSite0,GraphDrawingModel
 BottomMiddelPanelData=0000080001020200000009000000446F636B536974653010000000477261706844726177696E67566965779A1D00000000000002F206000000000000FFFFFFFF
 
 [View0]
 CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\QRCodeReader.pas
-CursorX=34
-CursorY=99
-TopLine=88
+Module=C:\Dev\Delphi\ZXing\UnitTest\dUnitXTest.dpr
+CursorX=1
+CursorY=54
+TopLine=39
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\QRCodeReader.pas
-
-[View1]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas
-CursorX=98
-CursorY=10
-TopLine=1
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas
-
-[View2]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas
-CursorX=25
-CursorY=12
-TopLine=1
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas
-
-[View3]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas
-CursorX=47
-CursorY=14
-TopLine=1
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas
-
-[View4]
-CustomEditViewType=TEditView
-Module=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGFPoly.pas
-CursorX=5
-CursorY=43
-TopLine=1
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\Decoder\GenericGFPoly.pas
+EditViewName=C:\Dev\Delphi\ZXing\UnitTest\dUnitXTest.dpr
 
 [Watches]
-Count=4
-Watch0='provisionalVersion',256,0,18,1,1,'Watches',1
-Watch1='image[j, i]',256,0,18,1,1,'Watches',1
-Watch2='x',256,0,18,1,1,'Watches',1
-Watch3='y',256,0,18,1,1,'Watches',1
+Count=8
+Watch0='image.BlackMatrix',256,0,18,1,0,'Watches',1
+Watch1='self.coefficients[i]',256,0,18,1,0,'Watches',1
+Watch2='coefficient',256,0,18,1,0,'Watches',1
+Watch3='product[i]',256,0,18,1,0,'Watches',1
+Watch4='product',256,0,18,1,0,'Watches',1
+Watch5='Fcoefficients',256,0,18,1,0,'Watches',1
+Watch6='received[position]',256,0,18,1,0,'Watches',1
+Watch7='position',256,0,18,1,0,'Watches',1
 
 [WatchWindow]
 WatchColumnWidth=120
@@ -158,28 +88,21 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3826
-Height=1105
+Width=8819
+Height=1047
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3826
-ClientHeight=1105
+ClientWidth=8819
+ClientHeight=1047
 TBDockHeight=209
 LRDockWidth=13604
 Dockable=1
 StayOnTop=0
 
 [Breakpoints]
-Count=1
-Breakpoint0='C:\Dev\Delphi\ZXing\Lib\Classes\2D Barcodes\QRCodeReader.pas',93,'',0,1,'',1,0,0,'',1,'','','',0,''
+Count=0
 
 [EmbarcaderoWin32Debugger_AddressBreakpoints]
-Count=0
-
-[EmbarcaderoWin64Debugger_AddressBreakpoints]
-Count=0
-
-[EmbarcaderoOSXDebugger_AddressBreakpoints]
 Count=0
 
 [EmbarcaderoIOS64DeviceDebugger_AddressBreakpoints]
@@ -191,14 +114,20 @@ Count=0
 [EmbarcaderoAndroidDebugger_AddressBreakpoints]
 Count=0
 
+[EmbarcaderoWin64Debugger_AddressBreakpoints]
+Count=0
+
+[EmbarcaderoOSXDebugger_AddressBreakpoints]
+Count=0
+
 [Main Window]
 PercentageSizes=1
 Create=1
 Visible=1
 Docked=0
 State=2
-Left=146
-Top=279
+Left=535
+Top=0
 Width=8931
 Height=8523
 MaxLeft=-7
@@ -207,7 +136,7 @@ MaxWidth=8931
 MaxHeight=8523
 ClientWidth=10000
 ClientHeight=9733
-BottomPanelSize=8678
+BottomPanelSize=8656
 BottomPanelClients=EditWindow0
 BottomPanelData=0000080000000000000000000000000000000000000000000000000100000000000000000C0000004564697457696E646F775F30FFFFFFFF
 
@@ -219,12 +148,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=2000
-Height=4267
+Width=2424
+Height=4291
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2000
-ClientHeight=4267
+ClientWidth=2424
+ClientHeight=4291
 TBDockHeight=5895
 LRDockWidth=2347
 Dockable=1
@@ -237,15 +166,15 @@ Visible=1
 Docked=1
 State=0
 Left=0
-Top=23
+Top=0
 Width=10000
-Height=1337
+Height=1047
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=10000
-ClientHeight=1337
-TBDockHeight=1337
-LRDockWidth=2771
+ClientHeight=1047
+TBDockHeight=1360
+LRDockWidth=10000
 Dockable=1
 StayOnTop=0
 
@@ -257,11 +186,11 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=2000
+Width=2424
 Height=2244
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2000
+ClientWidth=2424
 ClientHeight=2244
 TBDockHeight=7151
 LRDockWidth=2000
@@ -306,34 +235,14 @@ LRDockWidth=1833
 Dockable=1
 StayOnTop=0
 
-[PropertyInspector]
-PercentageSizes=1
-Create=1
-Visible=1
-Docked=1
-State=0
-Left=0
-Top=353
-Width=1896
-Height=3302
-MaxLeft=-1
-MaxTop=-1
-ClientWidth=1896
-ClientHeight=3302
-TBDockHeight=7105
-LRDockWidth=1896
-Dockable=1
-StayOnTop=0
-SplitPos=111
-
 [ClassBrowserTool]
 PercentageSizes=1
 Create=1
 Visible=0
 Docked=1
 State=0
-Left=-165
-Top=-138
+Left=-221
+Top=-110
 Width=1847
 Height=3140
 MaxLeft=-1
@@ -383,6 +292,26 @@ LRDockWidth=3562
 Dockable=1
 StayOnTop=0
 
+[PropertyInspector]
+PercentageSizes=1
+Create=1
+Visible=1
+Docked=1
+State=0
+Left=0
+Top=351
+Width=1896
+Height=3302
+MaxLeft=-1
+MaxTop=-1
+ClientWidth=1896
+ClientHeight=3302
+TBDockHeight=7151
+LRDockWidth=1896
+Dockable=1
+StayOnTop=0
+SplitPos=111
+
 [frmDesignPreview]
 PercentageSizes=1
 Create=1
@@ -391,12 +320,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=2000
-Height=6791
+Width=1389
+Height=6837
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2000
-ClientHeight=6791
+ClientWidth=1389
+ClientHeight=6837
 TBDockHeight=5953
 LRDockWidth=2514
 Dockable=1
@@ -408,8 +337,8 @@ Create=1
 Visible=0
 Docked=1
 State=0
-Left=-1011
-Top=-138
+Left=-1172
+Top=-110
 Width=2847
 Height=6209
 MaxLeft=-1
@@ -427,8 +356,8 @@ Create=1
 Visible=0
 Docked=1
 State=0
-Left=-1155
-Top=-138
+Left=-1263
+Top=-110
 Width=278
 Height=360
 MaxLeft=-1
@@ -451,12 +380,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3826
-Height=1105
+Width=8819
+Height=1047
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3826
-ClientHeight=1105
+ClientWidth=8819
+ClientHeight=1047
 TBDockHeight=407
 LRDockWidth=4951
 Dockable=1
@@ -470,12 +399,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3826
-Height=1105
+Width=8819
+Height=1047
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3826
-ClientHeight=1105
+ClientWidth=8819
+ClientHeight=1047
 TBDockHeight=209
 LRDockWidth=7410
 Dockable=1
@@ -493,12 +422,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3826
-Height=1105
+Width=8819
+Height=1047
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3826
-ClientHeight=1105
+ClientWidth=8819
+ClientHeight=1047
 TBDockHeight=1535
 LRDockWidth=3486
 Dockable=1
@@ -512,12 +441,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3826
-Height=1105
+Width=8819
+Height=1047
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3826
-ClientHeight=1105
+ClientWidth=8819
+ClientHeight=1047
 TBDockHeight=2070
 LRDockWidth=3486
 Dockable=1
@@ -596,12 +525,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=2000
-Height=6791
+Width=1153
+Height=6837
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2000
-ClientHeight=6791
+ClientWidth=1153
+ClientHeight=6837
 TBDockHeight=4884
 LRDockWidth=7146
 Dockable=1
@@ -634,12 +563,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3826
-Height=1105
+Width=8819
+Height=1047
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3826
-ClientHeight=1105
+ClientWidth=8819
+ClientHeight=1047
 TBDockHeight=1547
 LRDockWidth=8743
 Dockable=1
@@ -661,11 +590,11 @@ State=0
 Left=0
 Top=0
 Width=1896
-Height=3523
+Height=3547
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1896
-ClientHeight=3523
+ClientHeight=3547
 TBDockHeight=3674
 LRDockWidth=1896
 Dockable=1
@@ -679,12 +608,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=2000
-Height=6791
+Width=1271
+Height=6837
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2000
-ClientHeight=6791
+ClientWidth=1271
+ClientHeight=6837
 TBDockHeight=4884
 LRDockWidth=5306
 Dockable=1
@@ -737,30 +666,6 @@ ActiveTabID=RefactoringForm
 TabDockClients=RefactoringForm,FindReferencsForm,ToDo List,MetricsView,QAView
 
 [DockSite1]
-HostDockSite=DockBottomPanel
-DockSiteType=1
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=1
-State=0
-Left=0
-Top=0
-Width=3826
-Height=1419
-MaxLeft=-1
-MaxTop=-1
-ClientWidth=3826
-ClientHeight=1419
-TBDockHeight=1419
-LRDockWidth=3826
-Dockable=1
-StayOnTop=0
-TabPosition=1
-ActiveTabID=DebugLogView
-TabDockClients=DebugLogView,BreakpointWindow,ThreadStatusWindow,CallStackWindow,WatchWindow,LocalVarsWindow
-
-[DockSite2]
 HostDockSite=DockRightPanel
 DockSiteType=1
 PercentageSizes=1
@@ -769,22 +674,22 @@ Visible=1
 Docked=1
 State=0
 Left=0
-Top=23
-Width=2000
-Height=4581
+Top=21
+Width=2424
+Height=4605
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2000
-ClientHeight=4581
-TBDockHeight=7105
-LRDockWidth=2000
+ClientWidth=2424
+ClientHeight=4605
+TBDockHeight=7151
+LRDockWidth=2424
 Dockable=1
 StayOnTop=0
 TabPosition=1
 ActiveTabID=ProjectManager
 TabDockClients=ProjectManager,ModelViewTool,DataExplorerContainer,frmDesignPreview,TFileExplorerForm
 
-[DockSite3]
+[DockSite2]
 HostDockSite=DockLeftPanel
 DockSiteType=1
 PercentageSizes=1
@@ -793,14 +698,14 @@ Visible=1
 Docked=1
 State=0
 Left=0
-Top=23
+Top=21
 Width=1896
-Height=3523
+Height=3547
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1896
-ClientHeight=3523
-TBDockHeight=7105
+ClientHeight=3547
+TBDockHeight=7151
 LRDockWidth=1896
 Dockable=1
 StayOnTop=0
@@ -808,7 +713,7 @@ TabPosition=1
 ActiveTabID=StructureView
 TabDockClients=StructureView,ClassBrowserTool
 
-[DockSite4]
+[DockSite3]
 HostDockSite=DockRightPanel
 DockSiteType=1
 PercentageSizes=1
@@ -817,20 +722,44 @@ Visible=1
 Docked=1
 State=0
 Left=0
-Top=444
-Width=2000
+Top=442
+Width=2424
 Height=2244
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2000
+ClientWidth=2424
 ClientHeight=2244
-TBDockHeight=7105
-LRDockWidth=2000
+TBDockHeight=7151
+LRDockWidth=2424
 Dockable=1
 StayOnTop=0
 TabPosition=1
 ActiveTabID=ToolForm
 TabDockClients=ToolForm,TemplateView
+
+[DockSite4]
+HostDockSite=DockBottomPanel
+DockSiteType=1
+PercentageSizes=1
+Create=1
+Visible=1
+Docked=1
+State=0
+Left=0
+Top=21
+Width=10000
+Height=1360
+MaxLeft=-1
+MaxTop=-1
+ClientWidth=10000
+ClientHeight=1360
+TBDockHeight=1360
+LRDockWidth=3118
+Dockable=1
+StayOnTop=0
+TabPosition=1
+ActiveTabID=MessageView
+TabDockClients=MessageView,LocalVarsWindow,WatchWindow,CallStackWindow,ThreadStatusWindow,BreakpointWindow,DebugLogView
 
 [ActiveProject]
 ActiveProject=1

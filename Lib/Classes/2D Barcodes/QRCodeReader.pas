@@ -1,11 +1,28 @@
 unit QRCodeReader;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses
   SysUtils, Generics.Collections, Math, BitArray, ReadResult, Reader,
   DecodeHintType, ResultPoint, BarcodeFormat, BinaryBitmap, QRDecoder,
-  Bitmatrixx,
+  Bitmatrix,
   DecoderResult, ResultMetadataType, DetectorResult, QRCodeDecoderMetaData,
   Detector, DecodedBitStreamParser;
 
@@ -108,8 +125,8 @@ begin
   if (data <> nil) then
     data.applyMirroredCorrection(points);
 
-  Result := Result.Create(DecoderResult.Text, DecoderResult.RawBytes, points,
-    BarcodeFormat.QR_CODE);
+  Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
+    points, BarcodeFormat.QR_CODE);
 
   byteSegments := DecoderResult.byteSegments;
 
@@ -117,26 +134,24 @@ begin
     Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
 
   ecLevel := DecoderResult.ecLevel;
-  {
-    if (length(ecLevel) = 0) then
-    Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, ecLevel);
 
-    if (DecoderResult.StructuredAppend) then
-    begin
+  if (length(ecLevel) = 0) then
+    Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
+      TObject(ecLevel));
+
+  if (DecoderResult.StructuredAppend) then
+  begin
     Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
-    DecoderResult.StructuredAppendSequenceNumber);
+      TObject(DecoderResult.StructuredAppendSequenceNumber));
     Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
-    DecoderResult.StructuredAppendParity)
-    end;
-  }
+      TObject(DecoderResult.StructuredAppendParity))
+  end;
 
-  Result := Result;
-  exit
 end;
 
 class function TQRCodeReader.extractPureBits(image: TBitMatrix): TBitMatrix;
 begin
-
+  raise ENotImplemented.Create('not supported');
 end;
 
 function TQRCodeReader.getDecoder: TQRDecoder;
@@ -147,7 +162,7 @@ end;
 class function TQRCodeReader.moduleSize(leftTopBlack: TArray<Integer>;
   image: TBitMatrix; var msize: Single): boolean;
 begin
-
+  raise ENotImplemented.Create('not supported');
 end;
 
 procedure TQRCodeReader.reset;

@@ -1,8 +1,25 @@
 unit QRDecoder;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
-uses SysUtils, Generics.Collections, DecodeHintType, BitMatrixx,
+uses SysUtils, Generics.Collections, DecodeHintType, BitMatrix,
   BitmatrixParser, DecoderResult, ReedSolomonDecoder, GenericGF,
   QRCodeDecoderMetaData, version, FormatInformation, ErrorCorrectionLevel,
   Datablock, DecodedBitStreamParser;
@@ -10,15 +27,12 @@ uses SysUtils, Generics.Collections, DecodeHintType, BitMatrixx,
 type
 
   TQRDecoder = class
-
   private
     rsDecoder: TReedSolomonDecoder;
-
     function correctErrors(codewordBytes: TArray<Byte>;
       numDataCodewords: Integer): boolean;
     function decode(parser: TBitMatrixParser;
       hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult; overload;
-
   public
     constructor Create;
     function decode(bits: TBitMatrix;
@@ -42,6 +56,7 @@ var
 begin
 
   numCodewords := Length(codewordBytes);
+  codewordsInts := TArray<Integer>.Create();
   SetLength(codewordsInts, numCodewords);
 
   i := 0;
@@ -51,8 +66,8 @@ begin
     inc(i)
   end;
 
-  numECCodewords := (Length(codewordBytes) - numDataCodewords);
-  if (not self.rsDecoder.decode(codewordsInts, numECCodewords)) then
+  numECCodewords := Length(codewordBytes) - numDataCodewords;
+  if (not rsDecoder.decode(codewordsInts, numECCodewords)) then
   begin
     Result := false;
     exit
@@ -61,12 +76,11 @@ begin
   i := 0;
   while ((i < numDataCodewords)) do
   begin
-    codewordBytes[i] := PByte(@codewordsInts[i])^;
+    codewordBytes[i] := Byte(codewordsInts[i]);
     inc(i)
   end;
 
   Result := true;
-
 end;
 
 function TQRDecoder.decode(bits: TBitMatrix;
@@ -107,8 +121,6 @@ begin
       Result.Other := TQRCodeDecoderMetaData.Create(true)
   end;
 
-  Result := Result;
-
 end;
 
 function TQRDecoder.decode(parser: TBitMatrixParser;
@@ -146,12 +158,12 @@ begin
     exit
   end;
 
-  dataBlocks := Datablock.getDataBlocks(codeWords, version, ecLevel);
+  dataBlocks := TDataBlock.getDataBlocks(codeWords, version, ecLevel);
   totalBytes := 0;
 
   for Datablock in dataBlocks do
   begin
-    inc(totalBytes, Length(Datablock.codeWords))
+    inc(totalBytes, Datablock.numDataCodewords)
   end;
 
   resultBytes := TArray<Byte>.Create();
@@ -161,7 +173,7 @@ begin
   for Datablock in dataBlocks do
   begin
     codewordBytes := Datablock.codeWords;
-    numDataCodewords := Length(Datablock.codeWords);
+    numDataCodewords := Datablock.numDataCodewords;
     if (not self.correctErrors(codewordBytes, numDataCodewords)) then
     begin
       Result := nil;
@@ -171,8 +183,8 @@ begin
     i := 0;
     while ((i < numDataCodewords)) do
     begin
-      inc(resultOffset);
       resultBytes[resultOffset] := codewordBytes[i];
+      inc(resultOffset);
       inc(i)
     end
   end;

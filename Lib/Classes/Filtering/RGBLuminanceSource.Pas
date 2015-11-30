@@ -19,7 +19,7 @@ unit RGBLuminanceSource;
 
 interface
 uses
-  System.SysUtils, System.UITypes, FMX.Graphics, ZXingCommon, LuminanceSource;
+  System.SysUtils, System.UITypes, FMX.Graphics,  LuminanceSource;
 
 type
 

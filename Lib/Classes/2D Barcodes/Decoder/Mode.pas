@@ -1,5 +1,22 @@
 unit Mode;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
 uses SysUtils, Version;
@@ -11,6 +28,7 @@ type
     characterCountBitsForVersions: TArray<Integer>;
     constructor Create(characterCountBitsForVersions: TArray<Integer>;
       bits: Integer; name: string); overload;
+    class procedure ClassInit;
   public
     name: string;
     bits: Integer;
@@ -26,7 +44,6 @@ type
     class var STRUCTURED_APPEND: TMode;
     class var TERMINATOR: TMode;
 
-    constructor Create(); overload;
     class function forBits(bits: Integer): TMode; static;
     function getCharacterCountBits(Version: TVersion): Integer;
     function ToString: string; override;
@@ -37,7 +54,7 @@ implementation
 
 { TMode }
 
-constructor TMode.Create;
+class procedure TMode.ClassInit;
 var
   CS: TArray<Integer>;
 begin
@@ -167,5 +184,9 @@ function TMode.ToString: string;
 begin
   Result := self.name
 end;
+
+Initialization
+
+TMode.ClassInit;
 
 end.

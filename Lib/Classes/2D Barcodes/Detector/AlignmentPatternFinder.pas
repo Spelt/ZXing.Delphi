@@ -1,9 +1,26 @@
 unit AlignmentPatternFinder;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
-uses sysutils, BitMatrixx, nullableType, AlignmentPattern,
-  ResultPoint, generics.collections, MathUtils;
+uses sysutils, BitMatrix, AlignmentPattern, // nullableType,
+  ResultPoint, generics.collections, MathUtils, Math;
 
 type
 
@@ -21,7 +38,7 @@ type
     class function centerFromEnd(stateCount: TArray<Integer>; pEnd: Integer)
       : Single; static;
     function crossCheckVertical(startI: Integer; centerJ: Integer;
-      maxCount: Integer; originalStateCountTotal: Integer): Nullable<Single>;
+      maxCount: Integer; originalStateCountTotal: Integer): Single;
     function foundPatternCross(stateCount: TArray<Integer>): boolean;
     function handlePossibleCenter(stateCount: TArray<Integer>; i: Integer;
       j: Integer): TAlignmentPattern;
@@ -61,8 +78,9 @@ begin
   self.resultPointCallback := resultPointCallback
 end;
 
-function TAlignmentPatternFinder.crossCheckVertical(startI, centerJ, maxCount,
-  originalStateCountTotal: Integer): Nullable<Single>;
+function TAlignmentPatternFinder.crossCheckVertical(startI: Integer;
+  centerJ: Integer; maxCount: Integer;
+  originalStateCountTotal: Integer): Single;
 var
   maxI, i, stateCountTotal: Integer;
   stateCount: TArray<Integer>;
@@ -83,7 +101,7 @@ begin
 
   if ((i < 0) or (stateCount[1] > maxCount)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -96,7 +114,7 @@ begin
 
   if (stateCount[0] > maxCount) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -110,7 +128,7 @@ begin
 
   if ((i = maxI) or (stateCount[1] > maxCount)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -123,7 +141,7 @@ begin
 
   if (stateCount[2] > maxCount) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -131,7 +149,7 @@ begin
   if ((5 * Abs(stateCountTotal - originalStateCountTotal)) >=
     (2 * originalStateCountTotal)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -141,7 +159,7 @@ begin
     exit;
   end;
 
-  result := nil;
+  result := -1;
 end;
 
 function TAlignmentPatternFinder.find: TAlignmentPattern;
@@ -275,19 +293,19 @@ var
   center, point: TAlignmentPattern;
   stateCountTotal: Integer;
   estimatedModuleSize: Single;
-  centerJ, centerI: Nullable<Single>;
+  centerJ, centerI: Single;
 
 begin
   stateCountTotal := ((stateCount[0] + stateCount[1]) + stateCount[2]);
   centerJ := TAlignmentPatternFinder.centerFromEnd(stateCount, j);
 
-  if (centerJ.HasValue) then
+  if (centerJ <> -1) then
   begin
 
-    centerI := self.crossCheckVertical(i, trunc(centerJ.Value),
-      (2 * stateCount[1]), stateCountTotal);
+    centerI := crossCheckVertical(i, Floor(centerJ), (2 * stateCount[1]),
+      stateCountTotal);
 
-    if (centerI.HasValue) then
+    if (centerI <> -1) then
     begin
 
       estimatedModuleSize :=
@@ -295,18 +313,16 @@ begin
 
       for center in self.possibleCenters do
       begin
-        if (center.aboutEquals(estimatedModuleSize, centerI.Value,
-          centerJ.Value)) then
+        if (center.aboutEquals(estimatedModuleSize, centerI, centerJ)) then
         begin
-          result := center.combineEstimate(centerI.Value, centerJ.Value,
+          result := center.combineEstimate(centerI, centerJ,
             estimatedModuleSize);
           exit
         end
 
       end;
 
-      point := TAlignmentPattern.Create(centerJ.Value, centerI.Value,
-        estimatedModuleSize);
+      point := TAlignmentPattern.Create(centerJ, centerI, estimatedModuleSize);
 
       self.possibleCenters.Add(point);
 

@@ -1,8 +1,25 @@
 unit Version;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
-uses SysUtils, Bitmatrixx, ErrorCorrectionLevel, FormatInformation, MathUtils;
+uses SysUtils, Bitmatrix, ErrorCorrectionLevel, FormatInformation, MathUtils;
 
 type
 
@@ -47,19 +64,21 @@ type
     constructor Create(versionNumber: Integer;
       alignmentPatternCenters: TArray<Integer>; ecBlocks: TArray<TECBlocks>);
 
-    function buildFunctionPattern: TBitMatrix;
     function CalcDimensionForVersion: Integer;
     class function buildVersions: TArray<TVersion>; static;
-    class function decodeVersionInformation(versionBits: Integer)
-      : TVersion; static;
+    class procedure ClassInit; static;
 
   public
+    class function decodeVersionInformation(versionBits: Integer)
+      : TVersion; static;
+    function buildFunctionPattern: TBitMatrix;
     function getECBlocksForLevel(ecLevel: TErrorCorrectionLevel): TECBlocks;
     class function getProvisionalVersionForDimension(dimension: Integer)
       : TVersion; static;
     class function getVersionForNumber(versionNumber: Integer)
       : TVersion; static;
     function ToString: string; override;
+
     property DimensionForVersion: Integer read CalcDimensionForVersion;
     property alignmentPatternCenters: TArray<Integer>
       read FalignmentPatternCenters;
@@ -107,6 +126,9 @@ begin
   begin
     inc(total, ecBlock.count);
   end;
+
+  result := total;
+
 end;
 
 { TVersion }
@@ -596,5 +618,18 @@ function TVersion.ToString: string;
 begin
   result := self.versionNumber.ToString();
 end;
+
+class procedure TVersion.ClassInit();
+begin
+  TVersion.VERSION_DECODE_INFO := TArray<Integer>.Create($7C94, $85BC, $9A99,
+    $A4D3, $BBF6, $C762, $D847, $E60D, $F928, $10B78, $1145D, $12A17, $13532,
+    $149A6, $15683, $168C9, $177EC, $18EC4, $191E1, $1AFAB, $1B08E, $1CC1A,
+    $1D33F, $1ED75, $1F250, $209D5, $216F0, $228BA, $2379F, $24B0B, $2542E,
+    $26A64, $27541, $28C69);
+end;
+
+Initialization
+
+TVersion.ClassInit();
 
 end.

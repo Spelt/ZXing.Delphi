@@ -1,9 +1,26 @@
 unit FinderPatternFinder;
 
+{
+  * Copyright 2008 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Implemented by E. Spelt for Delphi
+}
 interface
 
-uses System.Generics.Defaults, SysUtils, NullableType, Generics.collections,
-  BitMatrixx, resultPoint,
+uses System.Generics.Defaults, SysUtils, Generics.collections,
+  BitMatrix, resultPoint, // NullableType,
   DecodeHinttype, FinderPatternInfo, finderPattern, math;
 
 type
@@ -25,13 +42,13 @@ type
     resultPointCallback: TresultPointCallback;
 
     class function centerFromEnd(stateCount: TArray<Integer>; pEnd: Integer)
-      : Nullable<Single>; static;
+      : Single; static;
     function crossCheckDiagonal(startI: Integer; centerJ: Integer;
       maxCount: Integer; originalStateCountTotal: Integer): boolean;
     function crossCheckHorizontal(startJ: Integer; centerI: Integer;
-      maxCount: Integer; originalStateCountTotal: Integer): Nullable<Single>;
+      maxCount: Integer; originalStateCountTotal: Integer): Single;
     function crossCheckVertical(startI: Integer; centerJ: Integer;
-      maxCount: Integer; originalStateCountTotal: Integer): Nullable<Single>;
+      maxCount: Integer; originalStateCountTotal: Integer): Single;
     function findRowSkip: Integer;
     function haveMultiplyConfirmedCenters: boolean;
     function selectBestPatterns: TArray<TFinderPattern>;
@@ -75,7 +92,7 @@ implementation
 { TFinderPatternFinder }
 
 class function TFinderPatternFinder.centerFromEnd(stateCount: TArray<Integer>;
-  pEnd: Integer): Nullable<Single>;
+  pEnd: Integer): Single;
 var
   aResult: Single;
 begin
@@ -84,7 +101,7 @@ begin
 
   if (Single.IsNaN(aResult)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -198,8 +215,9 @@ begin
 
 end;
 
-function TFinderPatternFinder.crossCheckHorizontal(startJ, centerI, maxCount,
-  originalStateCountTotal: Integer): Nullable<Single>;
+function TFinderPatternFinder.crossCheckHorizontal(startJ: Integer;
+  centerI: Integer; maxCount: Integer;
+  originalStateCountTotal: Integer): Single;
 var
   stateCount: TArray<Integer>;
   maxJ, j, stateCountTotal: Integer;
@@ -217,7 +235,7 @@ begin
 
   if (j < 0) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -230,7 +248,7 @@ begin
 
   if ((j < 0) or (stateCount[1] > maxCount)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -242,7 +260,7 @@ begin
 
   if (stateCount[0] > maxCount) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
   j := (startJ + 1);
@@ -255,7 +273,7 @@ begin
 
   if (j = maxJ) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -268,7 +286,7 @@ begin
 
   if ((j = maxJ) or (stateCount[3] >= maxCount)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -280,7 +298,7 @@ begin
 
   if (stateCount[4] >= maxCount) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -290,7 +308,7 @@ begin
   if (5 * Abs(stateCountTotal - originalStateCountTotal) >=
     originalStateCountTotal) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -300,7 +318,7 @@ begin
     exit;
   end;
 
-  result := nil;
+  result := -1;
 
 end;
 
@@ -314,8 +332,9 @@ begin
   result := FCrossCheckStateCount;
 end;
 
-function TFinderPatternFinder.crossCheckVertical(startI, centerJ, maxCount,
-  originalStateCountTotal: Integer): Nullable<Single>;
+function TFinderPatternFinder.crossCheckVertical(startI: Integer;
+  centerJ: Integer; maxCount: Integer;
+  originalStateCountTotal: Integer): Single;
 var
   stateCount: TArray<Integer>;
   maxI, i, stateCountTotal: Integer;
@@ -333,7 +352,7 @@ begin
 
   if (i < 0) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -346,7 +365,7 @@ begin
 
   if ((i < 0) or (stateCount[1] > maxCount)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -358,7 +377,7 @@ begin
 
   if (stateCount[0] > maxCount) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
   i := (startI + 1);
@@ -371,7 +390,7 @@ begin
 
   if (i = maxI) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -384,7 +403,7 @@ begin
 
   if ((i = maxI) or (stateCount[3] >= maxCount)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -397,7 +416,7 @@ begin
 
   if (stateCount[4] >= maxCount) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -407,7 +426,7 @@ begin
   if ((5 * Abs(stateCountTotal - originalStateCountTotal)) >=
     (2 * originalStateCountTotal)) then
   begin
-    result := nil;
+    result := -1;
     exit
   end;
 
@@ -417,7 +436,7 @@ begin
     exit;
   end;
 
-  result := nil;
+  result := -1;
 
 end;
 
@@ -572,11 +591,9 @@ begin
         if (firstConfirmedCenter <> nil) then
         begin
           self.hasSkipped := true;
-          begin
-            result := Round(Abs(firstConfirmedCenter.X - center.X) -
-              Abs(firstConfirmedCenter.Y - center.Y)) div 2;
-            exit
-          end
+          result := Floor(Abs(firstConfirmedCenter.X - center.X) -
+            Abs(firstConfirmedCenter.Y - center.Y)) div 2;
+          exit
         end;
         firstConfirmedCenter := center
       end
@@ -629,10 +646,11 @@ end;
 function TFinderPatternFinder.handlePossibleCenter(stateCount: TArray<Integer>;
   i, j: Integer; pureBarcode: boolean): boolean;
 var
-  stateCountTotal, estimatedModuleSize, index: Integer;
-  centerJ, centerI: Nullable<Single>;
+  stateCountTotal, index: Integer;
+  centerJ, centerI: Single;
   center, point: TFinderPattern;
   found: boolean;
+  estimatedModuleSize: Single;
 begin
 
   stateCountTotal := ((((stateCount[0] + stateCount[1]) + stateCount[2]) +
@@ -640,40 +658,39 @@ begin
 
   centerJ := TFinderPatternFinder.centerFromEnd(stateCount, j);
 
-  if (not centerJ.HasValue) then
+  if (centerJ = -1) then
   begin
     result := false;
     exit
   end;
 
-  centerI := self.crossCheckVertical(i, Round(centerJ.Value), stateCount[2],
+  centerI := self.crossCheckVertical(i, Floor(centerJ), stateCount[2],
     stateCountTotal);
 
-  if (not centerI.HasValue) then
+  if (centerI = -1) then
   begin
     result := false;
     exit
   end;
 
-  centerJ := self.crossCheckHorizontal(Round(centerJ.Value),
-    Round(centerI.Value), stateCount[2], stateCountTotal);
+  centerJ := crossCheckHorizontal(Floor(centerJ), Floor(centerI), stateCount[2],
+    stateCountTotal);
 
-  if (centerJ.HasValue and (not pureBarcode or
-    self.crossCheckDiagonal(Round(centerI.Value), Round(centerJ.Value),
-    stateCount[2], stateCountTotal))) then
+  if ((centerJ <> -1) and (not pureBarcode or
+    self.crossCheckDiagonal(Floor(centerI), Floor(centerJ), stateCount[2],
+    stateCountTotal))) then
   begin
-    estimatedModuleSize := (Round(stateCountTotal) div 7);
+    estimatedModuleSize := stateCountTotal / 7;
     found := false;
     index := 0;
     while ((index < self.PossibleCenters.Count)) do
     begin
       center := self.PossibleCenters[index];
-      if (center.aboutEquals(estimatedModuleSize, centerI.Value, centerJ.Value))
-      then
+      if (center.aboutEquals(estimatedModuleSize, centerI, centerJ)) then
       begin
         self.PossibleCenters.Delete(index);
-        self.PossibleCenters.Insert(index, center.combineEstimate(centerI.Value,
-          centerJ.Value, estimatedModuleSize));
+        self.PossibleCenters.Insert(index, center.combineEstimate(centerI,
+          centerJ, estimatedModuleSize));
         found := true;
         break;
 
@@ -684,8 +701,7 @@ begin
     if (not found) then
     begin
 
-      point := TFinderPattern.Create(centerJ.Value, centerI.Value,
-        estimatedModuleSize);
+      point := TFinderPattern.Create(centerJ, centerI, estimatedModuleSize);
       self.PossibleCenters.Add(point);
 
       // todo: 2015-10-16
@@ -698,12 +714,14 @@ begin
 
   end;
 
+  Result:=false;
+
 end;
 
 function TFinderPatternFinder.haveMultiplyConfirmedCenters: boolean;
 var
-  confirmedCount, max, i, totalDeviation: Integer;
-  totalModuleSize, average: Single;
+  confirmedCount, max, i: Integer;
+  totalModuleSize, average, totalDeviation: Single;
   pattern: TFinderPattern;
 begin
   confirmedCount := 0;
@@ -733,7 +751,8 @@ begin
   while ((i < max)) do
   begin
     pattern := self.PossibleCenters[i];
-    inc(totalDeviation, Round(Abs(pattern.estimatedModuleSize - average)));
+    totalDeviation := totalDeviation +
+      Abs(pattern.estimatedModuleSize - average);
     inc(i)
   end;
 
