@@ -72,3 +72,6 @@ __history/
 *.stat
 *.*cache
 *.local
+*.identcache
+*.dsk
+*.dsk
