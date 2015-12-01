@@ -206,54 +206,6 @@ begin
 
 end;
 
-procedure TZXingDelphiTest.AutoTypes;
-var
-  result: TReadResult;
-begin
-  // Test different types in a random sequence.
-
-  result := Decode('Code128.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('1234567'),
-    'Code 128 result Text Incorrect: ' + result.Text);
-
-  result := Decode('Code93-1.png', BarcodeFormat.CODE_93);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
-    'Code 93 - 1 result Text Incorrect: ' + result.Text);
-
-  result := Decode('Code128.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('1234567'),
-    'Code 128 result Text Incorrect: ' + result.Text);
-
-  result := Decode('q4.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
-
-  result := Decode('q2.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
-
-  result := Decode('Code93-1.png', BarcodeFormat.CODE_93);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
-    'Code 93 - 1 result Text Incorrect: ' + result.Text);
-
-  result := Decode('Code93-1.png', BarcodeFormat.CODE_93);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
-    'Code 93 - 1 result Text Incorrect: ' + result.Text);
-
-  result := Decode('q2.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
-
-end;
-
 procedure TZXingDelphiTest.AllCode128();
 var
   result: TReadResult;
@@ -287,6 +239,54 @@ begin
   Assert.IsNotNull(result, ' Nil result ');
   Assert.IsTrue(result.Text.Equals('ABC CODE96'),
     'Auto Code 93 - 3 result Text Incorrect: ' + result.Text);
+end;
+
+procedure TZXingDelphiTest.AutoTypes;
+var
+  result: TReadResult;
+begin
+  // Test different types in a random sequence.
+
+  result := Decode('Code128.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('1234567'),
+    'Code 128 result Text Incorrect: ' + result.Text);
+
+  result := Decode('Code93-1.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' nil result ');
+  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
+    'Code 93 - 1 result Text Incorrect: ' + result.Text);
+
+  result := Decode('Code128.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('1234567'),
+    'Code 128 result Text Incorrect: ' + result.Text);
+
+  result := Decode('q4.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+    'QR code result Text Incorrect: ' + result.Text);
+
+  result := Decode('q2.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+    'QR code result Text Incorrect: ' + result.Text);
+
+  result := Decode('Code93-1.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' nil result ');
+  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
+    'Code 93 - 1 result Text Incorrect: ' + result.Text);
+
+  result := Decode('Code93-1.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' nil result ');
+  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
+    'Code 93 - 1 result Text Incorrect: ' + result.Text);
+
+  result := Decode('q2.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+    'QR code result Text Incorrect: ' + result.Text);
+
 end;
 
 /// /////////////////////////////////////////////////////////////////////////////
