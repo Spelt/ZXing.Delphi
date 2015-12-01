@@ -1,5 +1,5 @@
 # ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE7/XE8 and Appmethod. 
+ZXing Barcode Scanning Library for Delphi XE7/XE8/10 Seattle and Appmethod. 
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/master/zxing.Delphi.picture1.png )
 
@@ -7,24 +7,35 @@ ZXing.Delphi is a native Object Pascal library that is based on the well known o
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compability issues and dependencies. It is fast.
 
-Its compatible with in Delphi XE7, XE8 and AppMethod and tested with IOS 8.x 32/64bit, Windows 32/64 and OSX. Not yet tested it with Android but that should work too.  
-The goal of ZXing.Delphi is to make scanning barcodes as effortless, painless, fast and build within your FireMonkey or native Windows applications.  Just include the source files or create a .bpl and add it in your existings projects and build the ZXing.Delphi source with your projects.
+Its compatible with in Delphi XE7, XE8, 10 Seattle and AppMethod and tested with IOS 8.x, 9.x 32/64bit, Windows 32/64 and OSX. Not yet tested it with Android but that should work too.  
+The goal of ZXing.Delphi is to make scanning barcodes as effortless, painless, fast and build within your FireMonkey or native Windows applications.  Just include the source files or create a .bpl and add it in your existings projects and build the ZXing.Delphi source within your projects.
 
 
 ###Changes
- - v1.1 Date: 2015/7/11
+- v2.0 Date: 2015/11/30
+	- Implemented  QR Codes + extensive unit tests
+
+- v1.1 Date: 2015/7/11
 	- Implemented Code93 + unit test
- - v1.0
+
+- v1.0
  	- Init upload
  	- Base classes 1D barcode implemented.	
  	- Code 128 format is implemented.
 
+###Features
+- Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
+- FREE. No ridiculous licence fees. Just FREE.
+- Speed
+- Barcodes: QCode, Code 128, Code93
+- Simple API
+- Unit tests provided
+	
+	
 #HELP NEEDED
-Although it works extremely well, it works currently only with one type barcode (Code 128). I only needed one barcode so for me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
+Although it works extremely well, it works currently only with a few barcodes. I only needed one barcode so for me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
 
-Its a good start for an awesome community effort!  
-
-The 1D barcode base classes I already implemented so if you need to have another 1D Barcode like Code39 you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy. 
+The base classes I already implemented so if you need to have another Barcode like Code39 you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy. 
 
 Only with your help we can get all the barcodes here! A unit test project is included and all barcodes must be unit tested!
 
@@ -32,8 +43,8 @@ Only with your help we can get all the barcodes here! A unit test project is inc
 
 ###What is different compared to the original source and what do I need to know if I implement a barcode?
 - I made use of generic array lists. This is easier and strongly typed.
-- I stayed at the architecture as implemented in the .Net source. Debugging 
-- There is a lot of bit shifting going around. Right bit shifting is the same as in C# but Left bit shifing is not! I made a helper for this: TMathUtils.Asr 
+- I stayed at the architecture and directory structure as implemented in the .Net source. Debugging 
+- There is a lot of bit shifting going around. Right bit shifting is the same as in C# but right bit shifing is not! I made a helper for this: TMathUtils.Asr 
 - You can convert c# files to pascal with CS2Pas2 (somewhere on the Internet) it can give you a good start! Or just convert it yourself.
 
 
@@ -53,21 +64,6 @@ ReadResult := FScanManager.Scan(scanBitmap);
 
 Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. I created a test app to show you how just to do that. Its included.  It makes use of the new Firemonkey parallel lib. In the testApp the resolution of the camera is set to medium (FMX.Media.TVideoCaptureQuality.MediumQuality) on my iPhone 6. This is only possible since XE8 and equivalent Appmethod.  Its also good to mention that how higher the resolution the more time it takes to scan a bitmap. Some scaling could probably work too.
 
-
-###Features
-- Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
-- FREE. No ridiculous licence fees. Just FREE.
-- Speed
-- Barcodes: Code 128, Code93
-- Simple API
-- Unit tests provided
-
-
-
- 	
-
-###Barcode Formats
-- Code 128
 
 ###Thanks
 ZXing.Delphi is a project that I've put together with the work of others.  So naturally, I'd like to thank everyone who's helped out in any way.  Those of you I know have helped I'm listing here, but anyone else that was involved, please let me know!
