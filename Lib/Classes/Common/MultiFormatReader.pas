@@ -30,7 +30,7 @@ uses SysUtils, rtti, Generics.Collections,
 /// <author>dswitkin@google.com (Daniel Switkin)</author>
 /// <author>www.Redivivus.in (suraj.supekar@redivivus.in) - Ported from ZXING Java Source</author>
 type
-  TMultiFormatReader = class(TInterfacedObject, IReader)
+   TMultiFormatReader = class(TInterfacedObject, IReader)
   private
 
     FHints: TDictionary<TDecodeHintType, TObject>;
@@ -117,7 +117,9 @@ begin
   begin
     hints := nil
   end;
-  result := DecodeInternal(image)
+
+  result := DecodeInternal(image);
+
 end;
 
 destructor TMultiFormatReader.Destroy;
@@ -239,21 +241,13 @@ begin
       readers := TList<IReader>.Create;
     end;
 
-    if not tryHarder then
-    begin
-      readers.Add(TMultiFormatOneDReader.Create(Value))
-    end;
-
-    // readers.Add(new QRCodeReader());
+    readers.Add(TMultiFormatOneDReader.Create(Value));
+    readers.Add(TQRCodeReader.Create());
     // readers.Add(new DataMatrixReader());
     // readers.Add(new AztecReader());
     // readers.Add(new PDF417Reader());
     // readers.Add(new MaxiCodeReader());
 
-    if tryHarder then
-    begin
-      readers.Add(TMultiFormatOneDReader.Create(Value))
-    end
 
   end
 
@@ -301,6 +295,7 @@ begin
     result := Reader.Decode(image, FHints);
     if result <> nil then
     begin
+
       // found a barcode, pushing the successful reader up front
       // I assume that the same type of barcode is read multiple times
       // so the reordering of the readers list should speed up the next reading
