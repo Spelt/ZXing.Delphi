@@ -34,19 +34,19 @@ type
     function Decode(Filename: String; CodeFormat: TBarcodeFormat): TReadResult;
 
     [Test]
-    procedure QRCode;
+    procedure AllQRCode;
 
     [Test]
-    procedure Code128();
+    procedure AllCode128();
 
     [Test]
-    procedure Code93();
+    procedure AllCode93();
 
   end;
 
 implementation
 
-procedure TZXingDelphiTest.QRCode();
+procedure TZXingDelphiTest.AllQRCode();
 var
   result: TReadResult;
 begin
@@ -205,7 +205,7 @@ begin
 
 end;
 
-procedure TZXingDelphiTest.Code128();
+procedure TZXingDelphiTest.AllCode128();
 var
   result: TReadResult;
 begin
@@ -215,7 +215,7 @@ begin
     'Code 128 result Text Incorrect: ' + result.Text);
 end;
 
-procedure TZXingDelphiTest.Code93();
+procedure TZXingDelphiTest.AllCode93();
 var
   result: TReadResult;
 begin
