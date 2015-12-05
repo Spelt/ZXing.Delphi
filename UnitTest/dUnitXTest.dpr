@@ -14,7 +14,6 @@ uses
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
   Test in 'Test.pas',
-  ScanManager in '..\Lib\Classes\ScanManager.pas',
   RGBLuminanceSource in '..\Lib\Classes\Filtering\RGBLuminanceSource.Pas',
   LuminanceSource in '..\Lib\Classes\Filtering\LuminanceSource.pas',
   HybridBinarizer in '..\Lib\Classes\Filtering\HybridBinarizer.pas',
@@ -61,7 +60,8 @@ uses
   CharacterSetECI in '..\Lib\Classes\Common\CharacterSetECI.pas',
   StringUtils in '..\Lib\Classes\Common\StringUtils.pas',
   Mode in '..\Lib\Classes\2D Barcodes\Decoder\Mode.pas',
-  Datamask in '..\Lib\Classes\2D Barcodes\Decoder\Datamask.pas';
+  Datamask in '..\Lib\Classes\2D Barcodes\Decoder\Datamask.pas',
+  ScanManager in '..\Lib\Classes\ScanManager.pas';
 
 var
   runner : ITestRunner;

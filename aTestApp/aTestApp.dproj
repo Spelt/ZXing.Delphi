@@ -299,27 +299,54 @@
             <Form>MainForm</Form>
             <FormType>fmx</FormType>
         </DCCReference>
+        <DCCReference Include="..\Lib\Classes\1D Barcodes\Code93Reader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\Code128Reader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\OneDReader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\Reader.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Datablock.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Datamask.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\DecodedBitStreamParser.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ErrorCorrectionLevel.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\FormatInformation.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Mode.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\QRCodeDecoderMetadata.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Version.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\AlignmentPattern.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\Detector.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPattern.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPatternFinder.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPatternInfo.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\QRCodeReader.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\BarcodeFormat.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\BitArray.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\Bitmatrix.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\BitSource.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\CharacterSetECI.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\DecodeHintType.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\DecoderResult.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\DefaultGridSampler.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\DetectorResult.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\Helpers.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\MathUtils.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\MultiFormatReader.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\PerspectiveTransform.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\ReadResult.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\ResultMetadataType.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\ResultPoint.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\StringUtils.pas"/>
         <DCCReference Include="..\Lib\Classes\Filtering\Binarizer.pas"/>
         <DCCReference Include="..\Lib\Classes\Filtering\BinaryBitmap.pas"/>
         <DCCReference Include="..\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas"/>
         <DCCReference Include="..\Lib\Classes\Filtering\HybridBinarizer.pas"/>
         <DCCReference Include="..\Lib\Classes\Filtering\LuminanceSource.pas"/>
         <DCCReference Include="..\Lib\Classes\Filtering\RGBLuminanceSource.Pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXingCommon.pas"/>
         <DCCReference Include="..\Lib\Classes\ScanManager.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\Code93Reader.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

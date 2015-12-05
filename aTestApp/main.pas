@@ -24,8 +24,8 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
   FMX.StdCtrls, FMX.Media, FMX.Platform, FMX.MultiView, FMX.ListView.Types,
   FMX.ListView, FMX.Layouts, System.Actions, FMX.ActnList, FMX.TabControl,
-  FMX.ListBox, Threading, ScanManager, BarcodeFormat, ReadResult,
-  FMX.Controls.Presentation, FMX.ScrollBox, FMX.Memo;
+  FMX.ListBox, Threading, BarcodeFormat, ReadResult,
+  FMX.Controls.Presentation, FMX.ScrollBox, FMX.Memo, ScanManager;
 
 type
   TMainForm = class(TForm)
@@ -90,7 +90,7 @@ begin
 
   CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
   lblScanStatus.Text := '';
-  FScanManager := TScanManager.Create(TBarcodeFormat.CODE_128, nil);
+  FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
