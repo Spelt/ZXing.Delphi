@@ -11,6 +11,10 @@ Its compatible with in Delphi XE7, XE8, 10 Seattle and AppMethod and tested with
 The goal of ZXing.Delphi is to make scanning barcodes as effortless, painless, fast and build within your FireMonkey or native Windows applications.  Just include the source files or create a .bpl and add it in your existings projects and build the ZXing.Delphi source within your projects.
 
 
+##Important note:
+There is a bug in the TCameraComponent (XE7/XE8/10) which causes the Android camera not to autofocus at all and therefore crippels the barcode scanning. THere is a work around which can be found here: https://translate.google.nl/translate?sl=auto&tl=en&js=y&prev=_t&hl=nl&ie=UTF-8&u=http://tacotony.pixnet.net/blog/post/105520991-xe6%E7%82%BAtcameracomponent%E5%85%83%E4%BB%B6%E5%8A%A0%E4%B8%8A%E5%B0%8D%E7%84%A6%E5%8A%9F%E8%83%BD&edit-text=  
+
+
 ###Changes
 - v2.0 Date: 2015/11/30
 	- Implemented QR-Codes + unit test.
