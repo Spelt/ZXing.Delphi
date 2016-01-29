@@ -113,7 +113,7 @@ begin
   left := localLuminances[0] and $FF;
   center := localLuminances[1] and $FF;
 
-  for x := 1 to w - 1 do
+  for x := 1 to w - 2 do
   begin
 
     right := localLuminances[x + 1] and $FF;
