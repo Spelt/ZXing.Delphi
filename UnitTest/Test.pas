@@ -43,6 +43,9 @@ type
     procedure AllCode93();
 
     [Test]
+    procedure AllCodeITF;
+
+    [Test]
     procedure AutoTypes();
 
   end;
@@ -241,6 +244,37 @@ begin
     'Auto Code 93 - 3 result Text Incorrect: ' + result.Text);
 end;
 
+procedure TZXingDelphiTest.AllCodeITF();
+var
+  result: TReadResult;
+begin
+  result := Decode('ITF-1.png', BarcodeFormat.ITF);
+  Assert.IsNotNull(result, ' nil result ');
+  Assert.IsTrue(result.Text.Equals('55867492279103'),
+    'Code ITF - 1 result Text Incorrect: ' + result.Text);
+
+  result := Decode('ITF-2.png', BarcodeFormat.ITF);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('04601234567893'),
+    'ITF - 2 result Text Incorrect: ' + result.Text);
+
+  result := Decode('ITF-3.png', BarcodeFormat.ITF);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('12345678900098'),
+    'ITF - 3 result Text Incorrect: ' + result.Text);
+
+  result := Decode('ITF-4.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('32145678900098'),
+    'ITF - 4 result Text Incorrect: ' + result.Text);
+
+  result := Decode('ITF-5.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('77745678900093'),
+    'ITF - 5 result Text Incorrect: ' + result.Text);
+
+end;
+
 procedure TZXingDelphiTest.AutoTypes;
 var
   result: TReadResult;
@@ -286,6 +320,17 @@ begin
   Assert.IsNotNull(result, ' Nil result ');
   Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
     'QR code result Text Incorrect: ' + result.Text);
+
+  result := Decode('ITF-2.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('04601234567893'),
+    'ITF - 2 result Text Incorrect: ' + result.Text);
+
+  result := Decode('ITF-3.png', BarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('12345678900098'),
+    'ITF - 3 result Text Incorrect: ' + result.Text);
+
 
 end;
 

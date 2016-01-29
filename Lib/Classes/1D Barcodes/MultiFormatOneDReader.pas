@@ -21,7 +21,7 @@ uses
 
   SysUtils, Generics.Collections,
   OneDReader, DecodeHintType, BitArray, ReadResult, BarcodeFormat,
-  Code128Reader, Code93Reader;
+  Code128Reader, Code93Reader, ITFReader;
 
 /// <summary>
 /// <author>dswitkin@google.com (Daniel Switkin)</author>
@@ -128,7 +128,7 @@ begin
     if (possibleFormats.Contains(BarcodeFormat.CODE_93)) or
       (possibleFormats.Contains(BarcodeFormat.All_1D)) then
     begin
-    	readers.Add(TCode93Reader.Create())
+      readers.Add(TCode93Reader.Create())
     end;
     if (possibleFormats.Contains(BarcodeFormat.CODE_128)) or
       (possibleFormats.Contains(BarcodeFormat.All_1D)) then
@@ -138,7 +138,7 @@ begin
     if (possibleFormats.Contains(BarcodeFormat.ITF)) or
       (possibleFormats.Contains(BarcodeFormat.All_1D)) then
     begin
-      // readers.Add(new ITFReader())
+      readers.Add(TITFReader.Create())
     end;
     if (possibleFormats.Contains(BarcodeFormat.CODABAR)) or
       (possibleFormats.Contains(BarcodeFormat.All_1D)) then
@@ -175,6 +175,7 @@ begin
     // readers.Add(new CodaBarReader());
     readers.Add(TCode93Reader.Create());
     readers.Add(TCode128Reader.Create);
+    readers.Add(TITFReader.Create);
     // readers.Add(new ITFReader());
     // readers.Add(new RSS14Reader());
     // readers.Add(new RSSExpandedReader())

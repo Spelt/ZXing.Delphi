@@ -382,7 +382,7 @@ begin
     patternLength := patternLength + pattern[i];
   end;
 
-  if (total < patternLength) then
+  if ((total < patternLength) or (patternLength < 1)) then
   begin
     // If we don't even have one pixel per unit of bar width, assume this is too small
     // to reliably match, so fail:

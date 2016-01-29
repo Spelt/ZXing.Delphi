@@ -51,7 +51,8 @@ uses
   HybridBinarizer in '..\Lib\Classes\Filtering\HybridBinarizer.pas',
   LuminanceSource in '..\Lib\Classes\Filtering\LuminanceSource.pas',
   RGBLuminanceSource in '..\Lib\Classes\Filtering\RGBLuminanceSource.Pas',
-  ScanManager in '..\Lib\Classes\ScanManager.pas';
+  ScanManager in '..\Lib\Classes\ScanManager.pas',
+  ITFReader in '..\Lib\Classes\1D Barcodes\ITFReader.pas';
 
 {$R *.res}
 

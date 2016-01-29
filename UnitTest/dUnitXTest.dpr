@@ -61,7 +61,8 @@ uses
   StringUtils in '..\Lib\Classes\Common\StringUtils.pas',
   Mode in '..\Lib\Classes\2D Barcodes\Decoder\Mode.pas',
   Datamask in '..\Lib\Classes\2D Barcodes\Decoder\Datamask.pas',
-  ScanManager in '..\Lib\Classes\ScanManager.pas';
+  ScanManager in '..\Lib\Classes\ScanManager.pas',
+  ITFReader in '..\Lib\Classes\1D Barcodes\ITFReader.pas';
 
 var
   runner : ITestRunner;
