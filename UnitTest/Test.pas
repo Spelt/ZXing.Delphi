@@ -248,6 +248,10 @@ procedure TZXingDelphiTest.AllCodeITF();
 var
   result: TReadResult;
 begin
+
+  result := Decode('q4.png', BarcodeFormat.ITF);
+  Assert.IsNull(result, ' Should be nil result ');
+
   result := Decode('ITF-1.png', BarcodeFormat.ITF);
   Assert.IsNotNull(result, ' nil result ');
   Assert.IsTrue(result.Text.Equals('55867492279103'),

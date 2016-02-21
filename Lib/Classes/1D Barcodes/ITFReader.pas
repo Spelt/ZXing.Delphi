@@ -21,7 +21,7 @@ interface
 
 uses
   SysUtils, Generics.Collections, Math, OneDReader, BitArray, ReadResult,
-  DecodeHintType, ResultPoint, BarcodeFormat;
+  DecodeHintType, ResultPoint, BarcodeFormat, Helpers;
 
 type
   TArrInt = TArray<Integer>;
@@ -307,6 +307,7 @@ begin
     Exit(nil);
   end;
 
+  // !!
   endPattern := findGuardPattern(row, endStart, END_PATTERN_REVERSED);
   if (endPattern = nil) then
   begin
@@ -340,7 +341,8 @@ var
   x: Integer;
   l: Integer;
 begin
-   patternLength := Length(pattern);
+  patternLength := Length(pattern);
+  counters := TArray<Integer>.Create();
   SetLength(counters, patternLength);
   width := row.Size;
   isWhite := false;
@@ -349,58 +351,45 @@ begin
   patternStart := rowOffset;
   x := rowOffset;
 
-  try
+  while ((x < width)) do
+  begin
 
-    while ((x < width)) do
+    if (row[x] xor isWhite) then
+    begin
+      inc(counters[counterPosition]);
+    end
+    else
     begin
 
-      if (row[x] xor isWhite) then
+      if (counterPosition = (patternLength - 1)) then
       begin
-        inc(counters[counterPosition]);
+
+        if (PatternMatchVariance(counters, pattern, MAX_INDIVIDUAL_VARIANCE) <
+          MAX_AVG_VARIANCE) then
+        begin
+          Result := [patternStart, x];
+          Exit(Result);
+        end;
+        inc(patternStart, (counters[0] + counters[1]));
+
+        counters := TArray.CopyInSameArray(counters, 2, patternLength - 2);
+
+        counters[(patternLength - 2)] := 0;
+        counters[(patternLength - 1)] := 0;
+        dec(counterPosition);
+
       end
       else
       begin
-
-            if (counterPosition = (patternLength - 1)) then
-            begin
-
-              if (PatternMatchVariance(counters, pattern, MAX_INDIVIDUAL_VARIANCE) <
-                MAX_AVG_VARIANCE) then
-              begin
-                Result := [patternStart, x];
-                Exit(Result);
-              end;
-              inc(patternStart, (counters[0] + counters[1]));
-              counters := Copy(counters, 2, (patternLength - 2));
-              counters[(patternLength - 2)] := 0;
-              counters[(patternLength - 1)] := 0;
-              dec(counterPosition);
-
-            end
-            else
-            begin
-              inc(counterPosition);
-            end;
-
-            counters[counterPosition] := 1;
-            isWhite := not isWhite
-
+        inc(counterPosition);
       end;
 
-      inc(x);
+      counters[counterPosition] := 1;
+      isWhite := not isWhite
+
     end;
 
-  except
-
-    // the original java code is exacly the same but sometimes when a QRCode is scanned
-    // and this decoder is called it can happen that the array access gets out of bounds.
-    // Thats why we eat the exception instead of making the code more complex.
-    on E: Exception do
-    begin
-
-      Result := nil;
-      Exit;
-    end;
+    inc(x);
   end;
 
   Result := nil;
