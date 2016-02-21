@@ -18,9 +18,12 @@ Reported is: Setting Focusmode to TFocusMode.ContinuousAutoFocus did help. It di
 
 
 ###Changes
+- v2.2 Date: 2016/02/21
+	- Fixed IOS crash bug on 32bit only (ITF related).
+
 - v2.1 Date: 2016/01/29
 	- Implemented ITF (thanks p. b. Hofstede!) + unit test.
-	- Fixed small bug
+	- Fixed small bug.
 	
 - v2.0 Date: 2015/11/30
 	- Implemented QR-Codes + unit test.
