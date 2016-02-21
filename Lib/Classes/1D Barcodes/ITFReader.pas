@@ -27,34 +27,36 @@ type
   TArrInt = TArray<Integer>;
   TMultiIntegerArray = TArray<TArrInt>;
 
-type
   TITFReader = class(TOneDReader)
   const
-    LARGEST_DEFAULT_ALLOWED_LENGTH = 14;
-    N = 1;
-    W = 3;
+    LARGEST_DEFAULT_ALLOWED_LENGTH: Integer = 14;
+    N: Integer = 1;
+    W: Integer = 3;
   private
-    PATTERNS: TMultiIntegerArray;
-    END_PATTERN_REVERSED: TArray<Integer>;
-    MAX_AVG_VARIANCE: Integer;
-    MAX_INDIVIDUAL_VARIANCE: Integer;
-    DEFAULT_ALLOWED_LENGTHS: TArray<Integer>;
-    START_PATTERN: TArray<Integer>;
 
+    class var PATTERNS: TMultiIntegerArray;
+    class var END_PATTERN_REVERSED: TArray<Integer>;
+    class var MAX_AVG_VARIANCE: Integer;
+    class var MAX_INDIVIDUAL_VARIANCE: Integer;
+    class var DEFAULT_ALLOWED_LENGTHS: TArray<Integer>;
+
+  class var
+    START_PATTERN: TArray<Integer>;
     narrowLineWidth: Integer;
 
-    function decodeDigit(counters: TArray<Integer>;
-      out bestMatch: Integer): boolean;
+    class function decodeDigit(counters: TArray<Integer>;
+      out bestMatch: Integer): boolean; static;
     function decodeEnd(row: TBitArray): TArray<Integer>;
-    function skipWhiteSpace(row: TBitArray): Integer;
-    function findGuardPattern(row: TBitArray; rowOffset: Integer;
-      pattern: TArray<Integer>): TArray<Integer>;
+    class function skipWhiteSpace(row: TBitArray): Integer; static;
+    class function findGuardPattern(row: TBitArray; rowOffset: Integer;
+      pattern: TArray<Integer>): TArray<Integer>; static;
     function validateQuietZone(row: TBitArray; startPattern: Integer): boolean;
     function decodeStart(row: TBitArray): TArray<Integer>;
-    function decodeMiddle(row: TBitArray; payloadStart: Integer;
-      payloadEnd: Integer; out resultString: TReadResult): boolean;
+    class function decodeMiddle(row: TBitArray;
+      payloadStart, payloadEnd: Integer; SBResult: TStringBuilder)
+      : boolean; static;
+    class procedure ClassInit();
   public
-    constructor Create;
     function DecodeRow(rowNumber: Integer; row: TBitArray;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
   end;
@@ -66,24 +68,120 @@ uses
 
 { TITFReader }
 
-constructor TITFReader.Create;
+class procedure TITFReader.ClassInit();
 begin
-  inherited;
+  MAX_AVG_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.42);
+  MAX_INDIVIDUAL_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.78);
 
-  narrowLineWidth := -1;
-  MAX_AVG_VARIANCE :=
-    Floor(TOneDReader.PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.42);
-  MAX_INDIVIDUAL_VARIANCE :=
-    Floor(TOneDReader.PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.78);
-  END_PATTERN_REVERSED := [1, 1, 3];
   DEFAULT_ALLOWED_LENGTHS := [6, 8, 10, 12, 14];
-  START_PATTERN := [1, 1, 1, 1];
-  PATTERNS := [[1, 1, 3, 3, 1], [3, 1, 1, 1, 3], [1, 3, 1, 1, 3],
-    [3, 3, 1, 1, 1], [1, 1, 3, 1, 3], [3, 1, 3, 1, 1], [1, 3, 3, 1, 1],
-    [1, 1, 1, 3, 3], [3, 1, 1, 3, 1], [1, 3, 1, 3, 1]];
+
+  START_PATTERN := [N, N, N, N];
+  END_PATTERN_REVERSED := [N, N, W];
+
+  PATTERNS := [[N, N, W, W, N], // 0
+  [W, N, N, N, W], // 1
+  [N, W, N, N, W], // 2
+  [W, W, N, N, N], // 3
+  [N, N, W, N, W], // 4
+  [W, N, W, N, N], // 5
+  [N, W, W, N, N], // 6
+  [N, N, N, W, W], // 7
+  [W, N, N, W, N], // 8
+  [N, W, N, W, N]]; // 9
 end;
 
-function TITFReader.decodeDigit(counters: TArray<Integer>;
+function TITFReader.DecodeRow(rowNumber: Integer; row: TBitArray;
+  hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+var
+  allowedLength: Integer;
+  startRange: TArray<Integer>;
+  endRange: TArray<Integer>;
+  stringResult: string;
+  allowedLengths: TArray<Integer>;
+  maxAllowedLength: Integer;
+  len: Integer;
+  lengthOK: boolean;
+  SBResult: TStringBuilder;
+  resultPoints: TArray<TResultPoint>;
+  resultPointLeft, resultPointRight: TResultPoint;
+
+begin
+  startRange := decodeStart(row);
+  if (startRange = nil) then
+  begin
+    Exit(nil);
+  end;
+
+  endRange := self.decodeEnd(row);
+  if (endRange = nil) then
+  begin
+    Exit(nil);
+  end;
+
+  SBResult := TStringBuilder.Create(20);
+  if (not decodeMiddle(row, startRange[1], endRange[0], SBResult)) then
+  begin
+    Exit(nil);
+  end;
+  stringResult := SBResult.ToString();
+
+  allowedLengths := nil;
+  maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
+  if ((hints <> nil) and hints.ContainsKey(DecodeHintType.ALLOWED_LENGTHS)) then
+  begin
+    allowedLengths := TArrInt(hints[DecodeHintType.ALLOWED_LENGTHS]);
+    maxAllowedLength := 0
+  end;
+
+  if (allowedLengths = nil) then
+  begin
+    allowedLengths := DEFAULT_ALLOWED_LENGTHS;
+    maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
+  end;
+
+  len := Length(stringResult);
+  lengthOK := (len > LARGEST_DEFAULT_ALLOWED_LENGTH);
+  if (not lengthOK) then
+  begin
+
+    for allowedLength in allowedLengths do
+    begin
+
+      if (len = allowedLength) then
+      begin
+        lengthOK := true;
+        break;
+      end;
+
+      if (allowedLength > maxAllowedLength) then
+      begin
+        maxAllowedLength := allowedLength;
+      end;
+
+    end;
+
+    if ((not lengthOK) and (len > maxAllowedLength)) then
+    begin
+      lengthOK := true;
+    end;
+
+    if (not lengthOK) then
+    begin
+      Exit(nil);
+    end
+
+  end;
+
+  resultPointLeft := TResultPoint.Create(startRange[1], rowNumber);
+  resultPointRight := TResultPoint.Create(endRange[0], rowNumber);
+  resultPoints := [resultPointLeft, resultPointRight];
+
+  Result := TReadResult.Create(stringResult, nil, resultPoints,
+    BarcodeFormat.ITF);
+
+end;
+
+class function TITFReader.decodeDigit(counters: TArray<Integer>;
   out bestMatch: Integer): boolean;
 var
   bestVariance: Integer;
@@ -91,6 +189,7 @@ var
   i: Integer;
   pattern: TArrInt;
   variance: Integer;
+
 begin
   bestVariance := MAX_AVG_VARIANCE;
   bestMatch := -1;
@@ -100,18 +199,99 @@ begin
   begin
     pattern := PATTERNS[i];
 
-    variance := TOneDReader.patternMatchVariance(counters, pattern,
+    variance := PatternMatchVariance(counters, pattern,
       MAX_INDIVIDUAL_VARIANCE);
     if (variance < bestVariance) then
     begin
       bestVariance := variance;
       bestMatch := i
     end;
+
     inc(i)
   end;
 
   Result := (bestMatch >= 0);
 
+end;
+
+function TITFReader.decodeStart(row: TBitArray): TArray<Integer>;
+var
+  endStart: Integer;
+  startPattern: TArray<Integer>;
+begin
+  endStart := skipWhiteSpace(row);
+  if (endStart < 0) then
+  begin
+    Exit(nil);
+  end;
+
+  startPattern := findGuardPattern(row, endStart, START_PATTERN);
+  if (startPattern = nil) then
+  begin
+    Exit(nil);
+  end;
+
+  narrowLineWidth := TMathUtils.Asr(startPattern[1] - startPattern[0], 2);
+  if (not validateQuietZone(row, startPattern[0])) then
+  begin
+    Exit(nil);
+  end;
+
+  Result := startPattern;
+end;
+
+class function TITFReader.decodeMiddle(row: TBitArray;
+  payloadStart, payloadEnd: Integer; SBResult: TStringBuilder): boolean;
+var
+  bestMatch: Integer;
+  counterDigit: Integer;
+  counterDigitPair: TArray<Integer>;
+  counterBlack: TArray<Integer>;
+  counterWhite: TArray<Integer>;
+  k: Integer;
+  twoK: Integer;
+
+begin
+  SetLength(counterDigitPair, 10);
+  SetLength(counterBlack, 5);
+  SetLength(counterWhite, 5);
+
+  while ((payloadStart < payloadEnd)) do
+  begin
+    if (not RecordPattern(row, payloadStart, counterDigitPair)) then
+    begin
+      Exit(false);
+    end;
+
+    k := 0;
+    while ((k < 5)) do
+    begin
+      twoK := (k shl 1);
+      counterBlack[k] := counterDigitPair[twoK];
+      counterWhite[k] := counterDigitPair[(twoK + 1)];
+      inc(k)
+    end;
+
+    if (not decodeDigit(counterBlack, bestMatch)) then // @(bestMatch))) then
+    begin
+      Exit(false);
+    end;
+    SBResult.Append(char($30 + bestMatch));
+
+    if (not decodeDigit(counterWhite, bestMatch)) then // @(bestMatch))) then
+    begin
+      Exit(false);
+    end;
+
+    SBResult.Append(char($30 + bestMatch));
+
+    for counterDigit in counterDigitPair do
+    begin
+      inc(payloadStart, counterDigit);
+    end
+  end;
+
+  Result := true;
 end;
 
 function TITFReader.decodeEnd(row: TBitArray): TArray<Integer>;
@@ -131,197 +311,24 @@ begin
   if (endPattern = nil) then
   begin
     row.reverse;
-    begin
-      Exit(nil);
-    end
+    Exit(nil);
   end;
 
-  if (not self.validateQuietZone(row, endPattern[0])) then
+  if (not validateQuietZone(row, endPattern[0])) then
   begin
     row.reverse;
-    begin
-      Exit(nil);
-    end
+    Exit(nil);
   end;
 
   temp := endPattern[0];
-  endPattern[0] := (row.Size - endPattern[1]);
-  endPattern[1] := (row.Size - temp);
+  endPattern[0] := row.Size - endPattern[1];
+  endPattern[1] := row.Size - temp;
   row.reverse;
 
   Result := endPattern;
-
 end;
 
-function TITFReader.decodeMiddle(row: TBitArray;
-  payloadStart, payloadEnd: Integer; out resultString: TReadResult): boolean;
-var
-  bestMatch: Integer;
-  counterDigit: Integer;
-  counterDigitPair: TArray<Integer>;
-  counterBlack: TArray<Integer>;
-  counterWhite: TArray<Integer>;
-  k: Integer;
-  twoK: Integer;
-  aString: string;
-begin
-  SetLength(counterDigitPair, 10);
-  SetLength(counterBlack, 5);
-  SetLength(counterWhite, 5);
-
-  aString := '';
-
-  while ((payloadStart < payloadEnd)) do
-  begin
-    if (not TOneDReader.recordPattern(row, payloadStart, counterDigitPair)) then
-    begin
-      Exit(false);
-    end;
-    k := 0;
-    while ((k < 5)) do
-    begin
-      twoK := (k shl 1);
-      counterBlack[k] := counterDigitPair[twoK];
-      counterWhite[k] := counterDigitPair[(twoK + 1)];
-      inc(k)
-    end;
-    if (not decodeDigit(counterBlack, bestMatch)) then // @(bestMatch))) then
-    begin
-      Exit(false);
-    end;
-
-    aString := aString + IntToStr(bestMatch); // ((($30 + bestMatch) as Char));
-    if (not decodeDigit(counterWhite, bestMatch)) then // @(bestMatch))) then
-    begin
-      Exit(false);
-    end;
-    aString := aString + IntToStr(bestMatch); // ((($30 + bestMatch) as Char));
-
-    for counterDigit in counterDigitPair do
-    begin
-      inc(payloadStart, counterDigit);
-    end
-  end;
-
-  Result := true;
-  resultString := TReadResult.Create(aString, nil, nil, TBarcodeFormat.ITF);
-
-end;
-
-function TITFReader.DecodeRow(rowNumber: Integer; row: TBitArray;
-  hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
-var
-  allowedLength: Integer;
-  startRange: TArray<Integer>;
-  endRange: TArray<Integer>;
-  aResult: string;
-  allowedLengths: TArray<Integer>;
-  maxAllowedLength: Integer;
-  ilength: Integer;
-  lengthOK: boolean;
-begin
-  startRange := decodeStart(row);
-  if (startRange = nil) then
-  begin
-    Exit(nil);
-  end;
-  endRange := self.decodeEnd(row);
-  if (endRange = nil) then
-  begin
-    Exit(nil);
-  end;
-
-  // result := StringBuilder.Create(20);
-  if (not decodeMiddle(row, startRange[1], endRange[0], Result)) then
-  begin
-    Exit(nil);
-  end;
-  aResult := Result.Text;
-  allowedLengths := nil;
-  maxAllowedLength := 14;
-  if ((hints <> nil) and hints.ContainsKey(DecodeHintType.ALLOWED_LENGTHS)) then
-  begin
-    allowedLengths := TArrInt(hints[DecodeHintType.ALLOWED_LENGTHS]);
-    maxAllowedLength := 0
-  end;
-  if (allowedLengths = nil) then
-  begin
-    allowedLengths := DEFAULT_ALLOWED_LENGTHS;
-    maxAllowedLength := 14
-  end;
-
-  ilength := Length(aResult);
-  lengthOK := (ilength > 14);
-  if (not lengthOK) then
-  begin
-    for allowedLength in allowedLengths do
-    begin
-      if (ilength = allowedLength) then
-      begin
-        lengthOK := true;
-        break;
-      end;
-      if (allowedLength > maxAllowedLength) then
-      begin
-        maxAllowedLength := allowedLength;
-      end;
-    end;
-    if (not lengthOK and (ilength > maxAllowedLength)) then
-    begin
-      lengthOK := true;
-    end;
-    if (not lengthOK) then
-    begin
-      Exit(nil);
-    end
-  end;
-
-  {
-    resultPointCallback :=  (if ((hints = nil) or not hints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then nil else (hints.Item[DecodeHintType.NEED_RESULT_POINT_CALLBACK] as ResultPointCallback));
-    if (resultPointCallback <> nil) then
-    begin
-    resultPointCallback.Invoke(ResultPoint.Create((startRange[1] as Single), (rowNumber as Single)));
-    resultPointCallback.Invoke(ResultPoint.Create((endRange[0] as Single), (rowNumber as Single)))
-    end;
-    begin
-    Result := Result.Create(resultString, nil, New(array[2] of ResultPoint, ( ( ResultPoint.Create((startRange[1] as Single), (rowNumber as Single)), ResultPoint.Create((endRange[0] as Single), (rowNumber as Single)) ) )), BarcodeFormat.ITF);
-    exit
-    end }
-
-  Result := TReadResult.Create(aResult, nil,
-    // New(array[2] of ResultPoint, ( ( ResultPoint.Create((startRange[1] as Single), (rowNumber as Single)), ResultPoint.Create((endRange[0] as Single), (rowNumber as Single)) ) )),
-    nil, BarcodeFormat.ITF);
-
-end;
-
-function TITFReader.decodeStart(row: TBitArray): TArray<Integer>;
-var
-  endStart: Integer;
-  startPattern: TArray<Integer>;
-begin
-  endStart := skipWhiteSpace(row);
-  if (endStart < 0) then
-  begin
-    Exit(nil);
-  end;
-  startPattern := findGuardPattern(row, endStart, START_PATTERN);
-  if (startPattern = nil) then
-  begin
-    Exit(nil);
-  end;
-
-  narrowLineWidth := TMathUtils.Asr(startPattern[1] - startPattern[0], 2);
-  // narrowLineWidth := ((startPattern[1] - startPattern[0]) shr 2);
-  if (not self.validateQuietZone(row, startPattern[0])) then
-  begin
-    Exit(nil);
-  end;
-
-  Result := startPattern;
-
-end;
-
-function TITFReader.findGuardPattern(row: TBitArray; rowOffset: Integer;
+class function TITFReader.findGuardPattern(row: TBitArray; rowOffset: Integer;
   pattern: TArray<Integer>): TArray<Integer>;
 var
   patternLength: Integer;
@@ -333,66 +340,74 @@ var
   x: Integer;
   l: Integer;
 begin
-  Result := nil;
-
-  patternLength := Length(pattern);
+   patternLength := Length(pattern);
   SetLength(counters, patternLength);
   width := row.Size;
   isWhite := false;
+
   counterPosition := 0;
   patternStart := rowOffset;
   x := rowOffset;
-  while ((x < width)) do
-  begin
-    if (row[x] xor isWhite) then
+
+  try
+
+    while ((x < width)) do
     begin
-      if (Length(counters) > counterPosition) then
-        inc(counters[counterPosition]);
-    end
-    else
-    begin
-      if (counterPosition = (patternLength - 1)) then
+
+      if (row[x] xor isWhite) then
       begin
-        if (TOneDReader.patternMatchVariance(counters, pattern,
-          MAX_INDIVIDUAL_VARIANCE) < MAX_AVG_VARIANCE) then
-        begin
-          Result := [patternStart, x];
-          Exit(Result);
-        end;
-
-        if (Length(counters) > 1) then
-        begin
-          inc(patternStart, (counters[0] + counters[1]));
-        end;
-
-        counters := Copy(counters, 2, (patternLength - 2));
-
-        if (Length(counters) >= patternLength - 2) then
-        begin
-          counters[(patternLength - 2)] := 0;
-          counters[(patternLength - 1)] := 0;
-        end;
-
-        dec(counterPosition);
+        inc(counters[counterPosition]);
       end
       else
       begin
-        inc(counterPosition);
+
+            if (counterPosition = (patternLength - 1)) then
+            begin
+
+              if (PatternMatchVariance(counters, pattern, MAX_INDIVIDUAL_VARIANCE) <
+                MAX_AVG_VARIANCE) then
+              begin
+                Result := [patternStart, x];
+                Exit(Result);
+              end;
+              inc(patternStart, (counters[0] + counters[1]));
+              counters := Copy(counters, 2, (patternLength - 2));
+              counters[(patternLength - 2)] := 0;
+              counters[(patternLength - 1)] := 0;
+              dec(counterPosition);
+
+            end
+            else
+            begin
+              inc(counterPosition);
+            end;
+
+            counters[counterPosition] := 1;
+            isWhite := not isWhite
+
       end;
 
-      if (Length(counters) > counterPosition) then
-      begin
-        counters[counterPosition] := 1;
-      end;
-
-      isWhite := not isWhite
+      inc(x);
     end;
-    inc(x)
+
+  except
+
+    // the original java code is exacly the same but sometimes when a QRCode is scanned
+    // and this decoder is called it can happen that the array access gets out of bounds.
+    // Thats why we eat the exception instead of making the code more complex.
+    on E: Exception do
+    begin
+
+      Result := nil;
+      Exit;
+    end;
   end;
+
+  Result := nil;
 
 end;
 
-function TITFReader.skipWhiteSpace(row: TBitArray): Integer;
+class function TITFReader.skipWhiteSpace(row: TBitArray): Integer;
 var
   width: Integer;
   endStart: Integer;
@@ -440,5 +455,9 @@ begin
   Result := true;
 
 end;
+
+initialization
+
+TITFReader.ClassInit();
 
 end.

@@ -1,4 +1,5 @@
 unit OneDReader;
+
 {
   * Copyright 2008 ZXing authors
   *
@@ -45,6 +46,7 @@ type
     /// <returns>The contents of the decoded barcode</returns>
     function DoDecode(image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+    class procedure ClassInit; static;
   protected
 
     class var INTEGER_MATH_SHIFT: Integer;
@@ -63,7 +65,7 @@ type
     /// the total variance between counters and patterns equals the pattern length, higher values mean
     /// even more variance</returns>
     class function patternMatchVariance(counters, pattern: TArray<Integer>;
-      maxIndividualVariance: Int64): Integer; static;
+      maxIndividualVariance: Integer): Integer; static;
 
     /// <summary>
     /// Records the pattern in reverse.
@@ -74,7 +76,6 @@ type
     /// <returns></returns>
     class function RecordPatternInReverse(row: TBitArray; start: Integer;
       counters: TArray<Integer>): Boolean; Static;
-
 
     /// <summary>
     /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
@@ -121,7 +122,7 @@ type
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       overload; virtual;
 
-        /// <summary>
+    /// <summary>
     /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
     /// The values are recorded in the given array, and the number of runs recorded is equal to the size
     /// of the array. If the row starts on a white pixel at the given start point, then the first count
@@ -133,7 +134,6 @@ type
     /// <param name="counters">array into which to record counts</param>
     class function recordPattern(row: TBitArray; start: Integer;
       counters: TArray<Integer>): Boolean; overload; static;
-
 
     /// <summary>
     /// Attempts to decode a one-dimensional barcode format given a single row of
@@ -149,8 +149,6 @@ type
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       virtual; abstract;
 
-    constructor Create();
-
   end;
 
 implementation
@@ -162,9 +160,8 @@ begin
   Result := Decode(image, nil);
 end;
 
-constructor TOneDReader.Create;
+class procedure TOneDReader.ClassInit();
 begin
-  inherited Create;
   INTEGER_MATH_SHIFT := 8;
   PATTERN_MATCH_RESULT_SCALE_FACTOR := 1 shl INTEGER_MATH_SHIFT;
 end;
@@ -231,7 +228,6 @@ begin
 
 end;
 
-
 function TOneDReader.DoDecode(image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 
@@ -271,11 +267,11 @@ begin
     // 15 rows spaced 1/32 apart is roughly the middle half of the image
   end;
 
-  for x := 0 to maxLines - 1 do
+  for X := 0 to maxLines - 1 do
   begin
     // Scanning from the middle out. Determine which row we're looking at next:
     rowStepsAboveOrBelow := TMathUtils.Asr((X + 1), 1);
-    isAbove := (x and $01) = 0; // i.e. is x even?
+    isAbove := (X and $01) = 0; // i.e. is x even?
 
     if (not isAbove) then
     begin
@@ -330,7 +326,7 @@ begin
       end;
 
       // Look for a barcode
-      ReadResult := decodeRow(rowNumber, row, hints);
+      ReadResult := DecodeRow(rowNumber, row, hints);
       if (ReadResult = nil) then
       begin
         continue;
@@ -340,7 +336,7 @@ begin
       if (attempt = 1) then
       begin
         // But it was upside down, so note that
-//  ReadResult.putMetadata(ResultMetadataType.orientation, TObject(180));
+        // ReadResult.putMetadata(ResultMetadataType.orientation, TObject(180));
         // And remember to flip the result points horizontally.
         points := ReadResult.ResultPoints;
         if (points <> nil) then
@@ -366,7 +362,7 @@ begin
 end;
 
 class function TOneDReader.patternMatchVariance(counters,
-  pattern: TArray<Integer>; maxIndividualVariance: Int64): Integer;
+  pattern: TArray<Integer>; maxIndividualVariance: Integer): Integer;
 
 var
   scaledPattern, variance, counter, totalVariance, X, unitBarWidth, i,
@@ -393,11 +389,11 @@ begin
   // Scale up patternLength so that intermediate values below like scaledCounter will have
   // more "significant digits"
   unitBarWidth := (total shl INTEGER_MATH_SHIFT) div patternLength;
-  maxIndividualVariance := TMathUtils.Asr((maxIndividualVariance * unitBarWidth)
-    ,INTEGER_MATH_SHIFT);
+  maxIndividualVariance :=
+    TMathUtils.Asr((maxIndividualVariance * unitBarWidth), INTEGER_MATH_SHIFT);
 
   totalVariance := 0;
-  for x := 0 to numCounters - 1 do
+  for X := 0 to numCounters - 1 do
   begin
     counter := counters[X] shl INTEGER_MATH_SHIFT;
     scaledPattern := pattern[X] * unitBarWidth;
@@ -514,5 +510,9 @@ procedure TOneDReader.Reset;
 begin
   // do nothing
 end;
+
+initialization
+
+TOneDReader.ClassInit();
 
 end.
