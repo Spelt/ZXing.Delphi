@@ -47,6 +47,7 @@ type
     constructor Create(image: TBitMatrix; startX: Integer; startY: Integer;
       width: Integer; height: Integer; moduleSize: Single;
       resultPointCallback: TResultPointCallback);
+    destructor Destroy();override;
     function find: TAlignmentPattern;
 
   end;
@@ -77,6 +78,16 @@ begin
   SetLength(self.crossCheckStateCount, 3);
   self.resultPointCallback := resultPointCallback
 end;
+
+destructor TAlignmentPatternFinder.Destroy;
+begin
+  self.possibleCenters.Clear;
+  FreeAndNil(self.possibleCenters);
+  self.crossCheckStateCount := nil;
+  self.resultPointCallback :=nil;
+  inherited;
+end;
+
 
 function TAlignmentPatternFinder.crossCheckVertical(startI: Integer;
   centerJ: Integer; maxCount: Integer;

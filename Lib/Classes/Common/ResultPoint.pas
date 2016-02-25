@@ -23,7 +23,7 @@ uses SysUtils, MathUtils;
 
 type
 
-  byteArray = array [0 .. 3] of byte;
+  byteArray = array of byte;
 
   TResultPoint = class
   private
@@ -66,12 +66,16 @@ constructor TResultPoint.Create(pX, pY: single);
 begin
   Fx := pX;
   Fy := pY;
-  bytesX := byteArray(pX);
-  bytesY := byteArray(pY);
+  SetLength(bytesX,4);
+  SetLength(bytesY,4);
+  //bytesX := byteArray(pX);
+  //bytesY := byteArray(pY);
 end;
 
 destructor TResultPoint.Destroy;
 begin
+  bytesX := nil;
+  bytesY := nil;
   inherited;
 end;
 
@@ -103,8 +107,8 @@ begin
     Exit;
   end;
 
-  result := ((otherPoint.x = Fx) and (otherPoint.y = Fy))
-
+  result := ((otherPoint.x = Fx) and (otherPoint.y = Fy));
+  FreeAndNil(otherPoint);
 end;
 
 function TResultPoint.GetHashCode: Integer;

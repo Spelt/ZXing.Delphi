@@ -19,6 +19,8 @@ unit PerspectiveTransform;
 }
 interface
 
+uses SysUtils;
+
 type
 
   TPerspectiveTransform = class sealed
@@ -93,13 +95,19 @@ class function TPerspectiveTransform.quadrilateralToQuadrilateral(x0, y0, x1,
   y1, x2, y2, x3, y3, x0p, y0p, x1p, y1p, x2p, y2p, x3p, y3p: Single)
   : TPerspectiveTransform;
 var
-  qToS: TPerspectiveTransform;
+  qToS, SToQ: TPerspectiveTransform;
 begin
   qToS := TPerspectiveTransform.quadrilateralToSquare(x0, y0, x1, y1, x2,
     y2, x3, y3);
 
-  Result := TPerspectiveTransform.squareToQuadrilateral(x0p, y0p, x1p, y1p, x2p,
-    y2p, x3p, y3p).times(qToS)
+  SToQ:= TPerspectiveTransform.squareToQuadrilateral(x0p, y0p, x1p, y1p, x2p,
+    y2p, x3p, y3p);
+
+  Result := SToQ.times(qToS);
+
+  FreeAndNil(sToQ);
+  FreeAndNil(qToS);
+
 end;
 
 class function TPerspectiveTransform.quadrilateralToSquare(x0: Single;
@@ -131,12 +139,10 @@ begin
   denominator := ((dx1 * dy2) - (dx2 * dy1));
   a13 := (((dx3 * dy2) - (dx2 * dy3)) / denominator);
   a23 := (((dx1 * dy3) - (dx3 * dy1)) / denominator);
-  begin
-    Result := TPerspectiveTransform.Create(((x1 - x0) + (a13 * x1)),
-      ((x3 - x0) + (a23 * x3)), x0, ((y1 - y0) + (a13 * y1)),
-      ((y3 - y0) + (a23 * y3)), y0, a13, a23, 1);
-    exit
-  end
+
+  Result := TPerspectiveTransform.Create(((x1 - x0) + (a13 * x1)),
+    ((x3 - x0) + (a23 * x3)), x0, ((y1 - y0) + (a13 * y1)),
+    ((y3 - y0) + (a23 * y3)), y0, a13, a23, 1);
 end;
 
 function TPerspectiveTransform.times(other: TPerspectiveTransform)

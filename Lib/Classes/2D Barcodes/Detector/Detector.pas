@@ -196,7 +196,6 @@ begin
     bottomRightY, bottomLeft.X, bottomLeft.Y);
 end;
 
-
 function TDetector.detect: TDetectorResult;
 begin
   Result := self.detect(nil)
@@ -339,8 +338,12 @@ begin
 
   transform := TDetector.createTransform(topLeft, topRight, bottomLeft,
     AlignmentPattern, dimension);
-
-  bits := TDetector.sampleGrid(FImage, transform, dimension);
+  try
+    bits := TDetector.sampleGrid(FImage, transform, dimension);
+  finally
+    FreeAndNil(transform);
+    FreeAndNil(AlignmentPattern);
+  end;
 
   if (bits = nil) then
   begin
