@@ -129,8 +129,17 @@ begin
 end;
 
 destructor TFinderPatternFinder.Destroy;
+var
+  finderPattern: TFinderPattern;
 begin
-  FreeAndNil(self.PossibleCenters);
+
+  for finderPattern in PossibleCenters do
+  begin
+    finderPattern.Free;
+  end;
+
+  PossibleCenters.Clear;
+  FreeAndNil(PossibleCenters);
   FCrossCheckStateCount := nil;
   inherited;
 end;
@@ -641,8 +650,6 @@ begin
   end;
 
   result := 0;
-  exit
-
 end;
 
 class function TFinderPatternFinder.foundPatternCross
@@ -692,7 +699,7 @@ var
   found: boolean;
   estimatedModuleSize: Single;
 begin
-
+  center := nil;
   stateCountTotal := ((((stateCount[0] + stateCount[1]) + stateCount[2]) +
     stateCount[3]) + stateCount[4]);
 
@@ -728,6 +735,7 @@ begin
       center := self.PossibleCenters[index];
       if (center.aboutEquals(estimatedModuleSize, centerI, centerJ)) then
       begin
+        self.PossibleCenters[index].Free;
         self.PossibleCenters.Delete(index);
         self.PossibleCenters.Insert(index, center.combineEstimate(centerI,
           centerJ, estimatedModuleSize));
@@ -755,6 +763,8 @@ begin
   end;
 
   result := false;
+
+
 
 end;
 
