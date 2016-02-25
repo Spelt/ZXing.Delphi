@@ -246,116 +246,121 @@ begin
   height := image.height;
   row := TBitArray.Create(width);
 
-  middle := TMathUtils.Asr(height, 1);
-  tryHarder := (hints <> nil) and hints.ContainsKey(DecodeHintType.TRY_HARDER);
+  try
 
-  sr := 5;
-  if (tryHarder) then
-  begin
-    sr := 8;
-  end;
+    middle := TMathUtils.Asr(height, 1);
+    tryHarder := (hints <> nil) and
+      hints.ContainsKey(DecodeHintType.TRY_HARDER);
 
-  rowStep := Max(1, TMathUtils.Asr(height, sr));
-
-  if (tryHarder) then
-  begin
-    maxLines := height; // Look at the whole image, not just the center
-  end
-  else
-  begin
-    maxLines := 15;
-    // 15 rows spaced 1/32 apart is roughly the middle half of the image
-  end;
-
-  for X := 0 to maxLines - 1 do
-  begin
-    // Scanning from the middle out. Determine which row we're looking at next:
-    rowStepsAboveOrBelow := TMathUtils.Asr((X + 1), 1);
-    isAbove := (X and $01) = 0; // i.e. is x even?
-
-    if (not isAbove) then
+    sr := 5;
+    if (tryHarder) then
     begin
-      rowStepsAboveOrBelow := rowStepsAboveOrBelow * -1;
-    end;
-    rowNumber := middle + rowStep * rowStepsAboveOrBelow;
-
-    if ((rowNumber < 0) or (rowNumber >= height)) then
-    begin
-      // Oops, if we run off the top or bottom, stop
-      break;
+      sr := 8;
     end;
 
-    // Estimate black point for this row and load it:
-    row := image.getBlackRow(rowNumber, row);
-    if (row = nil) then
+    rowStep := Max(1, TMathUtils.Asr(height, sr));
+
+    if (tryHarder) then
     begin
-      continue;
+      maxLines := height; // Look at the whole image, not just the center
+    end
+    else
+    begin
+      maxLines := 15;
+      // 15 rows spaced 1/32 apart is roughly the middle half of the image
     end;
 
-    // While we have the image data in a BitArray, it's fairly cheap to reverse it in place to
-    // handle decoding upside down barcodes.
-    // for attempt := 0 to (attempt < 2) do
-    for attempt := 0 to 1 do
+    for X := 0 to maxLines - 1 do
     begin
+      // Scanning from the middle out. Determine which row we're looking at next:
+      rowStepsAboveOrBelow := TMathUtils.Asr((X + 1), 1);
+      isAbove := (X and $01) = 0; // i.e. is x even?
 
-      if (attempt = 1) then
+      if (not isAbove) then
       begin
-        // trying again?
-        row.Reverse();
-        // row.reverse(); // reverse the row and continue
-        // This means we will only ever draw result points *once* in the life of this method
-        // since we want to avoid drawing the wrong points after flipping the row, and,
-        // don't want to clutter with noise from every single row scan -- just the scans
-        // that start on the center line.
-        if ((hints <> nil) and hints.ContainsKey
-          (DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then
-        begin
-          newHints := TDictionary<TDecodeHintType, TObject>.Create;
-          for Key in hints.Keys do
-          begin
+        rowStepsAboveOrBelow := rowStepsAboveOrBelow * -1;
+      end;
+      rowNumber := middle + rowStep * rowStepsAboveOrBelow;
 
-            if (Key <> DecodeHintType.NEED_RESULT_POINT_CALLBACK) then
-            begin
-              newHints.Add(Key, hints[Key]);
-            end;
-
-          end;
-          hints := newHints;
-
-        end;
+      if ((rowNumber < 0) or (rowNumber >= height)) then
+      begin
+        // Oops, if we run off the top or bottom, stop
+        break;
       end;
 
-      // Look for a barcode
-      ReadResult := DecodeRow(rowNumber, row, hints);
-      if (ReadResult = nil) then
+      // Estimate black point for this row and load it:
+      row := image.getBlackRow(rowNumber, row);
+      if (row = nil) then
       begin
         continue;
       end;
 
-      // We found our barcode
-      if (attempt = 1) then
+      // While we have the image data in a BitArray, it's fairly cheap to reverse it in place to
+      // handle decoding upside down barcodes.
+      // for attempt := 0 to (attempt < 2) do
+      for attempt := 0 to 1 do
       begin
-        // But it was upside down, so note that
-        // ReadResult.putMetadata(ResultMetadataType.orientation, TObject(180));
-        // And remember to flip the result points horizontally.
-        points := ReadResult.ResultPoints;
-        if (points <> nil) then
+
+        if (attempt = 1) then
         begin
-          points[0] := TResultPoint.Create(width - points[0].X - 1,
-            points[0].Y);
-          points[1] := TResultPoint.Create(width - points[1].X - 1,
-            points[1].Y);
+          // trying again?
+          row.Reverse();
+          // row.reverse(); // reverse the row and continue
+          // This means we will only ever draw result points *once* in the life of this method
+          // since we want to avoid drawing the wrong points after flipping the row, and,
+          // don't want to clutter with noise from every single row scan -- just the scans
+          // that start on the center line.
+          if ((hints <> nil) and
+            hints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then
+          begin
+            newHints := TDictionary<TDecodeHintType, TObject>.Create;
+            for Key in hints.Keys do
+            begin
+
+              if (Key <> DecodeHintType.NEED_RESULT_POINT_CALLBACK) then
+              begin
+                newHints.Add(Key, hints[Key]);
+              end;
+
+            end;
+            hints := newHints;
+
+          end;
         end;
 
-      end;
+        // Look for a barcode
+        ReadResult := DecodeRow(rowNumber, row, hints);
+        if (ReadResult = nil) then
+        begin
+          continue;
+        end;
 
-      Result := ReadResult;
-      Exit;
+        // We found our barcode
+        if (attempt = 1) then
+        begin
+          // But it was upside down, so note that
+          // ReadResult.putMetadata(ResultMetadataType.orientation, TObject(180));
+          // And remember to flip the result points horizontally.
+          points := ReadResult.ResultPoints;
+          if (points <> nil) then
+          begin
+            points[0] := TResultPoint.Create(width - points[0].X - 1,
+              points[0].Y);
+            points[1] := TResultPoint.Create(width - points[1].X - 1,
+              points[1].Y);
+          end;
 
-      // inc(attempt);
+        end;
 
-    end; // attempt loop
+        Result := ReadResult;
+        Exit;
 
+      end; // attempt loop
+
+    end;
+
+  finally
+    FreeAndNil(row);
   end;
 
   Result := nil;

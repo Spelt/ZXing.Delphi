@@ -31,6 +31,7 @@ type
     procedure unmaskBitMatrix(bits: TBitMatrix; dimension: Integer);
     function isMasked(i: Integer; j: Integer): boolean; virtual; abstract;
     constructor Create;
+    class procedure CleanStatics(); static;
   end;
 
   TDataMask000 = class(TDataMask)
@@ -76,6 +77,20 @@ type
 implementation
 
 { TDataMask }
+
+class procedure TDataMask.CleanStatics;
+var
+  dam: TDataMask;
+begin
+
+  for dam in TDataMask.DATA_MASKS do
+  begin
+    dam.Free;
+  end;
+
+  TDataMask.DATA_MASKS:=nil;
+
+end;
 
 constructor TDataMask.Create;
 begin
@@ -175,5 +190,9 @@ TDataMask.DATA_MASKS := TArray<TDataMask>.Create(TDataMask000.Create,
   TDataMask001.Create, TDataMask010.Create, TDataMask011.Create,
   TDataMask100.Create, TDataMask101.Create, TDataMask110.Create,
   TDataMask111.Create);
+
+finalization
+
+TDataMask.CleanStatics();
 
 end.

@@ -58,6 +58,8 @@ type
     // constructor Create(image: TBitMatrix); overload;
     constructor Create(image: TBitMatrix;
       resultPointCallback: TresultPointCallback);
+    destructor Destroy(); override;
+
     function find(hints: TDictionary<TDecodeHintType, TObject>)
       : TFinderPatternInfo; virtual;
 
@@ -126,6 +128,13 @@ begin
   self.resultPointCallback := resultPointCallback;
 end;
 
+destructor TFinderPatternFinder.Destroy;
+begin
+  FreeAndNil(self.PossibleCenters);
+  FCrossCheckStateCount := nil;
+  inherited;
+end;
+
 function TFinderPatternFinder.crossCheckDiagonal(startI, centerJ, maxCount,
   originalStateCountTotal: Integer): boolean;
 var
@@ -133,86 +142,94 @@ var
   i, maxI, maxJ, stateCountTotal: Integer;
 begin
   stateCount := CrossCheckStateCount;
-  i := 0;
-  while ((((startI >= i) and (centerJ >= i)) and self.image[(centerJ - i),
-    (startI - i)])) do
-  begin
-    inc(stateCount[2]);
-    inc(i)
-  end;
-  if ((startI < i) or (centerJ < i)) then
-  begin
-    result := false;
-    exit
-  end;
-  while (((((startI >= i) and (centerJ >= i)) and not self.image[(centerJ - i),
-    (startI - i)]) and (stateCount[1] <= maxCount))) do
-  begin
-    inc(stateCount[1]);
-    inc(i)
-  end;
-  if (((startI < i) or (centerJ < i)) or (stateCount[1] > maxCount)) then
-  begin
-    result := false;
-    exit
-  end;
-  while (((((startI >= i) and (centerJ >= i)) and self.image[(centerJ - i),
-    (startI - i)]) and (stateCount[0] <= maxCount))) do
-  begin
-    inc(stateCount[0]);
-    inc(i)
-  end;
-  if (stateCount[0] > maxCount) then
-  begin
-    result := false;
-    exit
-  end;
-  maxI := self.image.Height;
-  maxJ := self.image.Width;
-  i := 1;
-  while (((((startI + i) < maxI) and ((centerJ + i) < maxJ)) and
-    self.image[(centerJ + i), (startI + i)])) do
-  begin
-    inc(stateCount[2]);
-    inc(i)
-  end;
-  if (((startI + i) >= maxI) or ((centerJ + i) >= maxJ)) then
-  begin
-    result := false;
-    exit
-  end;
-  while ((((((startI + i) < maxI) and ((centerJ + i) < maxJ)) and
-    not self.image[(centerJ + i), (startI + i)]) and
-    (stateCount[3] < maxCount))) do
-  begin
-    inc(stateCount[3]);
-    inc(i)
-  end;
-  if ((((startI + i) >= maxI) or ((centerJ + i) >= maxJ)) or
-    (stateCount[3] >= maxCount)) then
-  begin
-    result := false;
-    exit
-  end;
-  while ((((((startI + i) < maxI) and ((centerJ + i) < maxJ)) and
-    self.image[(centerJ + i), (startI + i)]) and (stateCount[4] < maxCount))) do
-  begin
-    inc(stateCount[4]);
-    inc(i)
-  end;
-  if (stateCount[4] >= maxCount) then
-  begin
-    result := false;
-    exit
-  end;
+  try
 
-  stateCountTotal := ((((stateCount[0] + stateCount[1]) + stateCount[2]) +
-    stateCount[3]) + stateCount[4]);
+    i := 0;
+    while ((((startI >= i) and (centerJ >= i)) and self.image[(centerJ - i),
+      (startI - i)])) do
+    begin
+      inc(stateCount[2]);
+      inc(i)
+    end;
+    if ((startI < i) or (centerJ < i)) then
+    begin
+      result := false;
+      exit
+    end;
+    while (((((startI >= i) and (centerJ >= i)) and
+      not self.image[(centerJ - i), (startI - i)]) and
+      (stateCount[1] <= maxCount))) do
+    begin
+      inc(stateCount[1]);
+      inc(i)
+    end;
+    if (((startI < i) or (centerJ < i)) or (stateCount[1] > maxCount)) then
+    begin
+      result := false;
+      exit
+    end;
+    while (((((startI >= i) and (centerJ >= i)) and self.image[(centerJ - i),
+      (startI - i)]) and (stateCount[0] <= maxCount))) do
+    begin
+      inc(stateCount[0]);
+      inc(i)
+    end;
+    if (stateCount[0] > maxCount) then
+    begin
+      result := false;
+      exit
+    end;
+    maxI := self.image.Height;
+    maxJ := self.image.Width;
+    i := 1;
+    while (((((startI + i) < maxI) and ((centerJ + i) < maxJ)) and
+      self.image[(centerJ + i), (startI + i)])) do
+    begin
+      inc(stateCount[2]);
+      inc(i)
+    end;
+    if (((startI + i) >= maxI) or ((centerJ + i) >= maxJ)) then
+    begin
+      result := false;
+      exit
+    end;
+    while ((((((startI + i) < maxI) and ((centerJ + i) < maxJ)) and
+      not self.image[(centerJ + i), (startI + i)]) and
+      (stateCount[3] < maxCount))) do
+    begin
+      inc(stateCount[3]);
+      inc(i)
+    end;
+    if ((((startI + i) >= maxI) or ((centerJ + i) >= maxJ)) or
+      (stateCount[3] >= maxCount)) then
+    begin
+      result := false;
+      exit
+    end;
+    while ((((((startI + i) < maxI) and ((centerJ + i) < maxJ)) and
+      self.image[(centerJ + i), (startI + i)]) and
+      (stateCount[4] < maxCount))) do
+    begin
+      inc(stateCount[4]);
+      inc(i)
+    end;
+    if (stateCount[4] >= maxCount) then
+    begin
+      result := false;
+      exit
+    end;
 
-  result := (Abs(stateCountTotal - originalStateCountTotal) <
-    (2 * originalStateCountTotal)) and TFinderPatternFinder.foundPatternCross
-    (stateCount);
+    stateCountTotal :=
+      ((((stateCount[0] + stateCount[1]) + stateCount[2]) + stateCount[3]) +
+      stateCount[4]);
 
+    result := (Abs(stateCountTotal - originalStateCountTotal) <
+      (2 * originalStateCountTotal)) and TFinderPatternFinder.foundPatternCross
+      (stateCount);
+
+  finally
+    stateCount := nil;
+  end;
 end;
 
 function TFinderPatternFinder.crossCheckHorizontal(startJ: Integer;
@@ -226,96 +243,105 @@ begin
   maxJ := FImage.Width;
   stateCount := CrossCheckStateCount;
 
-  j := startJ;
-  while (((j >= 0) and FImage[j, centerI])) do
-  begin
-    inc(stateCount[2]);
-    dec(j)
-  end;
+  try
 
-  if (j < 0) then
-  begin
-    result := -1;
-    exit
-  end;
+    j := startJ;
+    while (((j >= 0) and FImage[j, centerI])) do
+    begin
+      inc(stateCount[2]);
+      dec(j)
+    end;
 
-  while ((((j >= 0) and not FImage[j, centerI]) and
-    (stateCount[1] <= maxCount))) do
-  begin
-    inc(stateCount[1]);
-    dec(j)
-  end;
+    if (j < 0) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if ((j < 0) or (stateCount[1] > maxCount)) then
-  begin
-    result := -1;
-    exit
-  end;
+    while ((((j >= 0) and not FImage[j, centerI]) and
+      (stateCount[1] <= maxCount))) do
+    begin
+      inc(stateCount[1]);
+      dec(j)
+    end;
 
-  while ((((j >= 0) and FImage[j, centerI]) and (stateCount[0] <= maxCount))) do
-  begin
-    inc(stateCount[0]);
-    dec(j)
-  end;
+    if ((j < 0) or (stateCount[1] > maxCount)) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if (stateCount[0] > maxCount) then
-  begin
-    result := -1;
-    exit
-  end;
-  j := (startJ + 1);
+    while ((((j >= 0) and FImage[j, centerI]) and
+      (stateCount[0] <= maxCount))) do
+    begin
+      inc(stateCount[0]);
+      dec(j)
+    end;
 
-  while (((j < maxJ) and FImage[j, centerI])) do
-  begin
-    inc(stateCount[2]);
-    inc(j)
-  end;
+    if (stateCount[0] > maxCount) then
+    begin
+      result := -1;
+      exit
+    end;
+    j := (startJ + 1);
 
-  if (j = maxJ) then
-  begin
-    result := -1;
-    exit
-  end;
+    while (((j < maxJ) and FImage[j, centerI])) do
+    begin
+      inc(stateCount[2]);
+      inc(j)
+    end;
 
-  while ((((j < maxJ) and not FImage[j, centerI]) and
-    (stateCount[3] < maxCount))) do
-  begin
-    inc(stateCount[3]);
-    inc(j)
-  end;
+    if (j = maxJ) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if ((j = maxJ) or (stateCount[3] >= maxCount)) then
-  begin
-    result := -1;
-    exit
-  end;
+    while ((((j < maxJ) and not FImage[j, centerI]) and
+      (stateCount[3] < maxCount))) do
+    begin
+      inc(stateCount[3]);
+      inc(j)
+    end;
 
-  while (((j < maxJ) and FImage[j, centerI]) and (stateCount[4] < maxCount)) do
-  begin
-    inc(stateCount[4]);
-    inc(j)
-  end;
+    if ((j = maxJ) or (stateCount[3] >= maxCount)) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if (stateCount[4] >= maxCount) then
-  begin
-    result := -1;
-    exit
-  end;
+    while (((j < maxJ) and FImage[j, centerI]) and
+      (stateCount[4] < maxCount)) do
+    begin
+      inc(stateCount[4]);
+      inc(j)
+    end;
 
-  stateCountTotal := ((((stateCount[0] + stateCount[1]) + stateCount[2]) +
-    stateCount[3]) + stateCount[4]);
+    if (stateCount[4] >= maxCount) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if (5 * Abs(stateCountTotal - originalStateCountTotal) >=
-    originalStateCountTotal) then
-  begin
-    result := -1;
-    exit
-  end;
+    stateCountTotal :=
+      ((((stateCount[0] + stateCount[1]) + stateCount[2]) + stateCount[3]) +
+      stateCount[4]);
 
-  if TFinderPatternFinder.foundPatternCross(stateCount) then
-  begin
-    result := TFinderPatternFinder.centerFromEnd(stateCount, j);
-    exit;
+    if (5 * Abs(stateCountTotal - originalStateCountTotal) >=
+      originalStateCountTotal) then
+    begin
+      result := -1;
+      exit
+    end;
+
+    if TFinderPatternFinder.foundPatternCross(stateCount) then
+    begin
+      result := TFinderPatternFinder.centerFromEnd(stateCount, j);
+      exit;
+    end;
+
+  finally
+    stateCount := nil;
   end;
 
   result := -1;
@@ -343,97 +369,103 @@ begin
   maxI := FImage.Height;
   stateCount := CrossCheckStateCount;
   i := startI;
+  try
+    while (((i >= 0) and FImage[centerJ, i])) do
+    begin
+      inc(stateCount[2]);
+      dec(i)
+    end;
 
-  while (((i >= 0) and FImage[centerJ, i])) do
-  begin
-    inc(stateCount[2]);
-    dec(i)
-  end;
+    if (i < 0) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if (i < 0) then
-  begin
-    result := -1;
-    exit
-  end;
+    while ((((i >= 0) and not FImage[centerJ, i]) and
+      (stateCount[1] <= maxCount))) do
+    begin
+      inc(stateCount[1]);
+      dec(i)
+    end;
 
-  while ((((i >= 0) and not FImage[centerJ, i]) and
-    (stateCount[1] <= maxCount))) do
-  begin
-    inc(stateCount[1]);
-    dec(i)
-  end;
+    if ((i < 0) or (stateCount[1] > maxCount)) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if ((i < 0) or (stateCount[1] > maxCount)) then
-  begin
-    result := -1;
-    exit
-  end;
+    while ((((i >= 0) and FImage[centerJ, i]) and
+      (stateCount[0] <= maxCount))) do
+    begin
+      inc(stateCount[0]);
+      dec(i)
+    end;
 
-  while ((((i >= 0) and FImage[centerJ, i]) and (stateCount[0] <= maxCount))) do
-  begin
-    inc(stateCount[0]);
-    dec(i)
-  end;
+    if (stateCount[0] > maxCount) then
+    begin
+      result := -1;
+      exit
+    end;
+    i := (startI + 1);
 
-  if (stateCount[0] > maxCount) then
-  begin
-    result := -1;
-    exit
-  end;
-  i := (startI + 1);
+    while (((i < maxI) and FImage[centerJ, i])) do
+    begin
+      inc(stateCount[2]);
+      inc(i)
+    end;
 
-  while (((i < maxI) and FImage[centerJ, i])) do
-  begin
-    inc(stateCount[2]);
-    inc(i)
-  end;
+    if (i = maxI) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if (i = maxI) then
-  begin
-    result := -1;
-    exit
-  end;
+    while ((((i < maxI) and not FImage[centerJ, i]) and
+      (stateCount[3] < maxCount))) do
+    begin
+      inc(stateCount[3]);
+      inc(i)
+    end;
 
-  while ((((i < maxI) and not FImage[centerJ, i]) and
-    (stateCount[3] < maxCount))) do
-  begin
-    inc(stateCount[3]);
-    inc(i)
-  end;
+    if ((i = maxI) or (stateCount[3] >= maxCount)) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if ((i = maxI) or (stateCount[3] >= maxCount)) then
-  begin
-    result := -1;
-    exit
-  end;
+    while ((((i < maxI) and FImage[centerJ, i]) and
+      (stateCount[4] < maxCount))) do
+    begin
+      inc(stateCount[4]);
+      inc(i)
+    end;
 
-  while ((((i < maxI) and FImage[centerJ, i]) and
-    (stateCount[4] < maxCount))) do
-  begin
-    inc(stateCount[4]);
-    inc(i)
-  end;
+    if (stateCount[4] >= maxCount) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if (stateCount[4] >= maxCount) then
-  begin
-    result := -1;
-    exit
-  end;
+    stateCountTotal :=
+      ((((stateCount[0] + stateCount[1]) + stateCount[2]) + stateCount[3]) +
+      stateCount[4]);
 
-  stateCountTotal := ((((stateCount[0] + stateCount[1]) + stateCount[2]) +
-    stateCount[3]) + stateCount[4]);
+    if ((5 * Abs(stateCountTotal - originalStateCountTotal)) >=
+      (2 * originalStateCountTotal)) then
+    begin
+      result := -1;
+      exit
+    end;
 
-  if ((5 * Abs(stateCountTotal - originalStateCountTotal)) >=
-    (2 * originalStateCountTotal)) then
-  begin
-    result := -1;
-    exit
-  end;
+    if TFinderPatternFinder.foundPatternCross(stateCount) then
+    begin
+      result := TFinderPatternFinder.centerFromEnd(stateCount, i);
+      exit;
+    end;
 
-  if TFinderPatternFinder.foundPatternCross(stateCount) then
-  begin
-    result := TFinderPatternFinder.centerFromEnd(stateCount, i);
-    exit;
+  finally
+    stateCount := nil;
   end;
 
   result := -1;
@@ -460,6 +492,7 @@ begin
     iSkip := 3;
   done := false;
   stateCount := TArray<Integer>.Create();
+
   SetLength(stateCount, 5);
   i := (iSkip - 1);
   while (((i < maxI) and not done)) do
@@ -714,7 +747,7 @@ begin
 
   end;
 
-  Result:=false;
+  result := false;
 
 end;
 

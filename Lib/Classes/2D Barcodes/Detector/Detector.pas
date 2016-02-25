@@ -214,7 +214,11 @@ begin
   end;
 
   finder := TFinderPatternFinder.Create(FImage, ResultPointCallback);
-  info := finder.find(hints);
+  try
+    info := finder.find(hints);
+  finally
+    FreeAndNil(finder);
+  end;
 
   if (info = nil) then
   begin
@@ -223,6 +227,7 @@ begin
   end;
 
   Result := self.processFinderPatternInfo(info);
+  FreeAndNil(info);
 end;
 
 function TDetector.findAlignmentInRegion(overallEstModuleSize: Single;
@@ -291,32 +296,39 @@ begin
   end;
 
   provisionalVersion := TVersion.GetProvisionalVersionForDimension(dimension);
-  if (provisionalVersion = nil) then
-  begin
-    Result := nil;
-    exit
-  end;
+  try
 
-  modulesBetweenFPCenters := (provisionalVersion.DimensionForVersion - 7);
-  AlignmentPattern := nil;
-  if (Length(provisionalVersion.AlignmentPatternCenters) > 0) then
-  begin
-    bottomRightX := ((topRight.X - topLeft.X) + bottomLeft.X);
-    bottomRightY := ((topRight.Y - topLeft.Y) + bottomLeft.Y);
-    correctionToTopLeft := (1 - (3 / modulesBetweenFPCenters));
-    estAlignmentX :=
-      Floor(topLeft.X + (correctionToTopLeft * (bottomRightX - topLeft.X)));
-    estAlignmentY :=
-      Floor(topLeft.Y + (correctionToTopLeft * (bottomRightY - topLeft.Y)));
-    i := 4;
-    while ((i <= $10)) do
+    if (provisionalVersion = nil) then
     begin
-      AlignmentPattern := self.findAlignmentInRegion(moduleSize, estAlignmentX,
-        estAlignmentY, i);
-      if (AlignmentPattern <> nil) then
-        break;;
-      i := (i shl 1)
-    end
+      Result := nil;
+      exit
+    end;
+
+    modulesBetweenFPCenters := (provisionalVersion.DimensionForVersion - 7);
+    AlignmentPattern := nil;
+    if (Length(provisionalVersion.AlignmentPatternCenters) > 0) then
+    begin
+      bottomRightX := ((topRight.X - topLeft.X) + bottomLeft.X);
+      bottomRightY := ((topRight.Y - topLeft.Y) + bottomLeft.Y);
+      correctionToTopLeft := (1 - (3 / modulesBetweenFPCenters));
+      estAlignmentX :=
+        Floor(topLeft.X + (correctionToTopLeft * (bottomRightX - topLeft.X)));
+      estAlignmentY :=
+        Floor(topLeft.Y + (correctionToTopLeft * (bottomRightY - topLeft.Y)));
+      i := 4;
+      while ((i <= $10)) do
+      begin
+        AlignmentPattern := self.findAlignmentInRegion(moduleSize,
+          estAlignmentX, estAlignmentY, i);
+        if (AlignmentPattern <> nil) then
+          break;;
+        i := (i shl 1)
+      end
+    end;
+
+  finally
+
+    FreeAndNil(provisionalVersion);
   end;
 
   transform := TDetector.createTransform(topLeft, topRight, bottomLeft,

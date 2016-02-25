@@ -54,6 +54,7 @@ type
     function DecodeRow(rowNumber: Integer; row: TBitArray;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
     constructor Create;
+    destructor Destroy(); override;
 
   end;
 
@@ -75,6 +76,15 @@ begin
   counters := TArray<Integer>.Create();
   SetLength(counters, 6);
   decodeRowResult := TStringBuilder.Create();
+end;
+
+destructor TCode93Reader.Destroy;
+begin
+  ALPHABET := nil;
+  CHARACTER_ENCODINGS := nil;
+  counters := nil;
+  FreeAndNil(decodeRowResult);
+  inherited;
 end;
 
 class function TCode93Reader.checkChecksums(pResult: TStringBuilder): boolean;
@@ -143,95 +153,100 @@ label Label_0179, Label_0169, Label_014A;
 begin
   length := encoded.length;
   decoded := TStringBuilder.Create(length);
-  i := 0;
-  next := char(0);
-  decodedChar := char(0);
+  try
+    i := 0;
+    next := Char(0);
+    decodedChar := Char(0);
 
-  while ((i < length)) do
-  begin
-
-    c := encoded.Chars[i];
-
-    if ((c < 'a') or (c > 'd')) then
-      goto Label_0179;
-
-    if (i < (length - 1)) then
+    while ((i < length)) do
     begin
 
-      next := encoded.Chars[(i + 1)];
-      decodedChar := #0;
+      c := encoded.Chars[i];
 
-      case c of
-        'a':
-          begin
-            if ((next < 'A') or (next > 'Z')) then
-            begin
-              Result := '';
-              exit
-            end;
-            decodedChar := Char(ord(next) - ord('@'));
-            goto Label_0169
-          end;
-        'b':
-          begin
-            if ((next < 'A') or (next > 'E')) then
-              break;;
-            decodedChar := Char(ord(next) - ord('&'));
-            goto Label_0169
-          end;
-        'c':
-          begin
-            if ((next < 'A') or (next > 'O')) then
-              goto Label_014A;
-            decodedChar := Char(ord(next) - ord(' '));
-            goto Label_0169
-          end;
-        'd':
-          begin
-            if ((next < 'A') or (next > 'Z')) then
-            begin
-              Result := '';
-              exit
-            end;
-            decodedChar := Char(ord(next) + ord(' '));
-            goto Label_0169
-          end;
-      else
-        begin
-          goto Label_0169
-        end;
-      end;
-      if ((next >= 'F') and (next <= 'W')) then
+      if ((c < 'a') or (c > 'd')) then
+        goto Label_0179;
+
+      if (i < (length - 1)) then
       begin
-        decodedChar := Char(ord(next) - ord(''));
-        goto Label_0169
-      end
-    end;
-    begin
-      Result := '';
-      exit
+
+        next := encoded.Chars[(i + 1)];
+        decodedChar := #0;
+
+        case c of
+          'a':
+            begin
+              if ((next < 'A') or (next > 'Z')) then
+              begin
+                Result := '';
+                exit
+              end;
+              decodedChar := Char(ord(next) - ord('@'));
+              goto Label_0169
+            end;
+          'b':
+            begin
+              if ((next < 'A') or (next > 'E')) then
+                break;;
+              decodedChar := Char(ord(next) - ord('&'));
+              goto Label_0169
+            end;
+          'c':
+            begin
+              if ((next < 'A') or (next > 'O')) then
+                goto Label_014A;
+              decodedChar := Char(ord(next) - ord(' '));
+              goto Label_0169
+            end;
+          'd':
+            begin
+              if ((next < 'A') or (next > 'Z')) then
+              begin
+                Result := '';
+                exit
+              end;
+              decodedChar := Char(ord(next) + ord(' '));
+              goto Label_0169
+            end;
+        else
+          begin
+            goto Label_0169
+          end;
+        end;
+        if ((next >= 'F') and (next <= 'W')) then
+        begin
+          decodedChar := Char(ord(next) - ord(''));
+          goto Label_0169
+        end
+      end;
+      begin
+        Result := '';
+        exit
+      end;
+
+    Label_014A:
+      if (next = 'Z') then
+        decodedChar := ':'
+      else
+      begin
+        Result := '';
+        exit
+      end;
+
+    Label_0169:
+      decoded.Append(decodedChar);
+      inc(i);
+      continue;
+
+    Label_0179:
+      decoded.Append(c);
+      inc(i)
     end;
 
-  Label_014A:
-    if (next = 'Z') then
-      decodedChar := ':'
-    else
-    begin
-      Result := '';
-      exit
-    end;
+    Result := decoded.ToString;
 
-  Label_0169:
-    decoded.Append(decodedChar);
-    inc(i);
-    continue;
-
-  Label_0179:
-    decoded.Append(c);
-    inc(i)
+  finally
+    FreeAndNil(decoded);
   end;
-
-  Result := decoded.ToString;
 
 end;
 

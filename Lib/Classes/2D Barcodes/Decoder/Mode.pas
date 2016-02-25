@@ -26,9 +26,10 @@ type
   TMode = class
   private
     characterCountBitsForVersions: TArray<Integer>;
-    constructor Create(characterCountBitsForVersions: TArray<Integer>;
-      bits: Integer; name: string); overload;
-    class procedure ClassInit;
+
+    class procedure ClassInit; static;
+    class procedure ClassFinalizing; static;
+
   public
     name: string;
     bits: Integer;
@@ -48,6 +49,9 @@ type
     function getCharacterCountBits(Version: TVersion): Integer;
     function ToString: string; override;
 
+    constructor Create(characterCountBitsForVersions: TArray<Integer>;
+      bits: Integer; const name: string); overload;
+
   end;
 
 implementation
@@ -55,17 +59,15 @@ implementation
 { TMode }
 
 class procedure TMode.ClassInit;
-var
-  CS: TArray<Integer>;
 begin
-  CS := TArray<Integer>.Create(0, 0, 0);
-  TMode.TERMINATOR := TMode.Create(CS, 0, 'TERMINATOR');
+
+  TMode.TERMINATOR := TMode.Create(TArray<Integer>.Create(0, 0, 0), 0, 'TERMINATOR');
   TMode.NUMERIC := TMode.Create(TArray<Integer>.Create(10, 12, 14), 1,
     'NUMERIC');
   TMode.ALPHANUMERIC := TMode.Create(TArray<Integer>.Create(9, 11, 13), 2,
     'ALPHANUMERIC');
-  CS := TArray<Integer>.Create(0, 0, 0);
-  TMode.STRUCTURED_APPEND := TMode.Create(CS, 3, 'STRUCTURED_APPEND');
+  TMode.STRUCTURED_APPEND := TMode.Create(TArray<Integer>.Create(0, 0, 0), 3,
+    'STRUCTURED_APPEND');
   TMode.BYTE := TMode.Create(TArray<Integer>.Create(8, $10, $10), 4, 'BYTE');
   TMode.ECI := TMode.Create(nil, 7, 'ECI');
   TMode.KANJI := TMode.Create(TArray<Integer>.Create(8, 10, 12), 8, 'KANJI');
@@ -74,8 +76,45 @@ begin
   TMode.HANZI := TMode.Create(TArray<Integer>.Create(8, 10, 12), 13, 'HANZI')
 end;
 
+class procedure TMode.ClassFinalizing;
+begin
+  TMode.TERMINATOR.characterCountBitsForVersions := nil;
+  TMode.NUMERIC.characterCountBitsForVersions := nil;
+  TMode.ALPHANUMERIC.characterCountBitsForVersions := nil;
+  TMode.STRUCTURED_APPEND.characterCountBitsForVersions := nil;
+  TMode.BYTE.characterCountBitsForVersions := nil;
+  TMode.ECI.characterCountBitsForVersions := nil;
+  TMode.KANJI.characterCountBitsForVersions := nil;
+  TMode.FNC1_FIRST_POSITION.characterCountBitsForVersions := nil;
+  TMode.FNC1_SECOND_POSITION.characterCountBitsForVersions := nil;
+  TMode.HANZI.characterCountBitsForVersions := nil;
+
+  // SetLength(TMode.TERMINATOR.name, 0);
+  // SetLength(TMode.NUMERIC.name, 0);
+  // SetLength(TMode.ALPHANUMERIC.name, 0);
+  // SetLength(TMode.STRUCTURED_APPEND.name, 0);
+  // SetLength(TMode.BYTE.name, 0);
+  // SetLength(TMode.ECI.name, 0);
+  // SetLength(TMode.KANJI.name, 0);
+  // SetLength(TMode.FNC1_FIRST_POSITION.name, 0);
+  // SetLength(TMode.FNC1_SECOND_POSITION.name, 0);
+  // SetLength(TMode.HANZI.name, 0);
+
+  FreeAndNil(TMode.TERMINATOR);
+  FreeAndNil(TMode.NUMERIC);
+  FreeAndNil(TMode.ALPHANUMERIC);
+  FreeAndNil(TMode.STRUCTURED_APPEND);
+  FreeAndNil(TMode.BYTE);
+  FreeAndNil(TMode.ECI);
+  FreeAndNil(TMode.KANJI);
+  FreeAndNil(TMode.FNC1_FIRST_POSITION);
+  FreeAndNil(TMode.FNC1_SECOND_POSITION);
+  FreeAndNil(TMode.HANZI);
+
+end;
+
 constructor TMode.Create(characterCountBitsForVersions: TArray<Integer>;
-  bits: Integer; name: string);
+  bits: Integer; const name: string);
 begin
   self.characterCountBitsForVersions := characterCountBitsForVersions;
   self.bits := bits;
@@ -187,6 +226,10 @@ end;
 
 Initialization
 
-TMode.ClassInit;
+TMode.ClassInit();
+
+Finalization
+
+TMode.ClassFinalizing();
 
 end.

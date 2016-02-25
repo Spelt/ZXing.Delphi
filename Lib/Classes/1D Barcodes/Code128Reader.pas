@@ -281,408 +281,414 @@ begin
   startCode := startPatternInfo[2];
 
   rawCodes := TList<Byte>.Create();
-  rawCodes.Add(Byte(startCode));
 
-  case startCode of
-    CODE_START_A:
-      begin
-        codeSet := CODE_CODE_A;
-      end;
-    CODE_START_B:
-      begin
-        codeSet := CODE_CODE_B;
-      end;
-    CODE_START_C:
-      begin
-        codeSet := CODE_CODE_C;
-      end
-  else
-    result := nil;
-    exit;
+  try
 
-  end;
+    rawCodes.Add(Byte(startCode));
 
-  done := false;
-  isNextShifted := false;
-  lastStart := startPatternInfo[0];
-  nextStart := startPatternInfo[1];
-  SetLength(counters, 6);
-  lastCode := 0;
-  code := 0;
-  checksumTotal := startCode;
-  multiplier := 0;
-  lastCharacterWasPrintable := true;
-  upperMode := false;
-  shiftUpperMode := false;
+    case startCode of
+      CODE_START_A:
+        begin
+          codeSet := CODE_CODE_A;
+        end;
+      CODE_START_B:
+        begin
+          codeSet := CODE_CODE_B;
+        end;
+      CODE_START_C:
+        begin
+          codeSet := CODE_CODE_C;
+        end
+    else
+      result := nil;
+      exit;
+    end;
 
-  while not done do
-  begin
-
-    unshift := isNextShifted;
+    done := false;
     isNextShifted := false;
+    lastStart := startPatternInfo[0];
+    nextStart := startPatternInfo[1];
+    SetLength(counters, 6);
+    lastCode := 0;
+    code := 0;
+    checksumTotal := startCode;
+    multiplier := 0;
+    lastCharacterWasPrintable := true;
+    upperMode := false;
+    shiftUpperMode := false;
 
-    // Save off last code
-    lastCode := code;
+    while not done do
+    begin
 
-    // Decode another code from image
-    if not DecodeCode(row, counters, nextStart, code) then
+      unshift := isNextShifted;
+      isNextShifted := false;
+
+      // Save off last code
+      lastCode := code;
+
+      // Decode another code from image
+      if not DecodeCode(row, counters, nextStart, code) then
+      begin
+        result := nil;
+        exit;
+      end;
+
+      rawCodes.Add(Byte(code));
+
+      // Remember whether the last code was printable or not (excluding CODE_STOP)
+      if code <> CODE_STOP then
+      begin
+        lastCharacterWasPrintable := true
+      end;
+
+      // Add to checksum computation (if not CODE_STOP of course)
+      if code <> CODE_STOP then
+      begin
+        inc(multiplier);
+        checksumTotal := checksumTotal + (multiplier * code);
+      end;
+
+      // Advance to where the next code will to start
+      lastStart := nextStart;
+      l := Length(counters) - 1;
+      for counter := 0 to l do
+      begin
+        nextStart := nextStart + counters[counter];
+      end;
+
+      // Take care of illegal start codes
+      case code of
+        CODE_START_A, CODE_START_B, CODE_START_C:
+          begin
+            result := nil;
+            exit;
+          end;
+      end;
+
+      case codeSet of
+
+        CODE_CODE_A:
+          begin
+            if code < 64 then
+            begin
+              if shiftUpperMode = upperMode then
+              begin
+                aResult := aResult + Char(32 + code);
+              end
+              else
+              begin
+                aResult := aResult + Char(32 + 128)
+              end;
+              shiftUpperMode := false
+            end
+            else if code < 96 then
+            begin
+              if shiftUpperMode = upperMode then
+              begin
+                aResult := aResult + Char(code - 64)
+              end
+              else
+              begin
+                aResult := aResult + Char(code + 64)
+              end;
+              shiftUpperMode := false
+            end
+            else
+            begin
+              // Don't let CODE_STOP, which always appears, affect whether whether we think the last
+              // code was printable or not.
+              if code <> CODE_STOP then
+              begin
+                lastCharacterWasPrintable := false
+              end;
+              case code of
+                CODE_FNC_1:
+                  begin
+                    if convertFNC1 then
+                    begin
+                      if Length(aResult) = 0 then
+                      begin
+                        // GS1 specification 5.4.3.7. and 5.4.6.4. If the first char after the start code
+                        // is FNC1 then this is GS1-128. We add the symbology identifier.
+                        aResult := aResult + ']C1'
+                      end
+                      else
+                      begin
+                        // GS1 specification 5.4.7.5. Every subsequent FNC1 is returned as ASCII 29 (GS)
+                        aResult := aResult + Char(29)
+                      end
+                    end;
+                  end;
+                CODE_FNC_2, CODE_FNC_3:
+                  begin
+
+                    // do nothing?
+                  end;
+                CODE_FNC_4_A:
+                  begin
+                    if (not upperMode) and (shiftUpperMode) then
+                    begin
+                      upperMode := true;
+                      shiftUpperMode := false
+                    end
+                    else if (upperMode) and (shiftUpperMode) then
+                    begin
+                      upperMode := false;
+                      shiftUpperMode := false
+                    end
+                    else
+                    begin
+                      shiftUpperMode := true
+                    end;
+                  end;
+                CODE_SHIFT:
+                  begin
+                    isNextShifted := true;
+                    codeSet := CODE_CODE_B;
+                  end;
+                CODE_CODE_B:
+                  begin
+                    codeSet := CODE_CODE_B;
+                  end;
+                CODE_CODE_C:
+                  begin
+                    codeSet := CODE_CODE_C;
+                  end;
+                CODE_STOP:
+                  begin
+                    done := true;
+                  end;
+              end
+            end;
+          end;
+        CODE_CODE_B:
+          begin
+            if code < 96 then
+            begin
+              if shiftUpperMode = upperMode then
+              begin
+                aResult := aResult + Char(32 + code)
+              end
+              else
+              begin
+                aResult := aResult + Char(32 + code + 128)
+              end;
+              shiftUpperMode := false
+            end
+            else
+            begin
+              if code <> CODE_STOP then
+              begin
+                lastCharacterWasPrintable := false
+              end;
+              case code of
+                CODE_FNC_1:
+                  begin
+                    if convertFNC1 then
+                    begin
+                      if Length(aResult) = 0 then
+                      begin
+                        // GS1 specification 5.4.3.7. and 5.4.6.4. If the first char after the start code
+                        // is FNC1 then this is GS1-128. We add the symbology identifier.
+                        aResult := aResult + (']C1')
+                      end
+                      else
+                      begin
+                        // GS1 specification 5.4.7.5. Every subsequent FNC1 is returned as ASCII 29 (GS)
+                        aResult := aResult + Char(29)
+                      end
+                    end;
+                  end;
+                CODE_FNC_2, CODE_FNC_3:
+                  begin
+                    // do nothing?
+                  end;
+                CODE_FNC_4_B:
+                  begin
+                    if (not upperMode) and (shiftUpperMode) then
+                    begin
+                      upperMode := true;
+                      shiftUpperMode := false
+                    end
+                    else if (upperMode) and (shiftUpperMode) then
+                    begin
+                      upperMode := false;
+                      shiftUpperMode := false
+                    end
+                    else
+                    begin
+                      shiftUpperMode := true
+                    end;
+                  end;
+                CODE_SHIFT:
+                  begin
+                    isNextShifted := true;
+                    codeSet := CODE_CODE_A;
+                  end;
+                CODE_CODE_A:
+                  begin
+                    codeSet := CODE_CODE_A;
+                  end;
+                CODE_CODE_C:
+                  begin
+                    codeSet := CODE_CODE_C;
+                  end;
+                CODE_STOP:
+                  begin
+                    done := true;
+                  end;
+              end
+            end;
+          end;
+        CODE_CODE_C:
+          begin
+            if code < 100 then
+            begin
+              if code < 10 then
+              begin
+                aResult := aResult + ('0')
+              end;
+              aResult := aResult + IntToStr(code);
+            end
+            else
+            begin
+              if code <> CODE_STOP then
+              begin
+                lastCharacterWasPrintable := false
+              end;
+              case code of
+                CODE_FNC_1:
+                  begin
+                    if convertFNC1 then
+                    begin
+                      if Length(aResult) = 0 then
+                      begin
+                        // GS1 specification 5.4.3.7. and 5.4.6.4. If the first char after the start code
+                        // is FNC1 then this is GS1-128. We add the symbology identifier.
+                        aResult := aResult + (']C1')
+                      end
+                      else
+                      begin
+                        // GS1 specification 5.4.7.5. Every subsequent FNC1 is returned as ASCII 29 (GS)
+                        aResult := aResult + Char(29)
+                      end
+                    end;
+                  end;
+                CODE_CODE_A:
+                  begin
+                    codeSet := CODE_CODE_A;
+                  end;
+                CODE_CODE_B:
+                  begin
+                    codeSet := CODE_CODE_B;
+                  end;
+                CODE_STOP:
+                  begin
+                    done := true;
+                  end;
+              end
+            end;
+          end;
+      end;
+
+      // Unshift back to another code set if we were shifted
+      if unshift then
+      begin
+
+        if (codeSet = CODE_CODE_A) then
+        begin
+          codeSet := CODE_CODE_B
+        end
+        else
+        begin
+          codeSet := CODE_CODE_A;
+        end;
+
+      end;
+
+    end;
+
+    lastPatternSize := nextStart - lastStart;
+
+    // Check for ample whitespace following pattern, but, to do this we first need to remember that
+    // we fudged decoding CODE_STOP since it actually has 7 bars, not 6. There is a black bar left
+    // to read off. Would be slightly better to properly read. Here we just skip it:
+    nextStart := row.getNextUnset(nextStart);
+    if not row.isRange(nextStart, Math.Min(row.Size,
+      nextStart + (nextStart - lastStart) div 2), false) then
     begin
       result := nil;
       exit;
     end;
 
-    rawCodes.Add(Byte(code));
-
-    // Remember whether the last code was printable or not (excluding CODE_STOP)
-    if code <> CODE_STOP then
+    // Pull out from sum the value of the penultimate check code
+    checksumTotal := checksumTotal - (multiplier * lastCode);
+    // lastCode is the checksum then:
+    if checksumTotal mod 103 <> lastCode then
     begin
-      lastCharacterWasPrintable := true
+      result := nil;
+      exit;
     end;
 
-    // Add to checksum computation (if not CODE_STOP of course)
-    if code <> CODE_STOP then
+    // Need to pull out the check digits from string
+    resultLength := Length(aResult);
+    if resultLength = 0 then
     begin
-      inc(multiplier);
-      checksumTotal := checksumTotal + (multiplier * code);
+      // false positive
+      result := nil;
+      exit;
     end;
 
-    // Advance to where the next code will to start
-    lastStart := nextStart;
-    l := Length(counters) - 1;
-    for counter := 0 to l do
+    // Only bother if the result had at least one character, and if the checksum digit happened to
+    // be a printable character. If it was just interpreted as a control code, nothing to remove.
+    if (resultLength > 0) and (lastCharacterWasPrintable) then
     begin
-      nextStart := nextStart + counters[counter];
-    end;
-
-    // Take care of illegal start codes
-    case code of
-      CODE_START_A, CODE_START_B, CODE_START_C:
-        begin
-          result := nil;
-          exit;
-        end;
-    end;
-
-    case codeSet of
-
-      CODE_CODE_A:
-        begin
-          if code < 64 then
-          begin
-            if shiftUpperMode = upperMode then
-            begin
-              aResult := aResult + Char(32 + code);
-            end
-            else
-            begin
-              aResult := aResult + Char(32 + 128)
-            end;
-            shiftUpperMode := false
-          end
-          else if code < 96 then
-          begin
-            if shiftUpperMode = upperMode then
-            begin
-              aResult := aResult + Char(code - 64)
-            end
-            else
-            begin
-              aResult := aResult + Char(code + 64)
-            end;
-            shiftUpperMode := false
-          end
-          else
-          begin
-            // Don't let CODE_STOP, which always appears, affect whether whether we think the last
-            // code was printable or not.
-            if code <> CODE_STOP then
-            begin
-              lastCharacterWasPrintable := false
-            end;
-            case code of
-              CODE_FNC_1:
-                begin
-                  if convertFNC1 then
-                  begin
-                    if Length(aResult) = 0 then
-                    begin
-                      // GS1 specification 5.4.3.7. and 5.4.6.4. If the first char after the start code
-                      // is FNC1 then this is GS1-128. We add the symbology identifier.
-                      aResult := aResult + ']C1'
-                    end
-                    else
-                    begin
-                      // GS1 specification 5.4.7.5. Every subsequent FNC1 is returned as ASCII 29 (GS)
-                      aResult := aResult + Char(29)
-                    end
-                  end;
-                end;
-              CODE_FNC_2, CODE_FNC_3:
-                begin
-
-                  // do nothing?
-                end;
-              CODE_FNC_4_A:
-                begin
-                  if (not upperMode) and (shiftUpperMode) then
-                  begin
-                    upperMode := true;
-                    shiftUpperMode := false
-                  end
-                  else if (upperMode) and (shiftUpperMode) then
-                  begin
-                    upperMode := false;
-                    shiftUpperMode := false
-                  end
-                  else
-                  begin
-                    shiftUpperMode := true
-                  end;
-                end;
-              CODE_SHIFT:
-                begin
-                  isNextShifted := true;
-                  codeSet := CODE_CODE_B;
-                end;
-              CODE_CODE_B:
-                begin
-                  codeSet := CODE_CODE_B;
-                end;
-              CODE_CODE_C:
-                begin
-                  codeSet := CODE_CODE_C;
-                end;
-              CODE_STOP:
-                begin
-                  done := true;
-                end;
-            end
-          end;
-        end;
-      CODE_CODE_B:
-        begin
-          if code < 96 then
-          begin
-            if shiftUpperMode = upperMode then
-            begin
-              aResult := aResult + Char(32 + code)
-            end
-            else
-            begin
-              aResult := aResult + Char(32 + code + 128)
-            end;
-            shiftUpperMode := false
-          end
-          else
-          begin
-            if code <> CODE_STOP then
-            begin
-              lastCharacterWasPrintable := false
-            end;
-            case code of
-              CODE_FNC_1:
-                begin
-                  if convertFNC1 then
-                  begin
-                    if Length(aResult) = 0 then
-                    begin
-                      // GS1 specification 5.4.3.7. and 5.4.6.4. If the first char after the start code
-                      // is FNC1 then this is GS1-128. We add the symbology identifier.
-                      aResult := aResult + (']C1')
-                    end
-                    else
-                    begin
-                      // GS1 specification 5.4.7.5. Every subsequent FNC1 is returned as ASCII 29 (GS)
-                      aResult := aResult + Char(29)
-                    end
-                  end;
-                end;
-              CODE_FNC_2, CODE_FNC_3:
-                begin
-                  // do nothing?
-                end;
-              CODE_FNC_4_B:
-                begin
-                  if (not upperMode) and (shiftUpperMode) then
-                  begin
-                    upperMode := true;
-                    shiftUpperMode := false
-                  end
-                  else if (upperMode) and (shiftUpperMode) then
-                  begin
-                    upperMode := false;
-                    shiftUpperMode := false
-                  end
-                  else
-                  begin
-                    shiftUpperMode := true
-                  end;
-                end;
-              CODE_SHIFT:
-                begin
-                  isNextShifted := true;
-                  codeSet := CODE_CODE_A;
-                end;
-              CODE_CODE_A:
-                begin
-                  codeSet := CODE_CODE_A;
-                end;
-              CODE_CODE_C:
-                begin
-                  codeSet := CODE_CODE_C;
-                end;
-              CODE_STOP:
-                begin
-                  done := true;
-                end;
-            end
-          end;
-        end;
-      CODE_CODE_C:
-        begin
-          if code < 100 then
-          begin
-            if code < 10 then
-            begin
-              aResult := aResult + ('0')
-            end;
-            aResult := aResult + IntToStr(code);
-          end
-          else
-          begin
-            if code <> CODE_STOP then
-            begin
-              lastCharacterWasPrintable := false
-            end;
-            case code of
-              CODE_FNC_1:
-                begin
-                  if convertFNC1 then
-                  begin
-                    if Length(aResult) = 0 then
-                    begin
-                      // GS1 specification 5.4.3.7. and 5.4.6.4. If the first char after the start code
-                      // is FNC1 then this is GS1-128. We add the symbology identifier.
-                      aResult := aResult + (']C1')
-                    end
-                    else
-                    begin
-                      // GS1 specification 5.4.7.5. Every subsequent FNC1 is returned as ASCII 29 (GS)
-                      aResult := aResult + Char(29)
-                    end
-                  end;
-                end;
-              CODE_CODE_A:
-                begin
-                  codeSet := CODE_CODE_A;
-                end;
-              CODE_CODE_B:
-                begin
-                  codeSet := CODE_CODE_B;
-                end;
-              CODE_STOP:
-                begin
-                  done := true;
-                end;
-            end
-          end;
-        end;
-    end;
-
-    // Unshift back to another code set if we were shifted
-    if unshift then
-    begin
-
-      if (codeSet = CODE_CODE_A) then
+      if codeSet = CODE_CODE_C then
       begin
-        codeSet := CODE_CODE_B
+        aResult := aResult.Remove(resultLength - 2, 2);
       end
       else
       begin
-        codeSet := CODE_CODE_A;
-      end;
-
+        aResult := aResult.Remove(resultLength - 1, 1);
+      end
     end;
 
-  end;
+    left := (startPatternInfo[1] + startPatternInfo[0]) / 2;
+    right := lastStart + lastPatternSize / 2;
 
-  lastPatternSize := nextStart - lastStart;
+    // ES: Nice to have
 
-  // Check for ample whitespace following pattern, but, to do this we first need to remember that
-  // we fudged decoding CODE_STOP since it actually has 7 bars, not 6. There is a black bar left
-  // to read off. Would be slightly better to properly read. Here we just skip it:
-  nextStart := row.getNextUnset(nextStart);
-  if not row.isRange(nextStart, Math.Min(row.Size,
-    nextStart + (nextStart - lastStart) div 2), false) then
-  begin
-    result := nil;
-    exit;
-  end;
+    // if ((hints = nil) or
+    // (not hints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
+    // begin
+    // resultPointCallback := nil;
+    // end
+    // else
+    // begin
+    // resultPointCallback := hints[DecodeHintType.NEED_RESULT_POINT_CALLBACK] as TResultPointCallback;
+    // end;
 
-  // Pull out from sum the value of the penultimate check code
-  checksumTotal := checksumTotal - (multiplier * lastCode);
-  // lastCode is the checksum then:
-  if checksumTotal mod 103 <> lastCode then
-  begin
-    result := nil;
-    exit;
-  end;
+    // if resultPointCallback <> nil then
+    // begin
+    // resultPointCallback(new TResultPoint(left, rowNumber));
+    // resultPointCallback(new TResultPoint(right, rowNumber))
+    // end;
 
-  // Need to pull out the check digits from string
-  resultLength := Length(aResult);
-  if resultLength = 0 then
-  begin
-    // false positive
-    result := nil;
-    exit;
-  end;
+    rawCodesSize := rawCodes.Count;
+    SetLength(rawBytes, rawCodesSize);
 
-  // Only bother if the result had at least one character, and if the checksum digit happened to
-  // be a printable character. If it was just interpreted as a control code, nothing to remove.
-  if (resultLength > 0) and (lastCharacterWasPrintable) then
-  begin
-    if codeSet = CODE_CODE_C then
+    for i := 0 to rawCodesSize - 1 do
     begin
-      aResult := aResult.Remove(resultLength - 2, 2);
-    end
-    else
-    begin
-      aResult := aResult.Remove(resultLength - 1, 1);
-    end
+      rawBytes[i] := rawCodes[i]
+    end;
+
+    resultPointLeft := TResultPoint.Create(left, rowNumber);
+    resultPointRight := TResultPoint.Create(right, rowNumber);
+    resultPoints := [resultPointLeft, resultPointRight];
+
+  finally
+    FreeAndNil(rawCodes);
   end;
-
-  left := (startPatternInfo[1] + startPatternInfo[0]) / 2;
-  right := lastStart + lastPatternSize / 2;
-
-  // ES: Nice to have
-
-  //if ((hints = nil) or
-  //  (not hints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
-  //begin
-  //  resultPointCallback := nil;
-  //end
-  //else
-  //begin
-  //   resultPointCallback := hints[DecodeHintType.NEED_RESULT_POINT_CALLBACK] as TResultPointCallback;
-  //end;
-
-  // if resultPointCallback <> nil then
-  // begin
-  // resultPointCallback(new TResultPoint(left, rowNumber));
-  // resultPointCallback(new TResultPoint(right, rowNumber))
-  // end;
-
-  rawCodesSize := rawCodes.Count;
-  SetLength(rawBytes, rawCodesSize);
-
-  for i := 0 to rawCodesSize - 1 do
-  begin
-    rawBytes[i] := rawCodes[i]
-  end;
-
-  resultPointLeft := TResultPoint.Create(left, rowNumber);
-  resultPointRight := TResultPoint.Create(right, rowNumber);
-  resultPoints := [resultPointLeft, resultPointRight];
 
   result := TReadResult.Create(aResult, rawBytes, resultPoints,
     BarcodeFormat.CODE_128);

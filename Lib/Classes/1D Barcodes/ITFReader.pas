@@ -121,9 +121,11 @@ begin
   SBResult := TStringBuilder.Create(20);
   if (not decodeMiddle(row, startRange[1], endRange[0], SBResult)) then
   begin
+    FreeAndNil(sbResult);
     Exit(nil);
   end;
   stringResult := SBResult.ToString();
+  FreeAndNil(sbResult);
 
   allowedLengths := nil;
   maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;

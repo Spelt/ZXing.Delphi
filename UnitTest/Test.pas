@@ -57,191 +57,207 @@ var
   result: TReadResult;
 begin
 
-  result := Decode('qrcode.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://google.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+  try
 
-  // From here a test set from: http://datagenetics.com/blog/november12013/index.html
-  // Please take a look of what QR can do for you
-  // NOTE: some test are expected to fail and are setup as such.
+    result := Decode('qrcode.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://google.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  // !Cancelled for test. Does not work with zxing.net either.
-  // Rotation does not work.
-  // result := Decode('q3.png', BarcodeFormat.QR_CODE);
-  // Assert.IsNotNull(result, ' Nil result ');
-  // Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-  // 'QR code result Text Incorrect: ' + result.Text);
+    // From here a test set from: http://datagenetics.com/blog/november12013/index.html
+    // Please take a look of what QR can do for you
+    // NOTE: some test are expected to fail and are setup as such.
 
-  result := Decode('q33.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Contains('Never gonna give you up'),
-    'QR code result Text Incorrect: ' + result.Text);
-  Assert.IsTrue(result.Text.Contains('Never gonna tell a lie and hurt you'),
-    'QR code result Text Incorrect: ' + result.Text);
+    // !Cancelled for test. Does not work with zxing.net either.
+    // Rotation does not work.
+    // result := Decode('q3.png', BarcodeFormat.QR_CODE);
+    // Assert.IsNotNull(result, ' Nil result ');
+    // Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+    // 'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q1.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q33.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Contains('Never gonna give you up'),
+      'QR code result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Contains('Never gonna tell a lie and hurt you'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q2.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q1.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q2q.png', BarcodeFormat.QR_CODE); // rotate 90 degrees
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q2.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q2m.png', BarcodeFormat.QR_CODE); // rotate 120 degrees
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q2q.png', BarcodeFormat.QR_CODE); // rotate 90 degrees
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q4.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q2m.png', BarcodeFormat.QR_CODE); // rotate 120 degrees
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q5.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  // fails on example website but does work!
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q4.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q6.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q5.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    // fails on example website but does work!
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q7.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q6.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q8.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q7.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q9.png', BarcodeFormat.QR_CODE);
-  Assert.IsNull(result, ' Should be nil result. Missing possition block ');
+    result := Decode('q8.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q10.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q9.png', BarcodeFormat.QR_CODE);
+    Assert.IsNull(result, ' Should be nil result. Missing possition block ');
 
-  result := Decode('q11.png', BarcodeFormat.QR_CODE);
-  Assert.IsNull(result, ' The code should not scan ');
+    result := Decode('q10.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q12.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q11.png', BarcodeFormat.QR_CODE);
+    Assert.IsNull(result, ' The code should not scan ');
 
-  result := Decode('q13.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q12.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q14.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q13.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q15.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q14.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q16.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q15.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q17.png', BarcodeFormat.QR_CODE);
-  Assert.IsNull(result, ' Should not scan ');
+    result := Decode('q16.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q18.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q17.png', BarcodeFormat.QR_CODE);
+    Assert.IsNull(result, ' Should not scan ');
 
-  result := Decode('q21.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q18.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q22.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q21.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q23.png', BarcodeFormat.QR_CODE);
-  Assert.IsNull(result, ' to dizzy to scan');
+    result := Decode('q22.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q25.png', BarcodeFormat.QR_CODE);
-  Assert.IsNull(result, 'Should not scan');
+    result := Decode('q23.png', BarcodeFormat.QR_CODE);
+    Assert.IsNull(result, ' to dizzy to scan');
 
-  result := Decode('q28.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q25.png', BarcodeFormat.QR_CODE);
+    Assert.IsNull(result, 'Should not scan');
 
-  result := Decode('q29.png', BarcodeFormat.QR_CODE);
-  Assert.IsNull(result, 'Should not scan');
+    result := Decode('q28.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('q30.png', BarcodeFormat.QR_CODE);
-  Assert.IsNull(result, 'Should not be scanned');
+    result := Decode('q29.png', BarcodeFormat.QR_CODE);
+    Assert.IsNull(result, 'Should not scan');
 
-  result := Decode('q31.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q30.png', BarcodeFormat.QR_CODE);
+    Assert.IsNull(result, 'Should not be scanned');
 
-  result := Decode('q32.png', BarcodeFormat.QR_CODE);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q31.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
+    result := Decode('q32.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
 end;
 
 procedure TZXingDelphiTest.AllCode128();
 var
   result: TReadResult;
 begin
-  result := Decode('Code128.png', BarcodeFormat.CODE_128);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('1234567'),
-    'Code 128 result Text Incorrect: ' + result.Text);
+  try
+    result := Decode('Code128.png', BarcodeFormat.CODE_128);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 128 result Text Incorrect: ' + result.Text);
+  finally
+    FreeAndNil(result);
+  end;
+
 end;
 
 procedure TZXingDelphiTest.AllCode93();
 var
   result: TReadResult;
 begin
-  result := Decode('Code93-1.png', BarcodeFormat.CODE_93);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
-    'Code 93 - 1 result Text Incorrect: ' + result.Text);
 
-  result := Decode('Code93-2.png', BarcodeFormat.CODE_93);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('ABC CODE93-2'),
-    'Code 93 - 2 result Text Incorrect: ' + result.Text);
+  try
+    result := Decode('Code93-1.png', BarcodeFormat.CODE_93);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
+      'Code 93 - 1 result Text Incorrect: ' + result.Text);
 
-  result := Decode('Code93-3.png', BarcodeFormat.CODE_93);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('ABC CODE96'),
-    'Code 93 - 3 result Text Incorrect: ' + result.Text);
+    result := Decode('Code93-2.png', BarcodeFormat.CODE_93);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('ABC CODE93-2'),
+      'Code 93 - 2 result Text Incorrect: ' + result.Text);
 
-  result := Decode('Code93-3.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('ABC CODE96'),
-    'Auto Code 93 - 3 result Text Incorrect: ' + result.Text);
+    result := Decode('Code93-3.png', BarcodeFormat.CODE_93);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('ABC CODE96'),
+      'Code 93 - 3 result Text Incorrect: ' + result.Text);
+
+    result := Decode('Code93-3.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('ABC CODE96'),
+      'Auto Code 93 - 3 result Text Incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
 end;
 
 procedure TZXingDelphiTest.AllCodeITF();
@@ -250,91 +266,101 @@ var
 begin
 
   result := Decode('q4.png', BarcodeFormat.ITF);
-  Assert.IsNull(result, ' Should be nil result ');
 
-  result := Decode('ITF-1.png', BarcodeFormat.ITF);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('55867492279103'),
-    'Code ITF - 1 result Text Incorrect: ' + result.Text);
+  try
 
-  result := Decode('ITF-2.png', BarcodeFormat.ITF);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('04601234567893'),
-    'ITF - 2 result Text Incorrect: ' + result.Text);
+    Assert.IsNull(result, ' Should be nil result ');
 
-  result := Decode('ITF-3.png', BarcodeFormat.ITF);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('12345678900098'),
-    'ITF - 3 result Text Incorrect: ' + result.Text);
+    result := Decode('ITF-1.png', BarcodeFormat.ITF);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('55867492279103'),
+      'Code ITF - 1 result Text Incorrect: ' + result.Text);
 
-  result := Decode('ITF-4.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('32145678900098'),
-    'ITF - 4 result Text Incorrect: ' + result.Text);
+    result := Decode('ITF-2.png', BarcodeFormat.ITF);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('04601234567893'),
+      'ITF - 2 result Text Incorrect: ' + result.Text);
 
-  result := Decode('ITF-5.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('77745678900093'),
-    'ITF - 5 result Text Incorrect: ' + result.Text);
+    result := Decode('ITF-3.png', BarcodeFormat.ITF);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('12345678900098'),
+      'ITF - 3 result Text Incorrect: ' + result.Text);
 
+    result := Decode('ITF-4.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('32145678900098'),
+      'ITF - 4 result Text Incorrect: ' + result.Text);
+
+    result := Decode('ITF-5.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('77745678900093'),
+      'ITF - 5 result Text Incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
 end;
 
 procedure TZXingDelphiTest.AutoTypes;
 var
   result: TReadResult;
 begin
-  // Test different types in a random sequence.
 
-  result := Decode('Code128.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('1234567'),
-    'Code 128 result Text Incorrect: ' + result.Text);
+  try
 
-  result := Decode('Code93-1.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
-    'Code 93 - 1 result Text Incorrect: ' + result.Text);
+    result := Decode('Code128.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 128 result Text Incorrect: ' + result.Text);
 
-  result := Decode('Code128.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('1234567'),
-    'Code 128 result Text Incorrect: ' + result.Text);
+    result := Decode('Code93-1.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
+      'Code 93 - 1 result Text Incorrect: ' + result.Text);
 
-  result := Decode('q4.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('Code128.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 128 result Text Incorrect: ' + result.Text);
 
-  result := Decode('q2.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('q4.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('Code93-1.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
-    'Code 93 - 1 result Text Incorrect: ' + result.Text);
+    result := Decode('q2.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('Code93-1.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' nil result ');
-  Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
-    'Code 93 - 1 result Text Incorrect: ' + result.Text);
+    result := Decode('Code93-1.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
+      'Code 93 - 1 result Text Incorrect: ' + result.Text);
 
-  result := Decode('q2.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
-    'QR code result Text Incorrect: ' + result.Text);
+    result := Decode('Code93-1.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('THIS IS CODE93'),
+      'Code 93 - 1 result Text Incorrect: ' + result.Text);
 
-  result := Decode('ITF-2.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('04601234567893'),
-    'ITF - 2 result Text Incorrect: ' + result.Text);
+    result := Decode('q2.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
 
-  result := Decode('ITF-3.png', BarcodeFormat.Auto);
-  Assert.IsNotNull(result, ' Nil result ');
-  Assert.IsTrue(result.Text.Equals('12345678900098'),
-    'ITF - 3 result Text Incorrect: ' + result.Text);
+    result := Decode('ITF-2.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('04601234567893'),
+      'ITF - 2 result Text Incorrect: ' + result.Text);
 
+    result := Decode('ITF-3.png', BarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('12345678900098'),
+      'ITF - 3 result Text Incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
 
 end;
 
@@ -350,8 +376,13 @@ var
 begin
 
   bmp := GetImage(Filename);
-  ScanManager := TScanManager.Create(CodeFormat, nil);
-  result := ScanManager.Scan(bmp);
+  try
+    ScanManager := TScanManager.Create(CodeFormat, nil);
+    result := ScanManager.Scan(bmp);
+  finally
+    FreeAndNil(bmp);
+    FreeAndNil(ScanManager);
+  end;
 
 end;
 

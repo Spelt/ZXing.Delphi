@@ -101,16 +101,27 @@ begin
   end
   else
   begin
-    DetectorResult := TDetector.Create(image.BlackMatrix).Detect(hints);
-    if (DetectorResult = nil) then
-    begin
-      Result := nil;
-      exit
-    end;
 
-    Decoder := TQRDecoder.Create;
-    DecoderResult := Decoder.decode(DetectorResult.bits, hints);
-    points := DetectorResult.points;
+    DetectorResult := TDetector.Create(image.BlackMatrix).Detect(hints);
+    try
+
+      if (DetectorResult = nil) then
+      begin
+        Result := nil;
+        exit
+      end;
+
+      Decoder := TQRDecoder.Create;
+      try
+        DecoderResult := Decoder.decode(DetectorResult.bits, hints);
+        points := DetectorResult.points;
+      finally
+        FreeAndNil(Decoder);
+      end;
+
+    finally
+      FreeAndNil(DetectorResult);
+    end;
 
   end;
 

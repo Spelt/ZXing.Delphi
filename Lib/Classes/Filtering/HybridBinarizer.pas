@@ -19,7 +19,8 @@ unit HybridBinarizer;
 
 interface
 
-uses SysUtils, GlobalHistogramBinarizer, LuminanceSource, Bitmatrix, binarizer, MathUtils;
+uses SysUtils, GlobalHistogramBinarizer, LuminanceSource, Bitmatrix, binarizer,
+  MathUtils;
 
 /// <summary> This class implements a local thresholding algorithm, which while slower than the
 /// GlobalHistogramBinarizer, is fairly efficient for what it does. It is designed for
@@ -63,11 +64,10 @@ type
   protected
 
   public
-     function createBinarizer(source: TLuminanceSource): TBinarizer;override;
+    function createBinarizer(source: TLuminanceSource): TBinarizer; override;
 
     constructor Create(source: TLuminanceSource);
     function BlackMatrix: TBitMatrix; override;
-
 
   end;
 
@@ -100,33 +100,41 @@ begin
     Exit;
   end;
 
-  source := self.LuminanceSource;
-  width := source.width;
-  height := source.height;
+  try
 
-  if ((width >= 40) and (height >= 40)) then
-  begin
-    luminances := source.matrix;
-    subWidth := TMathUtils.Asr(width, 3);
+    source := self.LuminanceSource;
+    width := source.width;
+    height := source.height;
 
-    if ((width and 7) <> 0) then
-      inc(subWidth);
+    if ((width >= 40) and (height >= 40)) then
+    begin
+      luminances := source.matrix;
+      subWidth := TMathUtils.Asr(width, 3);
 
-    subHeight := TMathUtils.Asr(height, 3);
+      if ((width and 7) <> 0) then
+        inc(subWidth);
 
-    if ((height and 7) <> 0) then
-      inc(subHeight);
+      subHeight := TMathUtils.Asr(height, 3);
 
-    blackPoints := calculateBlackPoints(luminances, subWidth, subHeight,
-      width, height);
+      if ((height and 7) <> 0) then
+        inc(subHeight);
 
-    newMatrix := TBitMatrix.Create(width, height);
-    calculateThresholdForBlock(luminances, subWidth, subHeight, width, height,
-      blackPoints, newMatrix);
+      blackPoints := calculateBlackPoints(luminances, subWidth, subHeight,
+        width, height);
 
-    self.matrix := newMatrix
+      newMatrix := TBitMatrix.Create(width, height);
+      calculateThresholdForBlock(luminances, subWidth, subHeight, width, height,
+        blackPoints, newMatrix);
+
+      self.matrix := newMatrix;
+    end;
+
+  finally
+    newMatrix := nil;
+    SetLength(blackPoints,0);
+    blackPoints := nil;
+    luminances := nil;
   end;
-
 end;
 
 function THybridBinarizer.calculateBlackPoints(luminances: TArray<Byte>;
@@ -144,7 +152,6 @@ begin
 
   while ((i < subHeight)) do
   begin
-
     blackPoints[i] := TArray<Integer>.Create();
     SetLength(blackPoints[i], subWidth);
     inc(i)
@@ -211,12 +218,13 @@ begin
       average := TMathUtils.Asr(sum, 6);
       if ((max - min) <= $18) then
       begin
-        average := TMathUtils.Asr(min,1);
+        average := TMathUtils.Asr(min, 1);
         if ((y > 0) and (x > 0)) then
         begin
           averageNeighborBlackPoint :=
-            TMathUtils.Asr(((blackPoints[(y - 1)][x] + (2 * blackPoints[y][(x - 1)])) +
-            blackPoints[(y - 1)][(x - 1)]),2);
+            TMathUtils.Asr
+            (((blackPoints[(y - 1)][x] + (2 * blackPoints[y][(x - 1)])) +
+            blackPoints[(y - 1)][(x - 1)]), 2);
           if (min < averageNeighborBlackPoint) then
             average := averageNeighborBlackPoint
         end
@@ -228,7 +236,6 @@ begin
   end;
 
   result := blackPoints;
-  Exit
 end;
 
 procedure THybridBinarizer.calculateThresholdForBlock(luminances: TArray<Byte>;

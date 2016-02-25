@@ -42,7 +42,7 @@ type
     public
       ecCodewordsPerBlock: Integer;
       constructor Create(ecCodewordsPerBlock: Integer; ecBlocks: TArray<TECB>);
-
+      destructor destroy();override;
       function getECBlocks: TArray<TECB>;
       { property ecCodewordsPerBlock: Integer read get_ECCodewordsPerBlock;
         property NumBlocks: Integer read get_NumBlocks;
@@ -69,6 +69,8 @@ type
     class procedure ClassInit; static;
 
   public
+
+    destructor Destroy(); override;
     class function decodeVersionInformation(versionBits: Integer)
       : TVersion; static;
     function buildFunctionPattern: TBitMatrix;
@@ -104,6 +106,13 @@ constructor TVersion.TECBlocks.Create(ecCodewordsPerBlock: Integer;
 begin
   self.ecBlocks := ecBlocks;
   self.ecCodewordsPerBlock := ecCodewordsPerBlock;
+end;
+
+destructor TVersion.TECBlocks.destroy;
+begin
+  ecBlocks :=nil;
+
+  inherited;
 end;
 
 function TVersion.TECBlocks.getECBlocks: TArray<TECB>;
@@ -532,7 +541,15 @@ begin
     inc(total, (ecBlock.count * (ecBlock.dataCodewords + ecCodewords)))
   end;
 
-  FTotalCodewords := total
+  FTotalCodewords := total;
+  ecbArray := nil;
+end;
+
+destructor TVersion.Destroy;
+begin
+  FalignmentPatternCenters := nil;
+  FecBlocks := nil;
+  inherited;
 end;
 
 class function TVersion.decodeVersionInformation(versionBits: Integer)

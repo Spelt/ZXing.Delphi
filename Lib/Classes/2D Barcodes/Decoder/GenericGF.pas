@@ -32,10 +32,10 @@ type
     FexpTable: TArray<Integer>;
     FGeneratorBase: Integer;
     FlogTable: TArray<Integer>;
+    FZero: TGenericGFPoly;
     FOne: TGenericGFPoly;
     Fprimitive: Integer;
     Fsize: Integer;
-    FZero: TGenericGFPoly;
 
     function get_GeneratorBase: Integer;
     function get_One: TGenericGFPoly;
@@ -48,6 +48,7 @@ type
     class function get_AZTEC_PARAM: TGenericGF; static;
     class function get_QR_CODE_FIELD_256: TGenericGF; static;
     class function get_DATA_MATRIX_FIELD_256: TGenericGF; static;
+    class procedure ClassFinalize; static;
 
   public
     class procedure ClassInitialize(); static;
@@ -62,6 +63,8 @@ type
     class var AZTEC_DATA_8: TGenericGF;
 
     constructor Create(primitive: Integer; size: Integer; genBase: Integer);
+    destructor Destroy(); override;
+
     function ToString: string; override;
 
     class function addOrSubtract(a: Integer; b: Integer): Integer; static;
@@ -94,6 +97,7 @@ type
     property Field: TGenericGF read Ffield;
 
     constructor Create(Field: TGenericGF; coefficients: TArray<Integer>);
+    destructor Destroy(); override;
     function addOrSubtract(other: TGenericGFPoly): TGenericGFPoly;
     function divide(other: TGenericGFPoly): TArray<TGenericGFPoly>;
     function evaluateAt(a: Integer): Integer;
@@ -120,11 +124,21 @@ begin
   AZTEC_DATA_6 := get_AZTEC_DATA_6;
   AZTEC_PARAM := get_AZTEC_PARAM;
   DATA_MATRIX_FIELD_256 := get_DATA_MATRIX_FIELD_256;
-
   QR_CODE_FIELD_256 := get_QR_CODE_FIELD_256;
-
   MAXICODE_FIELD_64 := get_AZTEC_DATA_6;
   AZTEC_DATA_8 := get_DATA_MATRIX_FIELD_256;
+end;
+
+class procedure TGenericGF.ClassFinalize;
+begin
+  FreeAndNil(AZTEC_DATA_10);
+  FreeAndNil(AZTEC_DATA_12);
+  FreeAndNil(AZTEC_DATA_6);
+  FreeAndNil(AZTEC_PARAM);
+  FreeAndNil(DATA_MATRIX_FIELD_256);
+  FreeAndNil(QR_CODE_FIELD_256);
+  FreeAndNil(MAXICODE_FIELD_64);
+  FreeAndNil(AZTEC_DATA_8);
 
 end;
 
@@ -167,6 +181,15 @@ begin
 
   FZero := TGenericGFPoly.Create(self, TArray<Integer>.Create(0));
   FOne := TGenericGFPoly.Create(self, TArray<Integer>.Create(1));
+end;
+
+destructor TGenericGF.Destroy;
+begin
+  FreeAndNil(FZero);
+  FreeAndNil(FOne);
+  self.FexpTable := nil;
+  self.FlogTable := nil;
+  inherited;
 end;
 
 class function TGenericGF.addOrSubtract(a, b: Integer): Integer;
@@ -321,6 +344,16 @@ begin
   end
   else
     Fcoefficients := coefficients
+end;
+
+destructor TGenericGFPoly.Destroy;
+begin
+  SetLength(Fcoefficients, 0);
+  Fcoefficients := nil;
+
+  Ffield := nil;
+
+  inherited;
 end;
 
 function TGenericGFPoly.addOrSubtract(other: TGenericGFPoly): TGenericGFPoly;
@@ -615,8 +648,10 @@ end;
 
 initialization
 
-begin
-  TGenericGF.ClassInitialize();
-end;
+TGenericGF.ClassInitialize();
+
+finalization
+
+TGenericGF.ClassFinalize();
 
 end.

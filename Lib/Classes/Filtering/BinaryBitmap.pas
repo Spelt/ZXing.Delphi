@@ -32,6 +32,7 @@ type
     function GetBlackMatrix: TBitMatrix;
   public
     constructor BinaryBitmap(Binarizer: TBinarizer);
+    destructor Destroy(); override;
     /// <summary>
     /// Converts one row of luminance data to 1 bit data. May actually do the conversion, or return
     /// cached data. Callers should assume this method is expensive and call it as seldom as possible.
@@ -65,6 +66,14 @@ begin
 
   Self.Binarizer := Binarizer;
 
+end;
+
+destructor TBinaryBitmap.Destroy;
+begin
+  if Assigned(Matrix) then
+    FreeAndNil(Matrix);
+
+  inherited;
 end;
 
 function TBinaryBitmap.GetBlackMatrix: TBitMatrix;

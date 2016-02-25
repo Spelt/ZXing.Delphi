@@ -51,7 +51,7 @@ type
     /// <throws>  ReaderException Any errors which occurred </throws>
   public
     function Decode(image: TBinaryBitmap): TReadResult; overload;
-
+    function Decode(image: TBinaryBitmap; WithHints: Boolean): TReadResult; overload;
     /// <summary> Decode an image using the hints provided. Does not honor existing state.
     ///
     /// </summary>
@@ -102,6 +102,12 @@ begin
   hints := nil;
   result := DecodeInternal(image)
 end;
+
+function TMultiFormatReader.Decode(image: TBinaryBitmap; WithHints: Boolean): TReadResult;
+begin
+  result := DecodeInternal(image)
+end;
+
 
 function TMultiFormatReader.Decode(image: TBinaryBitmap;
   pHints: TDictionary<TDecodeHintType, TObject>): TReadResult;

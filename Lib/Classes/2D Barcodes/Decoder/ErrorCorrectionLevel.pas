@@ -30,6 +30,7 @@ type
     Fordinal_Renamed_Field: Integer;
     class var FOR_BITS: TArray<TErrorCorrectionLevel>;
     class procedure InitClass; Static;
+    class procedure FinalClass; Static;
   public
     constructor Create(ordinal: Integer; bits: Integer; name: string);
     class function forBits(bits: Integer): TErrorCorrectionLevel; static;
@@ -55,6 +56,20 @@ begin
   Q := TErrorCorrectionLevel.Create(2, 3, 'Q');
 
   FOR_BITS := TArray<TErrorCorrectionLevel>.Create(M, L, H, Q);
+end;
+
+class procedure TErrorCorrectionLevel.FinalClass;
+begin
+  H.FOR_BITS := nil;
+  L.FOR_BITS := nil;
+  M.FOR_BITS := nil;
+  Q.FOR_BITS := nil;
+
+  FreeAndNil(H);
+  FreeAndNil(L);
+  FreeAndNil(M);
+  FreeAndNil(Q);
+  FOR_BITS := nil;
 end;
 
 constructor TErrorCorrectionLevel.Create(ordinal, bits: Integer; name: string);
@@ -88,5 +103,9 @@ end;
 Initialization
 
 TErrorCorrectionLevel.InitClass;
+
+Finalization
+
+TErrorCorrectionLevel.FinalClass;
 
 end.

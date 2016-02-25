@@ -9,6 +9,9 @@
         <Projects Include="aTestApp\aTestApp.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="MemLeakTest\Leaktest.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
     <Target Name="aTestApp:Make">
         <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Leaktest">
+        <MSBuild Projects="MemLeakTest\Leaktest.dproj"/>
+    </Target>
+    <Target Name="Leaktest:Clean">
+        <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Leaktest:Make">
+        <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="dUnitXTest;aTestApp"/>
+        <CallTarget Targets="dUnitXTest;aTestApp;Leaktest"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean"/>
+        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean;Leaktest:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make"/>
+        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make;Leaktest:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

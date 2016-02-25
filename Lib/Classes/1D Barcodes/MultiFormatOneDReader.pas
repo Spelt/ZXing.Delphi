@@ -39,7 +39,7 @@ type
     /// <param name="hints">The hints.</param>
   public
     constructor Create(hints: TDictionary<TDecodeHintType, TObject>);
-
+    destructor Destroy(); override;
     /// <summary>
     /// <p>Attempts to decode a one-dimensional barcode format given a single row of
     /// an image.</p>
@@ -181,6 +181,20 @@ begin
     // readers.Add(new RSSExpandedReader())
   end
 
+end;
+
+destructor TMultiFormatOneDReader.Destroy;
+var
+  reader: TOneDReader;
+begin
+  for reader in readers do
+  begin
+    reader.Free;
+  end;
+
+  readers.clear;
+  FreeAndNil(readers);
+  inherited;
 end;
 
 function TMultiFormatOneDReader.DecodeRow(rowNumber: Integer; row: TBitArray;

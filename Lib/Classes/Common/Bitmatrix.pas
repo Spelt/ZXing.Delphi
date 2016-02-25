@@ -40,6 +40,7 @@ type
   public
     constructor Create(dimension: Integer); overload;
     constructor Create(width: Integer; height: Integer); overload;
+    destructor Destroy;override;
     procedure Clear;
     function Clone: TObject;
     function Equals(obj: TObject): Boolean; override;
@@ -139,6 +140,13 @@ constructor TBitMatrix.Create(dimension: Integer);
 begin
   Self.Create(dimension, dimension);
 end;
+
+destructor TBitMatrix.Destroy;
+begin
+  Self.Fbits := nil;
+  inherited;
+end;
+
 
 function TBitMatrix.Equals(obj: TObject): Boolean;
 var
