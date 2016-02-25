@@ -35,6 +35,7 @@ type
 
   public
     constructor Create(pX, pY: single);
+    destructor Destroy(); override;
     function Equals(other: TObject): Boolean; override;
     function GetHashCode(): Integer; override;
     function ToString(): String; override;
@@ -67,6 +68,11 @@ begin
   Fy := pY;
   bytesX := byteArray(pX);
   bytesY := byteArray(pY);
+end;
+
+destructor TResultPoint.Destroy;
+begin
+  inherited;
 end;
 
 class function TResultPoint.crossProductZ(pointA, pointB,

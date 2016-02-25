@@ -492,45 +492,64 @@ begin
     iSkip := 3;
   done := false;
   stateCount := TArray<Integer>.Create();
-
   SetLength(stateCount, 5);
-  i := (iSkip - 1);
-  while (((i < maxI) and not done)) do
-  begin
-    stateCount[0] := 0;
-    stateCount[1] := 0;
-    stateCount[2] := 0;
-    stateCount[3] := 0;
-    stateCount[4] := 0;
-    currentState := 0;
-    j := 0;
+  try
 
-    while ((j < maxJ)) do
+    i := (iSkip - 1);
+    while (((i < maxI) and not done)) do
     begin
-      if (FImage[j, i]) then
+      stateCount[0] := 0;
+      stateCount[1] := 0;
+      stateCount[2] := 0;
+      stateCount[3] := 0;
+      stateCount[4] := 0;
+      currentState := 0;
+      j := 0;
+
+      while ((j < maxJ)) do
       begin
-        if ((currentState and 1) = 1) then
-          inc(currentState);
-        inc(stateCount[currentState])
-      end
-      else if ((currentState and 1) = 0) then
-        if (currentState = 4) then
-          if (TFinderPatternFinder.foundPatternCross(stateCount)) then
-          begin
-            if (self.handlePossibleCenter(stateCount, i, j, pureBarcode)) then
+        if (FImage[j, i]) then
+        begin
+          if ((currentState and 1) = 1) then
+            inc(currentState);
+          inc(stateCount[currentState])
+        end
+        else if ((currentState and 1) = 0) then
+          if (currentState = 4) then
+            if (TFinderPatternFinder.foundPatternCross(stateCount)) then
             begin
-              iSkip := 2;
-              if (self.hasSkipped) then
-                done := self.haveMultiplyConfirmedCenters
-              else
+              if (self.handlePossibleCenter(stateCount, i, j, pureBarcode)) then
               begin
-                rowSkip := self.findRowSkip;
-                if (rowSkip > stateCount[2]) then
+                iSkip := 2;
+                if (self.hasSkipped) then
+                  done := self.haveMultiplyConfirmedCenters
+                else
                 begin
-                  inc(i, ((rowSkip - stateCount[2]) - iSkip));
-                  j := (maxJ - 1)
+                  rowSkip := self.findRowSkip;
+                  if (rowSkip > stateCount[2]) then
+                  begin
+                    inc(i, ((rowSkip - stateCount[2]) - iSkip));
+                    j := (maxJ - 1)
+                  end
                 end
               end
+              else
+              begin
+                stateCount[0] := stateCount[2];
+                stateCount[1] := stateCount[3];
+                stateCount[2] := stateCount[4];
+                stateCount[3] := 1;
+                stateCount[4] := 0;
+                currentState := 3;
+                Continue;
+              end;
+
+              currentState := 0;
+              stateCount[0] := 0;
+              stateCount[1] := 0;
+              stateCount[2] := 0;
+              stateCount[3] := 0;
+              stateCount[4] := 0
             end
             else
             begin
@@ -539,72 +558,60 @@ begin
               stateCount[2] := stateCount[4];
               stateCount[3] := 1;
               stateCount[4] := 0;
-              currentState := 3;
-              Continue;
-            end;
-
-            currentState := 0;
-            stateCount[0] := 0;
-            stateCount[1] := 0;
-            stateCount[2] := 0;
-            stateCount[3] := 0;
-            stateCount[4] := 0
-          end
+              currentState := 3
+            end
           else
           begin
-            stateCount[0] := stateCount[2];
-            stateCount[1] := stateCount[3];
-            stateCount[2] := stateCount[4];
-            stateCount[3] := 1;
-            stateCount[4] := 0;
-            currentState := 3
+            inc(currentState);
+            inc(stateCount[currentState])
           end
         else
-        begin
-          inc(currentState);
-          inc(stateCount[currentState])
-        end
-      else
-        inc(stateCount[currentState]);
-      inc(j)
-    end;
-
-    if (TFinderPatternFinder.foundPatternCross(stateCount)) then
-    begin
-      confirmed := self.handlePossibleCenter(stateCount, i, maxJ, pureBarcode);
-      if confirmed then
-      begin
-        iSkip := stateCount[0];
-        if (hasSkipped) then
-          done := self.haveMultiplyConfirmedCenters
+          inc(stateCount[currentState]);
+        inc(j)
       end;
+
+      if (TFinderPatternFinder.foundPatternCross(stateCount)) then
+      begin
+        confirmed := self.handlePossibleCenter(stateCount, i, maxJ,
+          pureBarcode);
+        if confirmed then
+        begin
+          iSkip := stateCount[0];
+          if (hasSkipped) then
+            done := self.haveMultiplyConfirmedCenters
+        end;
+      end;
+
+      inc(i, iSkip)
+
     end;
 
-    inc(i, iSkip)
+    patternInfo := selectBestPatterns();
+    if (patternInfo = nil) then
+    begin
+      result := nil;
+      exit
+    end;
 
+    resultInfo := TArray<TResultPoint>.Create();
+    SetLength(resultInfo, 3);
+
+    resultInfo[0] := patternInfo[0] as TResultPoint;
+    resultInfo[1] := patternInfo[1] as TResultPoint;
+    resultInfo[2] := patternInfo[2] as TResultPoint;
+    TResultPoint.orderBestPatterns(resultInfo);
+
+    patternInfo[0] := resultInfo[0] as TFinderPattern;
+    patternInfo[1] := resultInfo[1] as TFinderPattern;
+    patternInfo[2] := resultInfo[2] as TFinderPattern;
+
+    result := TFinderPatternInfo.Create(patternInfo);
+
+  finally
+    resultInfo := nil;
+    stateCount := nil;
+    patternInfo := nil;
   end;
-
-  patternInfo := selectBestPatterns();
-  if (patternInfo = nil) then
-  begin
-    result := nil;
-    exit
-  end;
-
-  resultInfo := TArray<TResultPoint>.Create();
-  SetLength(resultInfo, 3);
-
-  resultInfo[0] := patternInfo[0] as TResultPoint;
-  resultInfo[1] := patternInfo[1] as TResultPoint;
-  resultInfo[2] := patternInfo[2] as TResultPoint;
-  TResultPoint.orderBestPatterns(resultInfo);
-
-  patternInfo[0] := resultInfo[0] as TFinderPattern;
-  patternInfo[1] := resultInfo[1] as TFinderPattern;
-  patternInfo[2] := resultInfo[2] as TFinderPattern;
-
-  result := TFinderPatternInfo.Create(patternInfo);
-
 end;
 
 function TFinderPatternFinder.findRowSkip: Integer;

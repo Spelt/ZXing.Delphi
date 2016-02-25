@@ -19,7 +19,7 @@ unit DetectorResult;
 }
 interface
 
-uses BitMatrix, Resultpoint;
+uses SysUtils, BitMatrix, Resultpoint;
 
 type
   TDetectorResult = class
@@ -32,7 +32,7 @@ type
 
   public
     constructor Create(bits: TBitmatrix; points: TArray<TResultPoint>);
-
+    destructor Destroy; override;
     property bits: TBitmatrix read get_Bits;
     property points: TArray<TResultPoint> read get_Points;
   end;
@@ -44,6 +44,14 @@ constructor TDetectorResult.Create(bits: TBitmatrix;
 begin
   FBits := bits;
   FPoints := points
+end;
+
+destructor TDetectorResult.Destroy;
+begin
+  FPoints := nil;
+  FBits := nil;
+
+  inherited;
 end;
 
 function TDetectorResult.get_Bits: TBitmatrix;

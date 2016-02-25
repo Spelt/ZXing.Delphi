@@ -59,14 +59,16 @@ type
     FTotalCodewords: Integer;
     FversionNumber: Integer;
 
+    class var BuildVersions : TArray<TVersion>;
     class var VERSION_DECODE_INFO: TArray<Integer>;
 
     constructor Create(versionNumber: Integer;
       alignmentPatternCenters: TArray<Integer>; ecBlocks: TArray<TECBlocks>);
 
     function CalcDimensionForVersion: Integer;
-    class function buildVersions: TArray<TVersion>; static;
+    class function GetBuildVersions: TArray<TVersion>; static;
     class procedure ClassInit; static;
+    class procedure ClassFinal; static;
 
   public
 
@@ -111,7 +113,6 @@ end;
 destructor TVersion.TECBlocks.destroy;
 begin
   ecBlocks :=nil;
-
   inherited;
 end;
 
@@ -180,18 +181,11 @@ begin
   result := Bitmatrix;
 end;
 
-class function TVersion.buildVersions: TArray<TVersion>;
+class function TVersion.GetBuildVersions: TArray<TVersion>;
 begin
   result := TArray<TVersion>.Create(
 
     TVersion.Create(1, TArray<Integer>.Create(),
-
-    { TArray<TECBlocks>.Create(
-      TECBlocks.Create(7,TECB.Create(1, 19)),
-      TECBlocks.Create(10,TECB.Create(1, 16)),
-      TECBlocks.Create(13,TECB.Create(1, 13)),
-      TECBlocks.Create(17,TECB.Create(1, 9))),
-    }
     TArray<TECBlocks>.Create(TECBlocks.Create(7,
     TArray<TECB>.Create(TECB.Create(1, 19))), TECBlocks.Create(10,
     TArray<TECB>.Create(TECB.Create(1, 16))), TECBlocks.Create(13,
@@ -546,9 +540,23 @@ begin
 end;
 
 destructor TVersion.Destroy;
+var ecBlocks :TECBlocks;
+  ECB: TECB;
 begin
   FalignmentPatternCenters := nil;
+  for ecBlocks in FecBlocks do
+  begin
+     
+      for ecb in ecBlocks.ecBlocks do
+      begin
+         ECB.Free;
+         //ECB := nil;
+      end;
+      ecBlocks.free;
+  end;
+  
   FecBlocks := nil;
+
   inherited;
 end;
 
@@ -627,8 +635,8 @@ begin
     raise EArgumentException.Create
       ('version number needs to be between 1 and 40');
 
-  result := TVersion.buildVersions[(versionNumber - 1)];
-
+  result := TVersion.BuildVersions[(versionNumber - 1)];
+  
 end;
 
 function TVersion.ToString: string;
@@ -643,10 +651,32 @@ begin
     $149A6, $15683, $168C9, $177EC, $18EC4, $191E1, $1AFAB, $1B08E, $1CC1A,
     $1D33F, $1ED75, $1F250, $209D5, $216F0, $228BA, $2379F, $24B0B, $2542E,
     $26A64, $27541, $28C69);
+
+  TVersion.BuildVersions := TVersion.GetBuildVersions;
+    
 end;
+
+class procedure TVersion.ClassFinal();
+var version :Tversion;
+begin
+  TVersion.VERSION_DECODE_INFO := nil;
+  
+  for version in TVersion.BuildVersions do
+  begin
+    version.Free;
+  end;
+  
+  TVersion.BuildVersions :=nil;
+end;
+
 
 Initialization
 
 TVersion.ClassInit();
+
+Finalization
+
+TVersion.ClassFinal();
+
 
 end.

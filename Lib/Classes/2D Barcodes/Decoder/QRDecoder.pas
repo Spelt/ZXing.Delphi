@@ -91,36 +91,41 @@ var
 begin
 
   parser := TBitMatrixParser.createBitMatrixParser(bits);
-  if (parser = nil) then
-  begin
-    Result := nil;
-    exit
-  end;
+  try
 
-  Result := self.decode(parser, hints);
-  if (Result = nil) then
-  begin
-
-    parser.remask;
-    parser.setMirror(true);
-    if (parser.readVersion = nil) then
+    if (parser = nil) then
     begin
       Result := nil;
       exit
     end;
 
-    if (parser.readFormatInformation = nil) then
-    begin
-      Result := nil;
-      exit
-    end;
-
-    parser.mirror;
     Result := self.decode(parser, hints);
-    if (Result <> nil) then
-      Result.Other := TQRCodeDecoderMetaData.Create(true)
-  end;
+    if (Result = nil) then
+    begin
 
+      parser.remask;
+      parser.setMirror(true);
+      if (parser.readVersion = nil) then
+      begin
+        Result := nil;
+        exit
+      end;
+
+      if (parser.readFormatInformation = nil) then
+      begin
+        Result := nil;
+        exit
+      end;
+
+      parser.mirror;
+      Result := self.decode(parser, hints);
+      if (Result <> nil) then
+        Result.Other := TQRCodeDecoderMetaData.Create(true)
+    end;
+
+  finally
+    FreeAndNil(parser);
+  end;
 end;
 
 function TQRDecoder.decode(parser: TBitMatrixParser;

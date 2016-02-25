@@ -68,7 +68,7 @@ type
 
   public
     constructor Create(image: TBitMatrix);
-
+    destructor Destroy(); override;
     function detect(): TDetectorResult; overload;
     function detect(hints: TDictionary<TDecodeHintType, TObject>)
       : TDetectorResult; overload;
@@ -81,6 +81,12 @@ implementation
 constructor TDetector.Create(image: TBitMatrix);
 begin
   FImage := image
+end;
+
+destructor TDetector.Destroy;
+begin
+  FreeAndNil(FImage);
+  inherited;
 end;
 
 function TDetector.Get_Image(): TBitMatrix;
@@ -189,6 +195,7 @@ begin
     dimMinusThree, topLeft.X, topLeft.Y, topRight.X, topRight.Y, bottomRightX,
     bottomRightY, bottomLeft.X, bottomLeft.Y);
 end;
+
 
 function TDetector.detect: TDetectorResult;
 begin
@@ -321,14 +328,13 @@ begin
         AlignmentPattern := self.findAlignmentInRegion(moduleSize,
           estAlignmentX, estAlignmentY, i);
         if (AlignmentPattern <> nil) then
-          break;;
+          break;
         i := (i shl 1)
       end
     end;
 
   finally
-
-    FreeAndNil(provisionalVersion);
+    provisionalVersion := nil;
   end;
 
   transform := TDetector.createTransform(topLeft, topRight, bottomLeft,

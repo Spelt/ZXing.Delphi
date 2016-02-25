@@ -63,7 +63,7 @@ type
       virtual; abstract;
 
     function BlackMatrix: TBitmatrix; virtual; abstract;
-
+    destructor Destroy();override;
 
     /// <summary> Creates a new object with the same type as this Binarizer implementation, but with pristine
     /// state. This is needed because Binarizer implementations may be stateful, e.g. keeping a cache
@@ -95,6 +95,11 @@ begin
 
   Self.FSource := source;
 
+end;
+
+destructor TBinarizer.Destroy;
+begin
+  inherited;
 end;
 
 function TBinarizer.GetHeight: Integer;

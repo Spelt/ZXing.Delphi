@@ -73,6 +73,7 @@ begin
   if Assigned(Matrix) then
     FreeAndNil(Matrix);
 
+  //FreeAndNil(Binarizer);
   inherited;
 end;
 
