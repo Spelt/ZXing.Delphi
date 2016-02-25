@@ -133,10 +133,10 @@ var
   finderPattern: TFinderPattern;
 begin
 
-  for finderPattern in PossibleCenters do
-  begin
-    finderPattern.Free;
-  end;
+//  for finderPattern in PossibleCenters do
+//  begin
+//    //finderPattern.Free;
+//  end;
 
   PossibleCenters.Clear;
   FreeAndNil(PossibleCenters);
