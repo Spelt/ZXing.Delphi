@@ -171,7 +171,6 @@ begin
     exit(nil);
   end;
 
-
   dataBlocks := TDataBlock.getDataBlocks(codeWords, version, ecLevel);
   totalBytes := 0;
 
@@ -213,7 +212,6 @@ begin
 
   FreeAndNil(formatInfo);
   resultBytes := nil;
-  //FreeAndNil(DataBlocks);
 end;
 
 end.

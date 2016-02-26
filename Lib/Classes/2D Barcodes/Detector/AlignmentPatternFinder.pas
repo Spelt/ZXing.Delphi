@@ -342,6 +342,8 @@ begin
 
       point := TAlignmentPattern.Create(centerJ, centerI, estimatedModuleSize);
 
+
+
       self.possibleCenters.Add(point);
 
       if (assigned(resultPointCallback)) then

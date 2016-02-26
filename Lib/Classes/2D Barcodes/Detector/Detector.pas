@@ -85,7 +85,7 @@ end;
 
 destructor TDetector.Destroy;
 begin
-  FreeAndNil(FImage);
+  //FreeAndNil(FImage);
   ResultPointCallback := nil;
   inherited;
 end;
@@ -267,7 +267,9 @@ begin
     (alignmentAreaBottomY - alignmentAreaTopY), overallEstModuleSize,
     self.ResultPointCallback);
 
+
   Result := alignmentFinder.find;
+  FreeAndNil(alignmentFinder);
 
 end;
 
@@ -329,7 +331,8 @@ begin
           estAlignmentX, estAlignmentY, i);
         if (AlignmentPattern <> nil) then
           break;
-        i := (i shl 1)
+        i := (i shl 1);
+
       end
     end;
 

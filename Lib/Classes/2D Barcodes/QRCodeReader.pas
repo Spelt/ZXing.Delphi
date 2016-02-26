@@ -70,6 +70,7 @@ function TQRCodeReader.decode(image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
   DecoderResult: TDecoderResult;
+  Detector: TDetector;
   points: TArray<TResultPoint>;
   bits: TBitMatrix;
   DetectorResult: TDetectorResult;
@@ -78,6 +79,7 @@ var
   ecLevel: string;
 
 begin
+  Detector := nil;
 
   if ((image = nil) or (image.BlackMatrix = nil)) then
   begin
@@ -101,8 +103,8 @@ begin
   end
   else
   begin
-
-    DetectorResult := TDetector.Create(image.BlackMatrix).Detect(hints);
+    Detector := TDetector.Create(image.BlackMatrix);
+    DetectorResult := Detector.Detect(hints);
     try
 
       if (DetectorResult = nil) then
@@ -127,8 +129,9 @@ begin
 
   if (DecoderResult = nil) then
   begin
-    Result := nil;
-    exit
+    if assigned(Detector) then
+      FreeAndNil(Detector);
+    exit(nil)
   end;
 
   try
@@ -162,6 +165,9 @@ begin
 
   finally
     FreeAndNil(DecoderResult);
+
+    if assigned(Detector) then
+      FreeAndNil(Detector);
   end;
 
 end;
