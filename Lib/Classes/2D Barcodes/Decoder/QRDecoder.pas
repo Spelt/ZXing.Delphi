@@ -35,6 +35,7 @@ type
       hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult; overload;
   public
     constructor Create;
+    destructor Destroy;override;
     function decode(bits: TBitMatrix;
       hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult; overload;
   end;
@@ -46,6 +47,13 @@ constructor TQRDecoder.Create;
 begin
   rsDecoder := TReedSolomonDecoder.Create(TGenericGF.QR_CODE_FIELD_256);
 end;
+
+destructor TQRDecoder.Destroy;
+begin
+  FreeAndNil(rsDecoder);
+  inherited;
+end;
+
 
 function TQRDecoder.correctErrors(codewordBytes: TArray<Byte>;
   numDataCodewords: Integer): boolean;
@@ -159,9 +167,10 @@ begin
   codeWords := parser.readCodewords;
   if (codeWords = nil) then
   begin
-    Result := nil;
-    exit
+     FreeAndNil(formatInfo);
+    exit(nil);
   end;
+
 
   dataBlocks := TDataBlock.getDataBlocks(codeWords, version, ecLevel);
   totalBytes := 0;
@@ -181,8 +190,8 @@ begin
     numDataCodewords := Datablock.numDataCodewords;
     if (not self.correctErrors(codewordBytes, numDataCodewords)) then
     begin
-      Result := nil;
-      exit
+      FreeAndNil(formatInfo);
+      Exit(nil);
     end;
 
     i := 0;
@@ -191,11 +200,20 @@ begin
       resultBytes[resultOffset] := codewordBytes[i];
       inc(resultOffset);
       inc(i)
-    end
+    end;
+
+    Datablock.Free;
+
   end;
+
+  dataBlocks := nil;
 
   Result := TDecodedBitStreamParser.decode(resultBytes, version,
     ecLevel, hints);
+
+  FreeAndNil(formatInfo);
+  resultBytes := nil;
+  //FreeAndNil(DataBlocks);
 end;
 
 end.
