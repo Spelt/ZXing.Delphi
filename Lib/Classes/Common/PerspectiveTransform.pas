@@ -100,12 +100,12 @@ begin
   qToS := TPerspectiveTransform.quadrilateralToSquare(x0, y0, x1, y1, x2,
     y2, x3, y3);
 
-  SToQ:= TPerspectiveTransform.squareToQuadrilateral(x0p, y0p, x1p, y1p, x2p,
+  SToQ := TPerspectiveTransform.squareToQuadrilateral(x0p, y0p, x1p, y1p, x2p,
     y2p, x3p, y3p);
 
   Result := SToQ.times(qToS);
 
-  FreeAndNil(sToQ);
+  FreeAndNil(SToQ);
   FreeAndNil(qToS);
 
 end;
@@ -113,9 +113,14 @@ end;
 class function TPerspectiveTransform.quadrilateralToSquare(x0: Single;
   y0: Single; x1: Single; y1: Single; x2: Single; y2: Single; x3: Single;
   y3: Single): TPerspectiveTransform;
+var
+  SToQ: TPerspectiveTransform;
 begin
-  Result := TPerspectiveTransform.squareToQuadrilateral(x0, y0, x1, y1, x2, y2,
-    x3, y3).buildAdjoint
+  SToQ := TPerspectiveTransform.squareToQuadrilateral(x0, y0, x1, y1, x2,
+    y2, x3, y3);
+
+  Result := SToQ.buildAdjoint;
+  FreeAndNil(SToQ);
 end;
 
 class function TPerspectiveTransform.squareToQuadrilateral(x0: Single;

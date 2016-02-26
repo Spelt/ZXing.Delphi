@@ -49,8 +49,7 @@ end;
 destructor TDetectorResult.Destroy;
 begin
   FPoints := nil;
-  FBits := nil;
-
+  FreeAndNil(FBits);
   inherited;
 end;
 

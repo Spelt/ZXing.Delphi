@@ -131,31 +131,37 @@ begin
     exit
   end;
 
-  data := TQRCodeDecoderMetaData(DecoderResult.Other);
+  try
 
-  if (data <> nil) then
-    data.applyMirroredCorrection(points);
+    data := TQRCodeDecoderMetaData(DecoderResult.Other);
 
-  Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
-    points, BarcodeFormat.QR_CODE);
+    if (data <> nil) then
+      data.applyMirroredCorrection(points);
 
-  byteSegments := DecoderResult.byteSegments;
+    Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
+      points, BarcodeFormat.QR_CODE);
 
-  if (byteSegments <> nil) then
-    Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
+    byteSegments := DecoderResult.byteSegments;
 
-  ecLevel := DecoderResult.ecLevel;
+    if (byteSegments <> nil) then
+      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
 
-  if (length(ecLevel) = 0) then
-    Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
-      TObject(ecLevel));
+    ecLevel := DecoderResult.ecLevel;
 
-  if (DecoderResult.StructuredAppend) then
-  begin
-    Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
-      TObject(DecoderResult.StructuredAppendSequenceNumber));
-    Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
-      TObject(DecoderResult.StructuredAppendParity))
+    if (length(ecLevel) = 0) then
+      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
+        TObject(ecLevel));
+
+    if (DecoderResult.StructuredAppend) then
+    begin
+      Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
+        TObject(DecoderResult.StructuredAppendSequenceNumber));
+      Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
+        TObject(DecoderResult.StructuredAppendParity))
+    end;
+
+  finally
+    FreeAndNil(DecoderResult);
   end;
 
 end;

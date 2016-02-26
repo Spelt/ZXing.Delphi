@@ -80,7 +80,14 @@ begin
 end;
 
 destructor TAlignmentPatternFinder.Destroy;
+var alignmentPattern : TAlignmentPattern;
 begin
+
+  for alignmentPattern in possibleCenters do
+  begin
+    alignmentPattern.Free;
+  end;
+
   self.possibleCenters.Clear;
   FreeAndNil(self.possibleCenters);
   self.crossCheckStateCount := nil;

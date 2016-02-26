@@ -150,58 +150,65 @@ begin
   DataMask.unmaskBitMatrix(self.BitMatrix, dimension);
 
   functionPattern := Version.buildFunctionPattern;
-  readingUp := true;
-  result := TArray<Byte>.Create();
-  SetLength(result, Version.TotalCodewords);
-  resultOffset := 0;
-  currentByte := 0;
-  bitsRead := 0;
-  j := (dimension - 1);
 
-  while ((j > 0)) do
-  begin
+  try
 
-    if (j = 6) then
-      dec(j);
-    count := 0;
-    while ((count < dimension)) do
+    readingUp := true;
+    result := TArray<Byte>.Create();
+    SetLength(result, Version.TotalCodewords);
+    resultOffset := 0;
+    currentByte := 0;
+    bitsRead := 0;
+    j := (dimension - 1);
+
+    while ((j > 0)) do
     begin
 
-      if readingUp then
-        i := ((dimension - 1) - count)
-      else
-        i := count;
-
-      col := 0;
-      while ((col < 2)) do
+      if (j = 6) then
+        dec(j);
+      count := 0;
+      while ((count < dimension)) do
       begin
-        if (not functionPattern[(j - col), i]) then
+
+        if readingUp then
+          i := ((dimension - 1) - count)
+        else
+          i := count;
+
+        col := 0;
+        while ((col < 2)) do
         begin
-          inc(bitsRead);
-          currentByte := (currentByte shl 1);
-          if (self.BitMatrix[(j - col), i]) then
-            currentByte := (currentByte or 1);
-          if (bitsRead = 8) then
+          if (not functionPattern[(j - col), i]) then
           begin
-            result[resultOffset] := Byte(currentByte);
-            inc(resultOffset);
-            bitsRead := 0;
-            currentByte := 0
-          end
+            inc(bitsRead);
+            currentByte := (currentByte shl 1);
+            if (self.BitMatrix[(j - col), i]) then
+              currentByte := (currentByte or 1);
+            if (bitsRead = 8) then
+            begin
+              result[resultOffset] := Byte(currentByte);
+              inc(resultOffset);
+              bitsRead := 0;
+              currentByte := 0
+            end
+          end;
+          inc(col)
         end;
-        inc(col)
+        inc(count)
       end;
-      inc(count)
+
+      readingUp := not readingUp;
+      dec(j, 2);
+
     end;
 
-    readingUp := not readingUp;
-    dec(j, 2);
+    if (resultOffset <> Version.TotalCodewords) then
+    begin
+      result := nil;
+    end;
 
-  end;
-
-  if (resultOffset <> Version.TotalCodewords) then
-  begin
-    result := nil;
+  finally
+    FreeAndNil(functionPattern);
   end;
 
 end;

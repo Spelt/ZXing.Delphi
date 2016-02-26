@@ -86,6 +86,7 @@ end;
 destructor TDetector.Destroy;
 begin
   FreeAndNil(FImage);
+  ResultPointCallback := nil;
   inherited;
 end;
 
@@ -358,6 +359,7 @@ begin
       AlignmentPattern);
 
   Result := TDetectorResult.Create(bits, points);
+
 
 end;
 

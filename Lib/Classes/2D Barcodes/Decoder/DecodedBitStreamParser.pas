@@ -95,145 +95,151 @@ begin
   symbolSequence := -1;
   parityData := -1;
   Mode := nil;
-
   try
-    currentCharacterSetECI := nil;
-    fc1InEffect := false;
-    repeat
+    try
+      currentCharacterSetECI := nil;
+      fc1InEffect := false;
+      repeat
 
-      if (bits.available < 4) then
-      begin
-        Mode := TMode.TERMINATOR;
-      end
-      else
-      begin
-
-        try
-          Mode := TMode.forBits(bits.readBits(4))
-        except
-          on exception1: EArgumentException do
-          begin
-            result := nil;
-            exit;
-          end;
-        end;
-
-      end;
-
-      if (Mode <> TMode.TERMINATOR) then
-      begin
-
-        if ((Mode = TMode.FNC1_FIRST_POSITION) or
-          (Mode = TMode.FNC1_SECOND_POSITION)) then
+        if (bits.available < 4) then
         begin
-          fc1InEffect := true;
-        end
-        else if (Mode = TMode.STRUCTURED_APPEND) then
-        begin
-          if (bits.available() < 16) then
-          begin
-            result := nil;
-            exit
-          end;
-
-          symbolSequence := bits.readBits(8);
-          parityData := bits.readBits(8);
-        end
-        else if (Mode = TMode.ECI) then
-        begin
-          currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue
-            (TDecodedBitStreamParser.parseECIValue(bits));
-
-          if (currentCharacterSetECI = nil) then
-          begin
-            result := nil;
-            exit
-          end
-
+          Mode := TMode.TERMINATOR;
         end
         else
         begin
-          if (Mode = TMode.HANZI) then
-          begin
-            subSet := bits.readBits(4);
-            countHanzi := bits.readBits(Mode.getCharacterCountBits(version));
-            if (subSet = 1) then
+
+          try
+            Mode := TMode.forBits(bits.readBits(4))
+          except
+            on exception1: EArgumentException do
             begin
-              if (not TDecodedBitStreamParser.decodeHanziSegment(bits, res,
-                countHanzi)) then
-              begin
-                result := nil;
-                exit
-              end
+              result := nil;
+              exit;
             end;
-          end
-          else
+          end;
+
+        end;
+
+        if (Mode <> TMode.TERMINATOR) then
+        begin
+
+          if ((Mode = TMode.FNC1_FIRST_POSITION) or
+            (Mode = TMode.FNC1_SECOND_POSITION)) then
           begin
-            count := bits.readBits(Mode.getCharacterCountBits(version));
-            if (Mode = TMode.NUMERIC) then
+            fc1InEffect := true;
+          end
+          else if (Mode = TMode.STRUCTURED_APPEND) then
+          begin
+            if (bits.available() < 16) then
             begin
-              if (not TDecodedBitStreamParser.decodeNumericSegment(bits, res,
-                count)) then
-              begin
-                result := nil;
-                exit
-              end;
-            end
-            else if (Mode = TMode.ALPHANUMERIC) then
-            begin
-              if (not TDecodedBitStreamParser.decodeAlphanumericSegment(bits,
-                res, count, fc1InEffect)) then
-              begin
-                result := nil;
-                exit
-              end;
-            end
-            else if (Mode = TMode.BYTE) then
-            begin
-              if (not TDecodedBitStreamParser.decodeByteSegment(bits, res,
-                count, currentCharacterSetECI, byteSegments, hints)) then
-              begin
-                result := nil;
-                exit;
-              end
-            end
-            else if (Mode <> TMode.KANJI) then
-            begin
-              if (not TDecodedBitStreamParser.decodeKanjiSegment(bits, res,
-                count)) then
-              begin
-                result := nil;
-                exit
-              end
-            end
-            else
+              result := nil;
+              exit
+            end;
+
+            symbolSequence := bits.readBits(8);
+            parityData := bits.readBits(8);
+          end
+          else if (Mode = TMode.ECI) then
+          begin
+            currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue
+              (TDecodedBitStreamParser.parseECIValue(bits));
+
+            if (currentCharacterSetECI = nil) then
             begin
               result := nil;
               exit
             end
+
+          end
+          else
+          begin
+            if (Mode = TMode.HANZI) then
+            begin
+              subSet := bits.readBits(4);
+              countHanzi := bits.readBits(Mode.getCharacterCountBits(version));
+              if (subSet = 1) then
+              begin
+                if (not TDecodedBitStreamParser.decodeHanziSegment(bits, res,
+                  countHanzi)) then
+                begin
+                  result := nil;
+                  exit
+                end
+              end;
+            end
+            else
+            begin
+              count := bits.readBits(Mode.getCharacterCountBits(version));
+              if (Mode = TMode.NUMERIC) then
+              begin
+                if (not TDecodedBitStreamParser.decodeNumericSegment(bits, res,
+                  count)) then
+                begin
+                  result := nil;
+                  exit
+                end;
+              end
+              else if (Mode = TMode.ALPHANUMERIC) then
+              begin
+                if (not TDecodedBitStreamParser.decodeAlphanumericSegment(bits,
+                  res, count, fc1InEffect)) then
+                begin
+                  result := nil;
+                  exit
+                end;
+              end
+              else if (Mode = TMode.BYTE) then
+              begin
+                if (not TDecodedBitStreamParser.decodeByteSegment(bits, res,
+                  count, currentCharacterSetECI, byteSegments, hints)) then
+                begin
+                  result := nil;
+                  exit;
+                end
+              end
+              else if (Mode <> TMode.KANJI) then
+              begin
+                if (not TDecodedBitStreamParser.decodeKanjiSegment(bits, res,
+                  count)) then
+                begin
+                  result := nil;
+                  exit
+                end
+              end
+              else
+              begin
+                result := nil;
+                exit
+              end
+            end
           end
         end
-      end
-      until (Mode = TMode.TERMINATOR)
+        until (Mode = TMode.TERMINATOR)
 
-    except
-      on exception2: EArgumentException do
-      begin
-        result := nil;
-        exit
-      end
+      except
+        on exception2: EArgumentException do
+        begin
+          result := nil;
+          exit
+        end
+      end;
+
+      if (byteSegments.count = 0) then
+        byteSegments := nil;
+
+      if (ecLevel = nil) then
+        ecstring := ''
+      else
+        ecstring := ecLevel.toString();
+
+      result := TDecoderResult.Create(bytes, res.toString.Replace('#13#10',
+        '#10').Replace('#10', #13), byteSegments, ecstring, symbolSequence,
+        parityData);
+
+    finally
+      FreeAndNil(res);
+      FreeAndNil(bits);
     end;
-
-    if (byteSegments.count = 0) then
-      byteSegments := nil;
-
-    if (ecLevel = nil) then
-      ecstring := ''
-    else
-      ecstring := ecLevel.toString();
-
-    result := TDecoderResult.Create(bytes, res.toString.Replace('#13#10', '#10')
-      .Replace('#10', #13), byteSegments, ecstring, symbolSequence, parityData);
 
   end;
 
@@ -306,7 +312,8 @@ begin
     currentCharacterSetECI: TCharacterSetECI; byteSegments: TList<TArray<Byte>>;
     hints: TDictionary<TDecodeHintType, TObject>): boolean;
   var
-    encoding: string;
+    Enc:TEncoding;
+    encodingS, s: string;
     readBytes: TArray<Byte>;
     i: Integer;
 
@@ -328,13 +335,15 @@ begin
     end;
 
     if (currentCharacterSetECI = nil) then
-      encoding := TStringUtils.guessEncoding(readBytes, hints)
+      encodingS := TStringUtils.guessEncoding(readBytes, hints)
     else
-      encoding := currentCharacterSetECI.EncodingName;
+      encodingS := currentCharacterSetECI.EncodingName;
 
     try
-      res.Append(Tencoding.GetEncoding(encoding).GetString(readBytes, 0,
-        Length(readBytes)))
+      enc:=Tencoding.GetEncoding(encodingS);
+      s:=enc.GetString(readBytes, 0, Length(readBytes));
+      res.Append(s);
+      FreeAndNil(enc);
     except
       on exception1: Exception do
       begin

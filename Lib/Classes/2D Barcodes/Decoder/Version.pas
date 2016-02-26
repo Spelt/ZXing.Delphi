@@ -146,13 +146,12 @@ end;
 function TVersion.buildFunctionPattern: TBitMatrix;
 var
   dimension, max, x, i, y: Integer;
-  Bitmatrix: TBitMatrix;
 begin
   dimension := DimensionForVersion;
-  Bitmatrix := TBitMatrix.Create(dimension);
-  Bitmatrix.setRegion(0, 0, 9, 9);
-  Bitmatrix.setRegion((dimension - 8), 0, 8, 9);
-  Bitmatrix.setRegion(0, (dimension - 8), 9, 8);
+  result := TBitMatrix.Create(dimension);
+  result.setRegion(0, 0, 9, 9);
+  result.setRegion((dimension - 8), 0, 8, 9);
+  result.setRegion(0, (dimension - 8), 9, 8);
   max := Length(FalignmentPatternCenters);
   x := 0;
 
@@ -164,21 +163,20 @@ begin
     begin
       if (((x <> 0) or ((y <> 0) and (y <> (max - 1)))) and
         ((x <> (max - 1)) or (y <> 0))) then
-        Bitmatrix.setRegion((self.alignmentPatternCenters[y] - 2), i, 5, 5);
+        result.setRegion((self.alignmentPatternCenters[y] - 2), i, 5, 5);
       inc(y)
     end;
     inc(x)
   end;
 
-  Bitmatrix.setRegion(6, 9, 1, (dimension - $11));
-  Bitmatrix.setRegion(9, 6, (dimension - $11), 1);
+  result.setRegion(6, 9, 1, (dimension - $11));
+  result.setRegion(9, 6, (dimension - $11), 1);
   if (self.versionNumber > 6) then
   begin
-    Bitmatrix.setRegion((dimension - 11), 0, 3, 6);
-    Bitmatrix.setRegion(0, (dimension - 11), 6, 3)
+    result.setRegion((dimension - 11), 0, 3, 6);
+    result.setRegion(0, (dimension - 11), 6, 3)
   end;
 
-  result := Bitmatrix;
 end;
 
 class function TVersion.GetBuildVersions: TArray<TVersion>;

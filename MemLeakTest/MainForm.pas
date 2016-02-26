@@ -51,14 +51,8 @@ begin
   finally
     FreeAndNil(bmp);
     FreeAndNil(ScanManager);
+    FreeAndNil(rs);
 
-    if (rs <> nil) then
-    begin
-      for ResultPoint in rs.ResultPoints do
-        ResultPoint.Free;
-      rs.ResultPoints := nil;
-      FreeAndNil(rs);
-    end;
   end;
 
   result := nil;

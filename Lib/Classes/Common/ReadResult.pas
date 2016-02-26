@@ -56,6 +56,8 @@ type
     constructor Create(Text: string; RawBytes: TArray<byte>;
       ResultPoints: TArray<TResultPoint>; BarcodeFormat: TBarcodeFormat);
 
+    destructor Destroy(); override;
+
     procedure putMetadata(ResultMetadataType: TResultMetadataType;
       value: TObject);
 
@@ -75,12 +77,31 @@ begin
   begin
     raise EArgumentException.Create('Text and bytes are null.');
   end;
+  FResultMetadata:=nil;
 
   FText := Text;
   FRawBytes := RawBytes;
   FResultPoints := ResultPoints;
   FResultMetadata := nil;
   FBarcodeFormat := BarcodeFormat;
+end;
+
+destructor TReadResult.Destroy;
+var
+  resulTPoint: TResultPoint;
+begin
+  for ResultPoint in ResultPoints do
+    ResultPoint.Free;
+  ResultPoints := nil;
+  FRawBytes := nil;
+
+  if FResultMetadata <> nil then
+  begin
+    FResultMetadata.Clear;
+    FreeAndNil(FResultMetadata);
+  end;
+
+  inherited;
 end;
 
 procedure TReadResult.PutAllMetaData(metaData: TDictionary<TResultMetadataType,

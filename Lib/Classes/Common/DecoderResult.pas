@@ -44,6 +44,7 @@ type
       ByteSegments: TList<TArray<Byte>>; ECLevel: string; saSequence: Integer;
       saParity: Integer); overload;
 
+    destructor Destroy(); override;
     property StructuredAppend: boolean read GetStructuredAppend;
 
   end;
@@ -70,6 +71,16 @@ begin
   self.ECLevel := ECLevel;
   self.StructuredAppendParity := saParity;
   self.StructuredAppendSequenceNumber := saSequence
+end;
+
+destructor TDecoderResult.Destroy;
+begin
+  ByteSegments.Clear;
+  FreeAndNil(ByteSegments);
+  RawBytes := nil;
+  FreeAndNil(Other);
+
+  inherited;
 end;
 
 function TDecoderResult.GetStructuredAppend: boolean;

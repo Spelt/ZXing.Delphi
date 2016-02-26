@@ -63,58 +63,66 @@ var
   noError: boolean;
 begin
   poly := TGenericGFPoly.Create(self.field, received);
+
   syndromeCoefficients := TArray<Integer>.Create();
   SetLength(syndromeCoefficients, twoS);
 
-  noError := true;
-  i := 0;
-  while ((i < twoS)) do
-  begin
-    eval := poly.evaluateAt(self.field.exp((i + self.field.GeneratorBase)));
-    syndromeCoefficients[((Length(syndromeCoefficients) - 1) - i)] := eval;
-    if (eval <> 0) then
-      noError := false;
-    inc(i)
-  end;
+  try
 
-  if (noError) then
-  begin
-    Result := true;
-    Exit;
-  end;
+    noError := true;
+    i := 0;
+    while ((i < twoS)) do
+    begin
+      eval := poly.evaluateAt(self.field.exp((i + self.field.GeneratorBase)));
+      syndromeCoefficients[((Length(syndromeCoefficients) - 1) - i)] := eval;
+      if (eval <> 0) then
+        noError := false;
+      inc(i)
+    end;
 
-  syndrome := TGenericGFPoly.Create(self.field, syndromeCoefficients);
-  sigmaOmega := self.runEuclideanAlgorithm(self.field.buildMonomial(twoS, 1),
-    syndrome, twoS);
+    if (noError) then
+    begin
+      Result := true;
+      Exit;
+    end;
 
-  if (sigmaOmega = nil) then
-  begin
-    Result := false;
-    Exit
-  end;
+    syndrome := TGenericGFPoly.Create(self.field, syndromeCoefficients);
+    sigmaOmega := self.runEuclideanAlgorithm(self.field.buildMonomial(twoS, 1),
+      syndrome, twoS);
 
-  sigma := sigmaOmega[0];
-  errorLocations := self.findErrorLocations(sigma);
-  if (errorLocations = nil) then
-  begin
-    Result := false;
-    Exit
-  end;
-
-  omega := sigmaOmega[1];
-  errorMagnitudes := self.findErrorMagnitudes(omega, errorLocations);
-  i := 0;
-  while (i < Length(errorLocations)) do
-  begin
-    position := ((Length(received) - 1) - self.field.log(errorLocations[i]));
-    if (position < 0) then
+    if (sigmaOmega = nil) then
     begin
       Result := false;
       Exit
     end;
-    received[position] := TGenericGF.addOrSubtract(received[position],
-      errorMagnitudes[i]);
-    inc(i)
+
+    sigma := sigmaOmega[0];
+    errorLocations := self.findErrorLocations(sigma);
+    if (errorLocations = nil) then
+    begin
+      Result := false;
+      Exit
+    end;
+
+    omega := sigmaOmega[1];
+    errorMagnitudes := self.findErrorMagnitudes(omega, errorLocations);
+    i := 0;
+    while (i < Length(errorLocations)) do
+    begin
+      position := ((Length(received) - 1) - self.field.log(errorLocations[i]));
+      if (position < 0) then
+      begin
+        Result := false;
+        Exit
+      end;
+      received[position] := TGenericGF.addOrSubtract(received[position],
+        errorMagnitudes[i]);
+      inc(i)
+    end;
+
+  finally
+    FreeAndNil(poly);
+    syndromeCoefficients := nil;
   end;
 
   Result := true;

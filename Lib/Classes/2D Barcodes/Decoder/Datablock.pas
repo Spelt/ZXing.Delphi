@@ -31,6 +31,7 @@ type
     NumDataCodewords: Integer;
     class function getDataBlocks(rawCodewords: TArray<Byte>; Version: Tversion;
       ecLevel: TErrorCorrectionLevel): TArray<TDataBlock>; static;
+    destructor Destroy(); override;
   end;
 
 implementation
@@ -42,6 +43,12 @@ constructor TDataBlock.Create(codewords: TArray<Byte>;
 begin
   self.codewords := codewords;
   self.NumDataCodewords := NumDataCodewords;
+end;
+
+destructor TDataBlock.Destroy;
+begin
+  codewords := nil;
+  inherited;
 end;
 
 class function TDataBlock.getDataBlocks(rawCodewords: TArray<Byte>;
@@ -91,6 +98,9 @@ begin
     end
 
   end;
+
+  numBlockCodewordsBytes := nil;
+
 
   shorterBlocksTotalCodewords := Length(result[0].codewords);
   longerBlocksStartAt := Length(result) - 1;
