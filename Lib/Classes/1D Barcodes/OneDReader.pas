@@ -352,8 +352,7 @@ begin
 
         end;
 
-        Result := ReadResult;
-        Exit;
+        Exit(ReadResult);
 
       end; // attempt loop
 

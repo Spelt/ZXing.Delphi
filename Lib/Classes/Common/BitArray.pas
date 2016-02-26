@@ -44,6 +44,7 @@ type
 
     constructor Create(); overload;
     constructor Create(Size: Integer); overload;
+    destructor Destroy; override;
     function getNextSet(from: Integer): Integer;
     function getNextUnset(from: Integer): Integer;
 
@@ -100,6 +101,13 @@ begin
   FBits := MakeArray(Size);
   InitLookup();
 
+end;
+
+destructor TBitArray.Destroy;
+begin
+  FBits := nil;
+  _lookup := nil;
+  inherited;
 end;
 
 function TBitArray.GetBit(i: Integer): Boolean;

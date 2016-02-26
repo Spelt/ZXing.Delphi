@@ -199,12 +199,14 @@ begin
             scanBitmap.Free;
           end;
 
+          FreeAndNil(ReadResult);
+
         end);
     end);
 
 end;
 
-{ Make sure the camera is released if you're going away. }
+{ Make sure the ca mera is released if you're going away. }
 function TMainForm.AppEvent(AAppEvent: TApplicationEvent;
 AContext: TObject): Boolean;
 begin

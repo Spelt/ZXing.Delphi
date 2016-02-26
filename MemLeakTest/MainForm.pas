@@ -15,10 +15,12 @@ type
     btnQRCode: TButton;
     btnCode93: TButton;
     btnITF: TButton;
+    btnDummy: TButton;
     procedure btnCode128Click(Sender: TObject);
     procedure btnQRCodeClick(Sender: TObject);
     procedure btnITFClick(Sender: TObject);
     procedure btnCode93Click(Sender: TObject);
+    procedure btnDummyClick(Sender: TObject);
   private
     function GetImage(Filename: string): TBitmap;
     function Decode(Filename: String; CodeFormat: TBarcodeFormat): TReadResult;
@@ -52,7 +54,6 @@ begin
     FreeAndNil(bmp);
     FreeAndNil(ScanManager);
     FreeAndNil(rs);
-
   end;
 
   result := nil;
@@ -86,6 +87,11 @@ end;
 procedure TForm2.btnCode93Click(Sender: TObject);
 begin
   Decode('Code93-1.png', TBarcodeFormat.CODE_93);
+end;
+
+procedure TForm2.btnDummyClick(Sender: TObject);
+begin
+  Decode('Dummy.png', TBarcodeFormat.Auto);
 end;
 
 procedure TForm2.btnITFClick(Sender: TObject);

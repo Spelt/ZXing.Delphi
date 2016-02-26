@@ -109,8 +109,8 @@ begin
 
       if (DetectorResult = nil) then
       begin
-        Result := nil;
-        exit
+        FreeAndNil(Detector);
+        exit(nil);
       end;
 
       Decoder := TQRDecoder.Create;

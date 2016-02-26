@@ -85,7 +85,7 @@ end;
 
 destructor TDetector.Destroy;
 begin
-  //FreeAndNil(FImage);
+  // FreeAndNil(FImage);
   ResultPointCallback := nil;
   inherited;
 end;
@@ -223,18 +223,18 @@ begin
   finder := TFinderPatternFinder.Create(FImage, ResultPointCallback);
   try
     info := finder.find(hints);
+
+    if (info = nil) then
+      exit(nil);
+
+    Result := self.processFinderPatternInfo(info);
+
   finally
     FreeAndNil(finder);
+    if info <> nil then
+      FreeAndNil(info);
   end;
 
-  if (info = nil) then
-  begin
-    Result := nil;
-    exit
-  end;
-
-  Result := self.processFinderPatternInfo(info);
-  FreeAndNil(info);
 end;
 
 function TDetector.findAlignmentInRegion(overallEstModuleSize: Single;
@@ -266,7 +266,6 @@ begin
     alignmentAreaTopY, (alignmentAreaRightX - alignmentAreaLeftX),
     (alignmentAreaBottomY - alignmentAreaTopY), overallEstModuleSize,
     self.ResultPointCallback);
-
 
   Result := alignmentFinder.find;
   FreeAndNil(alignmentFinder);
@@ -362,7 +361,6 @@ begin
       AlignmentPattern);
 
   Result := TDetectorResult.Create(bits, points);
-
 
 end;
 

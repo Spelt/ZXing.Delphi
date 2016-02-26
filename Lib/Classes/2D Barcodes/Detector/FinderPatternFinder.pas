@@ -38,7 +38,6 @@ type
     FCrossCheckStateCount: TArray<Integer>;
     hasSkipped: boolean;
     FImage: TBitMatrix;
-    PossibleCenters: TList<TFinderPattern>;
     resultPointCallback: TresultPointCallback;
 
     class function centerFromEnd(stateCount: TArray<Integer>; pEnd: Integer)
@@ -55,6 +54,8 @@ type
 
     function CrossCheckStateCount: TArray<Integer>;
   public
+    PossibleCenters: TList<TFinderPattern>;
+
     // constructor Create(image: TBitMatrix); overload;
     constructor Create(image: TBitMatrix;
       resultPointCallback: TresultPointCallback);
@@ -129,15 +130,8 @@ begin
 end;
 
 destructor TFinderPatternFinder.Destroy;
-var
-  finderPattern: TFinderPattern;
 begin
-
-//  for finderPattern in PossibleCenters do
-//  begin
-//    //finderPattern.Free;
-//  end;
-
+  FImage := nil;
   PossibleCenters.Clear;
   FreeAndNil(PossibleCenters);
   FCrossCheckStateCount := nil;
@@ -735,36 +729,34 @@ begin
       center := self.PossibleCenters[index];
       if (center.aboutEquals(estimatedModuleSize, centerI, centerJ)) then
       begin
-        self.PossibleCenters[index].Free;
-        self.PossibleCenters.Delete(index);
-        self.PossibleCenters.Insert(index, center.combineEstimate(centerI,
-          centerJ, estimatedModuleSize));
+        PossibleCenters[index].Free;
+        PossibleCenters[index] := nil;
+        PossibleCenters.Delete(index);
+        PossibleCenters.Insert(index, center.combineEstimate(centerI, centerJ,
+          estimatedModuleSize));
         found := true;
         break;
-
       end;
+
+      //FreeAndNil(center);
       inc(index)
     end;
 
     if (not found) then
     begin
-
       point := TFinderPattern.Create(centerJ, centerI, estimatedModuleSize);
-      self.PossibleCenters.Add(point);
+      PossibleCenters.Add(point);
 
       // todo: 2015-10-16
       // if (self.resultPointCallback <> nil) then
       // self.resultPointCallback.Invoke(point)
-
     end;
 
-    result := true;
+    Exit(true);
 
   end;
 
   result := false;
-
-
 
 end;
 

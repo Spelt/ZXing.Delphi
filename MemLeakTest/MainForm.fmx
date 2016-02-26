@@ -14,7 +14,7 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 4
+    TabOrder = 5
     Text = 'Code 128'
     OnClick = btnCode128Click
   end
@@ -24,7 +24,7 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 1
+    TabOrder = 2
     Text = 'QR Code'
     OnClick = btnQRCodeClick
   end
@@ -34,7 +34,7 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 3
+    TabOrder = 4
     Text = 'Code 93'
     OnClick = btnCode93Click
   end
@@ -44,8 +44,18 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 2
+    TabOrder = 3
     Text = 'ITF'
     OnClick = btnITFClick
+  end
+  object btnDummy: TButton
+    Position.X = 24.000000000000000000
+    Position.Y = 216.000000000000000000
+    Size.Width = 193.000000000000000000
+    Size.Height = 41.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Text = 'Dummy'
+    OnClick = btnDummyClick
   end
 end
