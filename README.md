@@ -18,6 +18,9 @@ Reported is: Setting Focusmode to TFocusMode.ContinuousAutoFocus did help. It di
 
 
 ###Changes
+- v2.3 Date: 2016/02/27
+	- Fixed leaks.
+
 - v2.2 Date: 2016/02/21
 	- Fixed IOS crash bug on 32bit only (ITF related).
 
