@@ -4,6 +4,6 @@
     <Transaction>1899-12-30 00:00:00.000.498,C:\Dev\Delphi\ZXing\ZXingDelphi.groupproj=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\ProjectGroup2.groupproj</Transaction>
   </Transactions>
 	<Default.Personality>
-		<Projects ActiveProject="C:\Dev\Delphi\ZXing\UnitTest\dUnitXTest.dproj"/>
+		<Projects ActiveProject="C:\Dev\Delphi\ZXing\MemLeakTest\Leaktest.dproj"/>
 	</Default.Personality>
 </BorlandProject>

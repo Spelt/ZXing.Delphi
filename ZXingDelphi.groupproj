@@ -12,6 +12,9 @@
         <Projects Include="MemLeakTest\Leaktest.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Project2.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
     <Target Name="Leaktest:Make">
         <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Project2">
+        <MSBuild Projects="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Project2.dproj"/>
+    </Target>
+    <Target Name="Project2:Clean">
+        <MSBuild Projects="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Project2.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Project2:Make">
+        <MSBuild Projects="C:\Users\Edward\Documents\Embarcadero\Studio\Projects\Project2.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="dUnitXTest;aTestApp;Leaktest"/>
+        <CallTarget Targets="dUnitXTest;aTestApp;Leaktest;Project2"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean;Leaktest:Clean"/>
+        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean;Leaktest:Clean;Project2:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make;Leaktest:Make"/>
+        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make;Leaktest:Make;Project2:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

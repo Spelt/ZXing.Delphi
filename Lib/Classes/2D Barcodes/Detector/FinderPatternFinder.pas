@@ -130,8 +130,15 @@ begin
 end;
 
 destructor TFinderPatternFinder.Destroy;
+var finderPattern: TFinderPattern;
 begin
   FImage := nil;
+
+  for finderPattern in PossibleCenters do
+  begin
+//    finderPattern.Free;
+  end;
+
   PossibleCenters.Clear;
   FreeAndNil(PossibleCenters);
   FCrossCheckStateCount := nil;
@@ -738,7 +745,6 @@ begin
         break;
       end;
 
-      //FreeAndNil(center);
       inc(index)
     end;
 
@@ -753,11 +759,9 @@ begin
     end;
 
     Exit(true);
-
   end;
 
   result := false;
-
 end;
 
 function TFinderPatternFinder.haveMultiplyConfirmedCenters: boolean;

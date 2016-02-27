@@ -77,7 +77,7 @@ begin
   begin
     raise EArgumentException.Create('Text and bytes are null.');
   end;
-  FResultMetadata:=nil;
+  FResultMetadata := nil;
 
   FText := Text;
   FRawBytes := RawBytes;
@@ -88,10 +88,13 @@ end;
 
 destructor TReadResult.Destroy;
 var
-  resulTPoint: TResultPoint;
+  ResultPoint: TResultPoint;
 begin
   for ResultPoint in ResultPoints do
+  begin
     ResultPoint.Free;
+  end;
+
   ResultPoints := nil;
   FRawBytes := nil;
 
