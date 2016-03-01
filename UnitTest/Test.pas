@@ -209,6 +209,21 @@ begin
     Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
       'QR code result Text Incorrect: ' + result.Text);
 
+    result := Decode('qr-a1.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('a1'),
+      'QR code result Text Incorrect: ' + result.Text);
+
+    result := Decode('qr-1a.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('1a'),
+      'QR code result Text Incorrect: ' + result.Text);
+
+    result := Decode('qr-12.png', BarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('12'),
+      'QR code result Text Incorrect: ' + result.Text);
+
   finally
     FreeAndNil(result);
   end;

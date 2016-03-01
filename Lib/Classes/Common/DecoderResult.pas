@@ -75,7 +75,8 @@ end;
 
 destructor TDecoderResult.Destroy;
 begin
-  ByteSegments.Clear;
+  if Assigned(ByteSegments) then
+    ByteSegments.Clear;
   FreeAndNil(ByteSegments);
   RawBytes := nil;
   FreeAndNil(Other);
