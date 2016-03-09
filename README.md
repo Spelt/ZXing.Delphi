@@ -7,19 +7,19 @@ ZXing.Delphi is a native Object Pascal library that is based on the well known o
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compability issues and dependencies. It is fast.
 
-Its compatible with in Delphi XE7, XE8, 10 Seattle and AppMethod and tested with IOS 8.x, 9.x 32/64bit, Windows 32/64 and OSX. Not yet tested it with Android but that should work too.  
-The goal of ZXing.Delphi is to make scanning barcodes as effortless, painless, fast and build within your FireMonkey or native Windows applications.  Just include the source files or create a .bpl and add it in your existings projects and build the ZXing.Delphi source within your projects.
+Its compatible with in Delphi XE7, XE8, 10 Seattle and AppMethod and tested with IOS 8.x, 9.x, Android, Windows 32/64 and OSX. 
+The goal of ZXing.Delphi is to make scanning barcodes as effortless, painless, fast and build within your FireMonkey or native Windows applications.  
+Just include the source files and add it in your existings projects and build the ZXing.Delphi source within your projects.
 
 
 ##Important note:
-There is a bug in the TCameraComponent (XE7/XE8/10) which causes the Android camera not to autofocus at all and therefore crippels the barcode scanning. There is a work around which can be found here: https://translate.google.nl/translate?sl=auto&tl=en&js=y&prev=_t&hl=nl&ie=UTF-8&u=http://tacotony.pixnet.net/blog/post/105520991-xe6%E7%82%BAtcameracomponent%E5%85%83%E4%BB%B6%E5%8A%A0%E4%B8%8A%E5%B0%8D%E7%84%A6%E5%8A%9F%E8%83%BD&edit-text=  
-
-Reported is: Setting Focusmode to TFocusMode.ContinuousAutoFocus did help. It did not help for me though.
+In Delphi 10 Seattle it is necessary to setting the Focusmode to TFocusMode.ContinuousAutoFocus. Perhaps its necessary in earlier versions too.
 
 
 ###Changes
 - v2.3 Date: 2016/02/27
 	- Fixed leaks.
+    - Android added to compatability list.
 
 - v2.2 Date: 2016/02/21
 	- Fixed IOS crash bug on 32bit only (ITF related).
@@ -56,6 +56,7 @@ The base classes I already implemented so if you need to have another Barcode li
 Only with your help we can get all the barcodes here! A unit test project is included and all barcodes must be unit tested!
 
 **If you want to help:** Let us/me know which barcode you planning to implement. There is no point in converting barcodes multiple times :-)
+
 
 ###'What is different compared to the original source and what do I need to know if I implement a barcode?' How did you do it?
 - I convert C# files to pascal via: 
@@ -96,10 +97,12 @@ ZXing.Delphi is a project that I've put together with the work of others.  So na
 Apache ZXing.Net.Mobile Copyright 2012 The Apache Software Foundation
 This product includes software developed at The Apache Software Foundation (http://www.apache.org/).
 
+
 ### ZXing.Net
 ZXing.Net is released under the Apache 2.0 license.
 ZXing.Net can be found here: http://code.google.com/p/zxing/
 A copy of the Apache 2.0 license can be found here: http://www.apache.org/licenses/LICENSE-2.0
+
 
 ### ZXing
 ZXing is released under the Apache 2.0 license.
