@@ -22,7 +22,7 @@ interface
 
 uses
   SysUtils, Generics.Collections, Math, OneDReader, BitArray, ReadResult,
-  DecodeHintType, ResultPoint, BarcodeFormat;
+  DecodeHintType, ResultPoint, BarcodeFormat, Helpers;
 
 /// <summary>
 /// <p>Decodes Code 128 barcodes.</p>
@@ -143,6 +143,7 @@ begin
   width := row.Size;
   rowOffset := row.getNextSet(0);
   counterPosition := 0;
+  counters := TArray<Integer>.Create();
   SetLength(counters, 6);
   patternStart := rowOffset;
   isWhite := false;
@@ -194,7 +195,8 @@ begin
         // Array.Copy(counters, 2, counters, 0, patternLength - 2);
         // source, source index, dest, dest index, lengte
 
-        CopyCounters := Copy(counters, 2, patternLength - 2);
+        counters := TArray.CopyInSameArray(counters, 2, patternLength - 2);
+
         counters[patternLength - 2] := 0;
         counters[patternLength - 1] := 0;
 

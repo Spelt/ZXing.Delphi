@@ -21,7 +21,7 @@ interface
 
 uses
   DUnitX.TestFramework, SysUtils, ScanManager, BarcodeFormat, ReadResult,
-  FMX.Types, FMX.Graphics, FMX.Objects;
+  FMX.Types, FMX.Graphics, FMX.Objects, DecodeHintType, generics.collections ;
 
 type
 
@@ -29,7 +29,14 @@ type
   TZXingDelphiTest = class(TObject)
   private
 
+    Hints: TDictionary<TDecodeHintType, TObject>;
+
   public
+    [Setup]
+    procedure Setup;
+    [TearDown]
+    procedure TearDown;
+
     function GetImage(Filename: string): TBitmap;
     function Decode(Filename: String; CodeFormat: TBarcodeFormat): TReadResult;
 
@@ -51,6 +58,19 @@ type
   end;
 
 implementation
+
+procedure TZXingDelphiTest.Setup;
+begin
+  hints := TDictionary<TDecodeHintType, TObject>.Create;
+  //hints.Add(TDecodeHintType.TRY_HARDER, nil);
+  //hints.Add(TDecodeHintType.TRY_HARDER_WITHOUT_ROTATION, nil);
+  //hints.Add(TDecodeHintType.PURE_BARCODE, nil);
+end;
+
+procedure TZXingDelphiTest.TearDown;
+begin
+  FreeAndNil(hints);
+end;
 
 procedure TZXingDelphiTest.AllQRCode();
 var
@@ -234,10 +254,18 @@ var
   result: TReadResult;
 begin
   try
-    result := Decode('Code128.png', BarcodeFormat.CODE_128);
+     result := Decode('Code128.png', BarcodeFormat.CODE_128);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1234567'),
       'Code 128 result Text Incorrect: ' + result.Text);
+
+    result := Decode('Code128red.png', BarcodeFormat.CODE_128);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 128 result Text Incorrect: ' + result.Text);
+
+
+
   finally
     FreeAndNil(result);
   end;
@@ -388,17 +416,16 @@ function TZXingDelphiTest.Decode(Filename: String; CodeFormat: TBarcodeFormat)
 var
   bmp: TBitmap;
   ScanManager: TScanManager;
-begin
 
+begin
   bmp := GetImage(Filename);
   try
-    ScanManager := TScanManager.Create(CodeFormat, nil);
+    ScanManager := TScanManager.Create(CodeFormat, hints);
     result := ScanManager.Scan(bmp);
   finally
     FreeAndNil(bmp);
     FreeAndNil(ScanManager);
   end;
-
 end;
 
 function TZXingDelphiTest.GetImage(Filename: string): TBitmap;
@@ -419,6 +446,7 @@ begin
     img.Free;
   end;
 end;
+
 
 (* TBarcodeFormat.CODE_128
   Result Decode(string file, BarcodeFormat? format = null, KeyValuePair<DecodeHintType, object>[] additionalHints = null)
