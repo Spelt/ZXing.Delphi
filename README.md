@@ -17,6 +17,9 @@ In Delphi 10 Seattle it is necessary to setting the Focusmode to TFocusMode.Cont
 
 
 ###Changes
+- v2.4 Date: 2016/04/06
+    - Fix in Code 128 where code did not scan at all sometimes.
+    
 - v2.3 Date: 2016/02/27
 	- Fixed leaks.
     - Android added to compatability list.
