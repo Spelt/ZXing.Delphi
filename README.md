@@ -13,7 +13,7 @@ Just include the source files and add it in your existings projects and build th
 
 
 ##Important note:
-In Delphi 10 Seattle it is necessary to setting the Focusmode to TFocusMode.ContinuousAutoFocus. Perhaps its necessary in earlier versions too.
+In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TFocusMode.ContinuousAutoFocus.
 
 
 ###Changes
