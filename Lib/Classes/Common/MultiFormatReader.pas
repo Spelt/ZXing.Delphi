@@ -18,8 +18,8 @@ unit MultiFormatReader;
 interface
 
 uses SysUtils, rtti, Generics.Collections,
-  ReadResult, Reader, DecodeHintType, BinaryBitmap, BarcodeFormat,
-  MultiFormatOneDReader, ResultPoint, OneDReader, QRCodeReader;
+  ReadResult, Reader, DecodeHintType, BinaryBitmap, BarcodeFormat, ResultPoint,
+  OneDReader, QRCodeReader, Code128Reader, Code93Reader, ITFReader;
 
 /// <summary>
 /// MultiFormatReader is a convenience class and the main entry point into the library for most uses.
@@ -30,7 +30,7 @@ uses SysUtils, rtti, Generics.Collections,
 /// <author>dswitkin@google.com (Daniel Switkin)</author>
 /// <author>www.Redivivus.in (suraj.supekar@redivivus.in) - Ported from ZXING Java Source</author>
 type
-   TMultiFormatReader = class(TInterfacedObject, IReader)
+  TMultiFormatReader = class(TInterfacedObject, IReader)
   private
 
     FHints: TDictionary<TDecodeHintType, TObject>;
@@ -51,7 +51,8 @@ type
     /// <throws>  ReaderException Any errors which occurred </throws>
   public
     function Decode(image: TBinaryBitmap): TReadResult; overload;
-    function Decode(image: TBinaryBitmap; WithHints: Boolean): TReadResult; overload;
+    function Decode(image: TBinaryBitmap; WithHints: Boolean)
+      : TReadResult; overload;
     /// <summary> Decode an image using the hints provided. Does not honor existing state.
     ///
     /// </summary>
@@ -103,11 +104,11 @@ begin
   result := DecodeInternal(image)
 end;
 
-function TMultiFormatReader.Decode(image: TBinaryBitmap; WithHints: Boolean): TReadResult;
+function TMultiFormatReader.Decode(image: TBinaryBitmap; WithHints: Boolean)
+  : TReadResult;
 begin
   result := DecodeInternal(image)
 end;
-
 
 function TMultiFormatReader.Decode(image: TBinaryBitmap;
   pHints: TDictionary<TDecodeHintType, TObject>): TReadResult;
@@ -155,7 +156,6 @@ begin
   readers.Clear();
   readers.Free;
   readers := nil;
-
 end;
 
 function TMultiFormatReader.Get_Hints: TDictionary<TDecodeHintType, TObject>;
@@ -166,7 +166,7 @@ end;
 procedure TMultiFormatReader.Set_Hints(const Value: TDictionary<TDecodeHintType,
   TObject>);
 var
-  tryHarder, addOneDReader: Boolean;
+  tryHarder: Boolean;
   formats: TList<TBarcodeFormat>;
 begin
   FHints := Value;
@@ -184,78 +184,39 @@ begin
     formats := Value[DecodeHintType.POSSIBLE_FORMATS] as TList<TBarcodeFormat>
   end;
 
+  // add readers from the hints
+  readers := TList<IReader>.Create;
   if formats <> nil then
   begin
 
-    addOneDReader :=
-      (((((((((((formats.Contains(BarcodeFormat.All_1D)) or
-      (formats.Contains(BarcodeFormat.UPC_A))) or
-      (formats.Contains(BarcodeFormat.UPC_E))) or
-      (formats.Contains(BarcodeFormat.EAN_13))) or
-      (formats.Contains(BarcodeFormat.EAN_8))) or
-      (formats.Contains(BarcodeFormat.CODABAR))) or
-      (formats.Contains(BarcodeFormat.CODE_39))) or
-      (formats.Contains(BarcodeFormat.CODE_93))) or
-      (formats.Contains(BarcodeFormat.CODE_128))) or
-      (formats.Contains(BarcodeFormat.ITF))) or
-      (formats.Contains(BarcodeFormat.RSS_14))) or
-      (formats.Contains(BarcodeFormat.RSS_EXPANDED));
-
-    readers := TList<IReader>.Create;
-
-    // NOT YET SUPPORTED!
-
-    // Put 1D readers upfront in "normal" mode
-    if (addOneDReader) and (not tryHarder) then
+    if (formats.Contains(BarcodeFormat.CODE_128)) then
     begin
-      readers.Add(TMultiFormatOneDReader.Create(Value))
+      readers.Add(TCode128Reader.Create)
     end;
-    if formats.Contains(BarcodeFormat.QR_CODE) then
+
+    if (formats.Contains(BarcodeFormat.CODE_93)) then
+    begin
+      readers.Add(TCode93Reader.Create())
+    end;
+
+    if (formats.Contains(BarcodeFormat.ITF)) then
+    begin
+      readers.Add(TITFReader.Create())
+    end;
+
+    if (formats.Contains(BarcodeFormat.QR_CODE)) then
     begin
       readers.Add(TQRCodeReader.Create())
     end;
-    if formats.Contains(BarcodeFormat.DATA_MATRIX) then
-    begin
-      // readers.Add(new DataMatrixReader())
-    end;
-    if formats.Contains(BarcodeFormat.AZTEC) then
-    begin
-      // readers.Add(new AztecReader())
-    end;
-    if formats.Contains(BarcodeFormat.PDF_417) then
-    begin
-      // readers.Add(new PDF417Reader())
-    end;
-    if formats.Contains(BarcodeFormat.MAXICODE) then
-    begin
-      // readers.Add(new MaxiCodeReader())
-    end;
-
-    // At end in "try harder" mode
-    if (addOneDReader) and (tryHarder) then
-    begin
-      // readers.Add(new MultiFormatOneDReader(Value))
-    end
-
   end;
 
-  if (readers = nil) or (readers.Count = 0) then
+  if (readers.Count = 0) then // must be auto, add them all
   begin
-
-    if (readers = nil) then
-    begin
-      readers := TList<IReader>.Create;
-    end;
-
-    readers.Add(TMultiFormatOneDReader.Create(Value));
+    readers.Add(TCode128Reader.Create);
+    readers.Add(TCode93Reader.Create());
+    readers.Add(TITFReader.Create());
     readers.Add(TQRCodeReader.Create());
-    // readers.Add(new DataMatrixReader());
-    // readers.Add(new AztecReader());
-    // readers.Add(new PDF417Reader());
-    // readers.Add(new MaxiCodeReader());
-
-
-  end
+  end;
 
 end;
 
@@ -320,3 +281,4 @@ begin
 end;
 
 end.
+
