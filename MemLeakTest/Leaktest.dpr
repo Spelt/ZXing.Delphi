@@ -18,7 +18,6 @@ uses
   Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas',
   Code128Reader in '..\Lib\Classes\1D Barcodes\Code128Reader.pas',
   ITFReader in '..\Lib\Classes\1D Barcodes\ITFReader.pas',
-  MultiFormatOneDReader in '..\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',
   OneDReader in '..\Lib\Classes\1D Barcodes\OneDReader.pas',
   Reader in '..\Lib\Classes\1D Barcodes\Reader.pas',
   BitMatrixParser in '..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas',

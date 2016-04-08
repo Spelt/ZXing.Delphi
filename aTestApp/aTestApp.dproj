@@ -302,7 +302,6 @@
         </DCCReference>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\Code93Reader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\Code128Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\OneDReader.pas"/>
         <DCCReference Include="..\Lib\Classes\1D Barcodes\Reader.pas"/>
         <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas"/>

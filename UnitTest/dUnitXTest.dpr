@@ -30,7 +30,6 @@ uses
   BarcodeFormat in '..\Lib\Classes\Common\BarcodeFormat.pas',
   Reader in '..\Lib\Classes\1D Barcodes\Reader.pas',
   OneDReader in '..\Lib\Classes\1D Barcodes\OneDReader.pas',
-  MultiFormatOneDReader in '..\Lib\Classes\1D Barcodes\MultiFormatOneDReader.pas',
   Code128Reader in '..\Lib\Classes\1D Barcodes\Code128Reader.pas',
   Code93Reader in '..\Lib\Classes\1D Barcodes\Code93Reader.pas',
   QRCodeReader in '..\Lib\Classes\2D Barcodes\QRCodeReader.pas',
