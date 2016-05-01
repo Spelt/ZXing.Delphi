@@ -86,7 +86,12 @@ begin
     p2ToX, p2ToY, p3ToX, p3ToY, p4ToX, p4ToY, p1FromX, p1FromY, p2FromX,
     p2FromY, p3FromX, p3FromY, p4FromX, p4FromY);
 
-  Result := sampleGrid(image, dimensionX, dimensionY, transform);
+  try
+    Result := sampleGrid(image, dimensionX, dimensionY, transform);
+  finally
+    transform.free;
+  end;
+
 end;
 
 class function TDefaultGridSampler.sampleGrid(const image: TBitMatrix;

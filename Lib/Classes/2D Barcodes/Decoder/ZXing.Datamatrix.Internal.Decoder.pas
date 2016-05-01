@@ -13,7 +13,7 @@
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Original Author: bbrown@google.com (Brian Brown)  
+  * Original Author: bbrown@google.com (Brian Brown)
   * Delphi Implementation by K. Gossens
 }
 
@@ -21,16 +21,16 @@ unit ZXing.Datamatrix.Internal.Decoder;
 
 interface
 
-uses 
-  System.SysUtils, 
-  System.Generics.Collections, 
-  DecodeHintType, 
+uses
+  System.SysUtils,
+  System.Generics.Collections,
+  DecodeHintType,
   ZXing.Common.BitMatrix,
   ZXing.Datamatrix.Internal.BitMatrixParser,
   ZXing.Datamatrix.Internal.DataBlock,
-  ZXing.Common.ReedSolomon.ReedSolomonDecoder, 
+  ZXing.Common.ReedSolomon.ReedSolomonDecoder,
   ZXing.Common.ReedSolomon.GenericGF,
-  DecoderResult, 
+  DecoderResult,
   ZXing.Datamatrix.Internal.DecodedBitStreamParser;
 
 type
@@ -40,19 +40,20 @@ type
   /// </summary>
   TDataMatrixDecoder = class sealed
   private
-    rsDecoder: TReedSolomonDecoder; 
+    rsDecoder: TReedSolomonDecoder;
   public
     constructor Create;
     destructor Destroy; override;
-	
+
     function correctErrors(codewordBytes: TArray<Byte>;
       numDataCodewords: Integer): boolean;
     function decode(bits: TBitMatrix): TDecoderResult; overload;
-    function decode(image: TArray<TArray<boolean>>): TDecoderResult; overload;
+    function decode(image: TArray < TArray < boolean >> )
+      : TDecoderResult; overload;
   end;
 
 implementation
-  
+
 { TDataMatrixDecoder }
 
 /// <summary>
@@ -78,11 +79,12 @@ end;
 /// <exception cref="FormatException">if the Data Matrix Code cannot be decoded</exception>
 /// <exception cref="ChecksumException">if error correction fails</exception>
 /// </summary>
-function TDataMatrixDecoder.decode(image: TArray<TArray<boolean>>): TDecoderResult;
+function TDataMatrixDecoder.decode(image: TArray < TArray < boolean >> )
+  : TDecoderResult;
 var
-  i, j : Integer;
+  i, j: Integer;
   dimension: Integer;
-  bits : TBitMatrix;
+  bits: TBitMatrix;
 begin
   dimension := Length(image);
   bits := TBitMatrix.Create(dimension);
@@ -90,9 +92,8 @@ begin
   begin
     for j := 0 to Pred(dimension) do
     begin
-      if (image[i][j]) 
-      then
-         bits[j, i] := true;
+      if (image[i][j]) then
+        bits[j, i] := true;
     end;
   end;
 
@@ -109,65 +110,77 @@ function TDataMatrixDecoder.decode(bits: TBitMatrix): TDecoderResult;
 var
   i, j: Integer;
   db: TDataBlock;
-  parser : TBitMatrixParser;
-  codewords : TArray<Byte>;
-  dataBlocks : TArray<TDataBlock>;
-  dataBlocksCount,
-  totalBytes : Integer;
-  resultBytes : TArray<Byte>;
-  dataBlock: TDataBlock;
+  parser: TBitMatrixParser;
+  codewords: TArray<Byte>;
+  dataBlocks: TArray<TDataBlock>;
+  dataBlocksCount, totalBytes: Integer;
+  resultBytes: TArray<Byte>;
+  DataBlock: TDataBlock;
   codewordBytes: TArray<Byte>;
   numDataCodewords: Integer;
 begin
   // Construct a parser and read version, error-correction level
   parser := TBitMatrixParser.Create(bits);
-  if (parser.Version = nil) then
-  begin
-    Result := nil;
-    exit;
-  end;
-  
-  // Read codewords
-  codewords := parser.readCodewords;
-  if (codewords = nil) then
-  begin
-    Result := nil;
-    exit;
-  end;
-  // Separate into data blocks
-  dataBlocks := TDataBlock.getDataBlocks(codewords, parser.Version);
-  
-  dataBlocksCount := Length(dataBlocks);
-  
-  // Count total number of data bytes
-  totalBytes := 0;
-  for db in dataBlocks do
-  begin
-    Inc(totalBytes, db.NumDataCodewords)
-  end;
-  resultBytes := TArray<Byte>.Create();
-  SetLength(resultBytes, totalBytes);
-  
-  // Error-correct and copy data blocks together into a stream of bytes
-  for j := 0 to Pred(dataBlocksCount) do
-  begin
-    dataBlock := dataBlocks[j];
-    codewordBytes := dataBlock.Codewords;
-    numDataCodewords := dataBlock.NumDataCodewords;
-    if (not correctErrors(codewordBytes, numDataCodewords)) then
+
+  try
+
+    if (parser.Version = nil) then
     begin
       Result := nil;
       exit;
     end;
-    for i := 0 to Pred(numDataCodewords) do
+
+    // Read codewords
+    codewords := parser.readCodewords;
+    if (codewords = nil) then
     begin
-      // De-interlace data blocks.
-      resultBytes[(i * dataBlocksCount) + j] := codewordBytes[i];
+      Result := nil;
+      exit;
     end;
+    // Separate into data blocks
+    dataBlocks := TDataBlock.getDataBlocks(codewords, parser.Version);
+
+    dataBlocksCount := Length(dataBlocks);
+
+    // Count total number of data bytes
+    totalBytes := 0;
+    for db in dataBlocks do
+    begin
+      Inc(totalBytes, db.numDataCodewords)
+    end;
+    resultBytes := TArray<Byte>.Create();
+    SetLength(resultBytes, totalBytes);
+
+    // Error-correct and copy data blocks together into a stream of bytes
+    for j := 0 to Pred(dataBlocksCount) do
+    begin
+      DataBlock := dataBlocks[j];
+      codewordBytes := DataBlock.codewords;
+      numDataCodewords := DataBlock.numDataCodewords;
+      if (not correctErrors(codewordBytes, numDataCodewords)) then
+      begin
+        Result := nil;
+        exit;
+      end;
+      for i := 0 to Pred(numDataCodewords) do
+      begin
+        // De-interlace data blocks.
+        resultBytes[(i * dataBlocksCount) + j] := codewordBytes[i];
+      end;
+
+      DataBlock.Free;
+    end;
+
+    // Decode the contents of that stream of bytes
+    Result := TDecodedBitStreamParser.decode(resultBytes);
+
+  finally
+
+    resultBytes := nil;
+    codewordBytes := nil;
+    parser.Free;
   end;
-  
-  // Decode the contents of that stream of bytes
-  Result := TDecodedBitStreamParser.decode(resultBytes);
+
 end;
 
 /// <summary>
@@ -180,15 +193,13 @@ end;
 function TDataMatrixDecoder.correctErrors(codewordBytes: TArray<Byte>;
   numDataCodewords: Integer): boolean;
 var
-  i,
-  numCodewords,
-  numECCodewords : Integer;
-  codewordsInts  : TArray<Integer>;
+  i, numCodewords, numECCodewords: Integer;
+  codewordsInts: TArray<Integer>;
 begin
   numCodewords := Length(codewordBytes);
   // First read into an array of ints
   codewordsInts := TArray<Integer>.Create();
-  SetLength(codewordsInts, numCodewords);  
+  SetLength(codewordsInts, numCodewords);
   for i := 0 to Pred(numCodewords) do
   begin
     codewordsInts[i] := (codewordBytes[i] and $FF);
@@ -201,12 +212,12 @@ begin
   end;
   // Copy back into array of bytes -- only need to worry about the bytes that were data
   // We don't care about errors in the error-correction codewords
-  for i := 0 to pred(numDataCodewords) do
+  for i := 0 to Pred(numDataCodewords) do
   begin
     codewordBytes[i] := Byte(codewordsInts[i]);
   end;
-  
+
   Result := true;
-end;  
-	
-end. 
+end;
+
+end.

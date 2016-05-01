@@ -98,11 +98,13 @@ begin
 
     Result := SToQ.times(qToS);
   finally
-    if (SToQ <> nil)
-    then
+
+    //if (SToQ <> nil)
+    //then
        SToQ.Free;
-    if (qToS <> nil)
-    then
+
+    //if (qToS <> nil)
+    //then
        qToS.Free;
   end;
 end;
@@ -121,8 +123,8 @@ begin
 
     Result := SToQ.buildAdjoint;
   finally
-    if (SToQ <> nil)
-    then
+    //if (SToQ <> nil)
+    //then
        SToQ.Free;
   end;
 end;

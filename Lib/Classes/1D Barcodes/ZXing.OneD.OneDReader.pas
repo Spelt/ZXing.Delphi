@@ -237,10 +237,10 @@ function TOneDReader.doDecode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 
 var
-  attempt, X, rowNumber, rowStepsAboveOrBelow, sr, width, height, middle,
+  attempt, X, rowNumber, rowStepsAboveOrBelow, width, height, middle,
     rowStep, maxLines: Integer;
   row: TBitArray;
-  tryHarder, isAbove: Boolean;
+  isAbove: Boolean;
   newHints: TDictionary<TDecodeHintType, TObject>;
   ReadResult: TReadResult;
   points: TArray<TResultPoint>;
@@ -254,26 +254,9 @@ begin
   try
 
     middle := TMathUtils.Asr(height, 1);
-    tryHarder := (hints <> nil) and
-      hints.ContainsKey(DecodeHintType.TRY_HARDER);
 
-    sr := 5;
-    if (tryHarder) then
-    begin
-      sr := 8;
-    end;
-
-    rowStep := Max(1, TMathUtils.Asr(height, sr));
-
-    if (tryHarder) then
-    begin
-      maxLines := height; // Look at the whole image, not just the center
-    end
-    else
-    begin
-      maxLines := 15;
-      // 15 rows spaced 1/32 apart is roughly the middle half of the image
-    end;
+    rowStep := 5;
+    maxLines := height; // Look at the whole image, not just the center
 
     for X := 0 to maxLines - 1 do
     begin

@@ -25,12 +25,14 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   System.Math,
+  Helpers,
   ZXing.OneD.OneDReader,
   ZXing.Common.BitArray,
   ZXing.ReadResult,
   DecodeHintType,
   ZXing.ResultPoint,
   ZXing.BarcodeFormat;
+
 
 var
   CODE_PATTERNS: TArray<TArray<Integer>>;
@@ -141,6 +143,7 @@ begin
   width := row.Size;
   rowOffset := row.getNextSet(0);
   counterPosition := 0;
+  counters := TArray<Integer>.Create();
   SetLength(counters, 6);
   patternStart := rowOffset;
   isWhite := false;
@@ -192,7 +195,7 @@ begin
         // Array.Copy(counters, 2, counters, 0, patternLength - 2);
         // source, source index, dest, dest index, lengte
 
-        CopyCounters := Copy(counters, 2, patternLength - 2);
+        counters := TArray.CopyInSameArray(counters, 2, patternLength - 2);
         counters[patternLength - 2] := 0;
         counters[patternLength - 1] := 0;
 

@@ -106,7 +106,7 @@ implementation
 constructor TQRCodeReader.Create;
 begin
   inherited;
-  FDecoder  := TQRDecoder.Create;
+  FDecoder := TQRDecoder.Create;
   NO_POINTS := TArray<TResultPoint>.Create();
 end;
 
@@ -134,69 +134,78 @@ var
   byteSegments: TList<TArray<Byte>>;
 begin
   Result := nil;
+  DecoderResult := nil;
 
-  if ((image = nil) or
-      (image.BlackMatrix = nil))
-  then
-     // something is wrong with the image
-     exit;
+  if ((image = nil) or (image.BlackMatrix = nil)) then
+    // something is wrong with the image
+    exit;
+  try
 
-  if ((hints <> nil) and hints.ContainsKey(TDecodeHintType.PURE_BARCODE)) then
-  begin
-    bits := TQRCodeReader.extractPureBits(image.BlackMatrix);
-    if Assigned(bits) then
+    if ((hints <> nil) and hints.ContainsKey(TDecodeHintType.PURE_BARCODE)) then
     begin
-      DecoderResult := Decoder.decode(bits, hints);
-      points := NO_POINTS;
-      bits.Free;
-    end else exit;
-  end else
-  begin
-    Detector := TDetector.Create(image.BlackMatrix);
-    try
-      DetectorResult := Detector.detect(hints);
-      if Assigned(DetectorResult) then
+      bits := TQRCodeReader.extractPureBits(image.BlackMatrix);
+      if Assigned(bits) then
       begin
-        DecoderResult := Decoder.decode(DetectorResult.bits, hints);
-        points := DetectorResult.points;
-        DetectorResult.Free;
-      end else exit;
-    finally
-      Detector.Free;
+        DecoderResult := Decoder.decode(bits, hints);
+        points := NO_POINTS;
+        bits.Free;
+      end
+      else
+        exit;
+    end
+    else
+    begin
+      Detector := TDetector.Create(image.BlackMatrix);
+      try
+        DetectorResult := Detector.detect(hints);
+        if Assigned(DetectorResult) then
+        begin
+          DecoderResult := Decoder.decode(DetectorResult.bits, hints);
+          points := DetectorResult.points;
+          DetectorResult.Free;
+        end
+        else
+          exit;
+      finally
+        Detector.Free;
+      end;
     end;
+
+    if (DecoderResult = nil) then
+      exit;
+
+    // If the code was mirrored: swap the bottom-left and the top-right points.
+    data := TQRCodeDecoderMetaData(DecoderResult.Other);
+    if (data <> nil) then
+      data.applyMirroredCorrection(points);
+
+    Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
+      points, TBarcodeFormat.QR_CODE);
+
+    byteSegments := DecoderResult.byteSegments;
+
+    if (byteSegments <> nil) then
+      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
+
+    if (Length(DecoderResult.ecLevel) <> 0) then
+      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
+        TStringObject.Create(DecoderResult.ecLevel));
+
+    if (DecoderResult.StructuredAppend) then
+    begin
+      Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
+        TObject(DecoderResult.StructuredAppendSequenceNumber));
+      Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
+        TObject(DecoderResult.StructuredAppendParity))
+    end;
+
+  finally
+
+    if Assigned(DecoderResult) then
+      FreeAndNil(DecoderResult);
+
   end;
 
-  if (DecoderResult = nil)
-  then
-     exit;
-
-  // If the code was mirrored: swap the bottom-left and the top-right points.
-  data := TQRCodeDecoderMetaData(DecoderResult.Other);
-  if (data <> nil)
-  then
-     data.applyMirroredCorrection(points);
-
-  Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
-    points, TBarcodeFormat.QR_CODE);
-
-  byteSegments := DecoderResult.byteSegments;
-
-  if (byteSegments <> nil)
-  then
-     Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
-
-  if (Length(decoderResult.ecLevel) <> 0)
-  then
-     Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
-       TStringObject.Create(decoderResult.ecLevel));
-
-  if (DecoderResult.StructuredAppend) then
-  begin
-    Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
-      TObject(DecoderResult.StructuredAppendSequenceNumber));
-    Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
-      TObject(DecoderResult.StructuredAppendParity))
-  end;
 end;
 
 procedure TQRCodeReader.reset;
@@ -204,33 +213,24 @@ begin
   // do nothing
 end;
 
-class function TQRCodeReader.extractPureBits(const image: TBitMatrix): TBitMatrix;
+class function TQRCodeReader.extractPureBits(const image: TBitMatrix)
+  : TBitMatrix;
 var
   moduleSize: Single;
-  leftTopBlack,
-  rightBottomBlack : TArray<Integer>;
-  top, bottom,
-  left, right,
-  matrixWidth,
-  matrixHeight,
-  nudge, x, y,
-  iOffset,
-  nudgedTooFarRight,
-  nudgedTooFarDown : Integer;
-  bits : TBitMatrix;
+  leftTopBlack, rightBottomBlack: TArray<Integer>;
+  top, bottom, left, right, matrixWidth, matrixHeight, nudge, x, y, iOffset,
+    nudgedTooFarRight, nudgedTooFarDown: Integer;
+  bits: TBitMatrix;
 begin
   Result := nil;
 
   leftTopBlack := image.getTopLeftOnBit;
   rightBottomBlack := image.getBottomRightOnBit;
-  if ((leftTopBlack = nil) or
-      (rightBottomBlack = nil))
-  then
-     exit;
+  if ((leftTopBlack = nil) or (rightBottomBlack = nil)) then
+    exit;
 
-  if (not TQRCodeReader.moduleSize(leftTopBlack, image, moduleSize))
-  then
-     exit;
+  if (not TQRCodeReader.moduleSize(leftTopBlack, image, moduleSize)) then
+    exit;
 
   top := leftTopBlack[1];
   bottom := rightBottomBlack[1];
@@ -238,27 +238,22 @@ begin
   right := rightBottomBlack[0];
 
   // Sanity check!
-  if ((left >= right) or
-      (top >= bottom))
-  then
-     exit;
+  if ((left >= right) or (top >= bottom)) then
+    exit;
 
-  if ((bottom - top) <> (right - left))
-  then
-     // Special case, where bottom-right module wasn't black so we found something else in the last row
-     // Assume it's a square, so use height as the width
-     right := (left + (bottom - top));
+  if ((bottom - top) <> (right - left)) then
+    // Special case, where bottom-right module wasn't black so we found something else in the last row
+    // Assume it's a square, so use height as the width
+    right := (left + (bottom - top));
 
   matrixWidth := Round(((right - left) + 1) / moduleSize);
   matrixHeight := Round(((bottom - top) + 1) / moduleSize);
-  if ((matrixWidth <= 0) or (matrixHeight <= 0))
-  then
-     exit;
+  if ((matrixWidth <= 0) or (matrixHeight <= 0)) then
+    exit;
 
-  if (matrixHeight <> matrixWidth)
-  then
-     // Only possibly decode square regions
-     exit;
+  if (matrixHeight <> matrixWidth) then
+    // Only possibly decode square regions
+    exit;
 
   // Push in the "border" by half the module width so that we start
   // sampling in the middle of the module. Just in case the image is a
@@ -273,20 +268,18 @@ begin
   nudgedTooFarRight := left + Trunc((matrixWidth - 1) * moduleSize) - right;
   if (nudgedTooFarRight > 0) then
   begin
-    if (nudgedTooFarRight > nudge)
-    then
-       // Neither way fits; abort
-       exit;
+    if (nudgedTooFarRight > nudge) then
+      // Neither way fits; abort
+      exit;
     Dec(left, nudgedTooFarRight);
   end;
   // See logic above
   nudgedTooFarDown := top + Trunc((matrixHeight - 1) * moduleSize) - bottom;
   if (nudgedTooFarDown > 0) then
   begin
-    if (nudgedTooFarDown > nudge)
-    then
-       // Neither way fits; abort
-       exit;
+    if (nudgedTooFarDown > nudge) then
+      // Neither way fits; abort
+      exit;
     Dec(top, nudgedTooFarDown);
   end;
 
@@ -297,9 +290,8 @@ begin
     iOffset := top + Trunc(y * moduleSize);
     for x := 0 to Pred(matrixWidth) do
     begin
-      if (image[left + Trunc((x * moduleSize)), iOffset])
-      then
-         bits[x, y] := true;
+      if (image[left + Trunc((x * moduleSize)), iOffset]) then
+        bits[x, y] := true;
     end;
   end;
 
@@ -309,16 +301,14 @@ end;
 class function TQRCodeReader.moduleSize(const leftTopBlack: TArray<Integer>;
   const image: TBitMatrix; var msize: Single): Boolean;
 var
-  height,
-  width,
-  x, y : Integer;
-  inBlack : Boolean;
-  transitions : Integer;
+  height, width, x, y: Integer;
+  inBlack: Boolean;
+  transitions: Integer;
 begin
   Result := false;
 
-  height := image.Height;
-  width := image.Width;
+  height := image.height;
+  width := image.width;
   x := leftTopBlack[0];
   y := leftTopBlack[1];
 
@@ -329,9 +319,8 @@ begin
     if (inBlack <> image[x, y]) then
     begin
       Inc(transitions);
-      if (transitions = 5)
-      then
-         break;
+      if (transitions = 5) then
+        break;
       inBlack := not inBlack;
     end;
     Inc(x);

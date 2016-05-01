@@ -36,9 +36,9 @@ type
     StructuredAppendSequenceNumber: Integer;
     Text: string;
 
-    constructor Create(RawBytes: TArray<Byte>; Text: string;
+    constructor Create(RawBytes: TArray<Byte>; const Text: string;
       ByteSegments: TList<TArray<Byte>>; ECLevel: string); overload;
-    constructor Create(RawBytes: TArray<Byte>; Text: string;
+    constructor Create(RawBytes: TArray<Byte>; const Text: string;
       ByteSegments: TList<TArray<Byte>>; ECLevel: string; saSequence: Integer;
       saParity: Integer); overload;
     destructor Destroy; override;
@@ -50,13 +50,13 @@ implementation
 
 { TDecoderResult }
 
-constructor TDecoderResult.Create(RawBytes: TArray<Byte>; Text: String;
+constructor TDecoderResult.Create(RawBytes: TArray<Byte>; const Text: String;
   ByteSegments: TList<TArray<Byte>>; ECLevel: String);
 begin
   Self.Create(RawBytes, Text, ByteSegments, ECLevel, -1, -1);
 end;
 
-constructor TDecoderResult.Create(RawBytes: TArray<Byte>; Text: string;
+constructor TDecoderResult.Create(RawBytes: TArray<Byte>; const Text: string;
   ByteSegments: TList<TArray<Byte>>; ECLevel: string;
   saSequence, saParity: Integer);
 begin

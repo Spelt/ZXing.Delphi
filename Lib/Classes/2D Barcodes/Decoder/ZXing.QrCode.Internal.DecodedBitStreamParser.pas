@@ -117,7 +117,7 @@ var
   count, value,
   countHanzi, subSet: Integer;
   currentCharacterSetECI: TCharacterSetECI;
-  ecstring: String;
+  ecstring,s: String;
   res: TStringBuilder;
 begin
   Result := nil;
@@ -128,7 +128,6 @@ begin
   byteSegments.Capacity := 1;
   symbolSequence := -1;
   parityData := -1;
-
   Mode := nil;
   try
     try
@@ -254,13 +253,18 @@ begin
       else
          ecstring := ecLevel.toString();
 
-      Result := TDecoderResult.Create(bytes, res.toString.Replace('#13#10',
-        '#10').Replace('#10', #13), byteSegments, ecstring, symbolSequence,
+      s:= res.toString.Replace('#13#10', '#10').Replace('#10', #13);
+      Result := TDecoderResult.Create(bytes, s, byteSegments, ecstring, symbolSequence,
         parityData);
     finally
+     // FreeAndNil(byteSegments);
+
+      res.Clear();
+
       FreeAndNil(res);
       FreeAndNil(bits);
     end;
+
   end;
 
 class function TDecodedBitStreamParser.decodeAlphanumericSegment(

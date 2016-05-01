@@ -38,6 +38,7 @@ type
   public
     constructor Create(const Acodewords: TArray<Byte>;
       const ANumDataCodewords: Integer);
+    destructor Destroy;override;
 
     class function getDataBlocks(rawCodewords: TArray<Byte>;
       version: TVersion): TArray<TDataBlock>;
@@ -55,6 +56,12 @@ constructor TDataBlock.Create(const Acodewords: TArray<Byte>;
 begin
   FnumDataCodewords := AnumDataCodewords;
   Fcodewords := Acodewords;
+end;
+
+destructor TDataBlock.Destroy;
+begin
+  Fcodewords := nil;
+  inherited;
 end;
 
 class function TDataBlock.getDataBlocks(rawCodewords: TArray<Byte>;

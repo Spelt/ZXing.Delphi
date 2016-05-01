@@ -3,13 +3,13 @@ ZXing Barcode Scanning Library for Delphi XE7/XE8/10 Seattle and Appmethod.
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/master/zxing.Delphi.picture1.png )
 
-ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib.  It is aimed at all of the FireMonkey mobile platforms.
+ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib. It is aimed at all of the FireMonkey mobile platforms.
 
-With this library you can scan with native speed without the use of linking in external libraries and avoid compability issues and dependencies. It is fast.
+With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
 
 Its compatible with in Delphi XE7, XE8, 10 Seattle and AppMethod and tested with IOS 8.x, 9.x, Android, Windows 32/64 and OSX. 
 The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows applications.  
-Just include the source files and add it in your existings projects and build the ZXing.Delphi source within your projects.
+Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
 
 ##Important note:
@@ -17,9 +17,19 @@ In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TF
 
 
 ###Changes
+- v3.0 Date: 2016/04/28 (Great many thanks to: Kai Gossens and Raphael Büchler)
+
+	- Added DataMatrix.
+	- ResultPoint event added.
+	- Support for inverted 1D/2D code types.
+	- Better OneDReader scan strategy
+	- Redesigned the file/folder structure for better namespacing.
+	- Simplification of adding readers to the TMultiformatReader (just add all your readers here)
+	- Small improvements.
+	
 - v2.4 Date: 2016/04/06
-    - Fix in Code 128 where code did not scan at all sometimes.
-    
+    - Fix in Code128 where code did not scan at all sometimes.    
+
 - v2.3 Date: 2016/02/27
 	- Fixed leaks.
     - Android added to compatability list.
@@ -44,7 +54,7 @@ In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TF
 
 ###Features
 - Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
-- 100% FREE. No ridiculous licence fees. Just FREE.
+- 100% FREE. No ridiculous license fees. Just FREE.
 - Speed
 - Barcodes: QR-Code, Code 128, Code93, ITF
 - Simple API
@@ -52,11 +62,11 @@ In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TF
 	
 	
 #Help wanted
-Although it works extremely well, it works currently only with a few barcodes. I only needed one barcode so for me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
+Although it works extremely well, it works currently only with a few barcodes.For me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
 
-The base classes I already implemented so if you need to have another Barcode like Code39 you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy. 
+The base classes I already implemented so if you need to have another Barcode like Code39 you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy (or just ask and I convert the raw classes for you). 
 
-Only with your help we can get all the barcodes here! A unit test project is included and all barcodes must be unit tested!
+Only with your help we can get all the barcodes here! A unit test project is included and you have to include tests for the barcode types you include.
 
 **If you want to help:** Let us/me know which barcode you planning to implement. There is no point in converting barcodes multiple times :-)
 
@@ -75,14 +85,14 @@ Only with your help we can get all the barcodes here! A unit test project is inc
 ### Usage
 The simplest example of using ZXing.Delphi looks something like this:
 
-Include all the file in your project. 
-- Add uses: ScanManager, BarcodeFormat, ReadResult.
-- Add var FScanManager, ReadResult.
+Include all the files in your project or use search path like included test application
+- Add uses: ScanManager, ZXing.BarcodeFormat, ZXing.ReadResult.
+- Add var FScanManager, FReadResult.
 
 ```Pascal  
 
 FScanManager := TScanManager.Create(TBarcodeFormat.CODE_128, nil);
-ReadResult := FScanManager.Scan(scanBitmap);
+FReadResult := FScanManager.Scan(scanBitmap);
 
 ```
 
@@ -92,8 +102,11 @@ Of course the real world is not that simple.  To leave your app responsive while
 ###Thanks
 ZXing.Delphi is a project that I've put together with the work of others.  So naturally, I'd like to thank everyone who's helped out in any way.  Those of you I know have helped I'm listing here, but anyone else that was involved, please let me know!
 
-- J. Dick at Redth at https://github.com/Redth/ZXing.Net.Mobile 
-- The ZXing Project
+- J. Dick at Redth at https://github.com/Redth/ZXing.Net.Mobile
+- The ZXing Project Authors
+- P. B. Hofstede
+- Kai Gossens
+- Raphael Büchler
 
 
 ###License

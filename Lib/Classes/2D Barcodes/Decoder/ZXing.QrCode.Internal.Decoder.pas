@@ -39,14 +39,14 @@ uses
 
 type
   /// <summary>
-  ///   <p>The main class which implements QR Code decoding -- as opposed to locating and extracting
+  /// <p>The main class which implements QR Code decoding -- as opposed to locating and extracting
   /// the QR Code from an image.</p>
   /// </summary>
   TQRDecoder = class
   private
     rsDecoder: TReedSolomonDecoder;
     /// <summary>
-    ///   <p>Given data and error-correction codewords received, possibly corrupted by errors, attempts to
+    /// <p>Given data and error-correction codewords received, possibly corrupted by errors, attempts to
     /// correct the errors in-place using Reed-Solomon error correction.</p>
     /// </summary>
     /// <param name="codewordBytes">data and error correction codewords</param>
@@ -56,7 +56,8 @@ type
       const numDataCodewords: Integer): Boolean;
 
     function decode(const parser: TBitMatrixParser;
-      const hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult; overload;
+      const hints: TDictionary<TDecodeHintType, TObject>)
+      : TDecoderResult; overload;
   public
     /// <summary>
     /// Initializes a new instance of the <see cref="Decoder"/> class.
@@ -65,7 +66,7 @@ type
     destructor Destroy; override;
 
     /// <summary>
-    ///   <p>Convenience method that can decode a QR Code represented as a 2D array of booleans.
+    /// <p>Convenience method that can decode a QR Code represented as a 2D array of booleans.
     /// "true" is taken to mean a black module.</p>
     /// </summary>
     /// <param name="image">booleans representing white/black QR Code modules</param>
@@ -74,10 +75,11 @@ type
     /// text and bytes encoded within the QR Code
     /// </returns>
     function decode(const image: TArray<TArray<Boolean>>;
-      const hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult; overload;
+      const hints: TDictionary<TDecodeHintType, TObject>)
+      : TDecoderResult; overload;
 
     /// <summary>
-    ///   <p>Decodes a QR Code represented as a {@link BitMatrix}. A 1 or "true" is taken to mean a black module.</p>
+    /// <p>Decodes a QR Code represented as a {@link BitMatrix}. A 1 or "true" is taken to mean a black module.</p>
     /// </summary>
     /// <param name="bits">booleans representing white/black QR Code modules</param>
     /// <param name="hints">decoding hints that should be used to influence decoding</param>
@@ -85,7 +87,8 @@ type
     /// text and bytes encoded within the QR Code
     /// </returns>
     function decode(const bits: TBitMatrix;
-      const hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult; overload;
+      const hints: TDictionary<TDecodeHintType, TObject>)
+      : TDecoderResult; overload;
   end;
 
 implementation
@@ -102,13 +105,10 @@ begin
   inherited;
 end;
 
-
 function TQRDecoder.correctErrors(const codewordBytes: TArray<Byte>;
   const numDataCodewords: Integer): Boolean;
 var
-  i,
-  numCodewords,
-  numECCodewords: Integer;
+  i, numCodewords, numECCodewords: Integer;
   codewordsInts: TArray<Integer>;
 begin
   Result := false;
@@ -121,9 +121,8 @@ begin
     codewordsInts[i] := (codewordBytes[i] and $FF);
   numECCodewords := Length(codewordBytes) - numDataCodewords;
 
-  if (not rsDecoder.decode(codewordsInts, numECCodewords))
-  then
-     exit;
+  if (not rsDecoder.decode(codewordsInts, numECCodewords)) then
+    exit;
 
   // Copy back into array of bytes -- only need to worry about the bytes that were data
   // We don't care about errors in the error-correction codewords
@@ -136,16 +135,15 @@ end;
 function TQRDecoder.decode(const image: TArray<TArray<Boolean>>;
   const hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult;
 var
-  dimension,
-  i, j: Integer;
-  bits : TBitMatrix;
+  dimension, i, j: Integer;
+  bits: TBitMatrix;
 begin
   dimension := Length(image);
   bits := TBitMatrix.Create(dimension);
   try
     for i := 0 to Pred(dimension) do
       for j := 0 to Pred(dimension) do
-         bits[j, i] := image[i][j];
+        bits[j, i] := image[i][j];
 
     Result := decode(bits, hints);
   finally
@@ -175,30 +173,27 @@ begin
         parser.setMirror(true);
 
         // Preemptively read the version.
-        if (parser.readVersion = nil)
-        then
-           exit;
+        if (parser.readVersion = nil) then
+          exit;
 
         // Preemptively read the format information.
-        if (parser.readFormatInformation = nil)
-        then
-           exit;
+        if (parser.readFormatInformation = nil) then
+          exit;
 
         (*
-         * Since we're here, this means we have successfully detected some kind
-         * of version and format information when mirrored. This is a good sign,
-         * that the QR code may be mirrored, and we should try once more with a
-         * mirrored content.
-         *)
+          * Since we're here, this means we have successfully detected some kind
+          * of version and format information when mirrored. This is a good sign,
+          * that the QR code may be mirrored, and we should try once more with a
+          * mirrored content.
+        *)
         // Prepare for a mirrored reading.
         parser.mirror;
 
         Result := decode(parser, hints);
 
-        if (Result <> nil)
-        then
-           // Success! Notify the caller that the code was mirrored.
-           Result.Other := TQRCodeDecoderMetaData.Create(true);
+        if (Result <> nil) then
+          // Success! Notify the caller that the code was mirrored.
+          Result.Other := TQRCodeDecoderMetaData.Create(true);
       end;
     finally
       parser.Free;
@@ -209,9 +204,9 @@ end;
 function TQRDecoder.decode(const parser: TBitMatrixParser;
   const hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult;
 var
-  Datablock: TDataBlock;
+  DataBlock: TDataBlock;
   dataBlocks: TArray<TDataBlock>;
-  version: TVersion;
+  Version: TVersion;
   formatInfo: TFormatInformation;
   ecLevel: TErrorCorrectionLevel;
   codeWords, resultBytes, codewordBytes: TArray<Byte>;
@@ -219,15 +214,13 @@ var
 begin
   Result := nil;
 
-  version := parser.readVersion;
-  if (version = nil)
-  then
-     exit;
+  Version := parser.readVersion;
+  if (Version = nil) then
+    exit;
 
   formatInfo := parser.readFormatInformation;
-  if (formatInfo = nil)
-  then
-     exit;
+  if (formatInfo = nil) then
+    exit;
 
   ecLevel := formatInfo.ErrorCorrectionLevel;
 
@@ -240,43 +233,51 @@ begin
   end;
 
   // Separate into data blocks
-  dataBlocks := TDataBlock.getDataBlocks(codeWords, version, ecLevel);
+  dataBlocks := TDataBlock.getDataBlocks(codeWords, Version, ecLevel);
 
   // Count total number of data bytes
   totalBytes := 0;
-  for Datablock in dataBlocks do
-    Inc(totalBytes, Datablock.numDataCodewords);
+  for DataBlock in dataBlocks do
+    Inc(totalBytes, DataBlock.numDataCodewords);
 
   resultBytes := TArray<Byte>.Create();
   SetLength(resultBytes, totalBytes);
-  resultOffset := 0;
+  try
 
-  // Error-correct and copy data blocks together into a stream of bytes
-  for Datablock in dataBlocks do
-  begin
-    codewordBytes := Datablock.codeWords;
-    numDataCodewords := Datablock.numDataCodewords;
-    if (not self.correctErrors(codewordBytes, numDataCodewords)) then
+    resultOffset := 0;
+
+    // Error-correct and copy data blocks together into a stream of bytes
+    for DataBlock in dataBlocks do
     begin
-      FreeAndNil(formatInfo);
-      Exit(nil);
+      codewordBytes := DataBlock.codeWords;
+      numDataCodewords := DataBlock.numDataCodewords;
+      if (not self.correctErrors(codewordBytes, numDataCodewords)) then
+      begin
+        exit(nil);
+      end;
+
+      for i := 0 to Pred(numDataCodewords) do
+      begin
+        resultBytes[resultOffset] := codewordBytes[i];
+        Inc(resultOffset);
+      end;
+
+      DataBlock.Free;
     end;
 
-    for i := 0 to Pred(numDataCodewords) do
-    begin
-      resultBytes[resultOffset] := codewordBytes[i];
-      Inc(resultOffset);
-    end;
+    dataBlocks := nil;
 
-    Datablock.Free;
+    // Decode the contents of that stream of bytes
+    Result := TDecodedBitStreamParser.decode(resultBytes, Version,
+      ecLevel, hints);
+
+  finally
+    FreeAndNil(formatInfo);
+    resultBytes := nil;
+    codewordBytes := nil;
+    codeWords := nil;
   end;
-  dataBlocks := nil;
 
-  // Decode the contents of that stream of bytes
-  Result := TDecodedBitStreamParser.decode(resultBytes, version, ecLevel, hints);
-
-  FreeAndNil(formatInfo);
-  resultBytes := nil;
 end;
 
 end.

@@ -166,16 +166,10 @@ begin
   ResultPoints := nil;
   FRawBytes := nil;
 
-  if (FResultMetadata <> nil) then
+  if FResultMetadata <> nil then
   begin
-    for Metadata in FResultMetadata do
-    begin
-      if (MetaData.Value is TStringObject)
-      then
-         MetaData.Value.Free;
-    end;
     FResultMetadata.Clear;
-    FResultMetadata.Free;
+    FreeAndNil(FResultMetadata);
   end;
 
   inherited;
