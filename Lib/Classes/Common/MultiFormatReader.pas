@@ -1,5 +1,3 @@
-unit MultiFormatReader;
-
 {
   * Copyright 2007 ZXing authors
   *
@@ -14,26 +12,44 @@ unit MultiFormatReader;
   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   * See the License for the specific language governing permissions and
   * limitations under the License.
+
+  * Original Authors: Sean Owen and dswitkin@google.com (Daniel Switkin)
+  * Ported from ZXING Java Source: www.Redivivus.in (suraj.supekar@redivivus.in)
+  * Delphi Implementation by E. Spelt and K. Gossens
 }
+
+unit MultiFormatReader;
+
 interface
 
-uses SysUtils, rtti, Generics.Collections,
-  ReadResult, Reader, DecodeHintType, BinaryBitmap, BarcodeFormat, ResultPoint,
-  OneDReader, QRCodeReader, Code128Reader, Code93Reader, ITFReader;
+uses
+  System.SysUtils,
+  System.Rtti,
+  System.Generics.Collections,
+  RegularExpressions,
+  ZXing.ReadResult,
+  ZXing.Reader,
+  DecodeHintType,
+  BinaryBitmap,
+  ZXing.BarcodeFormat,
+  ZXing.ResultPoint,
+  // 1D Barcodes
+  ZXing.OneD.OneDReader,
+  ZXing.OneD.MultiFormatOneDReader,
+  // 2D Codes
+  ZXing.QrCode.QRCodeReader,
+  ZXing.Datamatrix.DataMatrixReader;
 
 /// <summary>
 /// MultiFormatReader is a convenience class and the main entry point into the library for most uses.
 /// By default it attempts to decode all barcode formats that the library supports. Optionally, you
 /// can provide a hints object to request different behavior, for example only decoding QR codes.
 /// </summary>
-/// <author>Sean Owen</author>
-/// <author>dswitkin@google.com (Daniel Switkin)</author>
-/// <author>www.Redivivus.in (suraj.supekar@redivivus.in) - Ported from ZXING Java Source</author>
 type
   TMultiFormatReader = class(TInterfacedObject, IReader)
   private
-
     FHints: TDictionary<TDecodeHintType, TObject>;
+    FEvent : TResultPointCallback;
     readers: TList<IReader>;
 
     procedure Set_Hints(const Value: TDictionary<TDecodeHintType, TObject>);
@@ -49,10 +65,14 @@ type
     /// <returns> The contents of the image
     /// </returns>
     /// <throws>  ReaderException Any errors which occurred </throws>
+
+    function DecodeInternal(const image: TBinaryBitmap): TReadResult;
+    procedure FreeReaders();
   public
-    function Decode(image: TBinaryBitmap): TReadResult; overload;
-    function Decode(image: TBinaryBitmap; WithHints: Boolean)
-      : TReadResult; overload;
+    destructor Destroy; override;
+
+    function decode(const image: TBinaryBitmap): TReadResult; overload;
+    function decode(const image: TBinaryBitmap; const WithHints: Boolean): TReadResult; overload;
     /// <summary> Decode an image using the hints provided. Does not honor existing state.
     ///
     /// </summary>
@@ -63,8 +83,8 @@ type
     /// <returns> The contents of the image
     /// </returns>
     /// <throws>  ReaderException Any errors which occurred </throws>
-    function Decode(image: TBinaryBitmap;
-      pHints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload;
+    function decode(const image: TBinaryBitmap;
+      hints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload;
 
     /// <summary> Decode an image using the state set up by calling setHints() previously. Continuous scan
     /// clients will get a <b>large</b> speed increase by using this instead of decode().
@@ -75,8 +95,7 @@ type
     /// <returns> The contents of the image
     /// </returns>
     /// <throws>  ReaderException Any errors which occurred </throws>
-    function DecodeWithState(image: TBinaryBitmap): TReadResult;
-    destructor Destroy; override;
+    function DecodeWithState(const image: TBinaryBitmap): TReadResult;
 
     /// <summary> This method adds state to the MultiFormatReader. By setting the hints once, subsequent calls
     /// to decodeWithState(image) can reuse the same set of readers without reallocating memory. This
@@ -88,46 +107,10 @@ type
     property hints: TDictionary<TDecodeHintType, TObject> read Get_Hints
       write Set_Hints;
 
-    procedure Reset;
-
-    procedure FreeReaders();
-
-  private
-    function DecodeInternal(image: TBinaryBitmap): TReadResult;
+    procedure reset;
   end;
 
 implementation
-
-function TMultiFormatReader.Decode(image: TBinaryBitmap): TReadResult;
-begin
-  hints := nil;
-  result := DecodeInternal(image)
-end;
-
-function TMultiFormatReader.Decode(image: TBinaryBitmap; WithHints: Boolean)
-  : TReadResult;
-begin
-  result := DecodeInternal(image)
-end;
-
-function TMultiFormatReader.Decode(image: TBinaryBitmap;
-  pHints: TDictionary<TDecodeHintType, TObject>): TReadResult;
-begin
-  hints := pHints;
-  result := DecodeInternal(image)
-end;
-
-function TMultiFormatReader.DecodeWithState(image: TBinaryBitmap): TReadResult;
-begin
-  // Make sure to set up the default state so we don't crash
-  if readers = nil then
-  begin
-    hints := nil
-  end;
-
-  result := DecodeInternal(image);
-
-end;
 
 destructor TMultiFormatReader.Destroy;
 begin
@@ -135,40 +118,63 @@ begin
   inherited;
 end;
 
+function TMultiFormatReader.Decode(const image: TBinaryBitmap): TReadResult;
+begin
+  hints := nil;
+  Result := DecodeInternal(image);
+end;
+
+function TMultiFormatReader.Decode(const image: TBinaryBitmap;
+  const WithHints: Boolean): TReadResult;
+begin
+  Result := DecodeInternal(image);
+end;
+
+function TMultiFormatReader.Decode(const image: TBinaryBitmap;
+  hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+begin
+  Self.hints := hints;
+  result := DecodeInternal(image)
+end;
+
+function TMultiFormatReader.DecodeWithState(
+  const image: TBinaryBitmap): TReadResult;
+begin
+  // Make sure to set up the default state so we don't crash
+  if (readers = nil)
+  then
+     hints := nil;
+
+  Result := DecodeInternal(image);
+end;
+
 procedure TMultiFormatReader.FreeReaders;
 var
-  Reader: IReader;
-  OneDReader: TOneDReader;
+  i: Integer;
 begin
   if readers <> nil then
   begin
-    for Reader in readers do
+    for i := Pred(readers.count) downto 0 do
     begin
-
-      if (Reader is TOneDReader) then
-      begin
-        OneDReader := TObject(Reader) as TOneDReader;
-        OneDReader := nil;
-      end;
+      readers[i] := nil;
+      readers.Delete(i);
     end;
   end;
-
-  readers.Clear();
-  readers.Free;
-  readers := nil;
+  FreeAndNil(readers);
 end;
 
 function TMultiFormatReader.Get_Hints: TDictionary<TDecodeHintType, TObject>;
 begin
-  result := FHints;
+  Result := FHints;
 end;
 
 procedure TMultiFormatReader.Set_Hints(const Value: TDictionary<TDecodeHintType,
   TObject>);
 var
-  tryHarder: Boolean;
+  tryHarder, addOneDReader: Boolean;
   formats: TList<TBarcodeFormat>;
 begin
+  Readers := TList<IReader>.Create;
   FHints := Value;
 
   tryHarder := (Value <> nil) and
@@ -184,101 +190,107 @@ begin
     formats := Value[DecodeHintType.POSSIBLE_FORMATS] as TList<TBarcodeFormat>
   end;
 
-  // add readers from the hints
-  readers := TList<IReader>.Create;
-  if formats <> nil then
+  if (formats <> nil) then
   begin
+    addOneDReader :=
+      (formats.Contains(TBarcodeFormat.All_1D)) or
+      (formats.Contains(TBarcodeFormat.UPC_A)) or
+      (formats.Contains(TBarcodeFormat.UPC_E)) or
+      (formats.Contains(TBarcodeFormat.EAN_13)) or
+      (formats.Contains(TBarcodeFormat.EAN_8)) or
+      (formats.Contains(TBarcodeFormat.CODABAR)) or
+      (formats.Contains(TBarcodeFormat.CODE_39)) or
+      (formats.Contains(TBarcodeFormat.CODE_93)) or
+      (formats.Contains(TBarcodeFormat.CODE_128)) or
+      (formats.Contains(TBarcodeFormat.ITF)) or
+      (formats.Contains(TBarcodeFormat.RSS_14)) or
+      (formats.Contains(TBarcodeFormat.RSS_EXPANDED));
 
-    if (formats.Contains(BarcodeFormat.CODE_128)) then
-    begin
-      readers.Add(TCode128Reader.Create)
-    end;
+    // TODO: Not all 1D/2D fully supported yet
 
-    if (formats.Contains(BarcodeFormat.CODE_93)) then
-    begin
-      readers.Add(TCode93Reader.Create())
-    end;
+    // Put 1D readers upfront in "normal" mode
+    if (addOneDReader) and (not tryHarder)
+    then
+       readers.Add(TMultiFormatOneDReader.Create(Value));
 
-    if (formats.Contains(BarcodeFormat.ITF)) then
-    begin
-      readers.Add(TITFReader.Create())
-    end;
+    if formats.Contains(TBarcodeFormat.QR_CODE)
+    then
+       readers.Add(TQRCodeReader.Create);
 
-    if (formats.Contains(BarcodeFormat.QR_CODE)) then
-    begin
-      readers.Add(TQRCodeReader.Create())
-    end;
+    if formats.Contains(TBarcodeFormat.DATA_MATRIX)
+    then
+       readers.Add(TDataMatrixReader.Create)
+
+    {if formats.Contains(TBarcodeFormat.AZTEC)
+    then
+       readers.Add(TAztecReader.Create};
+
+    {formats.Contains(TBarcodeFormat.PDF_417)
+    then
+       readers.Add(TPDF417Reader.Create};
+
+    {if formats.Contains(TBarcodeFormat.MAXICODE)
+    then
+       readers.Add(TMaxiCodeReader.Create}
+
+    // At end in "try harder" mode
+    if (addOneDReader) and (tryHarder)
+    then
+       readers.Add(TMultiFormatOneDReader.Create(Value));
   end;
 
-  if (readers.Count = 0) then // must be auto, add them all
+  if (readers = nil) or
+     (readers.Count = 0) then
   begin
-    readers.Add(TCode128Reader.Create);
-    readers.Add(TCode93Reader.Create());
-    readers.Add(TITFReader.Create());
-    readers.Add(TQRCodeReader.Create());
-  end;
-
-end;
-
-procedure TMultiFormatReader.Reset;
-var
-  Reader: IReader;
-begin
-  if readers <> nil then
-  begin
-    for Reader in readers do
-    begin
-      Reader.Reset();
-    end
+    readers.Add(TMultiFormatOneDReader.Create(Value));
+    readers.Add(TQRCodeReader.Create);
+    readers.Add(TDataMatrixReader.Create);
+    // TODO: Not implemented yet
+    //readers.Add(TAztecReader.Create);
+    //readers.Add(TPDF417Reader.Create);
+    //readers.Add(TMaxiCodeReader.Create);
   end
 end;
 
-function TMultiFormatReader.DecodeInternal(image: TBinaryBitmap): TReadResult;
+procedure TMultiFormatReader.reset;
 var
-  rpCallBack: TResultPointCallback;
+  Reader: IReader;
+begin
+  if (readers <> nil) then
+  begin
+    for Reader in readers do
+      Reader.reset();
+  end
+end;
+
+function TMultiFormatReader.DecodeInternal(const image: TBinaryBitmap): TReadResult;
+var
   i: integer;
   Reader: IReader;
 begin
+  Result := nil;
 
-  result := nil;
-  if (readers = nil) then
+  if (readers = nil)
+  then
+     exit;
+
+  for i := 0 to Pred(readers.Count) do
   begin
-    Exit;
-  end;
-
-  rpCallBack := nil;
-  if ((FHints <> nil) and
-    (FHints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
-  begin
-    // rpCallBack := FHints[DecodeHintType.NEED_RESULT_POINT_CALLBACK]
-    // as TResultPointCallback(nil);
-  end;
-
-  for i := 0 to readers.Count - 1 do
-  begin
-
     Reader := readers[i];
-    Reader.Reset();
-    result := Reader.Decode(image, FHints);
-    if result <> nil then
-    begin
+    Reader.reset();
 
+    Result := Reader.decode(image, FHints);
+    if (Result <> nil) then
+    begin
       // found a barcode, pushing the successful reader up front
       // I assume that the same type of barcode is read multiple times
       // so the reordering of the readers list should speed up the next reading
       // a little bit
-
       readers.Delete(i);
       readers.Insert(0, Reader);
-      Exit;
+      exit;
     end;
-
-    // if rpCallBack <> nil then
-    // rpCallBack(nil)
-
   end;
-
 end;
 
 end.
-

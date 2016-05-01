@@ -1,5 +1,3 @@
-unit BinaryBitmap;
-
 {
   * Copyright 2008 ZXing authors
   *
@@ -17,13 +15,20 @@ unit BinaryBitmap;
 
   * Implemented by E. Spelt for Delphi
 }
+
+unit BinaryBitmap;
+
 interface
 
-uses SysUtils, Binarizer, LuminanceSource, BitArray, BitMatrix;
+uses
+  System.SysUtils,
+  Binarizer,
+  ZXing.LuminanceSource,
+  ZXing.Common.BitArray,
+  ZXing.Common.BitMatrix;
 
 type
   TBinaryBitmap = class
-
   private
     Binarizer: TBinarizer;
     Matrix: TBitMatrix;
@@ -31,7 +36,7 @@ type
     function GetHeight: Integer;
     function GetBlackMatrix: TBitMatrix;
   public
-    constructor BinaryBitmap(Binarizer: TBinarizer);
+    constructor Create(Binarizer: TBinarizer);
     destructor Destroy(); override;
     /// <summary>
     /// Converts one row of luminance data to 1 bit data. May actually do the conversion, or return
@@ -56,7 +61,7 @@ implementation
 
 { TBinaryBitmap }
 
-constructor TBinaryBitmap.BinaryBitmap(Binarizer: TBinarizer);
+constructor TBinaryBitmap.Create(Binarizer: TBinarizer);
 begin
 
   if (Binarizer = nil) then
@@ -108,7 +113,7 @@ var
   newSource: TLuminanceSource;
 begin
   newSource := Binarizer.LuminanceSource.rotateCounterClockwise();
-  result := TBinaryBitmap.BinaryBitmap(Binarizer.createBinarizer(newSource));
+  result := TBinaryBitmap.Create(Binarizer.createBinarizer(newSource));
 end;
 
 function TBinaryBitmap.RotateSupported: Boolean;

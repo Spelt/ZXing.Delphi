@@ -1,5 +1,3 @@
-unit ResultMetadataType;
-
 {
   * Copyright 2008 ZXing authors
   *
@@ -17,6 +15,9 @@ unit ResultMetadataType;
 
   * Implemented by E. Spelt for Delphi
 }
+
+unit ResultMetadataType;
+
 interface
 
 type

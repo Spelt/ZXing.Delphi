@@ -22,12 +22,10 @@ interface
 uses SysUtils, Generics.Collections;
 
 type
-
   TDecoderResult = class
   private
     function GetStructuredAppend: boolean;
   public
-  var
     ByteSegments: TList<TArray<Byte>>;
     ECLevel: string;
     Erasures: Integer;
@@ -43,40 +41,42 @@ type
     constructor Create(RawBytes: TArray<Byte>; Text: string;
       ByteSegments: TList<TArray<Byte>>; ECLevel: string; saSequence: Integer;
       saParity: Integer); overload;
+    destructor Destroy; override;
 
-    destructor Destroy(); override;
     property StructuredAppend: boolean read GetStructuredAppend;
-
   end;
 
 implementation
 
 { TDecoderResult }
 
-constructor TDecoderResult.Create(RawBytes: TArray<Byte>; Text: string;
-  ByteSegments: TList<TArray<Byte>>; ECLevel: string);
+constructor TDecoderResult.Create(RawBytes: TArray<Byte>; Text: String;
+  ByteSegments: TList<TArray<Byte>>; ECLevel: String);
 begin
-  self.Create(RawBytes, Text, ByteSegments, ECLevel, -1, -1);
+  Self.Create(RawBytes, Text, ByteSegments, ECLevel, -1, -1);
 end;
 
 constructor TDecoderResult.Create(RawBytes: TArray<Byte>; Text: string;
   ByteSegments: TList<TArray<Byte>>; ECLevel: string;
   saSequence, saParity: Integer);
 begin
-  if ((RawBytes = nil) and (Text = '')) then
-    raise EArgumentException.Create('Text or rawbytes cannot be nil or empty');
-  self.RawBytes := RawBytes;
-  self.Text := Text;
-  self.ByteSegments := ByteSegments;
-  self.ECLevel := ECLevel;
-  self.StructuredAppendParity := saParity;
-  self.StructuredAppendSequenceNumber := saSequence
+  if ((RawBytes = nil) and (Text = ''))
+  then
+     raise EArgumentException.Create('Text or rawbytes cannot be nil or empty');
+
+  Self.RawBytes := RawBytes;
+  Self.Text := Text;
+  Self.ByteSegments := ByteSegments;
+  Self.ECLevel := ECLevel;
+  Self.StructuredAppendParity := saParity;
+  Self.StructuredAppendSequenceNumber := saSequence
 end;
 
 destructor TDecoderResult.Destroy;
 begin
-  if Assigned(ByteSegments) then
-    ByteSegments.Clear;
+  if Assigned(ByteSegments)
+  then
+     ByteSegments.Clear;
   FreeAndNil(ByteSegments);
   RawBytes := nil;
   FreeAndNil(Other);

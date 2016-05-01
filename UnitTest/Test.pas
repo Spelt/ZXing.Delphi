@@ -14,34 +14,35 @@ unit Test;
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Implemented by E. Spelt for Delphi
+  * Delphi Implementation by E. Spelt and K. Gossens
 }
 
 interface
 
 uses
-  DUnitX.TestFramework, SysUtils, ScanManager, BarcodeFormat, ReadResult,
-  FMX.Types, FMX.Graphics, FMX.Objects, DecodeHintType, generics.collections ;
+  DUnitX.TestFramework, 
+  FMX.Types, 
+  FMX.Graphics, 
+  FMX.Objects,
+  SysUtils, 
+  ScanManager, 
+  BarcodeFormat, 
+  ZXing.ReadResult;
 
 type
-
   [TestFixture]
   TZXingDelphiTest = class(TObject)
   private
 
-    Hints: TDictionary<TDecodeHintType, TObject>;
-
   public
-    [Setup]
-    procedure Setup;
-    [TearDown]
-    procedure TearDown;
-
     function GetImage(Filename: string): TBitmap;
     function Decode(Filename: String; CodeFormat: TBarcodeFormat): TReadResult;
 
     [Test]
     procedure AllQRCode;
+
+    [Test]
+    procedure AllDataMatrixCode();
 
     [Test]
     procedure AllCode128();
@@ -59,26 +60,11 @@ type
 
 implementation
 
-procedure TZXingDelphiTest.Setup;
-begin
-  hints := TDictionary<TDecodeHintType, TObject>.Create;
-  //hints.Add(TDecodeHintType.TRY_HARDER, nil);
-  //hints.Add(TDecodeHintType.TRY_HARDER_WITHOUT_ROTATION, nil);
-  //hints.Add(TDecodeHintType.PURE_BARCODE, nil);
-end;
-
-procedure TZXingDelphiTest.TearDown;
-begin
-  FreeAndNil(hints);
-end;
-
 procedure TZXingDelphiTest.AllQRCode();
 var
   result: TReadResult;
 begin
-
   try
-
     result := Decode('qrcode.png', BarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('http://google.com'),
@@ -97,9 +83,12 @@ begin
 
     result := Decode('q33.png', BarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Contains('Never gonna give you up'),
-      'QR code result Text Incorrect: ' + result.Text);
-    Assert.IsTrue(result.Text.Contains('Never gonna tell a lie and hurt you'),
+    Assert.IsTrue(result.Text.Equals('Never gonna give you up, ' + #$0A +
+                                     'Never gonna let you down ' + #$0A +
+                                     'Never gonna run around and desert you ' + #$0A +
+                                     'Never gonna make you cry, ' + #$0A +
+                                     'Never gonna say goodbye ' + #$0A +
+                                     'Never gonna tell a lie and hurt you'),
       'QR code result Text Incorrect: ' + result.Text);
 
     result := Decode('q1.png', BarcodeFormat.QR_CODE);
@@ -249,34 +238,92 @@ begin
   end;
 end;
 
+procedure TZXingDelphiTest.AllDataMatrixCode();
+var
+  result: TReadResult;
+begin
+  try
+    result := Decode('dmc1.png', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+
+    // WRONG Encoding: How we can get the correct encoding (umlaut) here... :(
+    {result := Decode('dmc2.png', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('Beispiel für Wikipedia'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);}
+
+    result := Decode('dmc3.png', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('Wikipédia, l''encyclopédie libre'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+
+    // Not working yet
+    {result := Decode('dmc4.png', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('??'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);}
+
+    result := Decode('dmc5.png', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('Pause Hi-Tech' + #$0A +
+                                     'Tech tips for the non-geek' + #$0A +
+                                     'http://www.pausehitech.com'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+
+    result := Decode('dmc6.bmp', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('12345678'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+
+    result := Decode('dmc7.png', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('DataMatrix'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+
+    result := Decode('dmc8.jpg', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://www.labeljoy.com'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+
+    result := Decode('dmc9.png', BarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123Test123Test123Test123Test123' +
+                                     'Test123'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+  finally
+    FreeAndNil(result);
+  end;
+end;
+
 procedure TZXingDelphiTest.AllCode128();
 var
   result: TReadResult;
 begin
   try
-     result := Decode('Code128.png', BarcodeFormat.CODE_128);
+    result := Decode('Code128.png', BarcodeFormat.CODE_128);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1234567'),
       'Code 128 result Text Incorrect: ' + result.Text);
-
-    result := Decode('Code128red.png', BarcodeFormat.CODE_128);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('1234567'),
-      'Code 128 result Text Incorrect: ' + result.Text);
-
-
-
   finally
     FreeAndNil(result);
   end;
-
 end;
 
 procedure TZXingDelphiTest.AllCode93();
 var
   result: TReadResult;
 begin
-
   try
     result := Decode('Code93-1.png', BarcodeFormat.CODE_93);
     Assert.IsNotNull(result, ' nil result ');
@@ -297,7 +344,6 @@ begin
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('ABC CODE96'),
       'Auto Code 93 - 3 result Text Incorrect: ' + result.Text);
-
   finally
     FreeAndNil(result);
   end;
@@ -307,11 +353,8 @@ procedure TZXingDelphiTest.AllCodeITF();
 var
   result: TReadResult;
 begin
-
   result := Decode('q4.png', BarcodeFormat.ITF);
-
   try
-
     Assert.IsNull(result, ' Should be nil result ');
 
     result := Decode('ITF-1.png', BarcodeFormat.ITF);
@@ -338,7 +381,6 @@ begin
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('77745678900093'),
       'ITF - 5 result Text Incorrect: ' + result.Text);
-
   finally
     FreeAndNil(result);
   end;
@@ -348,9 +390,7 @@ procedure TZXingDelphiTest.AutoTypes;
 var
   result: TReadResult;
 begin
-
   try
-
     result := Decode('Code128.png', BarcodeFormat.Auto);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1234567'),
@@ -400,27 +440,24 @@ begin
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('12345678900098'),
       'ITF - 3 result Text Incorrect: ' + result.Text);
-
   finally
     FreeAndNil(result);
   end;
-
 end;
 
-/// /////////////////////////////////////////////////////////////////////////////
-/// / Helpers below                                                         /////
-/// /////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//// Helpers below                                                         /////
+////////////////////////////////////////////////////////////////////////////////
 
 function TZXingDelphiTest.Decode(Filename: String; CodeFormat: TBarcodeFormat)
   : TReadResult;
 var
   bmp: TBitmap;
   ScanManager: TScanManager;
-
 begin
   bmp := GetImage(Filename);
   try
-    ScanManager := TScanManager.Create(CodeFormat, hints);
+    ScanManager := TScanManager.Create(CodeFormat, nil);
     result := ScanManager.Scan(bmp);
   finally
     FreeAndNil(bmp);
@@ -436,17 +473,14 @@ var
 begin
   img := TImage.Create(nil);
   try
-
     fs := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + Filename;
     img.Bitmap.LoadFromFile(fs);
     result := TBitmap.Create;
     result.Assign(img.Bitmap);
-
   finally
     img.Free;
   end;
 end;
-
 
 (* TBarcodeFormat.CODE_128
   Result Decode(string file, BarcodeFormat? format = null, KeyValuePair<DecodeHintType, object>[] additionalHints = null)
@@ -459,15 +493,8 @@ end;
 
   return result;
   }
-
-
-
-
-
 *)
 
 initialization
-
-TDUnitX.RegisterTestFixture(TZXingDelphiTest);
-
+  TDUnitX.RegisterTestFixture(TZXingDelphiTest);
 end.

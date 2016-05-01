@@ -7,7 +7,7 @@
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>1119</TargetedPlatforms>
+        <TargetedPlatforms>1113</TargetedPlatforms>
         <AppType>Application</AppType>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
@@ -33,18 +33,8 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Base)'=='true') or '$(Base_OSX32)'!=''">
-        <Base_OSX32>true</Base_OSX32>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
         <Base_Win32>true</Base_Win32>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
-        <Base_Win64>true</Base_Win64>
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
@@ -55,12 +45,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
         <Cfg_1_Win32>true</Cfg_1_Win32>
-        <CfgParent>Cfg_1</CfgParent>
-        <Cfg_1>true</Cfg_1>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
-        <Cfg_1_Win64>true</Cfg_1_Win64>
         <CfgParent>Cfg_1</CfgParent>
         <Cfg_1>true</Cfg_1>
         <Base>true</Base>
@@ -76,13 +60,8 @@
         <Cfg_2>true</Cfg_2>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
-        <Cfg_2_Win64>true</Cfg_2_Win64>
-        <CfgParent>Cfg_2</CfgParent>
-        <Cfg_2>true</Cfg_2>
-        <Base>true</Base>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <DCC_UnitSearchPath>..\Lib\Classes;..\Lib\Classes\Common;..\Lib\Classes\Common\Detector;..\Lib\Classes\Common\ReedSolomon;..\Lib\Classes\Filtering;..\Lib\Classes\1D Barcodes;..\Lib\Classes\2D Barcodes;..\Lib\Classes\2D Barcodes\Decoder;..\Lib\Classes\2D Barcodes\Detector;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <AUP_ACCESS_FINE_LOCATION>true</AUP_ACCESS_FINE_LOCATION>
         <AUP_READ_EXTERNAL_STORAGE>true</AUP_READ_EXTERNAL_STORAGE>
         <AUP_CAMERA>true</AUP_CAMERA>
@@ -245,26 +224,12 @@
         <iPhone_Spotlight29>$(BDS)\bin\Artwork\iOS\iPhone\FM_SpotlightSearchIcon_29x29.png</iPhone_Spotlight29>
         <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDevelopmentRegion=en;CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleInfoDictionaryVersion=7.1;CFBundleVersion=1.0.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;LSRequiresIPhoneOS=true;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);UIDeviceFamily=iPhone &amp; iPad;CFBundleResourceSpecification=ResourceRules.plist;NSLocationAlwaysUsageDescription=The reason for accessing the location information of the user;NSLocationWhenInUseUsageDescription=The reason for accessing the location information of the user;FMLocalNotificationPermission=false;UIBackgroundModes=</VerInfo_Keys>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_OSX32)'!=''">
-        <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleVersion=1.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);NSHighResolutionCapable=true;LSApplicationCategoryType=public.app-category.utilities;NSLocationAlwaysUsageDescription=The reason for accessing the location information of the user;NSLocationWhenInUseUsageDescription=The reason for accessing the location information of the user</VerInfo_Keys>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <DCC_UsePackage>DBXSqliteDriver;bindcompdbx;IndyIPCommon;RESTComponents;DBXInterBaseDriver;IndyIPServer;IndySystem;tethering;fmxFireDAC;FireDAC;bindcompfmx;FireDACSqliteDriver;FireDACPgDriver;FireDACASADriver;inetdb;FMXTee;soaprtl;DbxCommonDriver;FmxTeeUI;FireDACIBDriver;fmx;fmxdae;xmlrtl;soapmidas;fmxobj;rtl;DbxClientDriver;CustomIPTransport;dbexpress;IndyCore;bindcomp;dsnap;FireDACCommon;IndyIPClient;RESTBackendComponents;dbxcds;soapserver;FireDACODBCDriver;bindengine;DBXMySQLDriver;CloudService;dsnapxml;FireDACMySQLDriver;dbrtl;inetdbxpress;IndyProtocols;FireDACCommonDriver;inet;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
-        <BT_BuildType>Debug</BT_BuildType>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_UsePackage>DBXSqliteDriver;bindcompdbx;IndyIPCommon;RESTComponents;DBXInterBaseDriver;vcl;IndyIPServer;vclactnband;frxe23;vclFireDAC;IndySystem;FMXfrxDB23;tethering;svnui;dsnapcon;FireDACADSDriver;FMXfrx23;FireDACMSAccDriver;fmxFireDAC;vclimg;TeeDB;FireDAC;vcltouch;vcldb;bindcompfmx;Intraweb;svn;FireDACSqliteDriver;FireDACPgDriver;DPFiOSPackagesDX10;FireDACASADriver;inetdb;FMXTee;soaprtl;DbxCommonDriver;FmxTeeUI;FireDACIBDriver;fmx;fmxdae;xmlrtl;soapmidas;Tee;fmxobj;vclwinx;rtl;DbxClientDriver;CustomIPTransport;vcldsnap;dbexpress;IndyCore;vclx;bindcomp;appanalytics;dsnap;GoTLogic;FireDACCommon;IndyIPClient;bindcompvcl;frxDB23;RESTBackendComponents;TeeUI;VCLRESTComponents;vclribbon;dbxcds;soapserver;frxTee23;adortl;FireDACODBCDriver;VclSmp;KernowSoftwareFMX;vclie;bindengine;DBXMySQLDriver;CloudService;dsnapxml;FireDACMySQLDriver;dbrtl;inetdbxpress;IndyProtocols;frx23;FixInsight_10;FireDACCommonDriver;inet;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <DCC_UsePackage>DBXSqliteDriver;bindcompdbx;IndyIPCommon;RESTComponents;DBXInterBaseDriver;vcl;IndyIPServer;vclactnband;vclFireDAC;IndySystem;tethering;dsnapcon;FireDACADSDriver;FireDACMSAccDriver;fmxFireDAC;vclimg;TeeDB;FireDAC;vcltouch;vcldb;bindcompfmx;Intraweb;FireDACSqliteDriver;FireDACPgDriver;FireDACASADriver;inetdb;FMXTee;soaprtl;DbxCommonDriver;FmxTeeUI;FireDACIBDriver;fmx;fmxdae;xmlrtl;soapmidas;Tee;fmxobj;vclwinx;rtl;DbxClientDriver;CustomIPTransport;vcldsnap;dbexpress;IndyCore;vclx;bindcomp;appanalytics;dsnap;FireDACCommon;IndyIPClient;bindcompvcl;RESTBackendComponents;TeeUI;VCLRESTComponents;vclribbon;dbxcds;soapserver;adortl;FireDACODBCDriver;VclSmp;vclie;bindengine;DBXMySQLDriver;CloudService;dsnapxml;FireDACMySQLDriver;dbrtl;inetdbxpress;IndyProtocols;FireDACCommonDriver;inet;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
-        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
@@ -276,16 +241,12 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <DCC_Define>EUREKALOG;EUREKALOG_VER7;$(DCC_Define)</DCC_Define>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <DCC_Define>EUREKALOG;EUREKALOG_VER7;$(DCC_Define)</DCC_Define>
         <DCC_MapFile>3</DCC_MapFile>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
-        <AppEnableHighDPI>true</AppEnableHighDPI>
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -297,10 +258,6 @@
         <AppEnableHighDPI>true</AppEnableHighDPI>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
-        <AppEnableHighDPI>true</AppEnableHighDPI>
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
-    </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
@@ -309,54 +266,6 @@
             <Form>Form2</Form>
             <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\Code93Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\Code128Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ITFReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\OneDReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Datablock.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Datamask.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\DecodedBitStreamParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ErrorCorrectionLevel.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\FormatInformation.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Mode.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\QRCodeDecoderMetadata.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Version.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\AlignmentPattern.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\Detector.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPattern.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPatternFinder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPatternInfo.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\QRCodeReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\BarcodeFormat.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\BitArray.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\Bitmatrix.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\BitSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\CharacterSetECI.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DecodeHintType.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DecoderResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DefaultGridSampler.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DetectorResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\Helpers.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\MathUtils.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\MultiFormatReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\PerspectiveTransform.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ReadResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ResultMetadataType.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ResultPoint.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\StringUtils.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\Binarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\BinaryBitmap.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\HybridBinarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\LuminanceSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\RGBLuminanceSource.Pas"/>
-        <DCCReference Include="..\Lib\Classes\ScanManager.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -378,8 +287,11 @@
                     <Source Name="MainSource">Leaktest.dpr</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k230.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp230.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k230.bpl">Embarcadero C++Builder-Package für Office 2000-Server</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp230.bpl">Embarcadero C++Builder-Package für Office XP-Server</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k230.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automatisierungsserver</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp230.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+                    <Excluded_Packages Name="C:\Users\Public\Documents\Embarcadero\Studio\17.0\Bpl\JvPluginSystemDesign230.bpl">JVCL Plugin Components</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="2">
@@ -805,9 +717,7 @@
                 <Platform value="iOSDevice32">True</Platform>
                 <Platform value="iOSDevice64">True</Platform>
                 <Platform value="iOSSimulator">True</Platform>
-                <Platform value="OSX32">True</Platform>
                 <Platform value="Win32">True</Platform>
-                <Platform value="Win64">True</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
@@ -822,11 +732,12 @@
 EurekaLog Version=7007
 Activate=1
 atFixSafeCallException=1
-atFMX=1
+atVCL=1
 atWin32=1
 cfoReduceFileSize=0
 csoShowInvalid=1
 csoShowPointers=1
+Debug=1
 DeleteMapAfterCompile=0
 dpJCL=1
 Encrypt Password=""
@@ -840,5 +751,6 @@ InjectOptions=1
 loEnableMMDebugMode=1
 loMaxLeaks=20
 loResCatchLeaks=1
+loResRAWStackTrace=1
 ProjectID="{2365314A-5EE8-4606-B77D-0E6F24399583}"
 EurekaLog Last Line -->

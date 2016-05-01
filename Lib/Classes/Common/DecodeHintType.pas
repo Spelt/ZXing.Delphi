@@ -1,5 +1,3 @@
-unit DecodeHintType;
-
 {
   * Copyright 2008 ZXing authors
   *
@@ -16,7 +14,11 @@ unit DecodeHintType;
   * limitations under the License.
 
   * Implemented by E. Spelt for Delphi
+  * Restructured by K. Gossens
 }
+
+unit DecodeHintType;
+
 interface
 
 type
@@ -60,8 +62,8 @@ type
     ASSUME_CODE_39_CHECK_DIGIT,
 
     /// <summary>
-    /// The caller needs to be notified via callback when a possible <see cref="ResultPoint" />
-    /// is found. Maps to a <see cref="ResultPointCallback" />.
+    /// The caller needs to be notified via callback when a possible <see cref="TResultPoint" />
+    /// is found. Maps to a <see cref="TResultPointCallback" />.
     /// </summary>
     NEED_RESULT_POINT_CALLBACK,
 

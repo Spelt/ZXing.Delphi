@@ -20,7 +20,10 @@ unit Binarizer;
 interface
 
 uses
-  System.SysUtils, LuminanceSource, BitArray, BitMatrix;
+  System.SysUtils,
+  ZXing.LuminanceSource,
+  ZXing.Common.BitArray,
+  ZXing.Common.BitMatrix;
 
 type
 
@@ -36,8 +39,6 @@ type
     FSource: TLuminanceSource;
     function GetWidth: Integer;
     function GetHeight: Integer;
-
-
   protected
     /// <summary>
     /// Initializes a new instance of the <see cref="Binarizer"/> class.
@@ -62,7 +63,7 @@ type
     function GetBlackRow(y: Integer; row: TBitArray): TBitArray;
       virtual; abstract;
 
-    function BlackMatrix: TBitmatrix; virtual; abstract;
+    function BlackMatrix: TBitMatrix; virtual; abstract;
     destructor Destroy();override;
 
     /// <summary> Creates a new object with the same type as this Binarizer implementation, but with pristine
@@ -111,7 +112,6 @@ function TBinarizer.GetWidth: Integer;
 begin
   result := FSource.Width;
 end;
-
 
 function TBinarizer.LuminanceSource: TLuminanceSource;
 begin

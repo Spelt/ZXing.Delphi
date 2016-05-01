@@ -19,7 +19,12 @@ unit GlobalHistogramBinarizer;
 
 interface
 
-uses SysUtils, Binarizer, LuminanceSource, BitArray, MathUtils;
+uses 
+  SysUtils, 
+  Binarizer, 
+  ZXing.LuminanceSource,
+  ZXing.Common.BitArray, 
+  ZXing.Common.Detector.MathUtils;
 
 type
   TGlobalHistogramBinarizer = class(TBinarizer)

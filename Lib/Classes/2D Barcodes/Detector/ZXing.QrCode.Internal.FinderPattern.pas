@@ -1,0 +1,176 @@
+{
+  * Copyright 2007 ZXing authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+
+  * Original Author: Sean Owen
+  * Delphi Implementation by E. Spelt and K. Gossens
+}
+
+unit ZXing.QrCode.Internal.FinderPattern;
+
+interface
+
+uses 
+  ZXing.ResultPoint;
+
+type
+  /// <summary>
+  /// <p>Encapsulates a finder pattern, which are the three square patterns found in
+  /// the corners of QR Codes. It also encapsulates a count of similar finder patterns,
+  /// as a convenience to the finder's bookkeeping.</p>
+  /// </summary>
+  TFinderPattern = class(TResultPoint)
+  private
+    Fcount: Integer;
+    FestimatedModuleSize: Single;
+  public
+    constructor Create(const posX, posY, estimatedModuleSize: Single;
+      const count: Integer); overload;
+    constructor Create(const posX, posY, estimatedModuleSize: Single); overload;
+
+    class procedure orderBestPatterns(const patterns: TArray<TFinderPattern>); static;
+
+    /// <summary> <p>Determines if this finder pattern "about equals" a finder pattern at the stated
+    /// position and size -- meaning, it is at nearly the same center with nearly the same size.</p>
+    /// </summary>
+    function aboutEquals(const moduleSize, i, j: Single): Boolean;
+
+    /// <summary>
+    /// Combines this object's current estimate of a finder pattern position and module size
+    /// with a new estimate. It returns a new {@code FinderPattern} containing a weighted average
+    /// based on count.
+    /// </summary>
+    /// <param name="i">The i.</param>
+    /// <param name="j">The j.</param>
+    /// <param name="newModuleSize">New size of the module.</param>
+    /// <returns></returns>
+    function combineEstimate(const i, j, newModuleSize: Single): TFinderPattern;
+
+    /// <summary>
+    /// Gets the size of the estimated module.
+    /// </summary>
+    /// <value>
+    /// The size of the estimated module.
+    /// </value>
+    property estimatedModuleSize : Single read FestimatedModuleSize;
+    property count : Integer read Fcount write Fcount;
+  end;
+
+implementation
+
+{ TFinderPattern }
+
+constructor TFinderPattern.Create(const posX, posY,
+  estimatedModuleSize: Single; const count: Integer);
+begin
+  inherited Create(posX, posY);
+
+  FestimatedModuleSize := estimatedModuleSize;
+  Fcount := count;
+end;
+
+constructor TFinderPattern.Create(const posX, posY,
+  estimatedModuleSize: Single);
+begin
+  Self.Create(posX, posY, estimatedModuleSize, 1);
+end;
+
+function TFinderPattern.aboutEquals(const moduleSize, i, j: Single): Boolean;
+var
+  moduleSizeDiff,
+  x, y: Single;
+begin
+  Result := false;
+
+  x := Self.x;
+  y := Self.y;
+
+  if ((Abs(i - self.y) <= moduleSize) and (Abs(j - self.x) <= moduleSize)) then
+  begin
+    moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
+
+    Result := ((moduleSizeDiff <= 1) or
+      (moduleSizeDiff <= self.estimatedModuleSize));
+  end;
+end;
+
+class procedure TFinderPattern.orderBestPatterns(
+  const patterns: TArray<TFinderPattern>);
+var
+  zeroOneDistance,
+  oneTwoDistance,
+  zeroTwoDistance: Single;
+  pointA,
+  pointB,
+  pointC,
+  temp: TFinderPattern;
+begin
+  // Find distances between pattern centers
+  zeroOneDistance := distance(patterns[0], patterns[1]);
+  oneTwoDistance := distance(patterns[1], patterns[2]);
+  zeroTwoDistance := distance(patterns[0], patterns[2]);
+
+  // Assume one closest to other two is B; A and C will just be guesses at first
+  if ((oneTwoDistance >= zeroOneDistance) and
+    (oneTwoDistance >= zeroTwoDistance)) then
+  begin
+    pointB := patterns[0];
+    pointA := patterns[1];
+    pointC := patterns[2];
+  end
+  else if ((zeroTwoDistance >= oneTwoDistance) and
+    (zeroTwoDistance >= zeroOneDistance)) then
+  begin
+    pointB := patterns[1];
+    pointA := patterns[0];
+    pointC := patterns[2];
+  end
+  else
+  begin
+    pointB := patterns[2];
+    pointA := patterns[0];
+    pointC := patterns[1];
+  end;
+
+  // Use cross product to figure out whether A and C are correct or flipped.
+  // This asks whether BC x BA has a positive z component, which is the arrangement
+  // we want for A, B, C. If it's negative, then we've got it flipped around and
+  // should swap A and C.
+  if (TResultPoint.crossProductZ(pointA, pointB, pointC) < 0) then
+  begin
+    temp := pointA;
+    pointA := pointC;
+    pointC := temp;
+  end;
+
+  patterns[0] := pointA;
+  patterns[1] := pointB;
+  patterns[2] := pointC;
+end;
+
+function TFinderPattern.combineEstimate(const i, j,
+  newModuleSize: Single): TFinderPattern;
+var
+  combinedCount: Integer;
+  combinedX, combinedY: Single;
+begin
+  combinedCount := (Self.count + 1);
+  combinedX := ((Self.count * Self.x) + j) / combinedCount;
+  combinedY := ((Self.count * Self.y) + i) / combinedCount;
+  Result := TFinderPattern.Create(combinedX, combinedY,
+    (((Self.count * Self.estimatedModuleSize) + newModuleSize) / combinedCount),
+    combinedCount)
+end;
+
+end.

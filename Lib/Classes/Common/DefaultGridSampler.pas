@@ -1,7 +1,5 @@
-unit DefaultGridSampler;
-
 {
-  * Copyright 2008 ZXing authors
+  * Copyright 2007 ZXing authors
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -15,34 +13,56 @@ unit DefaultGridSampler;
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Implemented by E. Spelt for Delphi
+  * Original Author: Sean Owen
+  * Ported from ZXING Java Source: www.Redivivus.in (suraj.supekar@redivivus.in)
+  * Delphi Implementation by E. Spelt and K. Gossens
 }
+
+unit DefaultGridSampler;
+
 interface
 
-uses SysUtils, BitMatrix, PerspectiveTransform, mathUtils, Math;
+uses
+  System.SysUtils,
+  System.Math,
+  ZXing.Common.BitMatrix,
+  ZXing.Common.PerspectiveTransform,
+  ZXing.Common.Detector.MathUtils;
 
 type
-  TDefaultGridSampler = class
-
+  // TODO(KG) Add GridSampler basis class
+  TDefaultGridSampler = class //(TGridSampler)
   private
     class var GridSampler: TDefaultGridSampler;
     class function get_Instance(): TDefaultGridSampler; static;
-
   protected
-    class function checkAndNudgePoints(image: TBitMatrix;
-      points: TArray<Single>): boolean; static;
-
+    /// <summary> <p>Checks a set of points that have been transformed to sample points on an image against
+    /// the image's dimensions to see if the point are even within the image.</p>
+    ///
+    /// <p>This method will actually "nudge" the endpoints back onto the image if they are found to be
+    /// barely (less than 1 pixel) off the image. This accounts for imperfect detection of finder
+    /// patterns in an image where the QR Code runs all the way to the image border.</p>
+    ///
+    /// <p>For efficiency, the method will check points from either end of the line until one is found
+    /// to be within the image. Because the set of points are assumed to be linear, this is valid.</p>
+    ///
+    /// </summary>
+    /// <param name="image">image into which the points should map
+    /// </param>
+    /// <param name="points">actual points in x1,y1,...,xn,yn form
+    /// </param>
+    class function checkAndNudgePoints(const image: TBitMatrix;
+      const points: TArray<Single>): boolean; static;
   public
-    class function sampleGrid(image: TBitMatrix; dimensionX: Integer;
-      dimensionY: Integer; transform: TPerspectiveTransform): TBitMatrix;
-      overload; static;
+    class function sampleGrid(const image: TBitMatrix;
+      const dimensionX, dimensionY: Integer;
+      const p1ToX, p1ToY, p2ToX, p2ToY, p3ToX, p3ToY, p4ToX, p4ToY,
+      p1FromX, p1FromY, p2FromX, p2FromY, p3FromX, p3FromY, p4FromX,
+      p4FromY: Single): TBitMatrix; overload; static;
 
-    class function sampleGrid(image: TBitMatrix; dimensionX: Integer;
-      dimensionY: Integer; p1ToX: Single; p1ToY: Single; p2ToX: Single;
-      p2ToY: Single; p3ToX: Single; p3ToY: Single; p4ToX: Single; p4ToY: Single;
-      p1FromX: Single; p1FromY: Single; p2FromX: Single; p2FromY: Single;
-      p3FromX: Single; p3FromY: Single; p4FromX: Single; p4FromY: Single)
-      : TBitMatrix; overload; static;
+    class function sampleGrid(const image: TBitMatrix;
+      const dimensionX, dimensionY: Integer;
+      const transform: TPerspectiveTransform): TBitMatrix; overload; static;
 
     class procedure setGridSampler(newGridSampler: TDefaultGridSampler); static;
 
@@ -55,77 +75,100 @@ implementation
 
 { TDefaultGridSampler }
 
-class function TDefaultGridSampler.sampleGrid(image: TBitMatrix;
-  dimensionX, dimensionY: Integer; transform: TPerspectiveTransform)
-  : TBitMatrix;
+class function TDefaultGridSampler.sampleGrid(const image: TBitMatrix;
+  const dimensionX, dimensionY: Integer; const p1ToX, p1ToY, p2ToX, p2ToY,
+  p3ToX, p3ToY, p4ToX, p4ToY, p1FromX, p1FromY, p2FromX, p2FromY, p3FromX,
+  p3FromY, p4FromX, p4FromY: Single): TBitMatrix;
+var
+  transform: TPerspectiveTransform;
+begin
+  transform := TPerspectiveTransform.quadrilateralToQuadrilateral(p1ToX, p1ToY,
+    p2ToX, p2ToY, p3ToX, p3ToY, p4ToX, p4ToY, p1FromX, p1FromY, p2FromX,
+    p2FromY, p3FromX, p3FromY, p4FromX, p4FromY);
 
+  Result := sampleGrid(image, dimensionX, dimensionY, transform);
+end;
+
+class function TDefaultGridSampler.sampleGrid(const image: TBitMatrix;
+  const dimensionX, dimensionY: Integer;
+  const transform: TPerspectiveTransform) : TBitMatrix;
 var
   bits: TBitMatrix;
   points: TArray<Single>;
-  y, x, max, p1, p2: Integer;
+  y, x, max: Integer;
   iValue: Single;
 begin
-  if ((dimensionX <= 0) or (dimensionY <= 0)) then
-  begin
-    Result := nil;
-    exit
-  end;
+  Result := nil;
+
+  if ((dimensionX <= 0) or
+      (dimensionY <= 0))
+  then
+     exit;
+
   bits := TBitMatrix.Create(dimensionX, dimensionY);
   points := TArray<Single>.Create();
   SetLength(points, dimensionX shl 1);
-  y := 0;
 
-  while ((y < dimensionY)) do
-  begin
-    max := Length(points);
-    iValue := (y + 0.5);
-    x := 0;
-    while ((x < max)) do
+  try
+    for y := 0 to Pred(dimensionY) do
     begin
-      points[x] := TMathUtils.Asr(x, 1) + 0.5;
-      points[(x + 1)] := iValue;
-      inc(x, 2)
-    end;
-
-    transform.transformPoints(points);
-
-    if (not checkAndNudgePoints(image, points)) then
-    begin
-      Result := nil;
-      exit
-    end;
-    try
+      max := Length(points);
+      iValue := (y + 0.5);
       x := 0;
       while ((x < max)) do
       begin
-        p1 := Floor(points[x]);
-        p2 := Floor(points[x + 1]);
+        points[x] := (x shr 1) + 0.5; //TMathUtils.Asr(x, 1) + 0.5;
+        points[(x + 1)] := iValue;
+        Inc(x, 2);
+      end;
+      transform.transformPoints(points);
 
-        bits[(TMathUtils.Asr(x, 1)), y] := image[p1, p2];
-        inc(x, 2)
-      end
-    except
-      Result := nil;
-      exit
+      // Quick check to see if points transformed to something inside the image;
+      // sufficient to check the endpoints
+      if (not checkAndNudgePoints(image, points)) then
+      begin
+        bits.Free;
+        exit;
+      end;
+
+      try
+        x := 0;
+        while (x < max) do
+        begin
+          bits[(TMathUtils.Asr(x, 1)), y] := image[Floor(points[x]), Floor(points[x + 1])];
+          Inc(x, 2);
+        end
+      except
+        // This feels wrong, but, sometimes if the finder patterns are misidentified, the resulting
+        // transform gets "twisted" such that it maps a straight line of points to a set of points
+        // whose endpoints are in bounds, but others are not. There is probably some mathematical
+        // way to detect this about the transformation that I don't know yet.
+        // This results in an ugly runtime exception despite our clever checks above -- can't have
+        // that. We could check each point's coordinates but that feels duplicative. We settle for
+        // catching and wrapping ArrayIndexOutOfBoundsException.
+        exit;
+      end;
     end;
-
-    inc(y)
+  finally
+    points := nil;
   end;
-
   Result := bits;
-
 end;
 
-class function TDefaultGridSampler.checkAndNudgePoints(image: TBitMatrix;
-  points: TArray<Single>): boolean;
+class function TDefaultGridSampler.checkAndNudgePoints(const image: TBitMatrix;
+  const points: TArray<Single>): Boolean;
 var
-  offset, x, y, width, height: Integer;
-  nudged: boolean;
+  offset,
+  x, y,
+  width, height : Integer;
+  nudged : Boolean;
 begin
-  width := image.width;
+  width  := image.width;
   height := image.height;
+  // Check and nudge points from start until we see some that are OK:
   nudged := true;
   offset := 0;
+
   while ((offset < Length(points)) and nudged) do
   begin
     x := Floor(points[offset]);
@@ -159,9 +202,9 @@ begin
     inc(offset, 2)
   end;
 
+  // Check and nudge points from end:
   nudged := true;
   offset := (Length(points) - 2);
-
   while ((offset >= 0) and nudged) do
   begin
     x := Floor(points[offset]);
@@ -192,33 +235,16 @@ begin
       points[(offset + 1)] := (height - 1);
       nudged := true
     end;
-    dec(offset, 2)
+    Dec(offset, 2);
   end;
 
   Result := true;
-
 end;
 
 class function TDefaultGridSampler.get_Instance: TDefaultGridSampler;
 begin
   GridSampler := TDefaultGridSampler.Create();
   Result := GridSampler;
-end;
-
-class function TDefaultGridSampler.sampleGrid(image: TBitMatrix;
-  dimensionX, dimensionY: Integer; p1ToX, p1ToY, p2ToX, p2ToY, p3ToX, p3ToY,
-  p4ToX, p4ToY, p1FromX, p1FromY, p2FromX, p2FromY, p3FromX, p3FromY, p4FromX,
-  p4FromY: Single): TBitMatrix;
-
-var
-  transform: TPerspectiveTransform;
-
-begin
-  transform := TPerspectiveTransform.quadrilateralToQuadrilateral(p1ToX, p1ToY,
-    p2ToX, p2ToY, p3ToX, p3ToY, p4ToX, p4ToY, p1FromX, p1FromY, p2FromX,
-    p2FromY, p3FromX, p3FromY, p4FromX, p4FromY);
-
-  Result := sampleGrid(image, dimensionX, dimensionY, transform)
 end;
 
 class procedure TDefaultGridSampler.setGridSampler(newGridSampler

@@ -19,7 +19,9 @@ unit BitSource;
 }
 interface
 
-uses SysUtils, MathUtils;
+uses 
+  SysUtils, 
+  ZXing.Common.Detector.MathUtils;
 
 type
 

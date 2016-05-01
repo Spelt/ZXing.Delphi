@@ -19,13 +19,37 @@ unit main;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes,
+  System.SysUtils,
+  System.Types,
+  System.UITypes,
+  System.Classes,
   System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
-  FMX.StdCtrls, FMX.Media, FMX.Platform, FMX.MultiView, FMX.ListView.Types,
-  FMX.ListView, FMX.Layouts, System.Actions, FMX.ActnList, FMX.TabControl,
-  FMX.ListBox, Threading, BarcodeFormat, ReadResult,
-  FMX.Controls.Presentation, FMX.ScrollBox, FMX.Memo, ScanManager;
+  System.Math.Vectors,
+  System.Actions,
+  System.Threading,
+  FMX.Types,
+  FMX.Controls,
+  FMX.Forms,
+  FMX.Graphics,
+  FMX.Dialogs,
+  FMX.Objects,
+  FMX.StdCtrls,
+  FMX.Media,
+  FMX.Platform,
+  FMX.MultiView,
+  FMX.ListView.Types,
+  FMX.ListView,
+  FMX.Layouts,
+  FMX.ActnList,
+  FMX.TabControl,
+  FMX.ListBox,
+  FMX.Controls.Presentation,
+  FMX.ScrollBox,
+  FMX.Memo,
+  FMX.Controls3D,
+  ZXing.BarcodeFormat,
+  ZXing.ReadResult,
+  ScanManager;
 
 type
   TMainForm = class(TForm)
@@ -39,6 +63,9 @@ type
     ToolBar3: TToolBar;
     CameraComponent1: TCameraComponent;
     Memo1: TMemo;
+    Camera1: TCamera;
+    Button1: TButton;
+    Button2: TButton;
     procedure btnStartCameraClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnStopCameraClick(Sender: TObject);
@@ -46,6 +73,9 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure CameraComponent1SampleBufferReady(Sender: TObject;
       const ATime: TMediaTime);
+    procedure Button1Click(Sender: TObject);
+    procedure imgCameraClick(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     { Private declarations }
 
@@ -53,14 +83,15 @@ type
     FScanInProgress: Boolean;
     frameTake: Integer;
     procedure GetImage();
+    procedure AddResult(const AText: String);
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
-
   public
     { Public declarations }
   end;
 
 var
   MainForm: TMainForm;
+  curImgIdx : Integer = 0;
 
 implementation
 
@@ -69,6 +100,8 @@ implementation
 procedure TMainForm.FormCreate(Sender: TObject);
 var
   AppEventSvc: IFMXApplicationEventService;
+  CaptureSetting : TVideoCaptureSetting;
+  LSettings: TArray<TVideoCaptureSetting>;
 begin
 
   lblScanStatus.Text := '';
@@ -88,7 +121,16 @@ begin
     (IFMXApplicationEventService, IInterface(AppEventSvc)) then
     AppEventSvc.SetApplicationEventHandler(AppEvent);
 
-  CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
+  CameraComponent1.CaptureSettingPriority := TVideoCaptureSettingPriority.FrameRate;
+  LSettings := CameraComponent1.AvailableCaptureSettings;
+  CameraComponent1.CaptureSetting := LSettings[0];
+  {CaptureSetting := CameraComponent1.GetCaptureSetting;
+  CaptureSetting.SetFrameRate(25, 30);
+  CaptureSetting.Width  := 640;
+  CaptureSetting.Height := 480;}
+  CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.CaptureSettings;
+
+  CameraComponent1.SetCaptureSetting(CaptureSetting);
   lblScanStatus.Text := '';
   FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 end;
@@ -102,16 +144,60 @@ procedure TMainForm.btnStartCameraClick(Sender: TObject);
 begin
   CameraComponent1.Active := False;
   CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
+  CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
   CameraComponent1.Active := True;
 
   lblScanStatus.Text := '';
   memo1.Lines.Clear;
+end;
 
+procedure TMainForm.AddResult(const AText: String);
+{var
+  FormatSettings: TFormatSettings;}
+begin
+  with memo1 do
+  begin
+    if Length(AText) > 0 then
+    begin
+      //FormatSettings := TFormatSettings.Create($409);
+      if (Lines.Count > 1)
+      then
+         Lines.Insert(0, '-------------------------------------------------------');
+      Lines.Insert(0, AText);
+      Lines.Insert(0, FormatDateTime('hh' + FormatSettings.TimeSeparator +
+                                     'nn' + FormatSettings.TimeSeparator +
+                                     'ss.zzz',
+                                     Now,
+                                     FormatSettings));
+    end;
+  end;
 end;
 
 procedure TMainForm.btnStopCameraClick(Sender: TObject);
 begin
   CameraComponent1.Active := False;
+end;
+
+procedure TMainForm.Button1Click(Sender: TObject);
+begin
+  Inc(curImgIdx);
+  if (curImgIdx > Pred(imgCamera.MultiResBitmap.Count))
+  then
+     curImgIdx := 1;
+
+  imgCamera.Bitmap := imgCamera.MultiResBitmap.Items[curImgIdx].Bitmap;
+end;
+
+procedure TMainForm.Button2Click(Sender: TObject);
+var
+  ReadResult: TReadResult;
+begin
+  //imgCamera.Bitmap := imgCamera.Bitmap.CreateThumbnail(640, 640);
+  ReadResult := FScanManager.Scan(imgCamera.Bitmap);
+  if (ReadResult <> nil) then
+  begin
+    AddResult(ReadResult.Text);
+  end;
 end;
 
 procedure TMainForm.CameraComponent1SampleBufferReady(Sender: TObject;
@@ -124,9 +210,7 @@ procedure TMainForm.GetImage;
 var
   scanBitmap: TBitmap;
   ReadResult: TReadResult;
-
 begin
-
   CameraComponent1.SampleBufferToBitmap(imgCamera.Bitmap, True);
 
   if (FScanInProgress) then
@@ -189,10 +273,9 @@ begin
 
           lblScanStatus.Text := lblScanStatus.Text + '*';
 
-          if (ReadResult <> nil) then
-          begin
-            memo1.Lines.Insert(0,ReadResult.Text);
-          end;
+          if (ReadResult <> nil)
+          then
+             AddResult(ReadResult.Text);
 
           if (scanBitmap <> nil) then
           begin
@@ -200,26 +283,25 @@ begin
           end;
 
           FreeAndNil(ReadResult);
-
         end);
     end);
+end;
+
+procedure TMainForm.imgCameraClick(Sender: TObject);
+begin
 
 end;
 
-{ Make sure the ca mera is released if you're going away. }
+{ Make sure the camera is released if you're going away. }
 function TMainForm.AppEvent(AAppEvent: TApplicationEvent;
 AContext: TObject): Boolean;
 begin
-
   case AAppEvent of
-    TApplicationEvent.WillBecomeInactive:
-      CameraComponent1.Active := False;
-    TApplicationEvent.EnteredBackground:
-      CameraComponent1.Active := False;
-    TApplicationEvent.WillTerminate:
+    TApplicationEvent.WillBecomeInactive,
+    TApplicationEvent.EnteredBackground,
+    TApplicationEvent.WillTerminate :
       CameraComponent1.Active := False;
   end;
-
 end;
 
 end.

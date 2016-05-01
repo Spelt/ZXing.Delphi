@@ -73,7 +73,7 @@
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <SanitizedProjectName>dUnitXTest</SanitizedProjectName>
-        <DCC_UnitSearchPath>$(DUnitX);$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>$(DUnitX);..\Lib\Classes;..\Lib\Classes\Common;..\Lib\Classes\Common\Detector;..\Lib\Classes\Common\ReedSolomon;..\Lib\Classes\Filtering;..\Lib\Classes\1D Barcodes;..\Lib\Classes\2D Barcodes;..\Lib\Classes\2D Barcodes\Decoder;..\Lib\Classes\2D Barcodes\Detector;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_E>false</DCC_E>
@@ -183,9 +183,9 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_MapFile>3</DCC_MapFile>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_MinorVer>1</VerInfo_MinorVer>
         <Manifest_File>None</Manifest_File>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
@@ -201,54 +201,6 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="Test.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\RGBLuminanceSource.Pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\LuminanceSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\HybridBinarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\GlobalHistogramBinarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\BinaryBitmap.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\Binarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ResultPoint.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ResultMetadataType.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ReadResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\MultiFormatReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\MathUtils.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DecodeHintType.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\BitArray.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\BarcodeFormat.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\OneDReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\Code128Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\Code93Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\QRCodeReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\QRDecoder.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\Bitmatrix.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\Helpers.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\BitMatrixParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Version.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ErrorCorrectionLevel.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\FormatInformation.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DecoderResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\Detector.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DetectorResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\AlignmentPattern.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\PerspectiveTransform.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPatternInfo.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPattern.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\QRCodeDecoderMetadata.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\FinderPatternFinder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternFinder.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\DefaultGridSampler.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ReedSolomonDecoder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\GenericGF.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Datablock.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\DecodedBitStreamParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\BitSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\CharacterSetECI.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\StringUtils.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Mode.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\Datamask.pas"/>
-        <DCCReference Include="..\Lib\Classes\ScanManager.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ITFReader.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -270,8 +222,11 @@
                     <Source Name="MainSource">dUnitXTest.dpr</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k230.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp230.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k230.bpl">Embarcadero C++Builder-Package für Office 2000-Server</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp230.bpl">Embarcadero C++Builder-Package für Office XP-Server</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k230.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automatisierungsserver</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp230.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+                    <Excluded_Packages Name="C:\Users\Public\Documents\Embarcadero\Studio\17.0\Bpl\JvPluginSystemDesign230.bpl">JVCL Plugin Components</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="2">
@@ -301,16 +256,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployClass Name="DependencyModule">
-                    <Platform Name="Win32">
-                        <Operation>0</Operation>
-                        <Extensions>.dll;.bpl</Extensions>
-                    </Platform>
-                    <Platform Name="OSX32">
-                        <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
-                    </Platform>
-                </DeployClass>
+                <DeployClass Name="ProjectiOSDeviceResourceRules"/>
                 <DeployClass Name="ProjectOSXResource">
                     <Platform Name="OSX32">
                         <RemoteDir>Contents\Resources</RemoteDir>
@@ -624,7 +570,16 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="ProjectiOSDeviceResourceRules"/>
+                <DeployClass Name="DependencyModule">
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
+                        <Extensions>.dll;.bpl</Extensions>
+                    </Platform>
+                    <Platform Name="OSX32">
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                </DeployClass>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>

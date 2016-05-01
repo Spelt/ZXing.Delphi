@@ -19,8 +19,13 @@ unit HybridBinarizer;
 
 interface
 
-uses SysUtils, GlobalHistogramBinarizer, LuminanceSource, Bitmatrix, binarizer,
-  MathUtils;
+uses 
+  SysUtils, 
+  GlobalHistogramBinarizer, 
+  ZXing.LuminanceSource,
+  ZXing.Common.BitMatrix, 
+  binarizer,
+  ZXing.Common.Detector.MathUtils;
 
 /// <summary> This class implements a local thresholding algorithm, which while slower than the
 /// GlobalHistogramBinarizer, is fairly efficient for what it does. It is designed for
@@ -45,7 +50,6 @@ uses SysUtils, GlobalHistogramBinarizer, LuminanceSource, Bitmatrix, binarizer,
 /// </author>
 
 type
-
   TArrayIntOfInt = TArray<TArray<Integer>>;
 
   THybridBinarizer = class(TGlobalHistogramBinarizer)
@@ -62,13 +66,12 @@ type
       matrix: TBitMatrix);
     function cap(value: Integer; min: Integer; max: Integer): Integer;
   protected
-
+    //
   public
     function createBinarizer(source: TLuminanceSource): TBinarizer; override;
 
     constructor Create(source: TLuminanceSource);
     function BlackMatrix: TBitMatrix; override;
-
   end;
 
 implementation
