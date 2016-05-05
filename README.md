@@ -56,7 +56,7 @@ In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TF
 - Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
 - 100% FREE. No ridiculous license fees. Just FREE.
 - Speed
-- Barcodes: QR-Code, Code 128, Code93, ITF
+- Barcodes: QR-Code, Code128, Code93, ITF, DataMatrix
 - Simple API
 - Unit tests provided
 	
