@@ -105,11 +105,11 @@ begin
 end;
 
 destructor TResultPoint.Destroy;
-//var n:Single;
+var n:Single;
 begin
-//  n:=0;
-//  bytesX:= TSingleArray(n);
-//  bytesY := TSingleArray(n);
+  n:=0;
+  bytesX := TSingleArray(n);
+  bytesY := TSingleArray(n);
   inherited;
 end;
 

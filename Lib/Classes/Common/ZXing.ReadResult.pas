@@ -21,10 +21,10 @@ unit ZXing.ReadResult;
 interface
 
 uses
-  System.SysUtils, 
+  System.SysUtils,
   Generics.Collections,
-  ZXing.ResultPoint, 
-  ResultMetadataType, 
+  ZXing.ResultPoint,
+  ResultMetadataType,
   ZXing.BarcodeFormat;
 
 type
@@ -54,7 +54,7 @@ type
     /// <param name="rawBytes">The raw bytes.</param>
     /// <param name="resultPoints">The result points.</param>
     /// <param name="format">The format.</param>
-    constructor Create(const text: string; const rawBytes: TArray<byte>;
+    constructor Create(const text: string; const rawBytes: TArray<Byte>;
       const resultPoints: TArray<TResultPoint>;
       const format: TBarcodeFormat); overload;
 
@@ -66,7 +66,7 @@ type
     /// <param name="resultPoints">The result points.</param>
     /// <param name="format">The format.</param>
     /// <param name="timestamp">The timestamp.</param>
-    constructor Create(const text: string; const rawBytes: TArray<byte>;
+    constructor Create(const text: string; const rawBytes: TArray<Byte>;
       const resultPoints: TArray<TResultPoint>; const format: TBarcodeFormat;
       const timeStamp: TDateTime); overload;
     destructor Destroy; override;
@@ -82,13 +82,14 @@ type
     /// <param name="type">The type.</param>
     /// <param name="value">The value.</param>
     procedure putMetadata(const ResultMetadataType: TResultMetadataType;
-      const value: TObject);
+      const Value: TObject);
 
     /// <summary>
     /// Adds a list of metadata to the result
     /// </summary>
     /// <param name="metadata">The metadata.</param>
-    procedure putAllMetaData(const metaData: TDictionary<TResultMetadataType, TObject>);
+    procedure putAllMetaData(const metaData: TDictionary<TResultMetadataType,
+      TObject>);
 
     /// <summary>
     /// Adds the result points.
@@ -97,17 +98,17 @@ type
     procedure addResultPoints(const newPoints: TArray<TResultPoint>);
 
     /// <returns>raw text encoded by the barcode, if applicable, otherwise <code>null</code></returns>
-    property Text: String read FText write SetText;
+    property text: String read FText write SetText;
 
     /// <returns>raw bytes encoded by the barcode, if applicable, otherwise <code>null</code></returns>
-    property RawBytes: TArray<byte> read FRawBytes write FRawBytes;
+    property rawBytes: TArray<Byte> read FRawBytes write FRawBytes;
 
     /// <returns>
     /// points related to the barcode in the image. These are typically points
     /// identifying finder patterns or the corners of the barcode. The exact meaning is
     /// specific to the type of barcode that was decoded.
     /// </returns>
-    property ResultPoints: TArray<TResultPoint> read FResultPoints
+    property resultPoints: TArray<TResultPoint> read FResultPoints
       write FResultPoints;
 
     /// <returns>{@link TBarcodeFormat} representing the format of the barcode that was decoded</returns>
@@ -116,7 +117,7 @@ type
     /// <summary>
     /// Gets the timestamp.
     /// </summary>
-    property TimeStamp: TDateTime read FTimeStamp;
+    property timeStamp: TDateTime read FTimeStamp;
   end;
 
 implementation
@@ -140,10 +141,8 @@ constructor TReadResult.Create(const text: String; const rawBytes: TArray<Byte>;
   const resultPoints: TArray<TResultPoint>; const format: TBarcodeFormat;
   const timeStamp: TDateTime);
 begin
-  if ((Text = '') and
-      (RawBytes = nil))
-  then
-     raise EArgumentException.Create('Text and bytes are null.');
+  if ((text = '') and (rawBytes = nil)) then
+    raise EArgumentException.Create('Text and bytes are null.');
 
   SetText(text);
   FRawBytes := rawBytes;
@@ -156,14 +155,20 @@ end;
 
 destructor TReadResult.Destroy;
 var
-  i : Integer;
+  i: Integer;
   ResultPoint: TResultPoint;
-  MetaData: TPair<TResultMetadataType, TObject>;
+  metaData: TPair<TResultMetadataType, TObject>;
 begin
-  for ResultPoint in FResultPoints do
-    ResultPoint.Free;
 
-  ResultPoints := nil;
+  if (Assigned(FResultPoints)) then
+  begin
+
+    for ResultPoint in FResultPoints do
+      ResultPoint.Free;
+
+    resultPoints := nil;
+  end;
+
   FRawBytes := nil;
 
   if FResultMetadata <> nil then
@@ -179,30 +184,27 @@ end;
 procedure TReadResult.SetText(const AValue: String);
 begin
   FText := UTF8ToString(AValue);
-  if (Length(FText) = 0)
-  then
-     FText := AValue;
+  if (Length(FText) = 0) then
+    FText := AValue;
 end;
 
 procedure TReadResult.putMetadata(const ResultMetadataType: TResultMetadataType;
- const value: TObject);
+  const Value: TObject);
 begin
-  if (FResultMetadata = nil)
-  then
-     FResultMetadata := TDictionary<TResultMetadataType, TObject>.Create();
-  FResultMetadata.AddOrSetValue(ResultMetadataType, value);
+  if (FResultMetadata = nil) then
+    FResultMetadata := TDictionary<TResultMetadataType, TObject>.Create();
+  FResultMetadata.AddOrSetValue(ResultMetadataType, Value);
 end;
 
-procedure TReadResult.PutAllMetaData(
-  const metaData: TDictionary<TResultMetadataType, TObject>);
+procedure TReadResult.putAllMetaData(const metaData
+  : TDictionary<TResultMetadataType, TObject>);
 var
   key: TResultMetadataType;
 begin
   if (metaData <> nil) then
   begin
-    if (FResultMetadata = nil)
-    then
-       FResultMetadata := metaData
+    if (FResultMetadata = nil) then
+      FResultMetadata := metaData
     else
     begin
       for key in metaData.Keys do
@@ -213,13 +215,11 @@ end;
 
 procedure TReadResult.addResultPoints(const newPoints: TArray<TResultPoint>);
 var
-  oldPoints,
-  allPoints : TArray<TResultPoint>;
+  oldPoints, allPoints: TArray<TResultPoint>;
 begin
   oldPoints := FResultPoints;
-  if (oldPoints = nil)
-  then
-     FResultPoints := newPoints
+  if (oldPoints = nil) then
+    FResultPoints := newPoints
   else
   begin
     if (newPoints <> nil) and (Length(newPoints) > 0) then
@@ -243,11 +243,10 @@ end;
 /// </returns>
 function TReadResult.ToString(): String;
 begin
-  if (Text = '')
-  then
-     Result := '[' + IntToStr(Length(RawBytes)) + ' bytes]'
+  if (text = '') then
+    Result := '[' + IntToStr(Length(rawBytes)) + ' bytes]'
   else
-     Result := Text;
+    Result := text;
 end;
 
 end.

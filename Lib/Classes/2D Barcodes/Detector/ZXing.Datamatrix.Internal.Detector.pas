@@ -41,7 +41,7 @@ type
   /// </summary>
   TDataMatrixDetector = class(TObject)
   private
-  class var
+  var
     Fimage: TBitMatrix;
     FrectangleDetector: TWhiteRectangleDetector;
 
@@ -122,18 +122,15 @@ end;
 /// <returns><see cref="DetectorResult" />encapsulating results of detecting a Data Matrix Code or null</returns>
 function TDataMatrixDetector.detect(): TDetectorResult;
 var
-  topRight: TResultPoint;
-  bits: TBitMatrix;
-  correctedTopRight: TResultPoint;
-  entry: TPair<TResultPoint, Integer>; // TKeyValuePair
+  topRight, correctedTopRight, pointA, pointB, pointC, pointD, maybeTopLeft,
+    bottomLeft, bottomRight, topLeft, maybeBottomRight, point: TResultPoint;
+
   cornerPoints: TArray<TResultPoint>;
-  pointA, pointB, pointC, pointD: TResultPoint;
+  bits: TBitMatrix;
+  entry: TPair<TResultPoint, Integer>; // TKeyValuePair
   Transitions: TObjectList<TResultPointsAndTransitions>;
   lSideOne, lSideTwo, transBetween, transA, transB: TResultPointsAndTransitions;
   pointCount: TDictionary<TResultPoint, Integer>;
-
-  maybeTopLeft, bottomLeft, bottomRight, topLeft, maybeBottomRight,
-    point: TResultPoint;
 
   corners: TArray<TResultPoint>;
 
@@ -301,8 +298,6 @@ begin
       transA.Free;
       transB.Free;
 
-
-
       if ((dimensionCorrected and $01) = 1) then
         Inc(dimensionCorrected);
 
@@ -315,29 +310,13 @@ begin
 
     Result := TDetectorResult.Create(bits, TArray<TResultPoint>.Create(topLeft,
       bottomLeft, bottomRight, correctedTopRight));
+
   finally
-    { for i := 0 to Pred(transitions.Count) do
-      begin
-      if (transitions.Items[i] <> nil) then
-      begin
-      if (transitions.Items[i].From <> nil)
-      then
-      transitions.Items[i].From.Free;
-      if (transitions.Items[i].To_ <> nil)
-      then
-      transitions.Items[i].To_.Free;
-      transitions.Items[i] := nil;
-      end;
-      end; }
 
-//    for entry in pointCount do
-//    begin
-//      entry.Key.Free;
-//    end;
-
+    FreeAndNil(pointC);
     pointCount.Free;
-
     Transitions.Free;
+    cornerPoints := nil;
   end;
 end;
 

@@ -95,6 +95,7 @@ begin
                                                (ResultPoint.y + iSize)), 1);
       finally
         bmp.Canvas.EndScene;
+
       end;
       imgResult.Bitmap.Assign(bmp);
     end;

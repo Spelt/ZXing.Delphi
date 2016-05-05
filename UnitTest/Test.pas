@@ -233,6 +233,14 @@ begin
     Assert.IsTrue(result.Text.Equals('12'),
       'QR code result Text Incorrect: ' + result.Text);
 
+    result := Decode('QRHiddenInBottom.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://DataGenetics.com'),
+      'QR code result Text Incorrect: ' + result.Text);
+
+
+
+
   finally
     FreeAndNil(result);
   end;
@@ -243,6 +251,13 @@ var
   result: TReadResult;
 begin
   try
+
+    Result := Decode('DatamatrixHiddenInBottom.png', TBarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
+      'DataMatrix code result Text Incorrect: ' + result.Text);
+//    //exit;
+
     result := Decode('dmc1.png', TBarcodeFormat.DATA_MATRIX);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
@@ -306,6 +321,16 @@ begin
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('http://www.labeljoy.com'),
       'DataMatrix code result Text Incorrect: ' + result.Text);
+
+    result := Decode('Code128.png', TBarcodeFormat.DATA_MATRIX);
+    Assert.IsNull(result, ' Should be Nil result ');
+
+
+
+
+
+
+
 
   finally
     FreeAndNil(result);
