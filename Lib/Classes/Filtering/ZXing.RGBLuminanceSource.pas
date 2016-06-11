@@ -177,7 +177,7 @@ begin
           r := TAlphaColorRec(color).R;
           g := TAlphaColorRec(color).G;
           b := TAlphaColorRec(color).B;
-          luminances[offset + x] := r shl 16 or g shl 8 or b;
+          luminances[offset + x] := (3482*r + 11721*g + 1181*b) shr 14;
         end;
       end;
     finally
