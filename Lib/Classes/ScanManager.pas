@@ -20,13 +20,14 @@ uses
 type
   TScanManager = class
   private
-    FResultPointEvent : TResultPointCallback;
+    FResultPointEvent: TResultPointCallback;
     FMultiFormatReader: TMultiFormatReader;
     hints: TDictionary<TDecodeHintType, TObject>;
     listFormats: TList<TBarcodeFormat>;
 
     function GetMultiFormatReader(const format: TBarcodeFormat;
-      const additionalHints: TDictionary<TDecodeHintType, TObject>): TMultiFormatReader;
+      const additionalHints: TDictionary<TDecodeHintType, TObject>)
+      : TMultiFormatReader;
 
     procedure SetResultPointEvent(const AValue: TResultPointCallback);
   public
@@ -36,7 +37,8 @@ type
     constructor Create(const format: TBarcodeFormat;
       const additionalHints: TDictionary<TDecodeHintType, TObject>);
 
-    property OnResultPoint : TResultPointCallback read FResultPointEvent write SetResultPointEvent;
+    property OnResultPoint: TResultPointCallback read FResultPointEvent
+      write SetResultPointEvent;
   end;
 
 implementation
@@ -70,7 +72,7 @@ end;
 procedure TScanManager.SetResultPointEvent(const AValue: TResultPointCallback);
 var
   ahKey: TDecodeHintType;
-  a : TResultPointCallback;
+  a: TResultPointCallback;
   ahValue: TObject;
 begin
   FResultPointEvent := AValue;
@@ -80,25 +82,23 @@ begin
   begin
     ahValue := TResultPointEventObject.Create(FResultPointEvent);
     hints.AddOrSetValue(ahKey, ahValue);
-  end else hints.Remove(ahKey);
+  end
+  else
+    hints.Remove(ahKey);
 end;
 
 function TScanManager.GetMultiFormatReader(const format: TBarcodeFormat;
-  const additionalHints: TDictionary<TDecodeHintType, TObject>): TMultiFormatReader;
+  const additionalHints: TDictionary<TDecodeHintType, TObject>)
+  : TMultiFormatReader;
 var
   ahKey: TDecodeHintType;
   ahValue: TObject;
+  o: TObject;
+
 begin
   Result := TMultiFormatReader.Create;
   hints := TDictionary<TDecodeHintType, TObject>.Create();
-  listFormats:= nil;
-
-  if ((format <> TBarcodeFormat.Auto)) then
-  begin
-    listFormats := TList<TBarcodeFormat>.Create();
-    listFormats.Add(format);
-    hints.Add(DecodeHintType.POSSIBLE_FORMATS, listFormats);
-  end;
+  listFormats := nil;
 
   if (additionalHints <> nil) then
   begin
@@ -109,13 +109,30 @@ begin
     end;
   end;
 
+  if ((format <> TBarcodeFormat.Auto)) then
+  begin
+
+    if (hints.TryGetValue(DecodeHintType.POSSIBLE_FORMATS, o)) then
+       listFormats := o as TList<TBarcodeFormat>
+    else
+      begin
+        listFormats := TList<TBarcodeFormat>.Create();
+        hints.Add(DecodeHintType.POSSIBLE_FORMATS, listFormats);
+      end;
+
+    if (listFormats.Count = 0) then
+      listFormats.Add(format)
+    else
+      listFormats.Insert(0, format);  // favor the format parameter
+
+  end;
+
   Result.hints := hints;
 end;
 
 function TScanManager.Scan(const pBitmapForScan: TBitmap): TReadResult;
 var
-  LuminanceSource,
-  InvLuminanceSource : TLuminanceSource;
+  LuminanceSource, InvLuminanceSource: TLuminanceSource;
   HybridBinarizer: THybridBinarizer;
   BinaryBitmap: TBinaryBitmap;
 begin
@@ -130,50 +147,44 @@ begin
 
     Result := FMultiFormatReader.Decode(BinaryBitmap, true);
 
-    if (result = nil) then
+    if (Result = nil) then
     begin
       if (LuminanceSource.InversionSupported) then
       begin
-        if (BinaryBitmap <> nil)
-        then
-           BinaryBitmap.Free;
+        if (BinaryBitmap <> nil) then
+          BinaryBitmap.Free;
 
-        if (HybridBinarizer <> nil)
-        then
-           HybridBinarizer.Free;
+        if (HybridBinarizer <> nil) then
+          HybridBinarizer.Free;
 
         InvLuminanceSource := LuminanceSource.invert();
         HybridBinarizer := THybridBinarizer.Create(InvLuminanceSource);
-        BinaryBitmap    := TBinaryBitmap.Create(HybridBinarizer);
+        BinaryBitmap := TBinaryBitmap.Create(HybridBinarizer);
 
         Result := FMultiFormatReader.Decode(BinaryBitmap, true);
 
-        {if (usePreviousState and FMultiFormatReader <> nil) then
-        begin
+        { if (usePreviousState and FMultiFormatReader <> nil) then
+          begin
           Result := FMultiFormatReader.decodeWithState(BinaryBitmap);
-        endelse
-        begin
+          endelse
+          begin
           Result = FMultiFormatReader.decode(binaryBitmap, Options.Hints);
           usePreviousState := true;
-        end;}
+          end; }
       end;
     end;
   finally
-    if (BinaryBitmap <> nil)
-    then
-       BinaryBitmap.Free;
+    if (BinaryBitmap <> nil) then
+      BinaryBitmap.Free;
 
-    if (HybridBinarizer <> nil)
-    then
-       HybridBinarizer.Free;
+    if (HybridBinarizer <> nil) then
+      HybridBinarizer.Free;
 
-    if (InvLuminanceSource <> nil)
-    then
-       InvLuminanceSource.Free;
+    if (InvLuminanceSource <> nil) then
+      InvLuminanceSource.Free;
 
-    if (LuminanceSource <> nil)
-    then
-       LuminanceSource.Free;
+    if (LuminanceSource <> nil) then
+      LuminanceSource.Free;
   end;
 end;
 

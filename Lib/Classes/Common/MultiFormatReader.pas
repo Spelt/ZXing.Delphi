@@ -145,7 +145,7 @@ end;
 function TMultiFormatReader.decode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 begin
-  hints := Hints;
+  Fhints := Hints;
   result := DecodeInternal(image)
 end;
 
