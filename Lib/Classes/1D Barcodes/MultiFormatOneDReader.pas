@@ -185,26 +185,31 @@ end;
 
 destructor TMultiFormatOneDReader.Destroy;
 var
-  reader: TOneDReader;
+  Reader: TOneDReader;
 begin
-  for reader in readers do
+  if readers <> nil then
   begin
-    reader.Free;
+    for Reader in readers do
+      Reader.Free;
+
+    readers.clear;
   end;
 
-  readers.clear;
+  // it is safe to pass a nil pointer to FreeAndNil: no need to check.
+  // Same applies to object.free
   FreeAndNil(readers);
+
   inherited;
 end;
 
 function TMultiFormatOneDReader.DecodeRow(rowNumber: Integer; row: TBitArray;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
-  reader: TOneDReader;
+  Reader: TOneDReader;
 begin
-  for reader in readers do
+  for Reader in readers do
   begin
-    result := reader.DecodeRow(rowNumber, row, hints);
+    result := Reader.DecodeRow(rowNumber, row, hints);
     if result <> nil then
       exit;
   end;
@@ -214,11 +219,11 @@ end;
 
 procedure TMultiFormatOneDReader.Reset();
 var
-  reader: TOneDReader;
+  Reader: TOneDReader;
 begin
-  for reader in readers do
+  for Reader in readers do
   begin
-    reader.Reset()
+    Reader.Reset()
   end
 end;
 
