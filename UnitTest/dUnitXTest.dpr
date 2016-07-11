@@ -1,20 +1,17 @@
-program dUnitXTest;
+program Project6;
 
-{$UNDEF TESTINSIGHT}
 {$IFNDEF TESTINSIGHT}
 {$APPTYPE CONSOLE}
 {$ENDIF}{$STRONGLINKTYPES ON}
-
-
 uses
-  SysUtils,
+  System.SysUtils,
   {$IFDEF TESTINSIGHT}
   TestInsight.DUnitX,
-  {$ENDIF}
+  {$ENDIF }
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
-  Test in 'Test.pas';
+  test in 'Test.pas';
 
 var
   runner : ITestRunner;
@@ -60,3 +57,4 @@ begin
       System.Writeln(E.ClassName, ': ', E.Message);
   end;
 end.
+
