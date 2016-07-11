@@ -89,6 +89,9 @@ var
   HybridBinarizer: THybridBinarizer;
   BinaryBitmap: TBinaryBitmap;
 begin
+  RGBLuminanceSource := nil;
+  HybridBinarizer := nil;
+  BinaryBitmap := nil;
   try
     RGBLuminanceSource := TRGBLuminanceSource.RGBLuminanceSource(pBitmapForScan,
       pBitmapForScan.Width, pBitmapForScan.Height);
@@ -99,21 +102,9 @@ begin
 
     Result := FMultiFormatReader.Decode(BinaryBitmap, true);
   finally
-
-    if (BinaryBitmap <> nil) then
-    begin
-      BinaryBitmap.Free;
-    end;
-
-    if (HybridBinarizer <> nil) then
-    begin
-      HybridBinarizer.Free;
-    end;
-
-    if (RGBLuminanceSource <> nil) then
-    begin
-      RGBLuminanceSource.Free;
-    end;
+    BinaryBitmap.Free;
+    HybridBinarizer.Free;
+    RGBLuminanceSource.Free;
   end;
 end;
 
