@@ -93,17 +93,12 @@ function TScanManager.GetMultiFormatReader(const format: TBarcodeFormat;
 var
   ahKey: TDecodeHintType;
   ahValue: TObject;
+  o: TObject;
+
 begin
   Result := TMultiFormatReader.Create;
   hints := TDictionary<TDecodeHintType, TObject>.Create();
   listFormats := nil;
-
-  if ((format <> TBarcodeFormat.Auto)) then
-  begin
-    listFormats := TList<TBarcodeFormat>.Create();
-    listFormats.Add(format);
-    hints.Add(DecodeHintType.POSSIBLE_FORMATS, listFormats);
-  end;
 
   if (additionalHints <> nil) then
   begin
@@ -112,6 +107,24 @@ begin
       ahValue := additionalHints[ahKey];
       hints.Add(ahKey, ahValue);
     end;
+  end;
+
+  if ((format <> TBarcodeFormat.Auto)) then
+  begin
+
+    if (hints.TryGetValue(DecodeHintType.POSSIBLE_FORMATS, o)) then
+       listFormats := o as TList<TBarcodeFormat>
+    else
+      begin
+        listFormats := TList<TBarcodeFormat>.Create();
+        hints.Add(DecodeHintType.POSSIBLE_FORMATS, listFormats);
+      end;
+
+    if (listFormats.Count = 0) then
+      listFormats.Add(format)
+    else
+      listFormats.Insert(0, format);  // favor the format parameter
+
   end;
 
   Result.hints := hints;
