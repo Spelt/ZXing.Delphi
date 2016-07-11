@@ -168,27 +168,14 @@ begin
 end;
 
 procedure TMultiFormatReader.FreeReaders;
-var
-  Reader: IReader;
-  OneDReader: TOneDReader;
 begin
   if readers <> nil then
-  begin
-    for Reader in readers do
-    begin
+    readers.Clear();
 
-      if (Reader is TOneDReader) then
-      begin
-        OneDReader := TObject(Reader) as TOneDReader;
-        OneDReader := nil;
-      end;
-    end;
-  end;
-
-  readers.Clear();
   readers.Free;
   readers := nil;
 end;
+
 
 function TMultiFormatReader.Get_Hints: TDictionary<TDecodeHintType, TObject>;
 begin
