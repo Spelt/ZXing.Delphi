@@ -20,13 +20,14 @@ uses
 type
   TScanManager = class
   private
-    FResultPointEvent : TResultPointCallback;
+    FResultPointEvent: TResultPointCallback;
     FMultiFormatReader: TMultiFormatReader;
     hints: TDictionary<TDecodeHintType, TObject>;
     listFormats: TList<TBarcodeFormat>;
 
     function GetMultiFormatReader(const format: TBarcodeFormat;
-      const additionalHints: TDictionary<TDecodeHintType, TObject>): TMultiFormatReader;
+      const additionalHints: TDictionary<TDecodeHintType, TObject>)
+      : TMultiFormatReader;
 
     procedure SetResultPointEvent(const AValue: TResultPointCallback);
   public
@@ -36,7 +37,8 @@ type
     constructor Create(const format: TBarcodeFormat;
       const additionalHints: TDictionary<TDecodeHintType, TObject>);
 
-    property OnResultPoint : TResultPointCallback read FResultPointEvent write SetResultPointEvent;
+    property OnResultPoint: TResultPointCallback read FResultPointEvent
+      write SetResultPointEvent;
   end;
 
 implementation
@@ -70,7 +72,7 @@ end;
 procedure TScanManager.SetResultPointEvent(const AValue: TResultPointCallback);
 var
   ahKey: TDecodeHintType;
-  a : TResultPointCallback;
+  a: TResultPointCallback;
   ahValue: TObject;
 begin
   FResultPointEvent := AValue;
@@ -80,18 +82,21 @@ begin
   begin
     ahValue := TResultPointEventObject.Create(FResultPointEvent);
     hints.AddOrSetValue(ahKey, ahValue);
-  end else hints.Remove(ahKey);
+  end
+  else
+    hints.Remove(ahKey);
 end;
 
 function TScanManager.GetMultiFormatReader(const format: TBarcodeFormat;
-  const additionalHints: TDictionary<TDecodeHintType, TObject>): TMultiFormatReader;
+  const additionalHints: TDictionary<TDecodeHintType, TObject>)
+  : TMultiFormatReader;
 var
   ahKey: TDecodeHintType;
   ahValue: TObject;
 begin
   Result := TMultiFormatReader.Create;
   hints := TDictionary<TDecodeHintType, TObject>.Create();
-  listFormats:= nil;
+  listFormats := nil;
 
   if ((format <> TBarcodeFormat.Auto)) then
   begin
@@ -114,66 +119,44 @@ end;
 
 function TScanManager.Scan(const pBitmapForScan: TBitmap): TReadResult;
 var
-  LuminanceSource,
-  InvLuminanceSource : TLuminanceSource;
+  LuminanceSource, InvLuminanceSource: TLuminanceSource;
   HybridBinarizer: THybridBinarizer;
   BinaryBitmap: TBinaryBitmap;
 begin
   try
     InvLuminanceSource := nil;
+    LuminanceSource := nil;
+    HybridBinarizer := nil;
+    BinaryBitmap := nil;
+
     LuminanceSource := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
       pBitmapForScan.Width, pBitmapForScan.Height);
-
     HybridBinarizer := THybridBinarizer.Create(LuminanceSource);
-
     BinaryBitmap := TBinaryBitmap.Create(HybridBinarizer);
-
     Result := FMultiFormatReader.Decode(BinaryBitmap, true);
 
-    if (result = nil) then
+    if (Result = nil) then
     begin
       if (LuminanceSource.InversionSupported) then
       begin
-        if (BinaryBitmap <> nil)
-        then
-           BinaryBitmap.Free;
+        if (BinaryBitmap <> nil) then
+          FreeAndNil(BinaryBitmap);
 
-        if (HybridBinarizer <> nil)
-        then
-           HybridBinarizer.Free;
+        if (HybridBinarizer <> nil) then
+          FreeAndNil(HybridBinarizer);
 
         InvLuminanceSource := LuminanceSource.invert();
         HybridBinarizer := THybridBinarizer.Create(InvLuminanceSource);
-        BinaryBitmap    := TBinaryBitmap.Create(HybridBinarizer);
-
+        BinaryBitmap := TBinaryBitmap.Create(HybridBinarizer);
         Result := FMultiFormatReader.Decode(BinaryBitmap, true);
 
-        {if (usePreviousState and FMultiFormatReader <> nil) then
-        begin
-          Result := FMultiFormatReader.decodeWithState(BinaryBitmap);
-        endelse
-        begin
-          Result = FMultiFormatReader.decode(binaryBitmap, Options.Hints);
-          usePreviousState := true;
-        end;}
       end;
     end;
   finally
-    if (BinaryBitmap <> nil)
-    then
-       BinaryBitmap.Free;
-
-    if (HybridBinarizer <> nil)
-    then
-       HybridBinarizer.Free;
-
-    if (InvLuminanceSource <> nil)
-    then
-       InvLuminanceSource.Free;
-
-    if (LuminanceSource <> nil)
-    then
-       LuminanceSource.Free;
+    BinaryBitmap.Free;
+    HybridBinarizer.Free;
+    InvLuminanceSource.Free;
+    LuminanceSource.Free;
   end;
 end;
 
