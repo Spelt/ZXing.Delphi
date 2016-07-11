@@ -244,6 +244,11 @@ begin
     Assert.IsTrue(result.Text.Equals('12'),
       'QR code result Text Incorrect: ' + result.Text);
 
+    result := Decode('big QR.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Contains('Version 40 QR Code can contain up to 1852 chars.'),
+       'QR code result Text Incorrect: ' + result.Text);
+
   finally
     FreeAndNil(result);
   end;
