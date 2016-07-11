@@ -31,19 +31,18 @@ type
   /// would be the location of a finder pattern or the corner of the barcode, for example.
   /// </summary>
   TResultPoint = class
-  private
-    type
-      TSingleArray = array[0..Pred(SizeOf(Single))] of Byte;
-    var
-      Fx, Fy : Single;
-      bytesX,
-      bytesY : TSingleArray;
-      FToString : String;
+  private type
+    TSingleArray = array [0 .. Pred(SizeOf(Single))] of Byte;
+
+  var
+    Fx, Fy: Single;
+    bytesX, bytesY: TSingleArray;
+    FToString: String;
     procedure SetX(const AValue: Single);
     procedure SetY(const AValue: Single);
   protected
-    class function crossProductZ(const pointA, pointB,
-      pointC: TResultPoint): Single; static;
+    class function crossProductZ(const pointA, pointB, pointC: TResultPoint)
+      : Single; static;
   public
     constructor Create; overload;
     constructor Create(const pX, pY: Single); overload;
@@ -53,8 +52,11 @@ type
     function GetHashCode(): Integer; override;
     function ToString(): String; override;
 
-    class procedure orderBestPatterns(const patterns: TArray<TResultPoint>); static;
-    class function distance(const pattern1, pattern2: TResultPoint): Single; static;
+    class procedure orderBestPatterns(const patterns
+      : TArray<TResultPoint>); static;
+    class function distance(const pattern1, pattern2: TResultPoint)
+      : Single; static;
+    constructor Clone(const src: TResultPoint);
 
     property x: Single read Fx write SetX;
     property y: Single read Fy write SetY;
@@ -67,15 +69,15 @@ type
   /// <seealso cref="TDecodeHintType.NEED_RESULT_POINT_CALLBACK">
   /// </seealso>
   TResultPointCallback = procedure(const point: TResultPoint) of object;
+
   TResultPointEventObject = class(TObject)
   private
-    FResultPointCallback : TResultPointCallback;
+    FResultPointCallback: TResultPointCallback;
   public
     constructor Create(const AEvent: TResultPointCallback);
 
-    property Event : TResultPointCallback read FResultPointCallback;
+    property Event: TResultPointCallback read FResultPointCallback;
   end;
-
 
 implementation
 
@@ -105,9 +107,10 @@ begin
 end;
 
 destructor TResultPoint.Destroy;
-var n:Single;
+var
+  n: Single;
 begin
-  n:=0;
+  n := 0;
   bytesX := TSingleArray(n);
   bytesY := TSingleArray(n);
   inherited;
@@ -137,12 +140,12 @@ end;
 class function TResultPoint.crossProductZ(const pointA, pointB,
   pointC: TResultPoint): Single;
 var
-  bX, bY: single;
+  bX, bY: Single;
 begin
   bX := pointB.x;
   bY := pointB.y;
   Result := ((pointC.x - bX) * (pointA.y - bY)) -
-            ((pointC.y - bY) * (pointA.x - bX));
+    ((pointC.y - bY) * (pointA.x - bX));
 end;
 
 /// <summary>
@@ -156,8 +159,7 @@ end;
 class function TResultPoint.distance(const pattern1,
   pattern2: TResultPoint): Single;
 begin
-  Result := TMathUtils.distance(pattern1.x,
-              pattern1.y, pattern2.x, pattern2.y);
+  Result := TMathUtils.distance(pattern1.x, pattern1.y, pattern2.x, pattern2.y);
 end;
 
 /// <summary>
@@ -165,18 +167,17 @@ end;
 /// </summary>
 /// <param name="other">The <see cref="System.TObject"/> to compare with this instance.</param>
 /// <returns>
-///   <c>true</c> if the specified <see cref="System.TObject"/> is equal to this instance; otherwise, <c>false</c>.
+/// <c>true</c> if the specified <see cref="System.TObject"/> is equal to this instance; otherwise, <c>false</c>.
 /// </returns>
 function TResultPoint.Equals(other: TObject): Boolean;
 var
   otherPoint: TResultPoint;
 begin
   otherPoint := other as TResultPoint;
-  if (otherPoint = nil)
-  then
-     Result := false
+  if (otherPoint = nil) then
+    Result := false
   else
-     Result := ((otherPoint.x = Fx) and (otherPoint.y = Fy));
+    Result := ((otherPoint.x = Fx) and (otherPoint.y = Fy));
 end;
 
 /// <summary>
@@ -187,8 +188,9 @@ end;
 /// </returns>
 function TResultPoint.GetHashCode: Integer;
 begin
-  Result := 31 * ((bytesX[0] shl 24) + (bytesX[1] shl 16) + (bytesX[2] shl 8) + bytesX[3]) +
-                  (bytesY[0] shl 24) + (bytesY[1] shl 16) + (bytesY[2] shl 8) + bytesY[3];
+  Result := 31 * ((bytesX[0] shl 24) + (bytesX[1] shl 16) + (bytesX[2] shl 8) +
+    bytesX[3]) + (bytesY[0] shl 24) + (bytesY[1] shl 16) + (bytesY[2] shl 8) +
+    bytesY[3];
 end;
 
 /// <summary>
@@ -196,16 +198,11 @@ end;
 /// BC is less than AC and the angle between BC and BA is less than 180 degrees.
 /// </summary>
 /// <param name="patterns">array of three <see cref="TResultPoint" /> to order</param>
-class procedure TResultPoint.orderBestPatterns(
-  const patterns: TArray<TResultPoint>);
+class procedure TResultPoint.orderBestPatterns(const patterns
+  : TArray<TResultPoint>);
 var
-  zeroOneDistance,
-  oneTwoDistance,
-  zeroTwoDistance: Single;
-  pointA,
-  pointB,
-  pointC,
-  temp: TResultPoint;
+  zeroOneDistance, oneTwoDistance, zeroTwoDistance: Single;
+  pointA, pointB, pointC, temp: TResultPoint;
 begin
   // Find distances between pattern centers
   zeroOneDistance := distance(patterns[0], patterns[1]);
@@ -258,9 +255,8 @@ end;
 /// </returns>
 function TResultPoint.ToString: String;
 begin
-  if (FToString = '')
-  then
-     FToString := Format('(%g),(%g)', [Fx, Fy]);
+  if (FToString = '') then
+    FToString := Format('(%g),(%g)', [Fx, Fy]);
   Result := FToString;
 end;
 
@@ -269,6 +265,16 @@ end;
 constructor TResultPointEventObject.Create(const AEvent: TResultPointCallback);
 begin
   Self.FResultPointCallback := AEvent;
+end;
+
+constructor TResultPoint.Clone(const src: TResultPoint);
+begin
+  inherited Create;
+  Self.Fx := src.Fx;
+  Self.Fy := src.Fy;
+  Self.bytesX := src.bytesX;
+  Self.bytesY := src.bytesY;
+  Self.FToString := src.FToString;
 end;
 
 end.

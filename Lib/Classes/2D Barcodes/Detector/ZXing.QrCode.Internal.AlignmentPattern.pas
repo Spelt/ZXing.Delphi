@@ -51,6 +51,7 @@ type
     /// <returns></returns>
     function combineEstimate(const i, j,
       newModuleSize: Single): TAlignmentPattern;
+    constructor Clone(const src: TAlignmentPattern);
   end;
 
 implementation
@@ -89,6 +90,12 @@ begin
   combinedY := (self.y + i) / 2.0;
   combinedModuleSize := (estimatedModuleSize + newModuleSize) / 2.0;
   Result := TAlignmentPattern.Create(combinedX, combinedY, combinedModuleSize);
+end;
+
+constructor TAlignmentPattern.Clone(const src: TAlignmentPattern);
+ begin
+  inherited Clone(src);
+  self.estimatedModuleSize  := src.estimatedModuleSize;
 end;
 
 end.

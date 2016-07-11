@@ -35,8 +35,8 @@ uses
   ZXing.QrCode.Internal.FinderPattern,
   ZXing.QrCode.Internal.AlignmentPattern,
   ZXing.QrCode.Internal.AlignmentPatternFinder,
-  ZXing.QrCode.Internal.Version, 
-  DefaultGridSampler, 
+  ZXing.QrCode.Internal.Version,
+  DefaultGridSampler,
   ZXing.Common.Detector.MathUtils;
 
 type
@@ -57,8 +57,8 @@ type
       var dimension: Integer): boolean; static;
 
     class function createTransform(const topLeft, topRight, bottomLeft,
-      alignmentPattern: TResultPoint;
-      const dimension: Integer): TPerspectiveTransform; static;
+      AlignmentPattern: TResultpoint; const dimension: Integer)
+      : TPerspectiveTransform; static;
 
     class function sampleGrid(image: TBitMatrix;
       transform: TPerspectiveTransform; dimension: Integer): TBitMatrix; static;
@@ -79,8 +79,8 @@ type
     /// </summary>
     /// <param name="info">The info.</param>
     /// <returns></returns>
-    function processFinderPatternInfo(
-      const info: TFinderPatternInfo): TDetectorResult; virtual;
+    function processFinderPatternInfo(const info: TFinderPatternInfo)
+      : TDetectorResult; virtual;
   public
     /// <summary>
     /// Initializes a new instance of the <see cref="Detector"/> class.
@@ -90,24 +90,26 @@ type
     destructor Destroy; override;
 
     /// <summary>
-    ///   <p>Detects a QR Code in an image.</p>
+    /// <p>Detects a QR Code in an image.</p>
     /// </summary>
     /// <returns>
-    ///   <see cref="TDetectorResult"/> encapsulating results of detecting a QR Code
+    /// <see cref="TDetectorResult"/> encapsulating results of detecting a QR Code
     /// </returns>
     function detect(): TDetectorResult; overload;
 
     /// <summary>
-    ///   <p>Detects a QR Code in an image.</p>
+    /// <p>Detects a QR Code in an image.</p>
     /// </summary>
     /// <param name="hints">optional hints to detector</param>
     /// <returns>
-    ///   <see cref="TDetectorResult"/> encapsulating results of detecting a QR Code
+    /// <see cref="TDetectorResult"/> encapsulating results of detecting a QR Code
     /// </returns>
-    function detect(const hints: TDictionary<TDecodeHintType, TObject>): TDetectorResult; overload;
+    function detect(const hints: TDictionary<TDecodeHintType, TObject>)
+      : TDetectorResult; overload;
 
-    property Image : TBitMatrix read FImage;
-    property ResultPointCallback: TResultPointCallback read FResultPointCallback;
+    property image: TBitMatrix read FImage;
+    property ResultPointCallback: TResultPointCallback
+      read FResultPointCallback;
   end;
 
 implementation
@@ -193,18 +195,18 @@ begin
   Result := true;
 end;
 
-class function TDetector.createTransform(const topLeft, topRight,
-  bottomLeft, alignmentPattern: TResultPoint;
-  const dimension: Integer): TPerspectiveTransform;
+class function TDetector.createTransform(const topLeft, topRight, bottomLeft,
+  AlignmentPattern: TResultpoint; const dimension: Integer)
+  : TPerspectiveTransform;
 var
   bottomRightX, bottomRightY, sourceBottomRightX, sourceBottomRightY,
     dimMinusThree: Single;
 begin
   dimMinusThree := (dimension - 3.5);
-  if (alignmentPattern <> nil) then
+  if (AlignmentPattern <> nil) then
   begin
-    bottomRightX := alignmentPattern.X;
-    bottomRightY := alignmentPattern.Y;
+    bottomRightX := AlignmentPattern.X;
+    bottomRightY := AlignmentPattern.Y;
     sourceBottomRightX := (dimMinusThree - 3);
     sourceBottomRightY := sourceBottomRightX;
   end
@@ -227,25 +229,23 @@ begin
   Result := self.detect(nil)
 end;
 
-function TDetector.detect(
-  const hints: TDictionary<TDecodeHintType, TObject>): TDetectorResult;
+function TDetector.detect(const hints: TDictionary<TDecodeHintType, TObject>)
+  : TDetectorResult;
 var
-  obj : TObject;
+  obj: TObject;
   info: TFinderPatternInfo;
   finder: TFinderPatternFinder;
 begin
   Result := nil;
 
   if ((hints = nil) or
-      (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK)))
-  then
-     FResultPointCallback := nil
+    (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
+    FResultPointCallback := nil
   else
   begin
     obj := hints[TDecodeHintType.NEED_RESULT_POINT_CALLBACK];
-    if (obj is TResultPointEventObject)
-    then
-       FResultPointCallback := TResultPointEventObject(obj).Event;
+    if (obj is TResultPointEventObject) then
+      FResultPointCallback := TResultPointEventObject(obj).Event;
   end;
 
   finder := TFinderPatternFinder.Create(FImage, ResultPointCallback);
@@ -261,17 +261,12 @@ begin
   end;
 end;
 
-function TDetector.processFinderPatternInfo(
-  const info: TFinderPatternInfo): TDetectorResult;
+function TDetector.processFinderPatternInfo(const info: TFinderPatternInfo)
+  : TDetectorResult;
 var
-  topLeft, topRight,
-  bottomLeft: TFinderPattern;
-  moduleSize,
-  bottomRightX, bottomRightY,
-  correctionToTopLeft: Single;
-  dimension, i,
-  modulesBetweenFPCenters,
-  estAlignmentX, estAlignmentY: Integer;
+  topLeft, topRight, bottomLeft: TFinderPattern;
+  moduleSize, bottomRightX, bottomRightY, correctionToTopLeft: Single;
+  dimension, i, modulesBetweenFPCenters, estAlignmentX, estAlignmentY: Integer;
   points: TArray<TResultpoint>;
   provisionalVersion: TVersion;
   transform: TPerspectiveTransform;
@@ -285,19 +280,16 @@ begin
   bottomLeft := info.bottomLeft;
 
   moduleSize := calculateModuleSize(topLeft, topRight, bottomLeft);
-  if (moduleSize < 1.0)
-  then
-     exit;
+  if (moduleSize < 1.0) then
+    exit;
 
-  if (not TDetector.computeDimension(topLeft, topRight, bottomLeft,
-      moduleSize, dimension))
-  then
-     exit;
+  if (not TDetector.computeDimension(topLeft, topRight, bottomLeft, moduleSize,
+    dimension)) then
+    exit;
 
   provisionalVersion := TVersion.getProvisionalVersionForDimension(dimension);
-  if (provisionalVersion = nil)
-  then
-     exit;
+  if (provisionalVersion = nil) then
+    exit;
 
   modulesBetweenFPCenters := (provisionalVersion.DimensionForVersion - 7);
 
@@ -312,18 +304,17 @@ begin
     // Estimate that alignment pattern is closer by 3 modules
     // from "bottom right" to known top left location
     correctionToTopLeft := (1.0 - (3.0 / modulesBetweenFPCenters));
-    estAlignmentX := Floor(topLeft.X + (correctionToTopLeft *
-                       (bottomRightX - topLeft.X)));
-    estAlignmentY := Floor(topLeft.Y + (correctionToTopLeft *
-                       (bottomRightY - topLeft.Y)));
+    estAlignmentX :=
+      Floor(topLeft.X + (correctionToTopLeft * (bottomRightX - topLeft.X)));
+    estAlignmentY :=
+      Floor(topLeft.Y + (correctionToTopLeft * (bottomRightY - topLeft.Y)));
     i := 4;
     while ((i <= 16)) do
     begin
       AlignmentPattern := findAlignmentInRegion(moduleSize, estAlignmentX,
         estAlignmentY, i);
-      if (AlignmentPattern <> nil)
-      then
-         break;
+      if (AlignmentPattern <> nil) then
+        break;
       i := (i shl 1);
     end;
     // If we didn't find alignment pattern... well try anyway without it
@@ -337,27 +328,26 @@ begin
     transform.Free;
   end;
 
-  if (bits = nil)
-  then
-     exit;
+  if (bits = nil) then
+    exit;
 
-  if (AlignmentPattern = nil)
-  then
-     points := TArray<TResultPoint>.Create(bottomLeft, topLeft, topRight)
+  if (AlignmentPattern = nil) then
+    points := TArray<TResultpoint>.Create(bottomLeft, topLeft, topRight)
   else
-     points := TArray<TResultPoint>.Create(bottomLeft, topLeft, topRight,
-                 AlignmentPattern);
+    points := TArray<TResultpoint>.Create(bottomLeft, topLeft, topRight,
+      AlignmentPattern);
 
   Result := TDetectorResult.Create(bits, points);
 end;
 
 function TDetector.findAlignmentInRegion(const overallEstModuleSize: Single;
-  const estAlignmentX, estAlignmentY: Integer;
-  const allowanceFactor: Single): TAlignmentPattern;
+  const estAlignmentX, estAlignmentY: Integer; const allowanceFactor: Single)
+  : TAlignmentPattern;
 var
   allowance, alignmentAreaRightX, alignmentAreaLeftX, alignmentAreaTopY,
     alignmentAreaBottomY: Integer;
   alignmentFinder: TAlignmentPatternFinder;
+  candidateResult: TAlignmentPattern;
 begin
   Result := nil;
 
@@ -368,7 +358,7 @@ begin
 
   if ((alignmentAreaRightX - alignmentAreaLeftX) < (overallEstModuleSize * 3))
   then
-     exit;
+    exit;
 
   alignmentAreaTopY := System.Math.Max(0, (estAlignmentY - allowance));
 
@@ -379,11 +369,15 @@ begin
     alignmentAreaTopY, (alignmentAreaRightX - alignmentAreaLeftX),
     (alignmentAreaBottomY - alignmentAreaTopY), overallEstModuleSize,
     self.ResultPointCallback);
-  try
-    Result := alignmentFinder.find;
-  finally
-    FreeAndNil(alignmentFinder);
-  end;
+
+  candidateResult := alignmentFinder.find;
+
+  if candidateResult = nil then
+    Result := nil
+  else
+    Result := TAlignmentPattern.Clone(candidateResult);
+
+  FreeAndNil(alignmentFinder);
 end;
 
 class function TDetector.sampleGrid(image: TBitMatrix;
@@ -396,13 +390,8 @@ end;
 function TDetector.sizeOfBlackWhiteBlackRun(fromX: Integer; fromY: Integer;
   toX: Integer; toY: Integer): Single;
 var
-  steep: Boolean;
-  temp, dx, dy,
-  xstep, ystep,
-  X, Y,
-  state, xlimit,
-  realx, realy,
-  error: Integer;
+  steep: boolean;
+  temp, dx, dy, xstep, ystep, X, Y, state, xlimit, realx, realy, error: Integer;
 begin
   steep := Abs(toY - fromY) > Abs(toX - fromX);
   if (steep) then
@@ -423,11 +412,10 @@ begin
   else
     xstep := -1;
 
-  if (fromY < toY)
-  then
-     ystep := 1
+  if (fromY < toY) then
+    ystep := 1
   else
-     ystep := 1;
+    ystep := 1;
 
   state := 0;
   xlimit := (toX + xstep);
@@ -435,16 +423,14 @@ begin
   Y := fromY;
   while ((X <> xlimit)) do
   begin
-    if steep
-    then
-       realx := Y
+    if steep then
+      realx := Y
     else
-       realx := X;
-    if steep
-    then
-       realy := X
+      realx := X;
+    if steep then
+      realy := X
     else
-       realy := Y;
+      realy := Y;
 
     if ((state = 1) = FImage[realx, realy]) then
     begin
@@ -481,7 +467,7 @@ function TDetector.sizeOfBlackWhiteBlackRunBothWays(fromX: Integer;
 var
   scale, otherToX, otherToY: Integer;
 begin
-  Result := Self.sizeOfBlackWhiteBlackRun(fromX, fromY, toX, toY);
+  Result := self.sizeOfBlackWhiteBlackRun(fromX, fromY, toX, toY);
   scale := 1;
   otherToX := (fromX - (toX - fromX));
   if (otherToX < 0) then
