@@ -27,6 +27,7 @@ type
   private
     estimatedModuleSize: Single;
   public
+    constructor Clone(const src:TAlignmentPattern); reintroduce;
     constructor Create(posX: Single; posY: Single; estimatedModuleSize: Single);
     function aboutEquals(moduleSize: Single; i: Single; j: Single): boolean;
     function combineEstimate(i: Single; j: Single; newModuleSize: Single)
@@ -60,6 +61,12 @@ begin
   end;
 
   Result := false;
+end;
+
+constructor TAlignmentPattern.Clone(const src: TAlignmentPattern);
+begin
+  inherited Clone(src);
+  self.estimatedModuleSize  := src.estimatedModuleSize;
 end;
 
 function TAlignmentPattern.combineEstimate(i: Single; j: Single;

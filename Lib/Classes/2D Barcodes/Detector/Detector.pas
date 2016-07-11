@@ -244,6 +244,8 @@ var
   allowance, alignmentAreaRightX, alignmentAreaLeftX, alignmentAreaTopY,
     alignmentAreaBottomY: Integer;
   alignmentFinder: TAlignmentPatternFinder;
+
+  candidateResult:TAlignmentPattern;
 begin
 
   allowance := Floor(allowanceFactor * overallEstModuleSize);
@@ -267,8 +269,14 @@ begin
     (alignmentAreaBottomY - alignmentAreaTopY), overallEstModuleSize,
     self.ResultPointCallback);
 
-  Result := alignmentFinder.find;
-  FreeAndNil(alignmentFinder);
+  candidateResult := alignmentFinder.find;
+
+  if candidateResult = nil then
+     result := nil
+  else
+     result := TAlignmentPattern.Clone(candidateResult);
+
+  FreeAndNil(alignmentFinder);  // note: this, under Win32 will destroy the object returned by alignmentFinder.find: this is why I am returning a clone of it
 
 end;
 

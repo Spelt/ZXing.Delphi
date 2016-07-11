@@ -34,6 +34,7 @@ type
       : single; static;
 
   public
+    constructor Clone(const src:TResultPoint);
     constructor Create(pX, pY: single);
     destructor Destroy(); override;
     function Equals(other: TObject): Boolean; override;
@@ -60,6 +61,16 @@ type
 implementation
 
 { TResultPoint }
+
+constructor TResultPoint.Clone(const src: TResultPoint);
+begin
+   inherited Create;
+   self.Fx := src.Fx;
+   self.Fy := src.Fy;
+   self.bytesX := src.bytesX;
+   self.bytesY := src.bytesY;
+   self.FToString := src.FToString;
+end;
 
 constructor TResultPoint.Create(pX, pY: single);
 
