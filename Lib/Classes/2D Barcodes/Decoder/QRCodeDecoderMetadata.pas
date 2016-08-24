@@ -31,7 +31,7 @@ type
   public
     property IsMirrored: boolean read get_IsMirrored;
     constructor Create(mirrored: boolean);
-    procedure applyMirroredCorrection(points: TArray<TResultPoint>);
+    procedure applyMirroredCorrection(points: TArray<IResultPoint>);
   end;
 
 implementation
@@ -47,9 +47,9 @@ begin
 end;
 
 procedure TQRCodeDecoderMetaData.applyMirroredCorrection
-  (points: TArray<TResultPoint>);
+  (points: TArray<IResultPoint>);
 var
-  bottomLeft: TResultPoint;
+  bottomLeft: IResultPoint;
 begin
   if ((FMirrored and (points <> nil)) and (Length(points) >= 3)) then
   begin

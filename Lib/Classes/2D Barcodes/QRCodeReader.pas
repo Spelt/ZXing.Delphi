@@ -32,7 +32,7 @@ type
   private
     // Fields
     Decoder: TQRDecoder;
-    NO_POINTS: TArray<TResultPoint>;
+    NO_POINTS: TArray<IResultPoint>;
 
     class function extractPureBits(image: TBitMatrix): TBitMatrix; static;
     class function moduleSize(leftTopBlack: TArray<Integer>; image: TBitMatrix;
@@ -63,7 +63,7 @@ constructor TQRCodeReader.Create;
 begin
   inherited;
 
-  NO_POINTS := TArray<TResultPoint>.Create();
+  NO_POINTS := TArray<IResultPoint>.Create();
 end;
 
 function TQRCodeReader.decode(image: TBinaryBitmap;
@@ -71,7 +71,7 @@ function TQRCodeReader.decode(image: TBinaryBitmap;
 var
   DecoderResult: TDecoderResult;
   Detector: TDetector;
-  points: TArray<TResultPoint>;
+  points: TArray<IResultPoint>;
   bits: TBitMatrix;
   DetectorResult: TDetectorResult;
   data: TQRCodeDecoderMetaData;

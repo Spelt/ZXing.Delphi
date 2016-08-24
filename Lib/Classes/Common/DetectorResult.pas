@@ -25,22 +25,22 @@ type
   TDetectorResult = class
 
     FBits: TBitmatrix;
-    FPoints: TArray<TResultPoint>;
+    FPoints: TArray<IResultPoint>;
   private
     function get_Bits: TBitmatrix;
-    function get_Points: TArray<TResultPoint>;
+    function get_Points: TArray<IResultPoint>;
 
   public
-    constructor Create(bits: TBitmatrix; points: TArray<TResultPoint>);
+    constructor Create(bits: TBitmatrix; points: TArray<IResultPoint>);
     destructor Destroy; override;
     property bits: TBitmatrix read get_Bits;
-    property points: TArray<TResultPoint> read get_Points;
+    property points: TArray<IResultPoint> read get_Points;
   end;
 
 implementation
 
 constructor TDetectorResult.Create(bits: TBitmatrix;
-  points: TArray<TResultPoint>);
+  points: TArray<IResultPoint>);
 begin
   FBits := bits;
   FPoints := points
@@ -58,7 +58,7 @@ begin
   result := FBits;
 end;
 
-function TDetectorResult.get_Points: TArray<TResultPoint>;
+function TDetectorResult.get_Points: TArray<IResultPoint>;
 begin
   result := FPoints;
 end;

@@ -26,15 +26,15 @@ type
   TFinderPatternInfo = class sealed
   public
   var
-    bottomLeft: TFinderPattern;
-    topLeft: TFinderPattern;
-    topRight: TFinderPattern;
-    constructor Create(patternCenters: TArray<TFinderPattern>);
+    bottomLeft: IFinderPattern;
+    topLeft: IFinderPattern;
+    topRight: IFinderPattern;
+    constructor Create(patternCenters: TArray<IFinderPattern>);
   end;
 
 implementation
 
-constructor TFinderPatternInfo.Create(patternCenters: TArray<TFinderPattern>);
+constructor TFinderPatternInfo.Create(patternCenters: TArray<IFinderPattern>);
 begin
   self.bottomLeft := patternCenters[0];
   self.topLeft := patternCenters[1];

@@ -30,7 +30,7 @@ type
     FText: string;
     FResultMetadata: TDictionary<TResultMetadataType, TObject>;
     FRawBytes: TArray<byte>;
-    FResultPoints: TArray<TResultPoint>;
+    FResultPoints: TArray<IResultPoint>;
     FBarcodeFormat: TBarcodeFormat;
 
   public
@@ -44,7 +44,7 @@ type
     /// identifying finder patterns or the corners of the barcode. The exact meaning is
     /// specific to the type of barcode that was decoded.
     /// </returns>
-    property ResultPoints: TArray<TResultPoint> read FResultPoints
+    property ResultPoints: TArray<IResultPoint> read FResultPoints
       write FResultPoints;
 
     property BarcodeFormat: TBarcodeFormat read FBarcodeFormat
@@ -54,7 +54,7 @@ type
       read FResultMetadata write FResultMetadata;
 
     constructor Create(Text: string; RawBytes: TArray<byte>;
-      ResultPoints: TArray<TResultPoint>; BarcodeFormat: TBarcodeFormat);
+      ResultPoints: TArray<IResultPoint>; BarcodeFormat: TBarcodeFormat);
 
     destructor Destroy(); override;
 
@@ -71,7 +71,7 @@ implementation
 { TReadResult }
 
 constructor TReadResult.Create(Text: string; RawBytes: TArray<byte>;
-  ResultPoints: TArray<TResultPoint>; BarcodeFormat: TBarcodeFormat);
+  ResultPoints: TArray<IResultPoint>; BarcodeFormat: TBarcodeFormat);
 begin
   if ((Text = '') and (RawBytes = nil)) then
   begin
@@ -88,12 +88,9 @@ end;
 
 destructor TReadResult.Destroy;
 var
-  ResultPoint: TResultPoint;
+  ResultPoint: IResultPoint;
 begin
-  for ResultPoint in ResultPoints do
-  begin
-    ResultPoint.Free;
-  end;
+  SetLength(FResultPoints,0);
 
   ResultPoints := nil;
   FRawBytes := nil;
