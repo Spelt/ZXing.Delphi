@@ -39,6 +39,8 @@ type
     ToolBar3: TToolBar;
     CameraComponent1: TCameraComponent;
     Memo1: TMemo;
+    btnLoadFromFile: TButton;
+    openDlg: TOpenDialog;
     procedure btnStartCameraClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnStopCameraClick(Sender: TObject);
@@ -46,6 +48,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure CameraComponent1SampleBufferReady(Sender: TObject;
       const ATime: TMediaTime);
+    procedure btnLoadFromFileClick(Sender: TObject);
   private
     { Private declarations }
 
@@ -54,6 +57,7 @@ type
     frameTake: Integer;
     procedure GetImage();
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
+    procedure ScanImage(scanBitmap: TBitmap;freeBitmap:boolean);
 
   public
     { Public declarations }
@@ -98,8 +102,16 @@ begin
   FScanManager.Free;
 end;
 
+procedure TMainForm.btnLoadFromFileClick(Sender: TObject);
+begin
+  if not openDlg.Execute then exit;
+  imgCamera.Bitmap.LoadFromFile(openDlg.FileName);
+  ScanImage(imgCamera.Bitmap,false);
+end;
+
 procedure TMainForm.btnStartCameraClick(Sender: TObject);
 begin
+  btnLoadFromFile.Enabled := false;
   CameraComponent1.Active := False;
   CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
   CameraComponent1.Active := True;
@@ -112,6 +124,7 @@ end;
 procedure TMainForm.btnStopCameraClick(Sender: TObject);
 begin
   CameraComponent1.Active := False;
+  btnLoadFromFile.Enabled := True;
 end;
 
 procedure TMainForm.CameraComponent1SampleBufferReady(Sender: TObject;
@@ -123,7 +136,6 @@ end;
 procedure TMainForm.GetImage;
 var
   scanBitmap: TBitmap;
-  ReadResult: TReadResult;
 
 begin
 
@@ -146,65 +158,69 @@ begin
   scanBitmap.Assign(imgCamera.Bitmap);
 
   TTask.Run(
-    procedure
+     procedure
+     begin
+        ScanImage(scanBitmap,true);
+     end);
+end;
+
+
+procedure TMainForm.ScanImage(scanBitmap:TBitmap;freeBitmap:boolean);
+var ReadResult: TReadResult;
+begin
+  if scanBitmap = nil then
+   exit;
+
+  ReadResult := nil;
+
+  try
+    FScanInProgress := True;
+    try
+       ReadResult := FScanManager.Scan(scanBitmap);
+    finally
+       FScanInProgress := False;
+       if freeBitmap then
+         scanBitmap.Free;
+    end;
+  except
+    on E: Exception do
     begin
-
-      try
-        FScanInProgress := True;
-
-        scanBitmap.Assign(imgCamera.Bitmap);
-
-        ReadResult := FScanManager.Scan(scanBitmap);
-        FScanInProgress := False;
-      except
-        on E: Exception do
-        begin
-          FScanInProgress := False;
-          TThread.Synchronize(nil,
-            procedure
-            begin
-              // lblScanStatus.Text := E.Message;
-              // lblScanResults.Text := '';
-            end);
-
-          if (scanBitmap <> nil) then
-          begin
-            scanBitmap.Free;
-          end;
-
-          Exit;
-
-        end;
-
-      end;
-
+      ReadResult.Free;
       TThread.Synchronize(nil,
         procedure
         begin
-
-          if (length(lblScanStatus.Text) > 10) then
-          begin
-            lblScanStatus.Text := '*';
-          end;
-
-          lblScanStatus.Text := lblScanStatus.Text + '*';
-
-          if (ReadResult <> nil) then
-          begin
-            memo1.Lines.Insert(0,ReadResult.Text);
-          end;
-
-          if (scanBitmap <> nil) then
-          begin
-            scanBitmap.Free;
-          end;
-
-          FreeAndNil(ReadResult);
-
+           lblScanStatus.Text := E.Message;
+          // lblScanResults.Text := '';
         end);
-    end);
 
+      Exit;
+
+    end;
+
+  end;
+
+  TThread.Synchronize(nil,
+    procedure
+    begin
+
+      if (length(lblScanStatus.Text) > 10) then
+      begin
+        lblScanStatus.Text := '*';
+      end;
+
+      lblScanStatus.Text := lblScanStatus.Text + '*';
+
+      if (ReadResult <> nil) then
+      begin
+        memo1.Lines.Insert(0,ReadResult.Text);
+      end;
+
+
+      FreeAndNil(ReadResult);
+
+    end);
 end;
+
 
 { Make sure the ca mera is released if you're going away. }
 function TMainForm.AppEvent(AAppEvent: TApplicationEvent;
