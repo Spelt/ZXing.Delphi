@@ -12,8 +12,14 @@ The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast
 Just include the source files and add it in your existings projects and build the ZXing.Delphi source within your projects.
 
 
+##NEW WORK SHOULD BE DONE IN THE v3 BRANCH. Which will be the next master branch.
+
+
 ##Important note:
 In Delphi 10 Seattle it is necessary to setting the Focusmode to TFocusMode.ContinuousAutoFocus. Perhaps its necessary in earlier versions too.
+
+
+
 
 
 ###Changes
