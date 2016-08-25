@@ -136,11 +136,11 @@ var
   HybridBinarizer: THybridBinarizer;
   BinaryBitmap: TBinaryBitmap;
 begin
+  InvLuminanceSource := nil;
+  LuminanceSource := nil;
+  HybridBinarizer := nil;
+  BinaryBitmap := nil;
   try
-    InvLuminanceSource := nil;
-    LuminanceSource := nil;
-    HybridBinarizer := nil;
-    BinaryBitmap := nil;
 
     LuminanceSource := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
       pBitmapForScan.Width, pBitmapForScan.Height);
