@@ -24,13 +24,14 @@ type
   protected
     constructor Create(const pX, pY: single);
   strict protected
-    destructor Destroy(); override;
     function Equals(other: IResultPoint): Boolean; reintroduce;
-    function GetHashCode(): Integer; override;
-    function ToString(): String; override;
 
     property x: single read GetX write SetX;
     property y: single read GetY write SetY;
+  public
+    destructor Destroy(); override;
+    function GetHashCode(): Integer; override;
+    function ToString(): String; override;
   end;
 
 
