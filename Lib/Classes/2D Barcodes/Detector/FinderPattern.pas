@@ -22,74 +22,31 @@ interface
 uses Resultpoint;
 
 type
-  TFinderPattern = class(TResultpoint)
-  public
-    constructor Create(posX: Single; posY: Single;
-      estimatedModuleSize: Single); overload;
-    constructor Create(posX: Single; posY: Single; estimatedModuleSize: Single;
-      count: Integer); overload;
-    function aboutEquals(moduleSize: Single; i: Single; j: Single): boolean;
-    function combineEstimate(i: Single; j: Single; newModuleSize: Single)
-      : TFinderPattern;
-
-  var
-    count: Integer;
-    estimatedModuleSize: Single;
+  IFinderPattern = interface(IResultPoint)
+    ['{8F123EA3-5A12-4C25-BFD1-49C6DB24D9C1}']
+    function aboutEquals(const moduleSize,i,j: Single): boolean;
+    function combineEstimate(const i,j,newModuleSize: Single): IFinderPattern;
+    function Count:integer;
+    function EstimatedModuleSize: Single;
   end;
+
+  TFinderPatternHelpers = class
+    class function CreateFinderPattern(const posX,posY,estimatedModuleSize: Single):IFinderPattern; overload;
+    class function CreateFinderPattern(const posX,posY,estimatedModuleSize: Single; const count :integer):IFinderPattern; overload;
+  end;
+
 
 implementation
+uses FinderPatternImpl;
 
-constructor TFinderPattern.Create(posX: Single; posY: Single;
-  estimatedModuleSize: Single);
+class function TFinderPatternHelpers.CreateFinderPattern(const posX,posY,estimatedModuleSize: Single):IFinderPattern;
 begin
-  inherited Create(posX, posY);
-  self.estimatedModuleSize := estimatedModuleSize;
-  self.count := 1
+   result := FinderPatternImpl.NewFinderPattern(posX,posY,estimatedModuleSize);
 end;
 
-constructor TFinderPattern.Create(posX: Single; posY: Single;
-  estimatedModuleSize: Single; count: Integer);
+class function TFinderPatternHelpers.CreateFinderPattern(const posX,posY,estimatedModuleSize: Single; const count :integer):IFinderPattern;
 begin
-  inherited Create(posX, posY);
-  self.estimatedModuleSize := estimatedModuleSize;
-  self.count := count
-end;
-
-function TFinderPattern.aboutEquals(moduleSize: Single; i: Single;
-  j: Single): boolean;
-var
-  moduleSizeDiff, x, y: Single;
-
-begin
-  x := self.x;
-  y := self.y;
-  if ((Abs(i - self.y) <= moduleSize) and (Abs(j - self.x) <= moduleSize)) then
-  begin
-
-    moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
-
-    Result := ((moduleSizeDiff <= 1) or
-      (moduleSizeDiff <= self.estimatedModuleSize));
-    exit
-  end;
-
-  Result := false;
-
-end;
-
-function TFinderPattern.combineEstimate(i: Single; j: Single;
-  newModuleSize: Single): TFinderPattern;
-var
-  combinedCount: Integer;
-  combinedX, combinedY: Single;
-
-begin
-  combinedCount := (self.count + 1);
-  combinedX := ((self.count * self.x) + j) / combinedCount;
-  combinedY := ((self.count * self.y) + i) / combinedCount;
-  Result := TFinderPattern.Create(combinedX, combinedY,
-    (((self.count * self.estimatedModuleSize) + newModuleSize) / combinedCount),
-    combinedCount)
+   result := FinderPatternImpl.NewFinderPattern(posX,posY,estimatedModuleSize,count);
 end;
 
 end.

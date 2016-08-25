@@ -102,8 +102,8 @@ var
   len: Integer;
   lengthOK: boolean;
   SBResult: TStringBuilder;
-  resultPoints: TArray<TResultPoint>;
-  resultPointLeft, resultPointRight: TResultPoint;
+  resultPoints: TArray<IResultPoint>;
+  resultPointLeft, resultPointRight: IResultPoint;
 
 begin
   startRange := decodeStart(row);
@@ -174,8 +174,8 @@ begin
 
   end;
 
-  resultPointLeft := TResultPoint.Create(startRange[1], rowNumber);
-  resultPointRight := TResultPoint.Create(endRange[0], rowNumber);
+  resultPointLeft := TResultPointHelpers.CreateResultPoint(startRange[1], rowNumber);
+  resultPointRight := TResultPointHelpers.CreateResultPoint(endRange[0], rowNumber);
   resultPoints := [resultPointLeft, resultPointRight];
 
   Result := TReadResult.Create(stringResult, nil, resultPoints,
@@ -341,7 +341,7 @@ var
   counterPosition: Integer;
   patternStart: Integer;
   x: Integer;
-  l: Integer;
+//   l: Integer; never used
 begin
   patternLength := Length(pattern);
   counters := TArray<Integer>.Create();

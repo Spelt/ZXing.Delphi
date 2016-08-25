@@ -174,7 +174,7 @@ var
   rotatedImage: TBinaryBitmap;
   metadata: TDictionary<TResultMetadataType, TObject>;
   orientation, height, i, l: Integer;
-  points: TArray<TResultPoint>;
+  points: TArray<IResultPoint>;
 
 begin
   Result := DoDecode(image, hints);
@@ -220,7 +220,7 @@ begin
       l := Length(points) - 1;
       for i := 0 to l do
       begin
-        points[i] := TResultPoint.Create(height - points[i].Y - 1, points[i].X);
+        points[i] := TResultPointHelpers.CreateResultPoint(height - points[i].Y - 1, points[i].X);
       end;
     end;
 
@@ -238,7 +238,7 @@ var
   tryHarder, isAbove: Boolean;
   newHints: TDictionary<TDecodeHintType, TObject>;
   ReadResult: TReadResult;
-  points: TArray<TResultPoint>;
+  points: TArray<IResultPoint>;
   Key: TDecodeHintType;
 
 begin
@@ -344,10 +344,8 @@ begin
           points := ReadResult.ResultPoints;
           if (points <> nil) then
           begin
-            points[0] := TResultPoint.Create(width - points[0].X - 1,
-              points[0].Y);
-            points[1] := TResultPoint.Create(width - points[1].X - 1,
-              points[1].Y);
+            points[0] := TResultPointHelpers.CreateResultPoint(width - points[0].X - 1,points[0].Y);
+            points[1] := TResultPointHelpers.CreateResultPoint(width - points[1].X - 1,points[1].Y);
           end;
 
         end;

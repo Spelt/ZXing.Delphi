@@ -32,7 +32,7 @@ type
     moduleSize: Single;
     width: Integer;
     startX, startY: Integer;
-    possibleCenters: TList<TAlignmentPattern>;
+    possibleCenters: TList<IAlignmentPattern>;
     resultPointCallback: TResultPointCallback;
 
     class function centerFromEnd(stateCount: TArray<Integer>; pEnd: Integer)
@@ -41,14 +41,14 @@ type
       maxCount: Integer; originalStateCountTotal: Integer): Single;
     function foundPatternCross(stateCount: TArray<Integer>): boolean;
     function handlePossibleCenter(stateCount: TArray<Integer>; i: Integer;
-      j: Integer): TAlignmentPattern;
+      j: Integer): IAlignmentPattern;
 
   public
     constructor Create(image: TBitMatrix; startX: Integer; startY: Integer;
       width: Integer; height: Integer; moduleSize: Single;
       resultPointCallback: TResultPointCallback);
     destructor Destroy();override;
-    function find: TAlignmentPattern;
+    function find: IAlignmentPattern;
 
   end;
 
@@ -67,7 +67,7 @@ constructor TAlignmentPatternFinder.Create(image: TBitMatrix;
   resultPointCallback: TResultPointCallback);
 begin
   self.image := image;
-  self.possibleCenters := TList<TAlignmentPattern>.Create();
+  self.possibleCenters := TList<IAlignmentPattern>.Create();
   self.possibleCenters.Capacity := 5;
   self.startX := startX;
   self.startY := startY;
@@ -80,15 +80,10 @@ begin
 end;
 
 destructor TAlignmentPatternFinder.Destroy;
-var alignmentPattern : TAlignmentPattern;
+var alignmentPattern : IAlignmentPattern;
 begin
-
-  for alignmentPattern in possibleCenters do
-  begin
-    alignmentPattern.Free;
-  end;
-
-  self.possibleCenters.Clear;
+  if possibleCenters<> nil then
+     possibleCenters.Clear;
   FreeAndNil(self.possibleCenters);
   self.crossCheckStateCount := nil;
   self.resultPointCallback :=nil;
@@ -180,9 +175,9 @@ begin
   result := -1;
 end;
 
-function TAlignmentPatternFinder.find: TAlignmentPattern;
+function TAlignmentPatternFinder.find: IAlignmentPattern;
 var
-  confirmed: TAlignmentPattern;
+  confirmed: IAlignmentPattern;
   maxJ, middleI, iGen, i, j, currentState: Integer;
   stateCount: TArray<Integer>;
 begin
@@ -306,9 +301,9 @@ begin
 end;
 
 function TAlignmentPatternFinder.handlePossibleCenter
-  (stateCount: TArray<Integer>; i, j: Integer): TAlignmentPattern;
+  (stateCount: TArray<Integer>; i, j: Integer): IAlignmentPattern;
 var
-  center, point: TAlignmentPattern;
+  center, point: IAlignmentPattern;
   stateCountTotal: Integer;
   estimatedModuleSize: Single;
   centerJ, centerI: Single;
@@ -340,7 +335,7 @@ begin
 
       end;
 
-      point := TAlignmentPattern.Create(centerJ, centerI, estimatedModuleSize);
+      point := TAlignmentPatternHelpers.CreateAlignmentPattern(centerJ, centerI, estimatedModuleSize);
 
 
 

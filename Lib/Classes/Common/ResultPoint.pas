@@ -25,26 +25,20 @@ type
 
   byteArray = array of byte;
 
-  TResultPoint = class
-  private
-    Fx, Fy: single;
-    bytesX, bytesY: byteArray;
-    FToString: string;
-    class function crossProductZ(pointA, pointB, pointC: TResultPoint)
-      : single; static;
+  IResultPoint = interface
+    ['{224BDE0F-391E-4F23-AB91-AA3696FB8C9E}']
+    // property accessors (must be functions and procedures, for interfaces)
+    function GetX: single;
+    function GetY: single;
+    procedure SetX(const Value: single);
+    procedure SetY(const Value: single);
 
-  public
-    constructor Clone(const src:TResultPoint);
-    constructor Create(pX, pY: single);
-    destructor Destroy(); override;
-    function Equals(other: TObject): Boolean; override;
-    function GetHashCode(): Integer; override;
-    function ToString(): String; override;
-    class procedure OrderBestPatterns(patterns: TArray<TResultPoint>); static;
-    class function Distance(pattern1, pattern2: TResultPoint): single; static;
+    function Equals(other: IResultPoint): Boolean;
+    function GetHashCode(): Integer;
+    function ToString(): String;
 
-    property x: single read Fx write Fx;
-    property y: single read Fy write Fy;
+    property x: single read GetX write SetX;
+    property y: single read GetY write SetY;
   end;
 
   /// <summary> Callback which is invoked when a possible result point (significant
@@ -53,86 +47,52 @@ type
   /// </summary>
   /// <seealso cref="DecodeHintType.NEED_RESULT_POINT_CALLBACK">
   /// </seealso>
-type
 
-  TResultPointCallback = procedure(point: TResultPoint) of Object;
+type
+  TResultPointCallback = procedure(point: IResultPoint) of Object;
   // The method- pointer
 
+  TResultPointHelpers = class
+  private
+     class function crossProductZ(const pointA, pointB, pointC: IResultPoint): single;
+  public
+     class function CreateResultPoint  (const pX, pY: single):IResultPoint;
+     class procedure OrderBestPatterns(patterns: TArray<IResultPoint>); static;
+     class function Distance(const pattern1, pattern2: IResultPoint): single; static;
+  end;
+
+
+
 implementation
+uses ResultPointImpl;
 
 { TResultPoint }
 
-constructor TResultPoint.Clone(const src: TResultPoint);
+
+class function TResultPointHelpers.CreateResultPoint  (const pX, pY: single):IResultPoint;
 begin
-   inherited Create;
-   self.Fx := src.Fx;
-   self.Fy := src.Fy;
-   self.bytesX := src.bytesX;
-   self.bytesY := src.bytesY;
-   self.FToString := src.FToString;
+    result := ResultPointImpl.NewResultPoint(px,py);
 end;
 
-constructor TResultPoint.Create(pX, pY: single);
-
-begin
-  Fx := pX;
-  Fy := pY;
-  SetLength(bytesX,4);
-  SetLength(bytesY,4);
-  //bytesX := byteArray(pX);
-  //bytesY := byteArray(pY);
-end;
-
-destructor TResultPoint.Destroy;
-begin
-  bytesX := nil;
-  bytesY := nil;
-  inherited;
-end;
-
-class function TResultPoint.crossProductZ(pointA, pointB,
-  pointC: TResultPoint): single;
+class function TResultPointHelpers.crossProductZ(const pointA, pointB,  pointC: IResultPoint): single;
 var
   bX, bY: single;
 begin
   bX := pointB.x;
   bY := pointB.y;
   result := ((pointC.x - bX) * (pointA.y - bY)) -
-    ((pointC.y - bY) * (pointA.x - bX));
+            ((pointC.y - bY) * (pointA.x - bX));
 end;
 
-class function TResultPoint.Distance(pattern1, pattern2: TResultPoint): single;
+class function TResultPointHelpers.Distance(const pattern1, pattern2: IResultPoint): single;
 begin
   result := TMathUtils.Distance(pattern1.x, pattern1.y, pattern2.x, pattern2.y);
 end;
 
-function TResultPoint.Equals(other: TObject): Boolean;
-var
-  otherPoint: TResultPoint;
-begin
-
-  otherPoint := other as TResultPoint;
-  if (otherPoint = nil) then
-  begin
-    result := false;
-    Exit;
-  end;
-
-  result := ((otherPoint.x = Fx) and (otherPoint.y = Fy));
-  FreeAndNil(otherPoint);
-end;
-
-function TResultPoint.GetHashCode: Integer;
-begin
-  result := 31 * ((bytesX[0] shl 24) + (bytesX[1] shl 16) + (bytesX[2] shl 8) +
-    bytesX[3]) + (bytesY[0] shl 24) + (bytesY[1] shl 16) + (bytesY[2] shl 8) +
-    bytesY[3];
-end;
-
-class procedure TResultPoint.OrderBestPatterns(patterns: TArray<TResultPoint>);
+class procedure TResultPointHelpers.OrderBestPatterns(patterns: TArray<IResultPoint>);
 var
   zeroOneDistance, oneTwoDistance, zeroTwoDistance: single;
-  pointA, pointB, pointC, temp: TResultPoint;
+  pointA, pointB, pointC, temp: IResultPoint;
 
 begin
   // Find distances between pattern centers
@@ -178,14 +138,5 @@ begin
   patterns[2] := pointC;
 end;
 
-function TResultPoint.ToString: String;
-begin
-  if (FToString = '') then
-  begin
-    FToString := Format('(%g),(%g)', [Fx, Fy]);
-  end;
-
-  result := FToString;
-end;
 
 end.

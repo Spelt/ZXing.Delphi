@@ -50,11 +50,11 @@ type
       maxCount: Integer; originalStateCountTotal: Integer): Single;
     function findRowSkip: Integer;
     function haveMultiplyConfirmedCenters: boolean;
-    function selectBestPatterns: TArray<TFinderPattern>;
+    function selectBestPatterns: TArray<IFinderPattern>;
 
     function CrossCheckStateCount: TArray<Integer>;
   public
-    PossibleCenters: TList<TFinderPattern>;
+    PossibleCenters: TList<IFinderPattern>;
 
     // constructor Create(image: TBitMatrix); overload;
     constructor Create(image: TBitMatrix;
@@ -73,21 +73,21 @@ type
 
   end;
 
-  TFurthestFromAverageComparator = class sealed(TInterfacedObject,
-    IComparer<TFinderPattern>)
+  TFurthestFromAverageComparator = class sealed(TInterfacedObject, IComparer<IFinderPattern>)
   private
     average: Single;
   public
     constructor Create(f: Single);
-    function Compare(const Left, Right: TFinderPattern): Integer;
+    function Compare(const Left, Right: IFinderPattern): Integer;
+    destructor Destroy; override;
   end;
 
-  TCenterComparator = class sealed(TInterfacedObject, IComparer<TFinderPattern>)
+  TCenterComparator = class sealed(TInterfacedObject, IComparer<IFinderPattern>)
   private
     average: Single;
   public
     constructor Create(f: Single);
-    function Compare(const Left, Right: TFinderPattern): Integer;
+    function Compare(const Left, Right: IFinderPattern): Integer;
   end;
 
 implementation
@@ -123,23 +123,19 @@ constructor TFinderPatternFinder.Create(image: TBitMatrix;
   resultPointCallback: TresultPointCallback);
 begin
   FImage := image;
-  self.PossibleCenters := TList<TFinderPattern>.Create;
+  self.PossibleCenters := TList<IFinderPattern>.Create;
   FCrossCheckStateCount := TArray<Integer>.Create();
   SetLength(FCrossCheckStateCount, 5);
   self.resultPointCallback := resultPointCallback;
 end;
 
 destructor TFinderPatternFinder.Destroy;
-var finderPattern: TFinderPattern;
+var finderPattern: IFinderPattern;
 begin
   FImage := nil;
 
-  for finderPattern in PossibleCenters do
-  begin
-//    finderPattern.Free;
-  end;
-
-  PossibleCenters.Clear;
+  if PossibleCenters<>nil then
+     PossibleCenters.Clear;
   FreeAndNil(PossibleCenters);
   FCrossCheckStateCount := nil;
   inherited;
@@ -488,8 +484,8 @@ var
   tryHarder, pureBarcode, done, confirmed: boolean;
   maxI, maxJ, iSkip, i, currentState, j, rowSkip: Integer;
   stateCount: TArray<Integer>;
-  patternInfo: TArray<TFinderPattern>;
-  resultInfo: TArray<TResultPoint>;
+  patternInfo: TArray<IFinderPattern>;
+  resultInfo: TArray<IResultPoint>;
 begin
   tryHarder := ((hints <> nil) and
     hints.ContainsKey(DecodeHinttype.TRY_HARDER));
@@ -603,17 +599,17 @@ begin
       exit
     end;
 
-    resultInfo := TArray<TResultPoint>.Create();
+    resultInfo := TArray<IResultPoint>.Create();
     SetLength(resultInfo, 3);
 
-    resultInfo[0] := patternInfo[0] as TResultPoint;
-    resultInfo[1] := patternInfo[1] as TResultPoint;
-    resultInfo[2] := patternInfo[2] as TResultPoint;
-    TResultPoint.orderBestPatterns(resultInfo);
+    resultInfo[0] := patternInfo[0] as IResultPoint;
+    resultInfo[1] := patternInfo[1] as IResultPoint;
+    resultInfo[2] := patternInfo[2] as IResultPoint;
+    TResultPointHelpers.orderBestPatterns(resultInfo);
 
-    patternInfo[0] := resultInfo[0] as TFinderPattern;
-    patternInfo[1] := resultInfo[1] as TFinderPattern;
-    patternInfo[2] := resultInfo[2] as TFinderPattern;
+    patternInfo[0] := resultInfo[0] as IFinderPattern;
+    patternInfo[1] := resultInfo[1] as IFinderPattern;
+    patternInfo[2] := resultInfo[2] as IFinderPattern;
 
     result := TFinderPatternInfo.Create(patternInfo);
 
@@ -626,8 +622,8 @@ end;
 
 function TFinderPatternFinder.findRowSkip: Integer;
 var
-  center: TFinderPattern;
-  firstConfirmedCenter: TResultPoint;
+  center: IFinderPattern;
+  firstConfirmedCenter: IResultPoint;
 begin
 
   if (self.PossibleCenters.Count > 1) then
@@ -696,7 +692,7 @@ function TFinderPatternFinder.handlePossibleCenter(stateCount: TArray<Integer>;
 var
   stateCountTotal, index: Integer;
   centerJ, centerI: Single;
-  center, point: TFinderPattern;
+  center, point: IFinderPattern;
   found: boolean;
   estimatedModuleSize: Single;
 begin
@@ -736,7 +732,6 @@ begin
       center := self.PossibleCenters[index];
       if (center.aboutEquals(estimatedModuleSize, centerI, centerJ)) then
       begin
-        PossibleCenters[index].Free;
         PossibleCenters[index] := nil;
         PossibleCenters.Delete(index);
         PossibleCenters.Insert(index, center.combineEstimate(centerI, centerJ,
@@ -750,7 +745,7 @@ begin
 
     if (not found) then
     begin
-      point := TFinderPattern.Create(centerJ, centerI, estimatedModuleSize);
+      point :=  TFinderPatternHelpers.CreateFinderPattern(centerJ, centerI, estimatedModuleSize);
       PossibleCenters.Add(point);
 
       // todo: 2015-10-16
@@ -768,7 +763,7 @@ function TFinderPatternFinder.haveMultiplyConfirmedCenters: boolean;
 var
   confirmedCount, max, i: Integer;
   totalModuleSize, average, totalDeviation: Single;
-  pattern: TFinderPattern;
+  pattern: IFinderPattern;
 begin
   confirmedCount := 0;
   totalModuleSize := 0;
@@ -806,11 +801,12 @@ begin
 
 end;
 
-function TFinderPatternFinder.selectBestPatterns: TArray<TFinderPattern>;
+function TFinderPatternFinder.selectBestPatterns: TArray<IFinderPattern>;
 var
   totalModuleSize, average, size, stdDev, square, limit: Single;
-  center, possibleCenter, pattern: TFinderPattern;
+  center, possibleCenter, pattern: IFinderPattern;
   startSize, i: Integer;
+  cmpInterface :IComparer<IFinderPattern>;
 begin
   startSize := self.PossibleCenters.Count;
   if (startSize < 3) then
@@ -833,7 +829,16 @@ begin
     average := totalModuleSize / startSize;
     stdDev := Sqrt((square / startSize) - (average * average));
 
-    self.PossibleCenters.Sort(TFurthestFromAverageComparator.Create(average));
+
+
+    // VERY important note: DO NOT TRY TO remove the intermediate assignment to cmpInterface
+    // and directly call Sort this way:
+    // self.PossibleCenters.Sort(TFurthestFromAverageComparator.Create(average));
+    // this intermediate variable assigment is a workaround for a Win32/Win64 XE8 compiler bug:
+    // if you do not use this variable, the compiler does not generate the calls to IUnknown._AddRef and
+    // IUnknown._Release that will handle automatic reference counting and deallocation of TFurthestFromAverageComparator instance!
+    cmpInterface :=  TFurthestFromAverageComparator.Create(average);
+    self.PossibleCenters.Sort(cmpInterface);
     limit := math.max((0.2 * average), stdDev);
     i := 0;
     while (((i < self.PossibleCenters.Count) and
@@ -859,7 +864,10 @@ begin
     end;
 
     average := totalModuleSize / self.PossibleCenters.Count;
-    self.PossibleCenters.Sort(TCenterComparator.Create(average));
+
+    // See above comment about the necessity of this intermediate cmpInterface variable
+    cmpInterface :=  TCenterComparator.Create(average);
+    self.PossibleCenters.Sort(cmpInterface);
 
     // if (PossibleCenters.Count > 4) then
     // begin
@@ -868,7 +876,7 @@ begin
 
   end;
 
-  result := TArray<TFinderPattern>.Create(self.PossibleCenters[0],
+  result := TArray<IFinderPattern>.Create(self.PossibleCenters[0],
     self.PossibleCenters[1], self.PossibleCenters[2]);
 
 end;
@@ -876,7 +884,7 @@ end;
 { TFurthestFromAverageComparator }
 
 function TFurthestFromAverageComparator.Compare(const Left,
-  Right: TFinderPattern): Integer;
+  Right: IFinderPattern): Integer;
 var
   dA, dB: Single;
 begin
@@ -898,12 +906,20 @@ end;
 
 constructor TFurthestFromAverageComparator.Create(f: Single);
 begin
+  inherited Create;
   average := f;
+end;
+
+destructor TFurthestFromAverageComparator.Destroy;
+begin
+  // added this override only for debug purposes: there is some kind of bug in the Win32/Win64 compiler that
+  // wasn't correctly handling reference counting (Look for "TFurthestFromAverageComparator.Create" and see the workaround I had to put in place)
+  inherited;
 end;
 
 { TCenterComparator }
 
-function TCenterComparator.Compare(const Left, Right: TFinderPattern): Integer;
+function TCenterComparator.Compare(const Left, Right: IFinderPattern): Integer;
 var
   dA, dB: Single;
 begin

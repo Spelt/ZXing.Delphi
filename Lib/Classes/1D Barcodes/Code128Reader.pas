@@ -136,7 +136,8 @@ class function TCode128Reader.FindStartPattern(row: TBitArray): TArray<Integer>;
 var
   i, bestMatch, startCode, bestVariance, width, rowOffset, patternStart,
     patternLength, variance, counterPosition: Integer;
-  counters, CopyCounters: TArray<Integer>;
+  counters:TArray<Integer>;
+  // CopyCounters:TArray<Integer>; // never used
   isWhite: Boolean;
 
 begin
@@ -264,10 +265,10 @@ var
   aResult: String;
   counter, resultLength, i: Integer;
   left, right: Single;
-  resultPointCallback: TResultPointCallback;
-  ReadResult: TReadResult;
-  resultPoints: TArray<TResultPoint>;
-  resultPointLeft, resultPointRight: TResultPoint;
+//   resultPointCallback: TResultPointCallback; never used
+//  ReadResult: TReadResult; never used
+  resultPoints: TArray<IResultPoint>;
+  resultPointLeft, resultPointRight: IResultPoint;
 
 begin
   convertFNC1 := (hints <> nil) and
@@ -684,8 +685,8 @@ begin
       rawBytes[i] := rawCodes[i]
     end;
 
-    resultPointLeft := TResultPoint.Create(left, rowNumber);
-    resultPointRight := TResultPoint.Create(right, rowNumber);
+    resultPointLeft := TResultPointHelpers.CreateResultPoint(left, rowNumber);
+    resultPointRight := TResultPointHelpers.CreateResultPoint(right, rowNumber);
     resultPoints := [resultPointLeft, resultPointRight];
 
   finally

@@ -260,8 +260,8 @@ var
   resultString: String;
   Left, Right: Single;
   // resultPointCallback: TResultPointCallback;
-  resultPoints: TArray<TResultPoint>;
-  resultPointLeft, resultPointRight: TResultPoint;
+  resultPoints: TArray<IResultPoint>;
+  resultPointLeft, resultPointRight: IResultPoint;
 
 begin
   for index := 0 to length(counters) - 1 do
@@ -347,8 +347,8 @@ begin
   Left := (start[1] + start[0]) div 2;
   Right := (lastStart + lastPatternSize) div 2;
 
-  resultPointLeft := TResultPoint.Create(Left, rowNumber);
-  resultPointRight := TResultPoint.Create(Right, rowNumber);
+  resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
+  resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
   resultPoints := [resultPointLeft, resultPointRight];
 
   Result := TReadResult.Create(resultString, nil, resultPoints,

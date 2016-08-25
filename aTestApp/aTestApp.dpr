@@ -52,7 +52,10 @@ uses
   LuminanceSource in '..\Lib\Classes\Filtering\LuminanceSource.pas',
   RGBLuminanceSource in '..\Lib\Classes\Filtering\RGBLuminanceSource.Pas',
   ScanManager in '..\Lib\Classes\ScanManager.pas',
-  ITFReader in '..\Lib\Classes\1D Barcodes\ITFReader.pas';
+  ITFReader in '..\Lib\Classes\1D Barcodes\ITFReader.pas',
+  ResultPointImpl in '..\Lib\Classes\Common\ResultPointImpl.pas',
+  AlignmentPatternImpl in '..\Lib\Classes\2D Barcodes\Detector\AlignmentPatternImpl.pas',
+  FinderPatternImpl in '..\Lib\Classes\2D Barcodes\Detector\FinderPatternImpl.pas';
 
 {$R *.res}
 

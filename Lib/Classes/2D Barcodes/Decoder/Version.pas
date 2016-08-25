@@ -42,7 +42,7 @@ type
     public
       ecCodewordsPerBlock: Integer;
       constructor Create(ecCodewordsPerBlock: Integer; ecBlocks: TArray<TECB>);
-      destructor destroy();override;
+      destructor Destroy();override;
       function getECBlocks: TArray<TECB>;
       { property ecCodewordsPerBlock: Integer read get_ECCodewordsPerBlock;
         property NumBlocks: Integer read get_NumBlocks;

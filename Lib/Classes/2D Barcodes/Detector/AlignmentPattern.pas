@@ -23,61 +23,26 @@ uses Resultpoint;
 
 type
 
-  TAlignmentPattern = class sealed(TResultpoint)
-  private
-    estimatedModuleSize: Single;
-  public
-    constructor Clone(const src:TAlignmentPattern); reintroduce;
-    constructor Create(posX: Single; posY: Single; estimatedModuleSize: Single);
-    function aboutEquals(moduleSize: Single; i: Single; j: Single): boolean;
-    function combineEstimate(i: Single; j: Single; newModuleSize: Single)
-      : TAlignmentPattern;
+  IAlignmentPattern = interface(IResultPoint)
+    ['{B75C2D62-002F-4DAD-AE99-2E5FB8CFAB52}']
+     function aboutEquals(const moduleSize,i,j: Single): boolean;
+     function combineEstimate(const i,j,newModuleSize: Single):IAlignmentPattern;
   end;
+
+
+
+  TAlignmentPatternHelpers = class
+     class function CreateAlignmentPattern(const posX,posY,estimatedModuleSize: Single):IAlignmentPattern;
+  end;
+
 
 implementation
+uses AlignmentPatternImpl;
 
-constructor TAlignmentPattern.Create(posX: Single; posY: Single;
-  estimatedModuleSize: Single);
+class function TAlignmentPatternHelpers.CreateAlignmentPattern(const posX,posY,estimatedModuleSize: Single):IAlignmentPattern;
 begin
-  inherited Create(posX, posY);
-  self.estimatedModuleSize := estimatedModuleSize;
+  result := AlignmentPatternImpl.NewAlignmentPattern(posx,posy,estimatedModuleSize)
 end;
 
-function TAlignmentPattern.aboutEquals(moduleSize: Single; i: Single;
-  j: Single): boolean;
-
-var
-  moduleSizeDiff: Single;
-
-begin
-  if ((Abs(i - self.y) <= moduleSize) and (Abs(j - self.x) <= moduleSize)) then
-  begin
-    moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
-    begin
-      Result := ((moduleSizeDiff <= 1) or
-        (moduleSizeDiff <= self.estimatedModuleSize));
-      exit
-    end
-  end;
-
-  Result := false;
-end;
-
-constructor TAlignmentPattern.Clone(const src: TAlignmentPattern);
-begin
-  inherited Clone(src);
-  self.estimatedModuleSize  := src.estimatedModuleSize;
-end;
-
-function TAlignmentPattern.combineEstimate(i: Single; j: Single;
-  newModuleSize: Single): TAlignmentPattern;
-var
-  combinedX, combinedY: Single;
-begin
-  combinedX := ((self.x + j) / 2);
-  combinedY := ((self.y + i) / 2);
-  Result := TAlignmentPattern.Create(combinedX, combinedY,
-    ((self.estimatedModuleSize + newModuleSize) / 2))
-end;
 
 end.
