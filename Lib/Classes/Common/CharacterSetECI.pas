@@ -33,18 +33,22 @@ type
   end;
 
   TCharacterSetECI = class sealed(TECI)
-  private
+  strict private
     FEncodingName: string;
     class var NAME_TO_ECI: TDictionary<string, TCharacterSetECI>;
     class var VALUE_TO_ECI: TDictionary<Integer, TCharacterSetECI>;
+    ///<summary>
+    /// this objectlist is just for doing proper deallocation of TCharacterSetECI instances under Win32/Win64,
+    /// without having to mess with TInterfacedObject. Since instances are meant to exist for the whole program life, there's no need of doing
+    /// anything much more complicated than this.
+    /// </summary>
+    class var AllocatedInstances:TObjectList<TCharacterSetECI>;
 
-    constructor Create; overload;
+    class constructor Create;
     constructor Create(value: Integer; encodingName: string); overload;
+    class destructor Destroy;
 
-    class procedure addCharacterSet(value: Integer; encodingName: string);
-      overload; static;
-    class procedure addCharacterSet(value: Integer;
-      encodingNames: TArray<string>); overload; static;
+    class procedure addCharacterSet(value: Integer;  encodingNames: TArray<string>); static;
 
   public
 
@@ -86,91 +90,73 @@ end;
 constructor TCharacterSetECI.Create(value: Integer; encodingName: string);
 begin
   inherited Create(value);
-  FEncodingName := encodingName
+  FEncodingName := encodingName;
+  AllocatedInstances.Add(self); // add the instance to the global list of all created instances
 end;
 
-constructor TCharacterSetECI.Create;
+class destructor TCharacterSetECI.Destroy;
 begin
-  TCharacterSetECI.addCharacterSet(0, 'CP437');
-  TCharacterSetECI.addCharacterSet(1, TArray<string>.Create('ISO-8859-1',
-    'ISO8859_1'));
-  TCharacterSetECI.addCharacterSet(2, 'CP437');
-  TCharacterSetECI.addCharacterSet(3, TArray<string>.Create('ISO-8859-1',
-    'ISO8859_1'));
-  TCharacterSetECI.addCharacterSet(4, TArray<string>.Create('ISO-8859-2',
-    'ISO8859_2'));
-  TCharacterSetECI.addCharacterSet(5, TArray<string>.Create('ISO-8859-3',
-    'ISO8859_3'));
-  TCharacterSetECI.addCharacterSet(6, TArray<string>.Create('ISO-8859-4',
-    'ISO8859_4'));
-  TCharacterSetECI.addCharacterSet(7, TArray<string>.Create('ISO-8859-5',
-    'ISO8859_5'));
-  TCharacterSetECI.addCharacterSet(8, TArray<string>.Create('ISO-8859-6',
-    'ISO8859_6'));
-  TCharacterSetECI.addCharacterSet(9, TArray<string>.Create('ISO-8859-7',
-    'ISO8859_7'));
-  TCharacterSetECI.addCharacterSet(10, TArray<string>.Create('ISO-8859-8',
-    'ISO8859_8'));
-  TCharacterSetECI.addCharacterSet(11, TArray<string>.Create('ISO-8859-9',
-    'ISO8859_9'));
-  TCharacterSetECI.addCharacterSet(12, TArray<string>.Create('ISO-8859-4',
-    'ISO-8859-10', 'ISO8859_10'));
-  TCharacterSetECI.addCharacterSet(13, TArray<string>.Create('ISO-8859-11',
-    'ISO8859_11'));
-  TCharacterSetECI.addCharacterSet(15, TArray<string>.Create('ISO-8859-13',
-    'ISO8859_13'));
-  TCharacterSetECI.addCharacterSet($10, TArray<string>.Create('ISO-8859-1',
-    'ISO-8859-14', 'ISO8859_14'));
-  TCharacterSetECI.addCharacterSet($11, TArray<string>.Create('ISO-8859-15',
-    'ISO8859_15'));
-  TCharacterSetECI.addCharacterSet($12, TArray<string>.Create('ISO-8859-3',
-    'ISO-8859-16', 'ISO8859_16'));
-  TCharacterSetECI.addCharacterSet(20, TArray<string>.Create('SJIS',
-    'Shift_JIS'));
-  TCharacterSetECI.addCharacterSet($15, TArray<string>.Create('WINDOWS-1250',
-    'CP1250'));
-  TCharacterSetECI.addCharacterSet($16, TArray<string>.Create('WINDOWS-1251',
-    'CP1251'));
-  TCharacterSetECI.addCharacterSet($17, TArray<string>.Create('WINDOWS-1252',
-    'CP1252'));
-  TCharacterSetECI.addCharacterSet($18, TArray<string>.Create('WINDOWS-1256',
-    'CP1256'));
-  TCharacterSetECI.addCharacterSet($19, TArray<string>.Create('UTF-16BE',
-    'UNICODEBIG'));
-  TCharacterSetECI.addCharacterSet($1A, TArray<string>.Create('UTF-8', 'UTF8'));
-  TCharacterSetECI.addCharacterSet($1B, 'US-ASCII');
-  TCharacterSetECI.addCharacterSet(170, 'US-ASCII');
-  TCharacterSetECI.addCharacterSet($1C, 'BIG5');
-  TCharacterSetECI.addCharacterSet($1D, TArray<string>.Create('GB18030',
-    'GB2312', 'EUC_CN', 'GBK'));
-  TCharacterSetECI.addCharacterSet(30, TArray<string>.Create('EUC-KR',
-    'EUC_KR'))
+   NAME_TO_ECI.Free;
+   VALUE_TO_ECI.Free;
+
+   if  AllocatedInstances<>nil then begin
+      AllocatedInstances.Clear;
+      AllocatedInstances.Free;
+   end;
 
 end;
 
-class procedure TCharacterSetECI.addCharacterSet(value: Integer;
-  encodingNames: TArray<string>);
+class constructor TCharacterSetECI.Create;
+begin
+  NAME_TO_ECI:=TDictionary<string, TCharacterSetECI>.Create;
+  VALUE_TO_ECI:=TDictionary<Integer, TCharacterSetECI>.Create;
+  // under Win32/64 TObjectList by default "OWNS" the objects it contains:
+  // if we clear the list, the objects contained get automatically destroyed
+  AllocatedInstances:= TObjectList<TCharacterSetECI>.Create;
+
+  TCharacterSetECI.addCharacterSet(  0, ['CP437']);
+  TCharacterSetECI.addCharacterSet(  1, ['ISO-8859-1','ISO8859_1']);
+  TCharacterSetECI.addCharacterSet(  2, ['CP437']);
+  TCharacterSetECI.addCharacterSet(  3, ['ISO-8859-1', 'ISO8859_1']);
+  TCharacterSetECI.addCharacterSet(  4, ['ISO-8859-2', 'ISO8859_2']);
+  TCharacterSetECI.addCharacterSet(  5, ['ISO-8859-3', 'ISO8859_3']);
+  TCharacterSetECI.addCharacterSet(  6, ['ISO-8859-4', 'ISO8859_4']);
+  TCharacterSetECI.addCharacterSet(  7, ['ISO-8859-5', 'ISO8859_5']);
+  TCharacterSetECI.addCharacterSet(  8, ['ISO-8859-6', 'ISO8859_6']);
+  TCharacterSetECI.addCharacterSet(  9, ['ISO-8859-7', 'ISO8859_7']);
+  TCharacterSetECI.addCharacterSet( 10, ['ISO-8859-8', 'ISO8859_8']);
+  TCharacterSetECI.addCharacterSet( 11, ['ISO-8859-9', 'ISO8859_9']);
+  TCharacterSetECI.addCharacterSet( 12, ['ISO-8859-4', 'ISO-8859-10', 'ISO8859_10']);
+  TCharacterSetECI.addCharacterSet( 13, ['ISO-8859-11', 'ISO8859_11']);
+  TCharacterSetECI.addCharacterSet( 15, ['ISO-8859-13', 'ISO8859_13']);
+  TCharacterSetECI.addCharacterSet($10, ['ISO-8859-1', 'ISO-8859-14', 'ISO8859_14']);
+  TCharacterSetECI.addCharacterSet($11, ['ISO-8859-15', 'ISO8859_15']);
+  TCharacterSetECI.addCharacterSet($12, ['ISO-8859-3', 'ISO-8859-16', 'ISO8859_16']);
+  TCharacterSetECI.addCharacterSet( 20, ['SJIS', 'Shift_JIS']);
+  TCharacterSetECI.addCharacterSet($15, ['WINDOWS-1250','CP1250']);
+  TCharacterSetECI.addCharacterSet($16, ['WINDOWS-1251','CP1251']);
+  TCharacterSetECI.addCharacterSet($17, ['WINDOWS-1252','CP1252']);
+  TCharacterSetECI.addCharacterSet($18, ['WINDOWS-1256', 'CP1256']);
+  TCharacterSetECI.addCharacterSet($19, ['UTF-16BE','UNICODEBIG']);
+  TCharacterSetECI.addCharacterSet($1A, ['UTF-8', 'UTF8']);
+  TCharacterSetECI.addCharacterSet($1B, ['US-ASCII']);
+  TCharacterSetECI.addCharacterSet(170, ['US-ASCII']);
+  TCharacterSetECI.addCharacterSet($1C, ['BIG5']);
+  TCharacterSetECI.addCharacterSet($1D, ['GB18030', 'GB2312', 'EUC_CN', 'GBK'] );
+  TCharacterSetECI.addCharacterSet( 30, ['EUC-KR', 'EUC_KR']);
+
+end;
+
+class procedure TCharacterSetECI.addCharacterSet(value: Integer; encodingNames: TArray<string>);
 var
   t: string;
   Eci: TCharacterSetECI;
 begin
   Eci := TCharacterSetECI.Create(value, encodingNames[0]);
-  TCharacterSetECI.VALUE_TO_ECI[value] := Eci;
+  TCharacterSetECI.VALUE_TO_ECI.AddOrSetValue(value,Eci);   // note : VALUE_TO_ECI[value] := Eci raises "key not found exception": it cant' be used for adding not existing values
 
   for t in encodingNames do
-  begin
-    TCharacterSetECI.NAME_TO_ECI[t] := Eci
-  end
-end;
-
-class procedure TCharacterSetECI.addCharacterSet(value: Integer;
-  encodingName: string);
-var
-  Eci: TCharacterSetECI;
-begin
-  Eci := TCharacterSetECI.Create(value, encodingName);
-  TCharacterSetECI.VALUE_TO_ECI[value] := Eci;
-  TCharacterSetECI.NAME_TO_ECI[encodingName] := Eci
+     TCharacterSetECI.NAME_TO_ECI.AddOrSetValue(t,Eci);
 end;
 
 class function TCharacterSetECI.getCharacterSetECIByName(name: string)
