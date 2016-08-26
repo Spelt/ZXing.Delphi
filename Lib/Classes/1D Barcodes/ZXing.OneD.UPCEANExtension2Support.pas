@@ -46,7 +46,7 @@ type
     class procedure InitializeClass; static;
     class procedure FinalizeClass; static;
 
-    class function decodeMiddle(const row: TBitArray;
+    class function decodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>;
       const resultString: TStringBuilder): Integer;
 
@@ -58,7 +58,7 @@ type
     class function parseExtensionString(const raw: String):
       TDictionary<TResultMetadataType, TObject>; static;
   public
-    class function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    class function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const extensionStartRange: TArray<Integer>): TReadResult;
   end;
 
@@ -82,14 +82,14 @@ begin
 end;
 
 class function TUPCEANExtension2Support.decodeRow(const rowNumber: Integer;
-  const row: TBitArray; const extensionStartRange: TArray<Integer>): TReadResult;
+  const row: IBitArray; const extensionStartRange: TArray<Integer>): TReadResult;
 var
   res : TStringBuilder;
   ending : Integer;
   resultString : String;
   extensionResult : TReadResult;
   extensionData : TDictionary<TResultMetadataType, TObject>;
-  resultPoints : TArray<TResultPoint>;
+  resultPoints : TArray<IResultPoint>;
 begin
   Result := nil;
 
@@ -103,9 +103,9 @@ begin
   resultString := Result.ToString;
   extensionData := TUPCEANExtension2Support.parseExtensionString(resultString);
 
-  resultPoints := TArray<TResultPoint>.Create(
-    TResultPoint.Create((extensionStartRange[0] + extensionStartRange[1]) div 2, rowNumber),
-    TResultPoint.Create(ending, rowNumber));
+  resultPoints := TArray<IResultPoint>.Create(
+    TResultPointHelpers.CreateResultPoint((extensionStartRange[0] + extensionStartRange[1]) div 2, rowNumber),
+    TResultPointHelpers.CreateResultPoint(ending, rowNumber));
 
   extensionResult := TReadResult.Create(resultString, nil, resultPoints, TBarcodeFormat.UPC_EAN_EXTENSION);
   if (extensionData <> nil)
@@ -115,7 +115,7 @@ begin
   Result := extensionResult;
 end;
 
-class function TUPCEANExtension2Support.decodeMiddle(const row: TBitArray;
+class function TUPCEANExtension2Support.decodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>; const resultString: TStringBuilder): Integer;
 var
   bestMatch: Integer;

@@ -46,7 +46,7 @@ type
       INTEGER_MATH_SHIFT: Integer = 8;
     var
       FImage: TBitMatrix;
-      FPossibleCenters: TList<TFinderPattern>;
+      FPossibleCenters: TList<IFinderPattern>;
       FhasSkipped: Boolean;
       FCrossCheckStateCount: TArray<Integer>;
       FresultPointCallback: TResultPointCallback;
@@ -58,7 +58,7 @@ type
     function crossCheckVertical(startI: Integer; centerJ: Integer; maxCount: Integer; originalStateCountTotal: Integer): Single;
     function findRowSkip: Integer;
     function haveMultiplyConfirmedCenters: boolean;
-    function selectBestPatterns: TArray<TFinderPattern>;
+    function selectBestPatterns: TArray<IFinderPattern>;
 
     function CrossCheckStateCount: TArray<Integer>;
   protected
@@ -96,20 +96,20 @@ type
   end;
 
   TFurthestFromAverageComparator = class sealed(TInterfacedObject,
-    IComparer<TFinderPattern>)
+    IComparer<IFinderPattern>)
   private
     average: Single;
   public
     constructor Create(f: Single);
-    function Compare(const Left, Right: TFinderPattern): Integer;
+    function Compare(const Left, Right: IFinderPattern): Integer;
   end;
 
-  TCenterComparator = class sealed(TInterfacedObject, IComparer<TFinderPattern>)
+  TCenterComparator = class sealed(TInterfacedObject, IComparer<IFinderPattern>)
   private
     average: Single;
   public
     constructor Create(f: Single);
-    function Compare(const Left, Right: TFinderPattern): Integer;
+    function Compare(const Left, Right: IFinderPattern): Integer;
   end;
 
 implementation
@@ -125,7 +125,7 @@ constructor TFinderPatternFinder.Create(const image: TBitMatrix;
   resultPointCallback: TResultPointCallback);
 begin
   FImage := image;
-  FPossibleCenters := TList<TFinderPattern>.Create;
+  FPossibleCenters := TList<IFinderPattern>.Create;
   FCrossCheckStateCount := TArray<Integer>.Create(0, 0, 0, 0, 0);
   FresultPointCallback := resultPointCallback;
 end;
@@ -506,8 +506,8 @@ var
   maxI, maxJ, iSkip,
   i, currentState, j, rowSkip: Integer;
   stateCount: TArray<Integer>;
-  patternInfo: TArray<TFinderPattern>;
-  resultInfo: TArray<TResultPoint>;
+  patternInfo: TArray<IFinderPattern>;
+  resultInfo: TArray<IResultPoint>;
 begin
   Result := nil;
 
@@ -647,7 +647,7 @@ begin
     then
        exit;
 
-    TFinderPattern.orderBestPatterns(patternInfo);
+    TFinderPatternHelpers.orderBestPatterns(patternInfo);
     Result := TFinderPatternInfo.Create(patternInfo);
   finally
     resultInfo := nil;
@@ -658,8 +658,8 @@ end;
 
 function TFinderPatternFinder.findRowSkip: Integer;
 var
-  center: TFinderPattern;
-  firstConfirmedCenter: TResultPoint;
+  center: IFinderPattern;
+  firstConfirmedCenter: IResultPoint;
 begin
   Result := 0;
 
@@ -727,7 +727,7 @@ function TFinderPatternFinder.handlePossibleCenter(stateCount: TArray<Integer>;
 var
   stateCountTotal, index: Integer;
   centerJ, centerI: Single;
-  center, point: TFinderPattern;
+  center, point: IFinderPattern;
   found: boolean;
   estimatedModuleSize: Single;
 begin
@@ -765,7 +765,6 @@ begin
       center := FPossibleCenters[index];
       if (center.aboutEquals(estimatedModuleSize, centerI, centerJ)) then
       begin
-        FPossibleCenters[index].Free;
         FPossibleCenters[index] := nil;
         FPossibleCenters.Delete(index);
         FPossibleCenters.Insert(index, center.combineEstimate(centerI, centerJ,
@@ -779,7 +778,7 @@ begin
 
     if (not found) then
     begin
-      point := TFinderPattern.Create(centerJ, centerI, estimatedModuleSize);
+      point := TFinderPatternHelpers.CreateFinderPattern(centerJ, centerI, estimatedModuleSize);
       FPossibleCenters.Add(point);
 
       if Assigned(FresultPointCallback)
@@ -794,7 +793,7 @@ function TFinderPatternFinder.haveMultiplyConfirmedCenters: boolean;
 var
   confirmedCount, max, i: Integer;
   totalModuleSize, average, totalDeviation: Single;
-  pattern: TFinderPattern;
+  pattern: IFinderPattern;
 begin
   confirmedCount := 0;
   totalModuleSize := 0;
@@ -832,12 +831,12 @@ begin
 
 end;
 
-function TFinderPatternFinder.selectBestPatterns: TArray<TFinderPattern>;
+function TFinderPatternFinder.selectBestPatterns: TArray<IFinderPattern>;
 var
   totalModuleSize, average, size, stdDev, square, limit: Single;
-  center, possibleCenter, pattern: TFinderPattern;
+  center, possibleCenter, pattern: IFinderPattern;
   startSize, i: Integer;
-  comparator: IComparer<TFinderPattern>;
+  comparator: IComparer<IFinderPattern>;
 begin
   startSize := FPossibleCenters.Count;
   if (startSize < 3) then
@@ -908,7 +907,7 @@ begin
 
   end;
 
-  result := TArray<TFinderPattern>.Create(FPossibleCenters[0],
+  result := TArray<IFinderPattern>.Create(FPossibleCenters[0],
     FPossibleCenters[1], FPossibleCenters[2]);
 
 end;
@@ -916,7 +915,7 @@ end;
 { TFurthestFromAverageComparator }
 
 function TFurthestFromAverageComparator.Compare(const Left,
-  Right: TFinderPattern): Integer;
+  Right: IFinderPattern): Integer;
 var
   dA, dB: Single;
 begin
@@ -943,7 +942,7 @@ end;
 
 { TCenterComparator }
 
-function TCenterComparator.Compare(const Left, Right: TFinderPattern): Integer;
+function TCenterComparator.Compare(const Left, Right: IFinderPattern): Integer;
 var
   dA, dB: Single;
 begin

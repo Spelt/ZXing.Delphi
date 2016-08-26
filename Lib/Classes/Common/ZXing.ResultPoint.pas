@@ -27,40 +27,73 @@ uses
 
 type
   /// <summary>
-  /// Encapsulates a point of interest in an image containing a barcode. Typically, this
-  /// would be the location of a finder pattern or the corner of the barcode, for example.
+  /// To mimic "garbage collection" (or ARC) with old-gen compilers we have to use
+  /// interfaces. IResultPoint is the interface that maps TResultPoint which is now
+  /// implemented as a TInterfacedObject descendant which supports automatic deallocation
+  /// based on reference counting of interface variables.
+  /// See ZXing.ResultPointImplementation to see the actual implementation of this interface.
+  /// since we are using automatic reference counting, we don't need the Clone method any more.
   /// </summary>
-  TResultPoint = class
-  private type
-    TSingleArray = array [0 .. Pred(SizeOf(Single))] of Byte;
 
-  var
-    Fx, Fy: Single;
-    bytesX, bytesY: TSingleArray;
-    FToString: String;
+  IResultPoint = interface
+     ['{1E60EDAB-0387-440C-9D8E-4E0CC772C820}']
+    // property accessors, for interfaces, MUST be functions or procedures (interfaces cannot contain data)
     procedure SetX(const AValue: Single);
     procedure SetY(const AValue: Single);
-  protected
-    class function crossProductZ(const pointA, pointB, pointC: TResultPoint)
-      : Single; static;
-  public
-    constructor Create; overload;
-    constructor Create(const pX, pY: Single); overload;
-    destructor Destroy; override;
+    function GetX: Single;
+    function GetY: Single;
 
-    function Equals(other: TObject): Boolean; override;
-    function GetHashCode(): Integer; override;
-    function ToString(): String; override;
+    function Equals(other: TObject): Boolean;
+    function GetHashCode(): Integer;
+    function ToString(): String;
 
-    class procedure orderBestPatterns(const patterns
-      : TArray<TResultPoint>); static;
-    class function distance(const pattern1, pattern2: TResultPoint)
-      : Single; static;
-    constructor Clone(const src: TResultPoint);
-
-    property x: Single read Fx write SetX;
-    property y: Single read Fy write SetY;
+    property x: Single read GetX write SetX;
+    property y: Single read GetY write SetY;
   end;
+
+  /// <summary>
+  /// in order to implement TResultPoint as an interface all static methods
+  /// have been moved in this static class.
+  /// this class contains also the CreateResultPoint method that must be used
+  /// in place of the actual class constructor
+  /// </summary>
+  TResultPointHelpers = class
+    protected
+       /// <summary>
+       /// Returns the z component of the cross product between vectors BC and BA.
+       /// </summary>
+       class function crossProductZ(const pointA, pointB, pointC: IResultPoint): Single; static;
+    public
+       /// <summary>
+       /// Initializes a new instance of <see cref="TResultPoint"/> and returns
+       /// its <see cref="IResultPoint"/> interface
+       /// </summary>
+       class function CreateResultPoint:IResultPoint; overload;
+       /// <summary>
+       /// Initializes a new instance of  <see cref="TResultPoint"/> and returns
+       /// its <see cref="IResultPoint"/> interface
+       /// </summary>
+       /// <param name="x">The x.</param>
+       /// <param name="y">The y.</param>
+       class function CreateResultPoint(const pX, pY: Single):IResultPoint; overload;
+       /// <summary>
+       /// Orders an array of three ResultPoints in an order [A,B,C] such that AB is less than AC and
+       /// BC is less than AC and the angle between BC and BA is less than 180 degrees.
+       /// </summary>
+       /// <param name="patterns">array of three <see cref="IResultPoint" /> to order</param>
+       class procedure orderBestPatterns(const patterns : TArray<IResultPoint>); static;
+       /// <summary>
+       /// calculates the distance between two points
+       /// </summary>
+       /// <param name="pattern1">first pattern</param>
+       /// <param name="pattern2">second pattern</param>
+       /// <returns>
+       /// distance between two points
+       /// </returns>
+       class function distance(const pattern1, pattern2: IResultPoint) : Single; static;
+  end;
+
+
 
   /// <summary> Callback which is invoked when a possible result point (significant
   /// point in the barcode image such as a corner) is found.
@@ -68,7 +101,7 @@ type
   /// </summary>
   /// <seealso cref="TDecodeHintType.NEED_RESULT_POINT_CALLBACK">
   /// </seealso>
-  TResultPointCallback = procedure(const point: TResultPoint) of object;
+  TResultPointCallback = procedure(const point: IResultPoint) of object;
 
   TResultPointEventObject = class(TObject)
   private
@@ -80,65 +113,21 @@ type
   end;
 
 implementation
+uses ZXing.ResultPointImplementation;
 
-{ TResultPoint }
-
-/// <summary>
-/// Initializes a new instance of the <see cref="TResultPoint"/> class.
-/// </summary>
-constructor TResultPoint.Create;
+class function TResultPointHelpers.CreateResultPoint:IResultPoint;
 begin
-  inherited;
+   result := ZXing.ResultPointImplementation.NewResultPoint;
 end;
 
-// <summary>
-/// Initializes a new instance of the <see cref="TResultPoint"/> class.
-/// </summary>
-/// <param name="x">The x.</param>
-/// <param name="y">The y.</param>
-constructor TResultPoint.Create(const pX, pY: Single);
+class function TResultPointHelpers.CreateResultPoint(const pX, pY: Single):IResultPoint;
 begin
-  inherited Create;
-
-  Fx := pX;
-  Fy := pY;
-  bytesX := TSingleArray(pX);
-  bytesY := TSingleArray(pY);
+   result := ZXing.ResultPointImplementation.NewResultPoint(px,py);
 end;
 
-destructor TResultPoint.Destroy;
-var
-  n: Single;
-begin
-  n := 0;
-  bytesX := TSingleArray(n);
-  bytesY := TSingleArray(n);
-  inherited;
-end;
 
-procedure TResultPoint.SetX(const AValue: Single);
-begin
-  if (AValue <> Fx) then
-  begin
-    Fx := AValue;
-    bytesX := TSingleArray(Fx);
-  end;
-end;
-
-procedure TResultPoint.SetY(const AValue: Single);
-begin
-  if (AValue <> Fy) then
-  begin
-    Fy := AValue;
-    bytesY := TSingleArray(Fy);
-  end;
-end;
-
-/// <summary>
-/// Returns the z component of the cross product between vectors BC and BA.
-/// </summary>
-class function TResultPoint.crossProductZ(const pointA, pointB,
-  pointC: TResultPoint): Single;
+class function TResultPointHelpers.crossProductZ(const pointA, pointB,
+  pointC: IResultPoint): Single;
 var
   bX, bY: Single;
 begin
@@ -148,61 +137,19 @@ begin
     ((pointC.y - bY) * (pointA.x - bX));
 end;
 
-/// <summary>
-/// calculates the distance between two points
-/// </summary>
-/// <param name="pattern1">first pattern</param>
-/// <param name="pattern2">second pattern</param>
-/// <returns>
-/// distance between two points
-/// </returns>
-class function TResultPoint.distance(const pattern1,
-  pattern2: TResultPoint): Single;
+
+class function TResultPointHelpers.distance(const pattern1,
+  pattern2: IResultPoint): Single;
 begin
   Result := TMathUtils.distance(pattern1.x, pattern1.y, pattern2.x, pattern2.y);
 end;
 
-/// <summary>
-/// Determines whether the specified <see cref="System.TObject"/> is equal to this instance.
-/// </summary>
-/// <param name="other">The <see cref="System.TObject"/> to compare with this instance.</param>
-/// <returns>
-/// <c>true</c> if the specified <see cref="System.TObject"/> is equal to this instance; otherwise, <c>false</c>.
-/// </returns>
-function TResultPoint.Equals(other: TObject): Boolean;
-var
-  otherPoint: TResultPoint;
-begin
-  otherPoint := other as TResultPoint;
-  if (otherPoint = nil) then
-    Result := false
-  else
-    Result := ((otherPoint.x = Fx) and (otherPoint.y = Fy));
-end;
 
-/// <summary>
-/// Returns a hash code for this instance.
-/// </summary>
-/// <returns>
-/// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
-/// </returns>
-function TResultPoint.GetHashCode: Integer;
-begin
-  Result := 31 * ((bytesX[0] shl 24) + (bytesX[1] shl 16) + (bytesX[2] shl 8) +
-    bytesX[3]) + (bytesY[0] shl 24) + (bytesY[1] shl 16) + (bytesY[2] shl 8) +
-    bytesY[3];
-end;
-
-/// <summary>
-/// Orders an array of three ResultPoints in an order [A,B,C] such that AB is less than AC and
-/// BC is less than AC and the angle between BC and BA is less than 180 degrees.
-/// </summary>
-/// <param name="patterns">array of three <see cref="TResultPoint" /> to order</param>
-class procedure TResultPoint.orderBestPatterns(const patterns
-  : TArray<TResultPoint>);
+class procedure TResultPointHelpers.orderBestPatterns(const patterns
+  : TArray<IResultPoint>);
 var
   zeroOneDistance, oneTwoDistance, zeroTwoDistance: Single;
-  pointA, pointB, pointC, temp: TResultPoint;
+  pointA, pointB, pointC, temp: IResultPoint;
 begin
   // Find distances between pattern centers
   zeroOneDistance := distance(patterns[0], patterns[1]);
@@ -247,18 +194,6 @@ begin
   patterns[2] := pointC;
 end;
 
-/// <summary>
-/// Returns a <see cref="System.String"/> that represents this instance.
-/// </summary>
-/// <returns>
-/// A <see cref="System.String"/> that represents this instance.
-/// </returns>
-function TResultPoint.ToString: String;
-begin
-  if (FToString = '') then
-    FToString := Format('(%g),(%g)', [Fx, Fy]);
-  Result := FToString;
-end;
 
 { TResultPointEventObject }
 
@@ -267,14 +202,5 @@ begin
   Self.FResultPointCallback := AEvent;
 end;
 
-constructor TResultPoint.Clone(const src: TResultPoint);
-begin
-  inherited Create;
-  Self.Fx := src.Fx;
-  Self.Fy := src.Fy;
-  Self.bytesX := src.bytesX;
-  Self.bytesY := src.bytesY;
-  Self.FToString := src.FToString;
-end;
 
 end.

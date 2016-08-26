@@ -43,7 +43,7 @@ type
     /// Apply the result points' order correction due to mirroring.
     /// </summary>
     /// <param name="points">Array of points to apply mirror correction to.</param>
-    procedure applyMirroredCorrection(const points: TArray<TResultPoint>);
+    procedure applyMirroredCorrection(const points: TArray<IResultPoint>);
 
     /// <summary>
     /// true if the QR Code was mirrored.
@@ -61,9 +61,9 @@ begin
 end;
 
 procedure TQRCodeDecoderMetaData.applyMirroredCorrection(
-  const points: TArray<TResultPoint>);
+  const points: TArray<IResultPoint>);
 var
-  bottomLeft: TResultPoint;
+  bottomLeft: IResultPoint;
 begin
   if ((FMirrored and (points <> nil)) and (Length(points) >= 3)) then
   begin

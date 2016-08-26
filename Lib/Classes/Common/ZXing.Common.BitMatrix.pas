@@ -65,19 +65,21 @@ type
     function getBottomRightOnBit: TArray<Integer>;
     function getEnclosingRectangle: TArray<Integer>;
     function GetHashCode: Integer; override;
-    function getRow(const y: Integer; row: TBitArray): TBitArray;
+    function getRow(const y: Integer; row: IBitArray): IBitArray;
     function getTopLeftOnBit: TArray<Integer>;
     procedure Rotate180;
     procedure setRegion(left: Integer; top: Integer; width: Integer;
       height: Integer);
-    procedure setRow(y: Integer; row: TBitArray);
+    procedure setRow(y: Integer; row: IBitArray);
     function ToBitmap: TBitmap; overload;
     function ToBitmap(format: TBarcodeFormat; content: string)
       : TBitmap; overload;
 
     property width: Integer read Fwidth;
     property height: Integer read Fheight;
-    property Self[x, y: Integer]: Boolean read getBit write setBit; default;
+    property Matrix[x, y: Integer]: Boolean read getBit write setBit; default;
+    // added for debugging
+    function ToString:string; override;
   end;
 
 implementation
@@ -341,13 +343,13 @@ begin
   result := hash;
 end;
 
-function TBitMatrix.getRow(const y: Integer; row: TBitArray): TBitArray;
+function TBitMatrix.getRow(const y: Integer; row: IBitArray): IBitArray;
 var
   x,
   offset: Integer;
 begin
   if ((row = nil) or (row.Size < Self.Fwidth)) then
-    row := TBitArray.Create(Self.Fwidth)
+    row := TBitArrayHelpers.CreateBitArray(Self.Fwidth)
   else
     row.Clear;
   offset := (y * Self.FrowSize);
@@ -399,12 +401,12 @@ var
   width, 
   height     : Integer;
   topRow, 
-  bottomRow  : TBitArray;
+  bottomRow  : IBitArray;
 begin
   width := Self.Fwidth;
   height := Self.Fheight;
-  topRow := TBitArray.Create(width);
-  bottomRow := TBitArray.Create(width);
+  topRow := TBitArrayHelpers.CreateBitArray(width);
+  bottomRow := TBitArrayHelpers.CreateBitArray(width);
   i := 0;
 
   while ((i < ((height + 1) div 2))) do
@@ -454,7 +456,7 @@ begin
   end;
 end;
 
-procedure TBitMatrix.setRow(y: Integer; row: TBitArray);
+procedure TBitMatrix.setRow(y: Integer; row: IBitArray);
 begin
   Fbits := System.Copy(row.bits, (y * FrowSize), FrowSize);
 end;
@@ -462,6 +464,20 @@ end;
 function TBitMatrix.ToBitmap(format: TBarcodeFormat; content: string): TBitmap;
 begin
   raise ENotImplemented.Create('Converting to bitmap is not implemented yet!');
+end;
+
+function TBitMatrix.ToString: string;
+var r,c:integer;
+begin
+   for r := 0 to Fheight -1 do begin
+       for c:= 0 to Fwidth-1 do begin
+         if matrix[r,c]  then
+           result := result + '*'
+         else
+           result := result + '.';
+       end;
+       result := result + #13#10;
+   end;
 end;
 
 function TBitMatrix.ToBitmap: TBitmap;

@@ -44,17 +44,17 @@ type
     constructor Create(image: TBitMatrix); overload;
     constructor Create(image: TBitMatrix; initSize: Integer; x: Integer;
       y: Integer); overload;
-    function centerEdges(y: TResultPoint; z: TResultPoint; x: TResultPoint;
-      t: TResultPoint): TArray<TResultPoint>;
+    function centerEdges(y: IResultPoint; z: IResultPoint; x: IResultPoint;
+      t: IResultPoint): TArray<IResultPoint>;
     function containsBlackPoint(a: Integer; b: Integer; fixed: Integer;
       horizontal: boolean): boolean;
     function getBlackPointOnSegment(aX: Single; aY: Single; bX: Single;
-      bY: Single): TResultPoint;
+      bY: Single): IResultPoint;
   public
     class function New(image: TBitMatrix): TWhiteRectangleDetector; overload;
     class function New(image: TBitMatrix; initSize: Integer; x: Integer;
       y: Integer): TWhiteRectangleDetector; overload; static;
-    function detect(): TArray<TResultPoint>;
+    function detect(): TArray<IResultPoint>;
   end;
 
 implementation
@@ -81,8 +81,8 @@ begin
   Self.downInit := (y + halfsize);
 end;
 
-function TWhiteRectangleDetector.centerEdges(y: TResultPoint; z: TResultPoint;
-  x: TResultPoint; t: TResultPoint): TArray<TResultPoint>;
+function TWhiteRectangleDetector.centerEdges(y: IResultPoint; z: IResultPoint;
+  x: IResultPoint; t: IResultPoint): TArray<IResultPoint>;
 var
   yi, yj, zi, zj, xi, xj, ti, tj: Single;
 begin
@@ -97,15 +97,15 @@ begin
 
   if (yi < (Self.width div 2)) then
   begin
-    Result := TArray<TResultPoint>.Create(TResultPoint.Create((ti - 1), (tj + 1)
-      ), TResultPoint.Create((zi + 1), (zj + 1)), TResultPoint.Create((xi - 1),
-      (xj - 1)), TResultPoint.Create((yi + 1), (yj - 1)));
+    Result := TArray<IResultPoint>.Create(TResultPointHelpers.CreateResultPoint((ti - 1), (tj + 1)
+      ), TResultPointHelpers.CreateResultPoint((zi + 1), (zj + 1)), TResultPointHelpers.CreateResultPoint((xi - 1),
+      (xj - 1)), TResultPointHelpers.CreateResultPoint((yi + 1), (yj - 1)));
     exit;
   end;
 
-  Result := TArray<TResultPoint>.Create(TResultPoint.Create((ti + 1), (tj + 1)),
-    TResultPoint.Create((zi + 1), (zj - 1)), TResultPoint.Create((xi - 1),
-    (xj + 1)), TResultPoint.Create((yi - 1), (yj - 1)));
+  Result := TArray<IResultPoint>.Create(TResultPointHelpers.CreateResultPoint((ti + 1), (tj + 1)),
+    TResultPointHelpers.CreateResultPoint((zi + 1), (zj - 1)), TResultPointHelpers.CreateResultPoint((xi - 1),
+    (xj + 1)), TResultPointHelpers.CreateResultPoint((yi - 1), (yj - 1)));
 
 end;
 
@@ -183,7 +183,7 @@ begin
   end;
 end;
 
-function TWhiteRectangleDetector.detect: TArray<TResultPoint>;
+function TWhiteRectangleDetector.detect: TArray<IResultPoint>;
 var
   left, right, up, down: Integer;
   sizeExceeded, aBlackPointFoundOnBorder, atLeastOneBlackPointFoundOnBorder,
@@ -192,7 +192,7 @@ var
   rightBorderNotWhite, bottomBorderNotWhite, leftBorderNotWhite,
   topBorderNotWhite: boolean;
   i: Integer;
-  z, t, x, y: TResultPoint;
+  z, t, x, y: IResultPoint;
   maxSize: Integer;
 begin
   z := nil;
@@ -308,83 +308,73 @@ begin
     exit;
   end;
 
-  try
-
-    maxSize := (right - left);
-    i := 1;
-    while ((i < maxSize)) do
-    begin
-      z := Self.getBlackPointOnSegment(left, (down - i), (left + i), down);
-      if (z <> nil) then
-        break;
-      Inc(i);
-    end;
-
-    if (z = nil) then
-    begin
-      Result := nil;
-      exit;
-    end;
-
-    i := 1;
-    while ((i < maxSize)) do
-    begin
-      t := Self.getBlackPointOnSegment(left, (up + i), (left + i), up);
-      if (t <> nil) then
-        break;
-      Inc(i);
-    end;
-
-    if (t = nil) then
-    begin
-      Result := nil;
-      exit;
-    end;
-
-    i := 1;
-    while ((i < maxSize)) do
-    begin
-      x := Self.getBlackPointOnSegment(right, (up + i), (right - i), up);
-      if (x <> nil) then
-        break;
-      Inc(i);
-    end;
-
-    if (x = nil) then
-    begin
-      Result := nil;
-      exit;
-    end;
-
-    y := nil;
-    i := 1;
-    while ((i < maxSize)) do
-    begin
-      y := Self.getBlackPointOnSegment(right, (down - i), (right - i), down);
-      if (y <> nil) then
-        break;
-      Inc(i);
-    end;
-
-    if (y = nil) then
-    begin
-      Result := nil;
-      exit;
-    end;
-
-    Result := Self.centerEdges(y, z, x, t);
-
-  finally
-    y.Free;
-    z.Free;
-    x.Free;
-    t.Free;
+  maxSize := (right - left);
+  i := 1;
+  while ((i < maxSize)) do
+  begin
+    z := Self.getBlackPointOnSegment(left, (down - i), (left + i), down);
+    if (z <> nil) then
+      break;
+    Inc(i);
   end;
 
+  if (z = nil) then
+  begin
+    Result := nil;
+    exit;
+  end;
+
+  i := 1;
+  while ((i < maxSize)) do
+  begin
+    t := Self.getBlackPointOnSegment(left, (up + i), (left + i), up);
+    if (t <> nil) then
+      break;
+    Inc(i);
+  end;
+
+  if (t = nil) then
+  begin
+    Result := nil;
+    exit;
+  end;
+
+  i := 1;
+  while ((i < maxSize)) do
+  begin
+    x := Self.getBlackPointOnSegment(right, (up + i), (right - i), up);
+    if (x <> nil) then
+      break;
+    Inc(i);
+  end;
+
+  if (x = nil) then
+  begin
+    Result := nil;
+    exit;
+  end;
+
+  y := nil;
+  i := 1;
+  while ((i < maxSize)) do
+  begin
+    y := Self.getBlackPointOnSegment(right, (down - i), (right - i), down);
+    if (y <> nil) then
+      break;
+    Inc(i);
+  end;
+
+  if (y = nil) then
+  begin
+    Result := nil;
+    exit;
+  end;
+
+  Result := Self.centerEdges(y, z, x, t);
 end;
 
 function TWhiteRectangleDetector.getBlackPointOnSegment(aX: Single; aY: Single;
-  bX: Single; bY: Single): TResultPoint;
+  bX: Single; bY: Single): IResultPoint;
 var
   i, x, y, dist: Integer;
   xStep, yStep: Single;
@@ -399,7 +389,7 @@ begin
     y := TMathUtils.round((aY + (i * yStep)));
     if (Self.image[x, y]) then
     begin
-      Result := TResultPoint.Create(x, y);
+      Result := TResultPointHelpers.CreateResultPoint(x, y);
       exit;
     end;
     Inc(i);

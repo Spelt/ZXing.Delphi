@@ -45,8 +45,10 @@ type
     function CreateLuminanceSource(const newLuminances: TArray<Byte>;
       const width, height: Integer): TLuminanceSource; virtual; abstract;
   public
-    constructor Create(const width, height: Integer); overload;
-    constructor Create(const luminanceArray: TArray<Byte>; const width, height: Integer); overload;
+    
+    // added the "reintroduce" keyword to shut off the "method hides another method with the same name in the base class"
+    constructor Create(const width, height: Integer);  reintroduce; overload; 
+    constructor Create(const luminanceArray: TArray<Byte>; const width, height: Integer);  reintroduce; overload;
 
     function getRow(const y: Integer; row: TArray<Byte>): TArray<Byte>; override;
     function rotateCounterClockwise(): TLuminanceSource; override;
