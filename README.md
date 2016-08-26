@@ -1,5 +1,5 @@
 # ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE7/XE8/10 Seattle and Appmethod. 
+ZXing Barcode Scanning Library for Delphi XE7-10 Berlin and Appmethod. 
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/master/zxing.Delphi.picture1.png )
 
@@ -7,16 +7,32 @@ ZXing.Delphi is a native Object Pascal library that is based on the well known o
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
 
-Its compatible with in Delphi XE7, XE8, 10 Seattle and AppMethod and tested with IOS 8.x, 9.x, Android, Windows 32/64 and OSX. 
+Its compatible with in Delphi XE7 - 10 Berlin and AppMethod and tested with IOS 8.x, 9.x, Android, Windows 32/64 and OSX. 
 The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows applications.  
+
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
 
 ##Important note:
 In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TFocusMode.ContinuousAutoFocus.
 
+###Features
+- Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
+- 100% free. No license fees. Just free.
+- Speed
+- Barcodes: QR-Code, Code128, Code93, ITF, DataMatrix
+- Simple API
+- Unit tests provided
+	
 
 ###Changes
+- v3.1 Date: 2016/06/28 (Super many thank to: Carlo Sirna)
+	- Memleak fixes for old gen compilers (win32/win64).
+	- Fix: QRCode ECI character set + extra unit test.
+	- Added 'Load Image' command in test project.
+	- Some other bug fixes.
+
+
 - v3.0 Date: 2016/04/28 (Great many thanks to: Kai Gossens and Raphael Büchler)
 
 	- Added DataMatrix.
@@ -52,14 +68,6 @@ In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TF
  	- Base classes 1D barcode implemented.	
  	- Implemented Code 128 + unit test.
 
-###Features
-- Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
-- 100% FREE. No ridiculous license fees. Just FREE.
-- Speed
-- Barcodes: QR-Code, Code128, Code93, ITF, DataMatrix
-- Simple API
-- Unit tests provided
-	
 	
 #Help wanted
 Although it works extremely well, it works currently only with a few barcodes.For me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
@@ -107,6 +115,7 @@ ZXing.Delphi is a project that I've put together with the work of others.  So na
 - P. B. Hofstede
 - Kai Gossens
 - Raphael Büchler
+- Cralo Sirna
 
 
 ###License
