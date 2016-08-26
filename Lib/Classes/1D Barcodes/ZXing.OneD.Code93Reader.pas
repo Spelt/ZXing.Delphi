@@ -46,7 +46,7 @@ type
       checkPosition, weightMax: Integer): boolean;
     class function decodeExtended(encoded: TStringBuilder): string; static;
 
-    function findAsteriskPattern(row: TBitArray): TArray<Integer>;
+    function findAsteriskPattern(row: IBitArray): TArray<Integer>;
     class function patternToChar(pattern: Integer; var c: Char)
       : boolean; static;
     class function toPattern(counters: TArray<Integer>): Integer; static;
@@ -65,7 +65,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
   end;
 
@@ -261,7 +261,7 @@ begin
 
 end;
 
-function TCode93Reader.decodeRow(const rowNumber: Integer; const row: TBitArray;
+function TCode93Reader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
   decodedChar: Char;
@@ -274,8 +274,8 @@ var
   Left, Right: Single;
   resultPointCallback: TResultPointCallback;
   obj: TObject;
-  resultPoints: TArray<TResultPoint>;
-  resultPointLeft, resultPointRight: TResultPoint;
+  resultPoints: TArray<IResultPoint>;
+  resultPointLeft, resultPointRight: IResultPoint;
 begin
   for index := 0 to length(counters) - 1 do
     counters[index] := 0;
@@ -358,9 +358,11 @@ begin
   Left := (start[1] + start[0]) div 2;
   Right := (lastStart + lastPatternSize) div 2;
 
-  resultPointLeft := TResultPoint.Create(Left, rowNumber);
-  resultPointRight := TResultPoint.Create(Right, rowNumber);
+  resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
+  resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
   resultPoints := [resultPointLeft, resultPointRight];
+
+  resultPointCallback := nil; // it is a local variable: it doesn't get NIL as default value, and the following ifs do not assign a value for all possible cases
 
   if ((hints = nil) or
       (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK)))
@@ -384,7 +386,7 @@ begin
     TBarcodeFormat.CODE_39);
 end;
 
-function TCode93Reader.findAsteriskPattern(row: TBitArray): TArray<Integer>;
+function TCode93Reader.findAsteriskPattern(row: IBitArray): TArray<Integer>;
 var
   i, l, patternStart, patternLength, width, counterPosition, rowOffset,
     index: Integer;

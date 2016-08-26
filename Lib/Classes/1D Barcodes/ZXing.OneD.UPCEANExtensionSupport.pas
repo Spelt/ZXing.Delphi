@@ -47,7 +47,7 @@ type
     class procedure InitializeClass; static;
     class procedure FinalizeClass; static;
   public
-    function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const rowOffset: Integer): TReadResult;
   end;
 
@@ -73,7 +73,7 @@ begin
 end;
 
 function TUPCEANExtensionSupport.decodeRow(const rowNumber: Integer;
-  const row: TBitArray; const rowOffset: Integer): TReadResult;
+  const row: IBitArray; const rowOffset: Integer): TReadResult;
 var
   extensionStartRange: TArray<Integer>;
   res : TReadResult;

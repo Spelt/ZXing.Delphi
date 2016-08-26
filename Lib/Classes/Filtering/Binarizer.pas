@@ -60,7 +60,7 @@ type
     /// <returns> The array of bits for this row (true means black).</returns>
   public
     function LuminanceSource(): TLuminanceSource;
-    function GetBlackRow(y: Integer; row: TBitArray): TBitArray;
+    function GetBlackRow(y: Integer; row: IBitArray): IBitArray;
       virtual; abstract;
 
     function BlackMatrix: TBitMatrix; virtual; abstract;

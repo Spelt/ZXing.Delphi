@@ -67,18 +67,18 @@ type
 
     class function decodeDigit(counters: TArray<Integer>;
       out bestMatch: Integer): boolean; static;
-    function decodeEnd(row: TBitArray): TArray<Integer>;
-    class function skipWhiteSpace(row: TBitArray): Integer; static;
-    class function findGuardPattern(row: TBitArray; rowOffset: Integer;
+    function decodeEnd(row: IBitArray): TArray<Integer>;
+    class function skipWhiteSpace(row: IBitArray): Integer; static;
+    class function findGuardPattern(row: IBitArray; rowOffset: Integer;
       pattern: TArray<Integer>): TArray<Integer>; static;
-    function validateQuietZone(row: TBitArray; startPattern: Integer): boolean;
-    function decodeStart(row: TBitArray): TArray<Integer>;
-    class function decodeMiddle(row: TBitArray;
+    function validateQuietZone(row: IBitArray; startPattern: Integer): boolean;
+    function decodeStart(row: IBitArray): TArray<Integer>;
+    class function decodeMiddle(row: IBitArray;
       payloadStart, payloadEnd: Integer; SBResult: TStringBuilder)
       : boolean; static;
     class procedure ClassInit();
   public
-    function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
   end;
 
@@ -111,7 +111,7 @@ begin
   [N, W, N, W, N]]; // 9
 end;
 
-function TITFReader.decodeRow(const rowNumber: Integer; const row: TBitArray;
+function TITFReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
   allowedLength: Integer;
@@ -125,9 +125,9 @@ var
   SBResult: TStringBuilder;
   resultPointCallback: TResultPointCallback;
   obj: TObject;
-  resultPoints: TArray<TResultPoint>;
+  resultPoints: TArray<IResultPoint>;
   resultPointLeft,
-  resultPointRight: TResultPoint;
+  resultPointRight: IResultPoint;
 begin
   startRange := decodeStart(row);
   if (startRange = nil) then
@@ -197,9 +197,14 @@ begin
 
   end;
 
-  resultPointLeft := TResultPoint.Create(startRange[1], rowNumber);
-  resultPointRight := TResultPoint.Create(endRange[0], rowNumber);
+  resultPointLeft := TResultPointHelpers.CreateResultPoint(startRange[1], rowNumber);
+  resultPointRight := TResultPointHelpers.CreateResultPoint(endRange[0], rowNumber);
   resultPoints := [resultPointLeft, resultPointRight];
+
+  resultPointCallback := nil; // had to add this initialization because the following if/else construct does not assign a value
+                            // for all possible cases. Being resultPointCallback a local variable it is not initialized by default to null,
+                            // so you could get unpredictable results
+
 
   if ((hints = nil) or
       (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK)))
@@ -255,7 +260,7 @@ begin
 
 end;
 
-function TITFReader.decodeStart(row: TBitArray): TArray<Integer>;
+function TITFReader.decodeStart(row: IBitArray): TArray<Integer>;
 var
   endStart: Integer;
   startPattern: TArray<Integer>;
@@ -281,7 +286,7 @@ begin
   Result := startPattern;
 end;
 
-class function TITFReader.decodeMiddle(row: TBitArray;
+class function TITFReader.decodeMiddle(row: IBitArray;
   payloadStart, payloadEnd: Integer; SBResult: TStringBuilder): boolean;
 var
   bestMatch: Integer;
@@ -335,7 +340,7 @@ begin
   Result := true;
 end;
 
-function TITFReader.decodeEnd(row: TBitArray): TArray<Integer>;
+function TITFReader.decodeEnd(row: IBitArray): TArray<Integer>;
 var
   endStart: Integer;
   endPattern: TArray<Integer>;
@@ -370,7 +375,7 @@ begin
   Result := endPattern;
 end;
 
-class function TITFReader.findGuardPattern(row: TBitArray; rowOffset: Integer;
+class function TITFReader.findGuardPattern(row: IBitArray; rowOffset: Integer;
   pattern: TArray<Integer>): TArray<Integer>;
 var
   patternLength: Integer;
@@ -380,7 +385,6 @@ var
   counterPosition: Integer;
   patternStart: Integer;
   x: Integer;
-  l: Integer;
 begin
   patternLength := Length(pattern);
   counters := TArray<Integer>.Create();
@@ -437,7 +441,7 @@ begin
 
 end;
 
-class function TITFReader.skipWhiteSpace(row: TBitArray): Integer;
+class function TITFReader.skipWhiteSpace(row: IBitArray): Integer;
 var
   width: Integer;
   endStart: Integer;
@@ -455,7 +459,7 @@ begin
 
 end;
 
-function TITFReader.validateQuietZone(row: TBitArray;
+function TITFReader.validateQuietZone(row: IBitArray;
   startPattern: Integer): boolean;
 var
   quietCount: Integer;

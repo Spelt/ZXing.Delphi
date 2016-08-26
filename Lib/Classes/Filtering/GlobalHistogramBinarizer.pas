@@ -44,7 +44,7 @@ type
     constructor Create(source: TLuminanceSource);
 
     // constructor GlobalHistogramBinarizer(source: TLuminanceSource);
-    function GetBlackRow(y: Integer; row: TBitArray): TBitArray; override;
+    function GetBlackRow(y: Integer; row: IBitArray): IBitArray; override;
   end;
 
 implementation
@@ -81,8 +81,8 @@ end;
   end;
 }
 
-function TGlobalHistogramBinarizer.GetBlackRow(y: Integer; row: TBitArray)
-  : TBitArray;
+function TGlobalHistogramBinarizer.GetBlackRow(y: Integer; row: IBitArray)
+  : IBitArray;
 var
   localLuminances: TArray<Byte>;
   localBuckets: TArray<Integer>;
@@ -91,7 +91,7 @@ begin
   w := width;
   if ((row = nil) or (row.Size < w)) then
   begin
-    row := TBitArray.Create(w);
+    row := TBitArrayHelpers.CreateBitArray(w);
   end
   else
   begin

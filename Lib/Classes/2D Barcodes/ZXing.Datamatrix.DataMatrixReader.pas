@@ -47,7 +47,7 @@ type
   TDataMatrixReader = class(TInterfacedObject, IReader)
   private
     FDecoder: TDataMatrixDecoder;
-    NO_POINTS: TArray<TResultPoint>;
+    NO_POINTS: TArray<IResultPoint>;
 
     /// <summary>
     /// This method detects a code in a "pure" image -- that is, pure monochrome image
@@ -84,7 +84,7 @@ constructor TDataMatrixReader.Create;
 begin
   inherited;
   FDecoder := TDataMatrixDecoder.Create;
-  NO_POINTS := TArray<TResultPoint>.Create();
+  NO_POINTS := TArray<IResultPoint>.Create();
 end;
 
 destructor TDataMatrixReader.Destroy;
@@ -104,7 +104,7 @@ function TDataMatrixReader.decode(const image: TBinaryBitmap;
 var
   matrixDetector: TDataMatrixDetector;
   DecoderResult: TDecoderResult;
-  points: TArray<TResultPoint>;
+  points: TArray<IResultPoint>;
   bits: TBitMatrix;
   DetectorResult: TDetectorResult;
   byteSegments: TList<TArray<Byte>>;

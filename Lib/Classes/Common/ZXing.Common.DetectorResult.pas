@@ -35,19 +35,19 @@ type
   TDetectorResult = class
   private
     Fbits: TBitmatrix;
-    Fpoints: TArray<TResultPoint>;
+    Fpoints: TArray<IResultPoint>;
   public
-    constructor Create(const bits: TBitmatrix; const points: TArray<TResultPoint>);
+    constructor Create(const bits: TBitmatrix; const points: TArray<IResultPoint>);
     destructor Destroy; override;
 
     property bits: TBitmatrix read Fbits;
-    property points: TArray<TResultPoint> read Fpoints;
+    property points: TArray<IResultPoint> read Fpoints;
   end;
 
 implementation
 
 constructor TDetectorResult.Create(const bits: TBitmatrix;
-  const points: TArray<TResultPoint>);
+  const points: TArray<IResultPoint>);
 begin
   Fbits := bits;
   Fpoints := points;

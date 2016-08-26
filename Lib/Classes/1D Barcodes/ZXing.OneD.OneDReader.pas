@@ -83,7 +83,7 @@ type
     /// <param name="start">The start.</param>
     /// <param name="counters">The counters.</param>
     /// <returns></returns>
-    class function RecordPatternInReverse(row: TBitArray; start: Integer;
+    class function RecordPatternInReverse(row: IBitArray; start: Integer;
       counters: TArray<Integer>): Boolean; Static;
 
     /// <summary>
@@ -96,7 +96,7 @@ type
     /// <param name="row">row to count from</param>
     /// <param name="start">offset into row to start at</param>
     /// <param name="counters">array into which to record counts</param>
-    class function recordPattern(row: TBitArray; start: Integer;
+    class function recordPattern(row: IBitArray; start: Integer;
       counters: TArray<Integer>; numCounters: Integer): Boolean;
       overload; static;
   public
@@ -139,7 +139,7 @@ type
     /// <param name="row">row to count from</param>
     /// <param name="start">offset into row to start at</param>
     /// <param name="counters">array into which to record counts</param>
-    class function recordPattern(row: TBitArray; start: Integer;
+    class function recordPattern(row: IBitArray; start: Integer;
       counters: TArray<Integer>): Boolean; overload; static;
 
     /// <summary>
@@ -152,7 +152,7 @@ type
     /// <returns>
     /// <see cref="Result"/>containing encoded string and start/end of barcode
     /// </returns>
-    function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       virtual; abstract;
   end;
@@ -179,7 +179,7 @@ var
   rotatedImage: TBinaryBitmap;
   metadata: TDictionary<TResultMetadataType, TObject>;
   orientation, height, i, l: Integer;
-  points: TArray<TResultPoint>;
+  points: TArray<IResultPoint>;
 
 begin
   Result := doDecode(image, hints);
@@ -225,7 +225,7 @@ begin
       l := Length(points) - 1;
       for i := 0 to l do
       begin
-        points[i] := TResultPoint.Create(height - points[i].Y - 1, points[i].X);
+        points[i] := TResultPointHelpers.CreateResultPoint(height - points[i].Y - 1, points[i].X);
       end;
     end;
 
@@ -239,116 +239,111 @@ function TOneDReader.doDecode(const image: TBinaryBitmap;
 var
   attempt, X, rowNumber, rowStepsAboveOrBelow, width, height, middle,
     rowStep, maxLines: Integer;
-  row: TBitArray;
+  row: IBitArray;
   isAbove: Boolean;
   newHints: TDictionary<TDecodeHintType, TObject>;
   ReadResult: TReadResult;
-  points: TArray<TResultPoint>;
+  points: TArray<IResultPoint>;
   Key: TDecodeHintType;
 
 begin
   width := image.width;
   height := image.height;
-  row := TBitArray.Create(width);
+  row := TBitArrayHelpers.CreateBitArray(width); // row is a interfaced object: we don't need to free it explicitly
 
-  try
+  middle := TMathUtils.Asr(height, 1);
 
-    middle := TMathUtils.Asr(height, 1);
+  rowStep := 5;
+  maxLines := height; // Look at the whole image, not just the center
 
-    rowStep := 5;
-    maxLines := height; // Look at the whole image, not just the center
+  for X := 0 to maxLines - 1 do
+  begin
+    // Scanning from the middle out. Determine which row we're looking at next:
+    rowStepsAboveOrBelow := TMathUtils.Asr((X + 1), 1);
+    isAbove := (X and $01) = 0; // i.e. is x even?
 
-    for X := 0 to maxLines - 1 do
+    if (not isAbove) then
     begin
-      // Scanning from the middle out. Determine which row we're looking at next:
-      rowStepsAboveOrBelow := TMathUtils.Asr((X + 1), 1);
-      isAbove := (X and $01) = 0; // i.e. is x even?
+      rowStepsAboveOrBelow := rowStepsAboveOrBelow * -1;
+    end;
+    rowNumber := middle + rowStep * rowStepsAboveOrBelow;
 
-      if (not isAbove) then
+    if ((rowNumber < 0) or (rowNumber >= height)) then
+    begin
+      // Oops, if we run off the top or bottom, stop
+      break;
+    end;
+
+    // Estimate black point for this row and load it:
+    row := image.getBlackRow(rowNumber, row);
+    if (row = nil) then
+    begin
+      continue;
+    end;
+
+    // While we have the image data in a BitArray, it's fairly cheap to reverse it in place to
+    // handle decoding upside down barcodes.
+    // for attempt := 0 to (attempt < 2) do
+    for attempt := 0 to 1 do
+    begin
+
+      if (attempt = 1) then
       begin
-        rowStepsAboveOrBelow := rowStepsAboveOrBelow * -1;
-      end;
-      rowNumber := middle + rowStep * rowStepsAboveOrBelow;
+        // trying again?
+        row.Reverse();
+        // row.reverse(); // reverse the row and continue
+        // This means we will only ever draw result points *once* in the life of this method
+        // since we want to avoid drawing the wrong points after flipping the row, and,
+        // don't want to clutter with noise from every single row scan -- just the scans
+        // that start on the center line.
+        if ((hints <> nil) and
+          hints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then
+        begin
+          newHints := TDictionary<TDecodeHintType, TObject>.Create;
+          for Key in hints.Keys do
+          begin
 
-      if ((rowNumber < 0) or (rowNumber >= height)) then
-      begin
-        // Oops, if we run off the top or bottom, stop
-        break;
+            if (Key <> DecodeHintType.NEED_RESULT_POINT_CALLBACK) then
+            begin
+              newHints.Add(Key, hints[Key]);
+            end;
+
+          end;
+          hints := newHints;
+
+        end;
       end;
 
-      // Estimate black point for this row and load it:
-      row := image.getBlackRow(rowNumber, row);
-      if (row = nil) then
+      // Look for a barcode
+      ReadResult := DecodeRow(rowNumber, row, hints);
+      if (ReadResult = nil) then
       begin
         continue;
       end;
 
-      // While we have the image data in a BitArray, it's fairly cheap to reverse it in place to
-      // handle decoding upside down barcodes.
-      // for attempt := 0 to (attempt < 2) do
-      for attempt := 0 to 1 do
+      // We found our barcode
+      if (attempt = 1) then
       begin
-
-        if (attempt = 1) then
+        // But it was upside down, so note that
+        // ReadResult.putMetadata(ResultMetadataType.orientation, TObject(180));
+        // And remember to flip the result points horizontally.
+        points := ReadResult.ResultPoints;
+        if (points <> nil) then
         begin
-          // trying again?
-          row.Reverse();
-          // row.reverse(); // reverse the row and continue
-          // This means we will only ever draw result points *once* in the life of this method
-          // since we want to avoid drawing the wrong points after flipping the row, and,
-          // don't want to clutter with noise from every single row scan -- just the scans
-          // that start on the center line.
-          if ((hints <> nil) and
-            hints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then
-          begin
-            newHints := TDictionary<TDecodeHintType, TObject>.Create;
-            for Key in hints.Keys do
-            begin
-
-              if (Key <> DecodeHintType.NEED_RESULT_POINT_CALLBACK) then
-              begin
-                newHints.Add(Key, hints[Key]);
-              end;
-
-            end;
-            hints := newHints;
-
-          end;
+          points[0] := TResultPointHelpers.CreateResultPoint(width - points[0].X - 1,
+            points[0].Y);
+          points[1] := TResultPointHelpers.CreateResultPoint(width - points[1].X - 1,
+            points[1].Y);
         end;
 
-        // Look for a barcode
-        ReadResult := DecodeRow(rowNumber, row, hints);
-        if (ReadResult = nil) then
-        begin
-          continue;
-        end;
+      end;
 
-        // We found our barcode
-        if (attempt = 1) then
-        begin
-          // But it was upside down, so note that
-          // ReadResult.putMetadata(ResultMetadataType.orientation, TObject(180));
-          // And remember to flip the result points horizontally.
-          points := ReadResult.ResultPoints;
-          if (points <> nil) then
-          begin
-            points[0] := TResultPoint.Create(width - points[0].X - 1,
-              points[0].Y);
-            points[1] := TResultPoint.Create(width - points[1].X - 1,
-              points[1].Y);
-          end;
+      Exit(ReadResult);
 
-        end;
+    end; // attempt loop
 
-        Exit(ReadResult);
-
-      end; // attempt loop
-
-    end;
-
-  finally
-    FreeAndNil(row);
   end;
+
 
   Result := nil;
 end;
@@ -410,13 +405,13 @@ begin
   Result := totalVariance div total;
 end;
 
-class function TOneDReader.recordPattern(row: TBitArray; start: Integer;
+class function TOneDReader.recordPattern(row: IBitArray; start: Integer;
   counters: TArray<Integer>): Boolean;
 begin
   Result := recordPattern(row, start, counters, Length(counters));
 end;
 
-class function TOneDReader.recordPattern(row: TBitArray; start: Integer;
+class function TOneDReader.recordPattern(row: IBitArray; start: Integer;
   counters: TArray<Integer>; numCounters: Integer): Boolean;
 
 var
@@ -469,7 +464,7 @@ begin
 
 end;
 
-class function TOneDReader.RecordPatternInReverse(row: TBitArray;
+class function TOneDReader.RecordPatternInReverse(row: IBitArray;
   start: Integer; counters: TArray<Integer>): Boolean;
 
 var

@@ -21,26 +21,20 @@ unit ZXing.QrCode.Internal.FinderPattern;
 
 interface
 
-uses 
+uses
   ZXing.ResultPoint;
 
 type
+
   /// <summary>
-  /// <p>Encapsulates a finder pattern, which are the three square patterns found in
-  /// the corners of QR Codes. It also encapsulates a count of similar finder patterns,
-  /// as a convenience to the finder's bookkeeping.</p>
+  ///  As we did for ResultPoint, we use an interfaced object to implement automatic deallocation
+  /// of TAligmnentPattern instances
+  /// the actual implementation of this interface is in unit ZXing.QrCode.Internal.FinderPatternImplementation
   /// </summary>
-  TFinderPattern = class(TResultPoint)
-  private
-    Fcount: Integer;
-    FestimatedModuleSize: Single;
-  public
-    constructor Create(const posX, posY, estimatedModuleSize: Single;
-      const count: Integer); overload;
-    constructor Create(const posX, posY, estimatedModuleSize: Single); overload;
-
-    class procedure orderBestPatterns(const patterns: TArray<TFinderPattern>); static;
-
+  IFinderPattern = interface(IResultPoint)
+    ['{EF95BB2F-8863-4A83-840E-699779592EC0}']
+    function GetCount:integer;
+    procedure SetCount(value:integer);
     /// <summary> <p>Determines if this finder pattern "about equals" a finder pattern at the stated
     /// position and size -- meaning, it is at nearly the same center with nearly the same size.</p>
     /// </summary>
@@ -55,7 +49,7 @@ type
     /// <param name="j">The j.</param>
     /// <param name="newModuleSize">New size of the module.</param>
     /// <returns></returns>
-    function combineEstimate(const i, j, newModuleSize: Single): TFinderPattern;
+    function combineEstimate(const i, j, newModuleSize: Single): IFinderPattern;
 
     /// <summary>
     /// Gets the size of the estimated module.
@@ -63,50 +57,39 @@ type
     /// <value>
     /// The size of the estimated module.
     /// </value>
-    property estimatedModuleSize : Single read FestimatedModuleSize;
-    property count : Integer read Fcount write Fcount;
+    function estimatedModuleSize : Single;
+    property count : Integer read GetCount  write SetCount;
+  end;
+
+
+  /// <summary>
+  ///  contains all static methods for using IFinderPattern instances
+  /// </summary>
+  TFinderPatternHelpers= class(TResultPointHelpers)
+    class function  CreateFinderPattern(const posX, posY, estimatedModuleSize: Single;
+      const count: Integer):IFinderPattern; overload;
+    class function CreateFinderPattern(const posX, posY, estimatedModuleSize: Single):IFinderPattern; overload;
+
+    class procedure orderBestPatterns(const patterns: TArray<IFinderPattern>); static;
+
   end;
 
 implementation
+uses ZXing.QrCode.Internal.FinderPatternImplementation;
 
-{ TFinderPattern }
-
-constructor TFinderPattern.Create(const posX, posY,
-  estimatedModuleSize: Single; const count: Integer);
+class function  TFinderPatternHelpers.CreateFinderPattern(const posX, posY, estimatedModuleSize: Single; const count: Integer):IFinderPattern;
 begin
-  inherited Create(posX, posY);
-
-  FestimatedModuleSize := estimatedModuleSize;
-  Fcount := count;
+   result :=  ZXing.QrCode.Internal.FinderPatternImplementation.NewFinderPattern(posX, posY, estimatedModuleSize ,count);
 end;
 
-constructor TFinderPattern.Create(const posX, posY,
-  estimatedModuleSize: Single);
+class function TFinderPatternHelpers.CreateFinderPattern(const posX, posY, estimatedModuleSize: Single):IFinderPattern;
 begin
-  Self.Create(posX, posY, estimatedModuleSize, 1);
+   result :=  ZXing.QrCode.Internal.FinderPatternImplementation.NewFinderPattern(posX, posY, estimatedModuleSize);
 end;
 
-function TFinderPattern.aboutEquals(const moduleSize, i, j: Single): Boolean;
-var
-  moduleSizeDiff,
-  x, y: Single;
-begin
-  Result := false;
 
-  x := Self.x;
-  y := Self.y;
 
-  if ((Abs(i - self.y) <= moduleSize) and (Abs(j - self.x) <= moduleSize)) then
-  begin
-    moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
-
-    Result := ((moduleSizeDiff <= 1) or
-      (moduleSizeDiff <= self.estimatedModuleSize));
-  end;
-end;
-
-class procedure TFinderPattern.orderBestPatterns(
-  const patterns: TArray<TFinderPattern>);
+class procedure TFinderPatternHelpers.orderBestPatterns( const patterns: TArray<IFinderPattern>);
 var
   zeroOneDistance,
   oneTwoDistance,
@@ -114,7 +97,7 @@ var
   pointA,
   pointB,
   pointC,
-  temp: TFinderPattern;
+  temp: IFinderPattern;
 begin
   // Find distances between pattern centers
   zeroOneDistance := distance(patterns[0], patterns[1]);
@@ -147,7 +130,7 @@ begin
   // This asks whether BC x BA has a positive z component, which is the arrangement
   // we want for A, B, C. If it's negative, then we've got it flipped around and
   // should swap A and C.
-  if (TResultPoint.crossProductZ(pointA, pointB, pointC) < 0) then
+  if (TResultPointHelpers.crossProductZ(pointA, pointB, pointC) < 0) then
   begin
     temp := pointA;
     pointA := pointC;
@@ -159,18 +142,6 @@ begin
   patterns[2] := pointC;
 end;
 
-function TFinderPattern.combineEstimate(const i, j,
-  newModuleSize: Single): TFinderPattern;
-var
-  combinedCount: Integer;
-  combinedX, combinedY: Single;
-begin
-  combinedCount := (Self.count + 1);
-  combinedX := ((Self.count * Self.x) + j) / combinedCount;
-  combinedY := ((Self.count * Self.y) + i) / combinedCount;
-  Result := TFinderPattern.Create(combinedX, combinedY,
-    (((Self.count * Self.estimatedModuleSize) + newModuleSize) / combinedCount),
-    combinedCount)
-end;
+
 
 end.

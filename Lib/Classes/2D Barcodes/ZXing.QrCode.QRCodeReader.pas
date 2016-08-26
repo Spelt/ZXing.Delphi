@@ -48,7 +48,7 @@ type
   TQRCodeReader = class(TInterfacedObject, IReader)
   private
     FDecoder: TQRDecoder;
-    NO_POINTS: TArray<TResultPoint>;
+    NO_POINTS: TArray<IResultPoint>;
 
     /// <summary>
     /// This method detects a code in a "pure" image -- that is, pure monochrome image
@@ -107,7 +107,7 @@ constructor TQRCodeReader.Create;
 begin
   inherited;
   FDecoder := TQRDecoder.Create;
-  NO_POINTS := TArray<TResultPoint>.Create();
+  NO_POINTS := TArray<IResultPoint>.Create();
 end;
 
 destructor TQRCodeReader.Destroy;
@@ -127,7 +127,7 @@ function TQRCodeReader.decode(const image: TBinaryBitmap;
 var
   DecoderResult: TDecoderResult;
   Detector: TDetector;
-  points: TArray<TResultPoint>;
+  points: TArray<IResultPoint>;
   bits: TBitMatrix;
   DetectorResult: TDetectorResult;
   data: TQRCodeDecoderMetaData;
