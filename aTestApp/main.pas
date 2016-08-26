@@ -63,6 +63,8 @@ type
     ToolBar3: TToolBar;
     CameraComponent1: TCameraComponent;
     Memo1: TMemo;
+    btnLoadFromFile: TButton;
+    openDlg: TOpenDialog;
     Camera1: TCamera;
     Button1: TButton;
     Button2: TButton;
@@ -73,6 +75,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure CameraComponent1SampleBufferReady(Sender: TObject;
       const ATime: TMediaTime);
+    procedure btnLoadFromFileClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure imgCameraClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -85,6 +88,8 @@ type
     procedure GetImage();
     procedure AddResult(const AText: String);
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
+    procedure ScanImage(scanBitmap: TBitmap;freeBitmap:boolean);
+
   public
     { Public declarations }
   end;
@@ -140,8 +145,16 @@ begin
   FScanManager.Free;
 end;
 
+procedure TMainForm.btnLoadFromFileClick(Sender: TObject);
+begin
+  if not openDlg.Execute then exit;
+  imgCamera.Bitmap.LoadFromFile(openDlg.FileName);
+  ScanImage(imgCamera.Bitmap,false);
+end;
+
 procedure TMainForm.btnStartCameraClick(Sender: TObject);
 begin
+  btnLoadFromFile.Enabled := false;
   CameraComponent1.Active := False;
   CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
   CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
@@ -176,7 +189,9 @@ end;
 procedure TMainForm.btnStopCameraClick(Sender: TObject);
 begin
   CameraComponent1.Active := False;
-end;
+  btnLoadFromFile.Enabled := True;
+
+end; //
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
@@ -209,7 +224,7 @@ end;
 procedure TMainForm.GetImage;
 var
   scanBitmap: TBitmap;
-  ReadResult: TReadResult;
+
 begin
   CameraComponent1.SampleBufferToBitmap(imgCamera.Bitmap, True);
 
@@ -232,29 +247,38 @@ begin
   TTask.Run(
     procedure
     begin
+        ScanImage(scanBitmap,true);
+     end);
+end;
+
+
+procedure TMainForm.ScanImage(scanBitmap:TBitmap;freeBitmap:boolean);
+var ReadResult: TReadResult;
+begin
+  if scanBitmap = nil then
+   exit;
+
+  ReadResult := nil;
 
       try
         FScanInProgress := True;
-
-        scanBitmap.Assign(imgCamera.Bitmap);
-
+    try
         ReadResult := FScanManager.Scan(scanBitmap);
+    finally
         FScanInProgress := False;
+       if freeBitmap then
+         scanBitmap.Free;
+    end;
       except
         on E: Exception do
         begin
-          FScanInProgress := False;
+      ReadResult.Free;
           TThread.Synchronize(nil,
             procedure
             begin
-              // lblScanStatus.Text := E.Message;
+           lblScanStatus.Text := E.Message;
               // lblScanResults.Text := '';
             end);
-
-          if (scanBitmap <> nil) then
-          begin
-            scanBitmap.Free;
-          end;
 
           Exit;
 
@@ -273,17 +297,13 @@ begin
 
           lblScanStatus.Text := lblScanStatus.Text + '*';
 
-          if (ReadResult <> nil)
-          then
-             AddResult(ReadResult.Text);
-
-          if (scanBitmap <> nil) then
+      if (ReadResult <> nil) then
           begin
-            scanBitmap.Free;
+        memo1.Lines.Insert(0,ReadResult.Text);
           end;
 
           FreeAndNil(ReadResult);
-        end);
+
     end);
 end;
 

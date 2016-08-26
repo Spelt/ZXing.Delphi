@@ -204,7 +204,7 @@ begin
     $3: Result := TMode.STRUCTURED_APPEND;
     $4: Result := TMode.BYTE;
     $5: Result := TMode.FNC1_FIRST_POSITION;
-    $6: Result := TMode.ECI;
+    $7: Result := TMode.ECI;
     $8: Result := TMode.KANJI;
     $9: Result := TMode.FNC1_SECOND_POSITION;
     $D: Result := TMode.HANZI; // 0xD is defined in GBT 18284-2000, may not be supported in foreign country
