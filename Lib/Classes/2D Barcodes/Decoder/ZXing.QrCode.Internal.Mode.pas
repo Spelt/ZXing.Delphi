@@ -204,8 +204,7 @@ begin
     $3: Result := TMode.STRUCTURED_APPEND;
     $4: Result := TMode.BYTE;
     $5: Result := TMode.FNC1_FIRST_POSITION;
-    $6, // IS THIS "6" A TYPO? ECI should be 7, according to   ISO 18004:2006, 6.4.1, Table 2
-      $7: Result := TMode.ECI;
+    $7: Result := TMode.ECI;
     $8: Result := TMode.KANJI;
     $9: Result := TMode.FNC1_SECOND_POSITION;
     $D: Result := TMode.HANZI; // 0xD is defined in GBT 18284-2000, may not be supported in foreign country
@@ -223,7 +222,7 @@ begin
   then
      raise EArgumentException.Create('Character count doesn''t apply to this mode');
 
-       number := version.VersionNumber;
+  number := version.VersionNumber;
   if (number <= 9)
   then
      offset := 0
