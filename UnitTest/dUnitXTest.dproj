@@ -5,8 +5,8 @@
         <MainSource>dUnitXTest.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>1</TargetedPlatforms>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Console</AppType>
         <FrameworkType>FMX</FrameworkType>
     </PropertyGroup>
@@ -177,6 +177,9 @@
         <DCC_UsePackage>DPFiOSPackagesXE8;FireDACASADriver;FireDACSqliteDriver;frx22;bindcompfmx;frxTee22;DBXSqliteDriver;FireDACPgDriver;FireDACODBCDriver;RESTBackendComponents;fmx;rtl;dbrtl;DbxClientDriver;IndySystem;FireDACCommon;bindcomp;inetdb;tethering;TeeDB;DBXInterBaseDriver;Tee;vclFireDAC;xmlrtl;svnui;frxe22;DbxCommonDriver;vclimg;DUnitXRuntime;IndyProtocols;dbxcds;DBXMySQLDriver;FireDACCommonDriver;appanalytics;bindcompdbx;soaprtl;bindengine;vclactnband;vcldb;vcldsnap;bindcompvcl;FMXTee;TeeUI;vclie;fmxFireDAC;FireDACADSDriver;vcltouch;frxDB22;CustomIPTransport;vclribbon;VclSmp;FireDAC;dsnap;IndyIPServer;VCLRESTComponents;fmxase;vcl;IndyCore;IndyIPCommon;CloudService;CodeSiteExpressPkg;dsnapcon;FireDACIBDriver;FmxTeeUI;inet;fmxobj;FireDACMySQLDriver;soapmidas;vclx;soapserver;inetdbxpress;svn;dsnapxml;fmxdae;RESTComponents;FireDACMSAccDriver;dbexpress;adortl;IndyIPClient;$(DCC_UsePackage)</DCC_UsePackage>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <DCC_UsePackage>FireDACASADriver;FireDACSqliteDriver;bindcompfmx;DBXSqliteDriver;FireDACPgDriver;FireDACODBCDriver;RESTBackendComponents;fmx;rtl;dbrtl;DbxClientDriver;IndySystem;FireDACCommon;bindcomp;inetdb;tethering;TeeDB;DBXInterBaseDriver;Tee;vclFireDAC;xmlrtl;DbxCommonDriver;vclimg;IndyProtocols;dbxcds;DBXMySQLDriver;FireDACCommonDriver;appanalytics;bindcompdbx;soaprtl;bindengine;vclactnband;vcldb;vcldsnap;bindcompvcl;FMXTee;TeeUI;vclie;fmxFireDAC;FireDACADSDriver;vcltouch;CustomIPTransport;vclribbon;VclSmp;FireDAC;dsnap;IndyIPServer;VCLRESTComponents;fmxase;vcl;IndyCore;IndyIPCommon;CloudService;dsnapcon;FireDACIBDriver;FmxTeeUI;inet;fmxobj;FireDACMySQLDriver;soapmidas;vclx;soapserver;inetdbxpress;dsnapxml;fmxdae;RESTComponents;FireDACMSAccDriver;dbexpress;adortl;IndyIPClient;$(DCC_UsePackage)</DCC_UsePackage>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
@@ -278,6 +281,12 @@
         <DCCReference Include="..\Lib\Classes\Filtering\ZXing.PlanarYUVLuminanceSource.pas"/>
         <DCCReference Include="..\Lib\Classes\Filtering\ZXing.RGBLuminanceSource.pas"/>
         <DCCReference Include="..\Lib\Classes\ScanManager.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\ZXing.Common.BitArrayImplementation.pas"/>
+        <DCCReference Include="..\Lib\Classes\Common\ZXing.ResultPointImplementation.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPatternImplementation.pas"/>
+        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPatternImplementation.pas"/>
+        <None Include="..\Lib\Classes\__history"/>
+        <None Include="..\Lib\Classes\__recovery"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -315,6 +324,18 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile LocalName="..\Lib\Classes\__recovery" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\dUnitXTest.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>dUnitXTest.rsm</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libPCRE.dylib" Class="DependencyModule">
                     <Platform Name="iOSSimulator">
                         <Overwrite>true</Overwrite>
@@ -335,7 +356,28 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployClass Name="ProjectiOSDeviceResourceRules"/>
+                <DeployFile LocalName="Win64\Debug\dUnitXTest.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>dUnitXTest.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\Lib\Classes\__history" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployClass Name="DependencyModule">
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
+                        <Extensions>.dll;.bpl</Extensions>
+                    </Platform>
+                    <Platform Name="OSX32">
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                </DeployClass>
                 <DeployClass Name="ProjectOSXResource">
                     <Platform Name="OSX32">
                         <RemoteDir>Contents\Resources</RemoteDir>
@@ -647,16 +689,7 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="DependencyModule">
-                    <Platform Name="Win32">
-                        <Operation>0</Operation>
-                        <Extensions>.dll;.bpl</Extensions>
-                    </Platform>
-                    <Platform Name="OSX32">
-                        <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
-                    </Platform>
-                </DeployClass>
+                <DeployClass Name="ProjectiOSDeviceResourceRules"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
@@ -673,7 +706,7 @@
                 <Platform value="iOSSimulator">False</Platform>
                 <Platform value="OSX32">False</Platform>
                 <Platform value="Win32">True</Platform>
-                <Platform value="Win64">False</Platform>
+                <Platform value="Win64">True</Platform>
             </Platforms>
             <ModelSupport>False</ModelSupport>
             <UnitTesting>

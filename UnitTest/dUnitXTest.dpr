@@ -78,7 +78,11 @@ uses
   ZXing.LuminanceSource in '..\Lib\Classes\Filtering\ZXing.LuminanceSource.pas',
   ZXing.PlanarYUVLuminanceSource in '..\Lib\Classes\Filtering\ZXing.PlanarYUVLuminanceSource.pas',
   ZXing.RGBLuminanceSource in '..\Lib\Classes\Filtering\ZXing.RGBLuminanceSource.pas',
-  ScanManager in '..\Lib\Classes\ScanManager.pas';
+  ScanManager in '..\Lib\Classes\ScanManager.pas',
+  ZXing.Common.BitArrayImplementation in '..\Lib\Classes\Common\ZXing.Common.BitArrayImplementation.pas',
+  ZXing.ResultPointImplementation in '..\Lib\Classes\Common\ZXing.ResultPointImplementation.pas',
+  ZXing.QrCode.Internal.AlignmentPatternImplementation in '..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPatternImplementation.pas',
+  ZXing.QrCode.Internal.FinderPatternImplementation in '..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPatternImplementation.pas';
 
 var
   runner : ITestRunner;
