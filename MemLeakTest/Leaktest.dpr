@@ -1,17 +1,6 @@
 program Leaktest;
 
 uses
-  EMemLeaks,
-  EResLeaks,
-  EDialogWinAPIMSClassic,
-  EDialogWinAPIEurekaLogDetailed,
-  EDialogWinAPIStepsToReproduce,
-  EDebugExports,
-  EDebugJCL,
-  EFixSafeCallException,
-  EMapWin32,
-  EAppVCL,
-  ExceptionLog7,
   System.StartUpCopy,
   FMX.Forms,
   MainForm in 'MainForm.pas' {Form2};

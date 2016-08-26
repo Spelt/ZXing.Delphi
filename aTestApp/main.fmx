@@ -9,7 +9,7 @@ object MainForm: TMainForm
   FormFactor.Devices = [Desktop]
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  DesignerMasterStyle = 3
+  DesignerMasterStyle = 0
   object Layout2: TLayout
     Align = Client
     Size.Width = 750.000000000000000000
@@ -40364,8 +40364,8 @@ object MainForm: TMainForm
       Size.Height = 208.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
-      Viewport.Width = 742.000000000000000000
-      Viewport.Height = 200.000000000000000000
+      Viewport.Width = 746.000000000000000000
+      Viewport.Height = 204.000000000000000000
     end
     object ToolBar3: TToolBar
       Align = MostBottom
