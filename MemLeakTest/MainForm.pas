@@ -42,7 +42,7 @@ type
     procedure btnDummyClick(Sender: TObject);
     procedure btnEAN13Click(Sender: TObject);
   private
-    procedure OnScanManagerResultPoint(const point: TResultPoint);
+    procedure OnScanManagerResultPoint(const point: IResultPoint);
     function GetImage(const Filename: string): TBitmap;
     function decode(const Filename: String;
       const CodeFormat: TBarcodeFormat): TReadResult;
@@ -63,7 +63,7 @@ var
   ScanManager: TScanManager;
   rs: TReadResult;
   obj : TObject;
-  ResultPoint: TResultPoint;
+  ResultPoint: IResultPoint;
 const
   iSize = 5;
 begin
@@ -108,7 +108,7 @@ begin
   Result := nil;
 end;
 
-procedure TForm2.OnScanManagerResultPoint(const point: TResultPoint);
+procedure TForm2.OnScanManagerResultPoint(const point: IResultPoint);
 begin
   if Assigned(point)
   then
