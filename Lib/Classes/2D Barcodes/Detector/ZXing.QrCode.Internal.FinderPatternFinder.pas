@@ -837,6 +837,7 @@ var
   totalModuleSize, average, size, stdDev, square, limit: Single;
   center, possibleCenter, pattern: TFinderPattern;
   startSize, i: Integer;
+  comparator: IComparer<TFinderPattern>;
 begin
   startSize := FPossibleCenters.Count;
   if (startSize < 3) then
@@ -858,8 +859,14 @@ begin
 
     average := totalModuleSize / startSize;
     stdDev := Sqrt((square / startSize) - (average * average));
-
-    FPossibleCenters.Sort(TFurthestFromAverageComparator.Create(average));
+    // this intermediate assignment is a workaround for old-gen compilers
+    // that are not deallocating TFurthestFromAverageComparator instance
+    // (bug verified on XE8: just declare a destructor Destroy override
+    // in TFurthestFromAverageComparator put a breakpoint in it and see
+    // that the destructor never gets called if  you don't use this intermediate
+    // assignment)
+    comparator :=  TFurthestFromAverageComparator.Create(average);
+    FPossibleCenters.Sort(comparator);
     limit := System.Math.Max((0.2 * average), stdDev);
     i := 0;
     while (((i < FPossibleCenters.Count) and
@@ -885,7 +892,14 @@ begin
     end;
 
     average := totalModuleSize / FPossibleCenters.Count;
-    FPossibleCenters.Sort(TCenterComparator.Create(average));
+    // this intermediate assignment is a workaround for old-gen compilers
+    // that are not deallocating TCenterComparator instance
+    // (bug verified on XE8: just declare a destructor Destroy override in
+    // TCenterComparator,put a breakpoint in it and see that the destructor
+    // never gets called if  you don't use this intermediate assignment)
+    comparator :=  TCenterComparator.Create(average);
+
+    FPossibleCenters.Sort( comparator );
 
     // if (PossibleCenters.Count > 4) then
     // begin
