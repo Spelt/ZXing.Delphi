@@ -40389,9 +40389,19 @@ object MainForm: TMainForm
         Size.Width = 183.000000000000000000
         Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
-        TabOrder = 2
+        TabOrder = 5
         Text = 'Start Camera'
         OnClick = btnStartCameraClick
+      end
+      object btnLoadFromFile: TButton
+        Align = Left
+        Position.X = 334.000000000000000000
+        Size.Width = 235.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        Text = 'Load Image from File...'
+        OnClick = btnLoadFromFileClick
       end
       object Button1: TButton
         Align = Right
@@ -40427,6 +40437,10 @@ object MainForm: TMainForm
   object CameraComponent1: TCameraComponent
     OnSampleBufferReady = CameraComponent1SampleBufferReady
     Left = 544
+    Top = 96
+  end
+  object openDlg: TOpenDialog
+    Left = 664
     Top = 96
   end
 end
