@@ -245,7 +245,7 @@ begin
 
     result := Decode('CarloTest.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Contains('Version 40 QR Code can contain up to 1852 chars.'),
+    Assert.IsTrue(result.Text.Contains('gov.it'),
        'QR code result Text Incorrect: ' + result.Text);
 
 
