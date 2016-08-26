@@ -49,15 +49,15 @@ type
     FImage: TBitMatrix;
     FResultPointCallback: TResultPointCallback;
 
-    function calculateModuleSizeOneWay(pattern: TResultpoint;
-      otherPattern: TResultpoint): Single;
+    function calculateModuleSizeOneWay(pattern: IResultpoint;
+      otherPattern: IResultpoint): Single;
 
-    class function computeDimension(topLeft: TResultpoint;
-      topRight: TResultpoint; bottomLeft: TResultpoint; moduleSize: Single;
+    class function computeDimension(topLeft: IResultpoint;
+      topRight: IResultpoint; bottomLeft: IResultpoint; moduleSize: Single;
       var dimension: Integer): boolean; static;
 
     class function createTransform(const topLeft, topRight, bottomLeft,
-      AlignmentPattern: TResultpoint; const dimension: Integer)
+      AlignmentPattern: IResultpoint; const dimension: Integer)
       : TPerspectiveTransform; static;
 
     class function sampleGrid(image: TBitMatrix;
@@ -68,11 +68,11 @@ type
       toX: Integer; toY: Integer): Single;
   protected
     function calculateModuleSize(const topLeft, topRight,
-      bottomLeft: TResultpoint): Single; virtual;
+      bottomLeft: IResultPoint): Single; virtual;
 
     function findAlignmentInRegion(const overallEstModuleSize: Single;
       const estAlignmentX, estAlignmentY: Integer;
-      const allowanceFactor: Single): TAlignmentPattern;
+      const allowanceFactor: Single): IAlignmentPattern;
 
     /// <summary>
     /// Processes the finder pattern info.
@@ -128,14 +128,14 @@ begin
 end;
 
 function TDetector.calculateModuleSize(const topLeft, topRight,
-  bottomLeft: TResultpoint): Single;
+  bottomLeft: IResultPoint): Single;
 begin
   Result := ((self.calculateModuleSizeOneWay(topLeft, topRight) +
     self.calculateModuleSizeOneWay(topLeft, bottomLeft)) / 2)
 end;
 
-function TDetector.calculateModuleSizeOneWay(pattern: TResultpoint;
-  otherPattern: TResultpoint): Single;
+function TDetector.calculateModuleSizeOneWay(pattern: IResultPoint;
+  otherPattern: IResultPoint): Single;
 var
   moduleSizeEst1, moduleSizeEst2: Single;
 
@@ -160,17 +160,17 @@ begin
   Result := ((moduleSizeEst1 + moduleSizeEst2) / 14);
 end;
 
-class function TDetector.computeDimension(topLeft: TResultpoint;
-  topRight: TResultpoint; bottomLeft: TResultpoint; moduleSize: Single;
+class function TDetector.computeDimension(topLeft: IResultPoint;
+  topRight: IResultPoint; bottomLeft: IResultPoint; moduleSize: Single;
   var dimension: Integer): boolean;
 
 var
   tltrCentersDimension, tlblCentersDimension: Integer;
 begin
   tltrCentersDimension :=
-    round((TResultpoint.distance(topLeft, topRight) / moduleSize));
+    round((TResultPointHelpers.distance(topLeft, topRight) / moduleSize));
   tlblCentersDimension :=
-    round((TResultpoint.distance(topLeft, bottomLeft) / moduleSize));
+    round((TResultPointHelpers.distance(topLeft, bottomLeft) / moduleSize));
   dimension := TMathUtils.Asr
     ((tltrCentersDimension + tlblCentersDimension), 1) + 7;
 
@@ -196,7 +196,7 @@ begin
 end;
 
 class function TDetector.createTransform(const topLeft, topRight, bottomLeft,
-  AlignmentPattern: TResultpoint; const dimension: Integer)
+  AlignmentPattern: IResultPoint; const dimension: Integer)
   : TPerspectiveTransform;
 var
   bottomRightX, bottomRightY, sourceBottomRightX, sourceBottomRightY,
@@ -264,14 +264,14 @@ end;
 function TDetector.processFinderPatternInfo(const info: TFinderPatternInfo)
   : TDetectorResult;
 var
-  topLeft, topRight, bottomLeft: TFinderPattern;
+  topLeft, topRight, bottomLeft: IFinderPattern;
   moduleSize, bottomRightX, bottomRightY, correctionToTopLeft: Single;
   dimension, i, modulesBetweenFPCenters, estAlignmentX, estAlignmentY: Integer;
-  points: TArray<TResultpoint>;
+  points: TArray<IResultPoint>;
   provisionalVersion: TVersion;
   transform: TPerspectiveTransform;
   bits: TBitMatrix;
-  AlignmentPattern: TAlignmentPattern;
+  AlignmentPattern: IAlignmentPattern;
 begin
   Result := nil;
 
@@ -332,9 +332,9 @@ begin
     exit;
 
   if (AlignmentPattern = nil) then
-    points := TArray<TResultpoint>.Create(bottomLeft, topLeft, topRight)
+    points := TArray<IResultPoint>.Create(bottomLeft, topLeft, topRight)
   else
-    points := TArray<TResultpoint>.Create(bottomLeft, topLeft, topRight,
+    points := TArray<IResultPoint>.Create(bottomLeft, topLeft, topRight,
       AlignmentPattern);
 
   Result := TDetectorResult.Create(bits, points);
@@ -342,12 +342,12 @@ end;
 
 function TDetector.findAlignmentInRegion(const overallEstModuleSize: Single;
   const estAlignmentX, estAlignmentY: Integer; const allowanceFactor: Single)
-  : TAlignmentPattern;
+  : IAlignmentPattern;
 var
   allowance, alignmentAreaRightX, alignmentAreaLeftX, alignmentAreaTopY,
     alignmentAreaBottomY: Integer;
   alignmentFinder: TAlignmentPatternFinder;
-  candidateResult: TAlignmentPattern;
+  candidateResult: IAlignmentPattern;
 begin
   Result := nil;
 
@@ -375,7 +375,7 @@ begin
   if candidateResult = nil then
     Result := nil
   else
-    Result := TAlignmentPattern.Clone(candidateResult);
+    Result := candidateResult;
 
   FreeAndNil(alignmentFinder);
 end;

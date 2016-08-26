@@ -75,10 +75,8 @@ class function TDecodedBitStreamParser.decode(bytes: TArray<Byte>)
 var
   bits: TBitSource;
   res, resultTrailer: TStringBuilder;
-  bs: TArray<Byte>;
   byteSegments: TList<TArray<Byte>>;
   mode: TMode;
-  i: Integer;
 
 begin
   bits := TBitSource.Create(bytes);

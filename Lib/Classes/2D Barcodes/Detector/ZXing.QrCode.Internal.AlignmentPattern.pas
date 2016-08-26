@@ -19,23 +19,17 @@
 }
 
 unit ZXing.QrCode.Internal.AlignmentPattern;
-
 interface
-
-uses 
-  ZXing.ResultPoint;
+uses ZXing.ResultPoint;
 
 type
-  /// <summary> <p>Encapsulates an alignment pattern, which are the smaller square patterns found in
-  /// all but the simplest QR Codes.</p>
-  ///
+  /// <summary>
+  ///  As we did for ResultPoint, we use an interfaced object to implement automatic deallocation
+  /// of TAligmnentPattern instances
+  /// the actual implementation of this interface is in unit ZXing.QrCode.Internal.AlignmentPatternImplementation
   /// </summary>
-  TAlignmentPattern = class sealed(TResultPoint)
-  private
-    estimatedModuleSize: Single;
-  public
-    constructor Create(const posX, posY, estimatedModuleSize: Single);
-
+  IAlignmentPattern = interface(IResultPoint)
+     ['{8C0A5D01-9620-42B6-BE3E-9C40717B5B38}']
     /// <summary> <p>Determines if this alignment pattern "about equals" an alignment pattern at the stated
     /// position and size -- meaning, it is at nearly the same center with nearly the same size.</p>
     /// </summary>
@@ -49,53 +43,27 @@ type
     /// <param name="j">The j.</param>
     /// <param name="newModuleSize">New size of the module.</param>
     /// <returns></returns>
-    function combineEstimate(const i, j,
-      newModuleSize: Single): TAlignmentPattern;
-    constructor Clone(const src: TAlignmentPattern);
+    function combineEstimate(const i, j, newModuleSize: Single): IAlignmentPattern;
+  end;
+
+
+  /// <summary>
+  ///  contains all static methods for using IAlignmentPatterns instances
+  /// </summary>
+  TAlignmentPatternHelpers = class
+    /// <summary>
+    ///  IAlignmentPattern instances must be obtained by calling this function
+    /// </summary>
+    class function CreateAlignmentPattern(const posX, posY, estimatedModuleSize: Single):IAlignmentPattern;
   end;
 
 implementation
+uses ZXing.QrCode.Internal.AlignmentPatternImplementation;
 
-{ TAlignmentPattern }
-
-constructor TAlignmentPattern.Create(const posX, posY,
-  estimatedModuleSize: Single);
+{ TAlignmentPatternHelpers }
+class function TAlignmentPatternHelpers.CreateAlignmentPattern(const posX, posY, estimatedModuleSize: Single):IAlignmentPattern;
 begin
-  inherited Create(posX, posY);
-
-  Self.estimatedModuleSize := estimatedModuleSize;
-end;
-
-function TAlignmentPattern.aboutEquals(const moduleSize, i, j: Single): Boolean;
-var
-  moduleSizeDiff: Single;
-begin
-  if ((Abs(i - Self.y) <= moduleSize) and
-      (Abs(j - Self.x) <= moduleSize)) then
-  begin
-    moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
-    Result := ((moduleSizeDiff <= 1) or
-               (moduleSizeDiff <= self.estimatedModuleSize));
-  end else Result := false;
-end;
-
-function TAlignmentPattern.combineEstimate(const i, j,
-  newModuleSize: Single): TAlignmentPattern;
-var
-  combinedX,
-  combinedY,
-  combinedModuleSize : Single;
-begin
-  combinedX := (self.x + j) / 2.0;
-  combinedY := (self.y + i) / 2.0;
-  combinedModuleSize := (estimatedModuleSize + newModuleSize) / 2.0;
-  Result := TAlignmentPattern.Create(combinedX, combinedY, combinedModuleSize);
-end;
-
-constructor TAlignmentPattern.Clone(const src: TAlignmentPattern);
- begin
-  inherited Clone(src);
-  self.estimatedModuleSize  := src.estimatedModuleSize;
+    result := ZXing.QrCode.Internal.AlignmentPatternImplementation.NewAlignmentPattern(posX,posY,estimatedModuleSize);
 end;
 
 end.

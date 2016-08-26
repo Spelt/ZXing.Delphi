@@ -48,7 +48,7 @@ type
     /// If used, the Binarizer will call BitArray.clear(). Always use the returned object.
     /// </param>
     /// <returns> The array of bits for this row (true means black).</returns>
-    function getBlackRow(y: Integer; row: TBitArray): TBitArray;
+    function getBlackRow(y: Integer; row: IBitArray): IBitArray;
     function RotateSupported: Boolean;
     function rotateCounterClockwise(): TBinaryBitmap;
 
@@ -93,7 +93,7 @@ begin
 
 end;
 
-function TBinaryBitmap.getBlackRow(y: Integer; row: TBitArray): TBitArray;
+function TBinaryBitmap.getBlackRow(y: Integer; row: IBitArray): IBitArray;
 begin
   result := Binarizer.getBlackRow(y, row);
 end;

@@ -60,14 +60,14 @@ type
 
     class var MAX_AVG_VARIANCE: Integer;
     class var MAX_INDIVIDUAL_VARIANCE: Integer;
-    class function FindStartPattern(row: TBitArray): TArray<Integer>;
-    class function DecodeCode(row: TBitArray; counters: TArray<Integer>;
+    class function FindStartPattern(row: IBitArray): TArray<Integer>;
+    class function DecodeCode(row: IBitArray; counters: TArray<Integer>;
       rowOffset: Integer; var code: Integer): Boolean;
 
   public
     constructor Create();
     destructor Destroy(); override;
-    function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
 
   end;
@@ -132,11 +132,11 @@ begin
   inherited;
 end;
 
-class function TCode128Reader.FindStartPattern(row: TBitArray): TArray<Integer>;
+class function TCode128Reader.FindStartPattern(row: IBitArray): TArray<Integer>;
 var
   i, bestMatch, startCode, bestVariance, width, rowOffset, patternStart,
     patternLength, variance, counterPosition: Integer;
-  counters, CopyCounters: TArray<Integer>;
+  counters: TArray<Integer>;
   isWhite: Boolean;
 
 begin
@@ -216,7 +216,7 @@ begin
 
 end;
 
-class function TCode128Reader.DecodeCode(row: TBitArray;
+class function TCode128Reader.DecodeCode(row: IBitArray;
   counters: TArray<Integer>; rowOffset: Integer; var code: Integer): Boolean;
 var
   bestVariance, l, d, variance: Integer;
@@ -250,7 +250,7 @@ begin
   result := code >= 0;
 end;
 
-function TCode128Reader.decodeRow(const rowNumber: Integer; const row: TBitArray;
+function TCode128Reader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
   shiftUpperMode, upperMode,
@@ -271,9 +271,8 @@ var
   left, right: Single;
   resultPointCallback: TResultPointCallback;
   obj: TObject;
-  ReadResult: TReadResult;
-  resultPoints: TArray<TResultPoint>;
-  resultPointLeft, resultPointRight: TResultPoint;
+  resultPoints: TArray<IResultPoint>;
+  resultPointLeft, resultPointRight: IResultPoint;
 begin
   convertFNC1 := (hints <> nil) and
     (hints.ContainsKey(DecodeHintType.ASSUME_GS1));
@@ -663,9 +662,13 @@ begin
     for i := 0 to rawCodesSize - 1 do
       rawBytes[i] := rawCodes[i];
 
-    resultPointLeft := TResultPoint.Create(left, rowNumber);
-    resultPointRight := TResultPoint.Create(right, rowNumber);
+    resultPointLeft := TResultPointHelpers.CreateResultPoint(left, rowNumber);
+    resultPointRight := TResultPointHelpers.CreateResultPoint(right, rowNumber);
     resultPoints := [resultPointLeft, resultPointRight];
+
+    resultPointCallback := nil; // had to add this initialization because the following if/else construct does not assign a value
+                                // for all possible cases. Being resultPointCallback a local variable it is not initialized by default to null,
+                                // so you could get unpredictable results
 
     if ((hints = nil) or
       (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK)))

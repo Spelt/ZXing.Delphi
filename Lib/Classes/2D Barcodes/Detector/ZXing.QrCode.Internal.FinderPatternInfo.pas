@@ -31,35 +31,35 @@ type
   /// </summary>
   TFinderPatternInfo = class sealed
   private
-    FbottomLeft: TFinderPattern;
-    FtopLeft: TFinderPattern;
-    FtopRight: TFinderPattern;
+    FbottomLeft: IFinderPattern;
+    FtopLeft: IFinderPattern;
+    FtopRight: IFinderPattern;
   public
     /// <summary>
     /// Initializes a new instance of the <see cref="FinderPatternInfo"/> class.
     /// </summary>
     /// <param name="patternCenters">The pattern centers.</param>
-    constructor Create(const patternCenters: TArray<TFinderPattern>);
+    constructor Create(const patternCenters: TArray<IFinderPattern>);
 
     /// <summary>
     /// Gets the bottom left.
     /// </summary>
-    property bottomLeft : TFinderPattern read FbottomLeft;
+    property bottomLeft : IFinderPattern read FbottomLeft;
 
     /// <summary>
     /// Gets the top left.
     /// </summary>
-    property topLeft : TFinderPattern read FtopLeft;
+    property topLeft : IFinderPattern read FtopLeft;
 
     /// <summary>
     /// Gets the top right.
     /// </summary>
-    property topRight : TFinderPattern read FtopRight;
+    property topRight : IFinderPattern read FtopRight;
   end;
 
 implementation
 
-constructor TFinderPatternInfo.Create(const patternCenters: TArray<TFinderPattern>);
+constructor TFinderPatternInfo.Create(const patternCenters: TArray<IFinderPattern>);
 begin
   FbottomLeft := patternCenters[0];
   FtopLeft := patternCenters[1];

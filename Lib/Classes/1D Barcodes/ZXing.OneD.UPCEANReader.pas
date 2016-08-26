@@ -57,7 +57,7 @@ type
     /// searched for as a pattern
     /// <param name="counters">array of counters, as long as pattern, to re-use</param>
     /// <returns>start/end horizontal offset of guard pattern, as an array of two ints</returns>
-    class function findGuardPattern(const row: TBitArray;
+    class function findGuardPattern(const row: IBitArray;
       rowOffset: Integer; const whiteFirst: Boolean;
       const pattern: TArray<Integer>;
       counters: TArray<Integer>): TArray<Integer>; overload;
@@ -103,7 +103,7 @@ type
     /// <param name="startRange">start/end offset of start guard pattern</param>
     /// <param name="resultString"><see cref="StringBuilder" />to append decoded chars to</param>
     /// <returns>horizontal offset of first pixel after the "middle" that was decoded or -1 if decoding could not complete successfully</returns>
-    class function decodeMiddle(const row: TBitArray;
+    class function decodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>;
       const resultString: TStringBuilder): Integer; virtual; abstract;
 
@@ -113,7 +113,7 @@ type
     /// <param name="row">The row.</param>
     /// <param name="endStart">The end start.</param>
     /// <returns></returns>
-    class function decodeEnd(const row: TBitArray;
+    class function decodeEnd(const row: IBitArray;
       const endStart: Integer): TArray<Integer>; virtual;
 
     /// <summary>
@@ -141,9 +141,9 @@ type
     function BarcodeFormat: TBarcodeFormat; virtual; abstract;
 
     class function findStartGuardPattern(
-      const row: TBitArray): TArray<Integer>; static;
+      const row: IBitArray): TArray<Integer>; static;
 
-    class function findGuardPattern(const row: TBitArray;
+    class function findGuardPattern(const row: IBitArray;
       const rowOffset: Integer; const whiteFirst: Boolean;
       const pattern: TArray<Integer>): TArray<Integer>; overload;
 
@@ -157,7 +157,7 @@ type
     /// for the digits 0-9 are used, and this indicates the encodings for 0 to 9 that should
     /// be used
     /// <returns>horizontal offset of first pixel beyond the decoded digit</returns>
-    class function decodeDigit(const row: TBitArray; const counters: TArray<Integer>;
+    class function decodeDigit(const row: IBitArray; const counters: TArray<Integer>;
       const rowOffset: Integer; const patterns: TArray<TArray<Integer>>;
       var digit: Integer): Boolean;
 
@@ -171,7 +171,7 @@ type
     /// <returns>
     ///   <see cref="TReadResult"/>containing encoded string and start/end of barcode or null, if an error occurs or barcode cannot be found
     /// </returns>
-    function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       overload; override;
 
@@ -185,7 +185,7 @@ type
     /// <param name="startGuardRange">start/end column where the opening start pattern was found</param>
     /// <param name="hints">optional hints that influence decoding</param>
     /// <returns><see cref="TReadResult"/> encapsulating the result of decoding a barcode in the row</returns>
-    function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const startGuardRange: TArray<Integer>;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       reintroduce; overload;
@@ -303,14 +303,14 @@ begin
   Result := ((sum mod 10) = 0);
 end;
 
-class function TUPCEANReader.decodeEnd(const row: TBitArray;
+class function TUPCEANReader.decodeEnd(const row: IBitArray;
    const endStart: Integer): TArray<Integer>;
  begin
    Result := findGuardPattern(row, endStart, false, START_END_PATTERN);
 end;
 
 class function TUPCEANReader.findStartGuardPattern(
-  const row: TBitArray): TArray<Integer>;
+  const row: IBitArray): TArray<Integer>;
 var
   foundStart: Boolean;
   startRange,
@@ -349,7 +349,7 @@ begin
   Result := startRange;
 end;
 
-class function TUPCEANReader.findGuardPattern(const row: TBitArray;
+class function TUPCEANReader.findGuardPattern(const row: IBitArray;
   const rowOffset: Integer; const whiteFirst: Boolean;
   const pattern: TArray<Integer>): TArray<Integer>;
 var
@@ -360,7 +360,7 @@ begin
   Result := findGuardPattern(row, rowOffset, whiteFirst, pattern, counters);
 end;
 
-class function TUPCEANReader.findGuardPattern(const row: TBitArray;
+class function TUPCEANReader.findGuardPattern(const row: IBitArray;
   rowOffset: Integer; const whiteFirst: Boolean;
   const pattern: TArray<Integer>;
   counters: TArray<Integer>): TArray<Integer>;
@@ -414,7 +414,7 @@ begin
   end;
 end;
 
-class function TUPCEANReader.decodeDigit(const row: TBitArray;
+class function TUPCEANReader.decodeDigit(const row: IBitArray;
   const counters: TArray<Integer>; const rowOffset: Integer;
   const patterns: TArray<TArray<Integer>>; var digit: Integer): Boolean;
 var
@@ -447,13 +447,13 @@ begin
   Result := (digit >= 0);
 end;
 
-function TUPCEANReader.decodeRow(const rowNumber: Integer; const row: TBitArray;
+function TUPCEANReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 begin
   Result := decodeRow(rowNumber, row, findStartGuardPattern(row), hints);
 end;
 
-function TUPCEANReader.decodeRow(const rowNumber: Integer; const row: TBitArray;
+function TUPCEANReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const startGuardRange: TArray<Integer>;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
@@ -464,11 +464,11 @@ var
   ending,
   quietEnd : Integer;
   endRange : TArray<Integer>;
-  resultPoints : TArray<TResultPoint>;
+  resultPoints : TArray<IResultPoint>;
   left, right : Single;
   resultPointCallback: TResultPointCallback;
   obj: TObject;
-  resPoint : TResultPoint;
+  resPoint : IResultPoint;
   decodeResult,
   extensionResult : TReadResult;
   format : TBarcodeFormat;
@@ -498,12 +498,8 @@ begin
 
   if Assigned(resultPointCallback) then
   begin
-    resPoint := TResultPoint.Create(endStart, rowNumber);
-    try
-      resultPointCallback(resPoint);
-    finally
-      resPoint.Free;
-    end;
+    resPoint := TResultPointHelpers.CreateResultPoint(endStart, rowNumber);
+    resultPointCallback(resPoint);
   end;
 
   endRange := decodeEnd(row, endStart);
@@ -513,12 +509,8 @@ begin
 
   if Assigned(resultPointCallback) then
   begin
-    resPoint := TResultPoint.Create((endRange[0] + endRange[1]) div 2, rowNumber);
-    try
-      resultPointCallback(resPoint);
-    finally
-      resPoint.Free;
-    end;
+    resPoint := TResultPointHelpers.CreateResultPoint((endRange[0] + endRange[1]) div 2, rowNumber);
+    resultPointCallback(resPoint);
   end;
 
   ending := endRange[1];
@@ -536,8 +528,8 @@ begin
   left := ((startGuardRange[1] + startGuardRange[0]) div 2);
   right := ((endRange[1] + endRange[0]) div 2);
   format := BarcodeFormat;
-  resultPoints := TArray<TResultPoint>.Create(TResultPoint.Create(left, rowNumber),
-                                              TResultPoint.Create(right, rowNumber));
+  resultPoints := TArray<IResultPoint>.Create(TResultPointHelpers.CreateResultPoint(left, rowNumber),
+                                              TResultPointHelpers.CreateResultPoint(right, rowNumber));
   decodeResult := TReadResult.Create(resultString, nil, resultPoints, format);
   extensionResult := extensionReader.decodeRow(rowNumber, row, endRange[1]);
   if (extensionResult <> nil) then

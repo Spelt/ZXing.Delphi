@@ -48,7 +48,7 @@ type
     class procedure InitializeClass; static;
     class procedure FinalizeClass; static;
 
-    class function decodeMiddle(const row: TBitArray;
+    class function decodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>;
       const resultString: TStringBuilder): Integer;
 
@@ -68,7 +68,7 @@ type
 
     class function parseExtension5String(const raw: String): String; static;
   public
-    class function decodeRow(const rowNumber: Integer; const row: TBitArray;
+    class function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const extensionStartRange: TArray<Integer>): TReadResult;
   end;
 
@@ -95,13 +95,13 @@ begin
 end;
 
 class function TUPCEANExtension5Support.decodeRow(const rowNumber: Integer;
-  const row: TBitArray; const extensionStartRange: TArray<Integer>): TReadResult;
+  const row: IBitArray; const extensionStartRange: TArray<Integer>): TReadResult;
 var
   res : TStringBuilder;
   ending : Integer;
   resultString : String;
   extensionData : TDictionary<TResultMetadataType, TObject>;
-  resultPoints : TArray<TResultPoint>;
+  resultPoints : TArray<IResultPoint>;
   extensionResult : TReadResult;
 begin
   Result := nil;
@@ -115,9 +115,9 @@ begin
 
   resultString := res.ToString;
   extensionData := parseExtensionString(resultString);
-  resultPoints := TArray<TResultPoint>.Create(
-    TResultPoint.Create((extensionStartRange[0] + extensionStartRange[1]) div 2, rowNumber),
-    TResultPoint.Create(ending, rowNumber));
+  resultPoints := TArray<IResultPoint>.Create(
+    TResultPointHelpers.CreateResultPoint((extensionStartRange[0] + extensionStartRange[1]) div 2, rowNumber),
+    TResultPointHelpers.CreateResultPoint(ending, rowNumber));
 
   extensionResult := TReadResult.Create(resultString, nil, resultPoints, TBarcodeFormat.UPC_EAN_EXTENSION);
   if (extensionData <> nil)
@@ -127,7 +127,7 @@ begin
   Result := extensionResult;
 end;
 
-class function TUPCEANExtension5Support.decodeMiddle(const row: TBitArray;
+class function TUPCEANExtension5Support.decodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>; const resultString: TStringBuilder): Integer;
 var
   bestMatch: Integer;
