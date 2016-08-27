@@ -264,6 +264,7 @@ begin
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
       'DataMatrix code result Text Incorrect: ' + result.Text);
+
 //    //exit;
 
     result := Decode('dmc1.png', TBarcodeFormat.DATA_MATRIX);
@@ -332,13 +333,6 @@ begin
 
     result := Decode('Code128.png', TBarcodeFormat.DATA_MATRIX);
     Assert.IsNull(result, ' Should be Nil result ');
-
-
-
-
-
-
-
 
   finally
     FreeAndNil(result);
@@ -499,7 +493,7 @@ begin
     Assert.IsTrue(result.Text.Equals('12345678900098'),
       'ITF - 3 result Text Incorrect: ' + result.Text);
 
-    result := Decode('dmc7.png', TBarcodeFormat.DATA_MATRIX);
+    result := Decode('dmc7.png', TBarcodeFormat.Auto);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('DataMatrix'),
       'DataMatrix code result Text Incorrect: ' + result.Text);
