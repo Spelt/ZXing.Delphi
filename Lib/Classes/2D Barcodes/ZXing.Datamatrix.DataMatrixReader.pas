@@ -208,7 +208,7 @@ begin
   // Push in the "border" by half the module width so that we start
   // sampling in the middle of the module. Just in case the image is a
   // little off, this will help recover.
-  nudge := moduleSize shr 1;
+  nudge :=  TMathUtils.Asr(moduleSize,1);
   Inc(top, nudge);
   Inc(left, nudge);
 

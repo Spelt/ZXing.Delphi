@@ -22,10 +22,10 @@ unit ZXing.QrCode.Internal.FormatInformation;
 
 interface
 
-uses 
-  Generics.Collections, 
+uses
+  Generics.Collections,
   ZXing.QrCode.Internal.ErrorCorrectionLevel,
-  Classes, 
+  Classes,
   ZXing.Common.Detector.MathUtils;
 
 type
@@ -42,8 +42,8 @@ type
     FErrorCorrectionLevel: TErrorCorrectionLevel;
     FDataMask: Byte;
 
-    const
-      FORMAT_INFO_MASK_QR: Integer = $5412;
+  const
+    FORMAT_INFO_MASK_QR: Integer = $5412;
 
     /// <summary> See ISO 18004:2006, Annex C, Table C.1</summary>
     class var FORMAT_INFO_DECODE_LOOKUP: TArray<TArray<Integer>>;
@@ -75,7 +75,8 @@ type
     class function decodeFormatInformation(const maskedFormatInfo1,
       maskedFormatInfo2: Integer): TFormatInformation; static;
 
-    property ErrorCorrectionLevel: TErrorCorrectionLevel read FErrorCorrectionLevel;
+    property ErrorCorrectionLevel: TErrorCorrectionLevel
+      read FErrorCorrectionLevel;
     property DataMask: Byte read FDataMask;
   end;
 
@@ -86,32 +87,32 @@ implementation
 constructor TFormatInformation.Create(const formatInfo: Integer);
 begin
   // Bits 3,4
-  FErrorCorrectionLevel := TErrorCorrectionLevel.forBits((formatInfo shr 3) and $03);
+  FErrorCorrectionLevel := TErrorCorrectionLevel.forBits
+    (TMathUtils.Asr(formatInfo, 3) and $03);
   // Bottom 3 bits
   FDataMask := Byte(formatInfo and 7);
 end;
 
-class function TFormatInformation.decodeFormatInformation(
-  const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
+class function TFormatInformation.decodeFormatInformation
+  (const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
 var
   formatInfo: TFormatInformation;
 begin
   formatInfo := doDecodeFormatInformation(maskedFormatInfo1, maskedFormatInfo2);
 
-  if (formatInfo <> nil)
-  then
-     Result := formatInfo
+  if (formatInfo <> nil) then
+    Result := formatInfo
   else
-     // Should return null, but, some QR codes apparently
-     // do not mask this info. Try again by actually masking the pattern
-     // first
-     Result := TFormatInformation.doDecodeFormatInformation
-       ((maskedFormatInfo1 xor FORMAT_INFO_MASK_QR),
-        (maskedFormatInfo2 xor FORMAT_INFO_MASK_QR));
+    // Should return null, but, some QR codes apparently
+    // do not mask this info. Try again by actually masking the pattern
+    // first
+    Result := TFormatInformation.doDecodeFormatInformation
+      ((maskedFormatInfo1 xor FORMAT_INFO_MASK_QR),
+      (maskedFormatInfo2 xor FORMAT_INFO_MASK_QR));
 end;
 
-class function TFormatInformation.doDecodeFormatInformation(
-  const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
+class function TFormatInformation.doDecodeFormatInformation
+  (const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
 var
   bestDifference, bestFormatInfo, bitsDifference, targetInfo: Integer;
   decodeInfo: TArray<Integer>;
@@ -125,8 +126,8 @@ begin
   for decodeInfo in FORMAT_INFO_DECODE_LOOKUP do
   begin
     targetInfo := decodeInfo[0];
-    if ((targetInfo = maskedFormatInfo1) or
-        (targetInfo = maskedFormatInfo2)) then
+    if ((targetInfo = maskedFormatInfo1) or (targetInfo = maskedFormatInfo2))
+    then
     begin
       // Found an exact match
       Result := TFormatInformation.Create(decodeInfo[1]);
@@ -165,9 +166,8 @@ var
   other: TFormatInformation;
 begin
   Result := false;
-  if (not (o is TFormatInformation))
-  then
-     exit;
+  if (not(o is TFormatInformation)) then
+    exit;
 
   other := TFormatInformation(o);
   Result := ((FErrorCorrectionLevel = other.ErrorCorrectionLevel) and
@@ -216,10 +216,8 @@ begin
   FORMAT_INFO_DECODE_LOOKUP[30] := TArray<Integer>.Create($2EDA, 30);
   FORMAT_INFO_DECODE_LOOKUP[$1F] := TArray<Integer>.Create($2BED, $1F);
 
-  BITS_SET_IN_HALF_BYTE := TArray<Integer>.Create(0, 1, 1, 2,
-                                                  1, 2, 2, 3,
-                                                  1, 2, 2, 3,
-                                                  2, 3, 3, 4);
+  BITS_SET_IN_HALF_BYTE := TArray<Integer>.Create(0, 1, 1, 2, 1, 2, 2, 3, 1, 2,
+    2, 3, 2, 3, 3, 4);
 end;
 
 class procedure TFormatInformation.FinalizeClass;
@@ -237,18 +235,22 @@ class function TFormatInformation.numBitsDiffering(a, b: Integer): Integer;
 begin
   a := (a xor b); // a now has a 1 bit exactly where its bit differs with b's
   // Count bits set quickly with a series of lookups:
-  Result := BITS_SET_IN_HALF_BYTE[(a and $0F)] +
-    BITS_SET_IN_HALF_BYTE[(Integer((UInt32(a) shr 4)) and $0F)] +
-    BITS_SET_IN_HALF_BYTE[(Integer((UInt32(a) shr 8)) and $0F)] +
-    BITS_SET_IN_HALF_BYTE[(Integer((UInt32(a) shr 12)) and $0F)] +
-    BITS_SET_IN_HALF_BYTE[(Integer((UInt32(a) shr 16)) and $0F)] +
-    BITS_SET_IN_HALF_BYTE[(Integer((UInt32(a) shr 20)) and $0F)] +
-    BITS_SET_IN_HALF_BYTE[(Integer((UInt32(a) shr 24)) and $0F)] +
-    BITS_SET_IN_HALF_BYTE[(Integer((UInt32(a) shr 28)) and $0F)];
+  Result := BITS_SET_IN_HALF_BYTE[(a and $0F)] + BITS_SET_IN_HALF_BYTE
+    [TMathUtils.Asr(UInt32(a), 4) and $0F] + BITS_SET_IN_HALF_BYTE
+    [TMathUtils.Asr(UInt32(a), 8) and $0F] + BITS_SET_IN_HALF_BYTE
+    [TMathUtils.Asr(UInt32(a), 12) and $0F] + BITS_SET_IN_HALF_BYTE
+    [TMathUtils.Asr(UInt32(a), 16) and $0F] + BITS_SET_IN_HALF_BYTE
+    [TMathUtils.Asr(UInt32(a), 20) and $0F] + BITS_SET_IN_HALF_BYTE
+    [TMathUtils.Asr(UInt32(a), 24) and $0F] + BITS_SET_IN_HALF_BYTE
+    [TMathUtils.Asr(UInt32(a), 28) and $0F];
 end;
 
 initialization
-  TFormatInformation.InitializeClass;
+
+TFormatInformation.InitializeClass;
+
 finalization
-  TFormatInformation.FinalizeClass;
+
+TFormatInformation.FinalizeClass;
+
 end.

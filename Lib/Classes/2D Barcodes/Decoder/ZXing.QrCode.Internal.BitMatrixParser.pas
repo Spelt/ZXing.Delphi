@@ -295,7 +295,7 @@ begin
   end;
 
   dimension := Self.bitMatrix.Height;
-  provisionalVersion := (dimension - 17) shr 2;
+  provisionalVersion := TMathUtils.Asr((dimension - 17), 2);
   if (provisionalVersion <= 6) then
   begin
     Result := TVersion.getVersionForNumber(provisionalVersion);

@@ -13,7 +13,7 @@
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Original Authors: Sean Owen and dswitkin@google.com (Daniel Switkin)  
+  * Original Authors: Sean Owen and dswitkin@google.com (Daniel Switkin)
   * Delphi Implementation by E. Spelt and K. Gossens
 }
 
@@ -21,26 +21,26 @@ unit ZXing.Common.BitMatrix;
 
 interface
 
-uses 
-  SysUtils, 
+uses
+  SysUtils,
   Fmx.Graphics,
-  Generics.Collections, 
-  ZXing.Common.BitArray, 
+  Generics.Collections,
+  ZXing.Common.BitArray,
   ZXing.BarcodeFormat,
-  Helpers, 
+  Helpers,
   ZXing.Common.Detector.MathUtils;
 
 type
   /// <summary>
-  ///   <p>Represents a 2D matrix of bits. In function arguments below, and throughout the common
+  /// <p>Represents a 2D matrix of bits. In function arguments below, and throughout the common
   /// module, x is the column position, and y is the row position. The ordering is always x, y.
   /// The origin is at the top-left.</p>
-  ///   <p>Internally the bits are represented in a 1-D array of 32-bit ints. However, each row begins
+  /// <p>Internally the bits are represented in a 1-D array of 32-bit ints. However, each row begins
   /// with a new int. This is done intentionally so that we can copy out a row into a BitArray very
   /// efficiently.</p>
-  ///   <p>The ordering of bits is row-major. Within each int, the least significant bits are used first,
+  /// <p>The ordering of bits is row-major. Within each int, the least significant bits are used first,
   /// meaning they represent lower x values. This is compatible with BitArray's implementation.</p>
-  /// </summary> 
+  /// </summary>
   TBitMatrix = class sealed
   private
     Fbits: TArray<Integer>;
@@ -79,7 +79,7 @@ type
     property height: Integer read Fheight;
     property Matrix[x, y: Integer]: Boolean read getBit write setBit; default;
     // added for debugging
-    function ToString:string; override;
+    function ToString: string; override;
   end;
 
 implementation
@@ -88,25 +88,20 @@ implementation
 
 function TBitMatrix.getBit(x, y: Integer): Boolean;
 var
-  offset : NativeInt;
+  offset, v, bits, shift: Integer;
+  uBits: LongWord;
 begin
-  offset := y * FrowSize + (x shr 5);
+  offset := y * FrowSize + TMathUtils.Asr(x, 5);
   try
-    Result := ((NativeUInt(Fbits[offset]) shr (x and $1F)) and 1) <> 0;
+    bits := Fbits[offset];
+    uBits := LongWord(bits);
+    shift := (x and $1F);
+    v := TMathUtils.Asr(uBits, shift);
+    Result := (v and 1) <> 0;
   except
     Result := false;
   end;
-  {
-  try
-    s := TMathUtils.Asr(x, 5);
-    offset := y * FrowSize + s;
 
-    shiftOp := TMathUtils.Asr(uint32(Fbits[offset]), (x and $1F));
-
-    result := (shiftOp and 1) <> 0;
-  except
-    result := false;
-  end;}
 end;
 
 procedure TBitMatrix.setBit(x, y: Integer; const value: Boolean);
@@ -115,16 +110,17 @@ var
 begin
   if (value) then
   begin
-    offset := y * FrowSize + (x shr 5);
+    offset := y * FrowSize + TMathUtils.Asr(x, 5);
     Fbits[offset] := Fbits[offset] or (1 shl (x and $1F));
-  end else
+  end
+  else
   begin
     offset := Trunc(y * FrowSize + (x / 32));
     Fbits[offset] := Fbits[offset] and (not(1 shl (x and $1F)));
   end;
 end;
 
-procedure TBitMatrix.Clear;
+procedure TBitMatrix.clear;
 var
   max, i: Integer;
 begin
@@ -142,16 +138,14 @@ var
   b: TArray<Integer>;
 begin
   b := TArray.Clone(Fbits);
-  result := TBitMatrix.Create(Self.Fwidth, Self.Fheight, Self.FrowSize, b);
+  Result := TBitMatrix.Create(Self.Fwidth, Self.Fheight, Self.FrowSize, b);
 end;
 
 constructor TBitMatrix.Create(const width, height, rowSize: Integer;
   const bits: TArray<Integer>);
 begin
-  if ((width < 1) or
-      (height < 1))
-  then
-     raise EArgumentException.Create('Both dimensions must be greater than 0');
+  if ((width < 1) or (height < 1)) then
+    raise EArgumentException.Create('Both dimensions must be greater than 0');
 
   Self.Fwidth := width;
   Self.Fheight := height;
@@ -168,7 +162,7 @@ begin
   Self.Fheight := height;
   Self.FrowSize := TMathUtils.Asr((width + $1F), 5);
   SetLength(Self.Fbits, Self.FrowSize * height);
-  Self.Clear;
+  Self.clear;
 end;
 
 constructor TBitMatrix.Create(const dimension: Integer);
@@ -189,7 +183,7 @@ var
 begin
   if (not(obj is TBitMatrix)) then
   begin
-    result := false;
+    Result := false;
     exit;
   end;
 
@@ -198,7 +192,7 @@ begin
     (FrowSize <> other.FrowSize)) or (Length(Fbits) <> Length(other.Fbits)))
   then
   begin
-    result := false;
+    Result := false;
     exit
   end;
 
@@ -209,13 +203,13 @@ begin
   begin
     if (Fbits[i] <> other.Fbits[i]) then
     begin
-      result := false;
+      Result := false;
       exit
     end;
-    inc(i)
+    Inc(i)
   end;
 
-  result := true;
+  Result := true;
 end;
 
 procedure TBitMatrix.flip(x, y: Integer);
@@ -229,10 +223,7 @@ end;
 
 function TBitMatrix.getBottomRightOnBit: TArray<Integer>;
 var
-  bitsOffset, 
-  x, y, 
-  theBits, 
-  bit: Integer;
+  bitsOffset, x, y, theBits, bit: Integer;
 begin
   bitsOffset := Length(Fbits) - 1;
   while ((bitsOffset >= 0) and (Self.Fbits[bitsOffset] = 0)) do
@@ -242,7 +233,7 @@ begin
 
   if (bitsOffset < 0) then
   begin
-    result := nil;
+    Result := nil;
     exit
   end;
 
@@ -256,8 +247,8 @@ begin
     dec(bit);
   end;
 
-  inc(x, bit);
-  result := TArray<Integer>.Create(x, y);
+  Inc(x, bit);
+  Result := TArray<Integer>.Create(x, y);
 end;
 
 function TBitMatrix.getEnclosingRectangle: TArray<Integer>;
@@ -292,7 +283,7 @@ begin
           bit := 0;
           while (((theBits shl ($1F - bit)) = 0)) do
           begin
-            inc(bit)
+            Inc(bit)
           end;
           if (((x32 * $20) + bit) < left) then
             left := ((x32 * $20) + bit)
@@ -309,9 +300,9 @@ begin
             right := ((x32 * $20) + bit)
         end
       end;
-      inc(x32)
+      Inc(x32)
     end;
-    inc(y)
+    Inc(y)
   end;
 
   widthTmp := (right - left);
@@ -319,11 +310,11 @@ begin
 
   if ((widthTmp < 0) or (heightTmp < 0)) then
   begin
-    result := nil;
+    Result := nil;
     exit;
   end;
 
-  result := TArray<Integer>.Create(left, top, widthTmp, heightTmp);
+  Result := TArray<Integer>.Create(left, top, widthTmp, heightTmp);
 end;
 
 function TBitMatrix.GetHashCode: Integer;
@@ -340,28 +331,27 @@ begin
     hash := (($1F * hash) + bit); // .GetHashCode
   end;
 
-  result := hash;
+  Result := hash;
 end;
 
 function TBitMatrix.getRow(const y: Integer; row: IBitArray): IBitArray;
 var
-  x,
-  offset: Integer;
+  x, offset: Integer;
 begin
   if ((row = nil) or (row.Size < Self.Fwidth)) then
     row := TBitArrayHelpers.CreateBitArray(Self.Fwidth)
   else
-    row.Clear;
+    row.clear;
   offset := (y * Self.FrowSize);
   x := 0;
 
   while ((x < Self.FrowSize)) do
   begin
     row.setBulk((x shl 5), Self.Fbits[(offset + x)]);
-    inc(x)
+    Inc(x)
   end;
 
-  result := row;
+  Result := row;
 end;
 
 function TBitMatrix.getTopLeftOnBit: TArray<Integer>;
@@ -372,12 +362,12 @@ begin
 
   while (((bitsOffset < Length(Fbits)) and (Fbits[bitsOffset] = 0))) do
   begin
-    inc(bitsOffset)
+    Inc(bitsOffset)
   end;
 
   if (bitsOffset = Length(Fbits)) then
   begin
-    result := nil;
+    Result := nil;
     exit
   end;
 
@@ -388,20 +378,17 @@ begin
 
   while (((theBits shl ($1F - bit)) = 0)) do
   begin
-    inc(bit)
+    Inc(bit)
   end;
 
-  inc(x, bit);
-  result := TArray<Integer>.Create(x, y);
+  Inc(x, bit);
+  Result := TArray<Integer>.Create(x, y);
 end;
 
 procedure TBitMatrix.Rotate180;
 var
-  i, 
-  width, 
-  height     : Integer;
-  topRow, 
-  bottomRow  : IBitArray;
+  i, width, height: Integer;
+  topRow, bottomRow: IBitArray;
 begin
   width := Self.Fwidth;
   height := Self.Fheight;
@@ -417,16 +404,13 @@ begin
     bottomRow.reverse;
     Self.setRow(i, bottomRow);
     Self.setRow(((height - 1) - i), topRow);
-    inc(i)
+    Inc(i)
   end;
 end;
 
 procedure TBitMatrix.setRegion(left, top, width, height: Integer);
 var
-  x, y, 
-  offset, 
-  right, 
-  bottom  : Integer;
+  x, y, offset, right, bottom: Integer;
 begin
   if ((top < 0) or (left < 0)) then
     raise EArgumentException.Create('Left and top must be non-negative');
@@ -450,9 +434,9 @@ begin
     begin
       Fbits[(offset + TMathUtils.Asr(x, 5))] :=
         (Fbits[(offset + TMathUtils.Asr(x, 5))] or (1 shl x));
-      inc(x)
+      Inc(x)
     end;
-    inc(y)
+    Inc(y)
   end;
 end;
 
@@ -467,22 +451,25 @@ begin
 end;
 
 function TBitMatrix.ToString: string;
-var r,c:integer;
+var
+  r, c: Integer;
 begin
-   for r := 0 to Fheight -1 do begin
-       for c:= 0 to Fwidth-1 do begin
-         if matrix[r,c]  then
-           result := result + '*'
-         else
-           result := result + '.';
-       end;
-       result := result + #13#10;
-   end;
+  for r := 0 to Fheight - 1 do
+  begin
+    for c := 0 to Fwidth - 1 do
+    begin
+      if Matrix[r, c] then
+        Result := Result + '*'
+      else
+        Result := Result + '.';
+    end;
+    Result := Result + #13#10;
+  end;
 end;
 
 function TBitMatrix.ToBitmap: TBitmap;
 begin
-  result := ToBitmap(TBarcodeFormat.CODE_128, '')
+  Result := ToBitmap(TBarcodeFormat.CODE_128, '')
 end;
 
 end.

@@ -122,7 +122,7 @@ begin
       x := 0;
       while ((x < max)) do
       begin
-        points[x] := (x shr 1) + 0.5; //TMathUtils.Asr(x, 1) + 0.5;
+        points[x] := TMathUtils.Asr(x, 1) + 0.5;
         points[(x + 1)] := iValue;
         Inc(x, 2);
       end;

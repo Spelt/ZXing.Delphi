@@ -189,7 +189,7 @@ end;
 
 function TDataMask100.isMasked(const i, j: Integer): Boolean;
 begin
-  Result := (((Integer(UInt32(i) shr 1)) + (j div 3)) and $01) = 0;
+   Result := (( TMathUtils.Asr(UInt32(i),1) + (j div 3)) and $01) = 0;
 end;
 
 { TDataMask101 }

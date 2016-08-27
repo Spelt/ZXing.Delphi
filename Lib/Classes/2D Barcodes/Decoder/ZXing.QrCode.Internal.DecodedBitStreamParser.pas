@@ -454,7 +454,7 @@ begin
        Inc(assembledTwoBytes, $08140)
     else
        Inc(assembledTwoBytes, $0C140);
-    buffer[offset] := Byte(assembledTwoBytes shr 8);
+    buffer[offset] := Byte( TMathUtils.Asr(assembledTwoBytes,8));
     buffer[(offset + 1)] := Byte(assembledTwoBytes);
     Inc(offset, 2);
     Dec(count);

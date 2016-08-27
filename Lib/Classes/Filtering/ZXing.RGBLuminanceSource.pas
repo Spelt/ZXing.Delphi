@@ -26,7 +26,8 @@ uses
   System.TypInfo,
   FMX.Graphics,
   ZXing.LuminanceSource,
-  ZXing.BaseLuminanceSource;
+  ZXing.BaseLuminanceSource,
+  ZXing.Common.Detector.MathUtils;
 
 type
   /// <summary>
@@ -112,6 +113,7 @@ type
   end;
 
 implementation
+uses Helpers;
 
 /// <summary>
 /// Initializes a new instance of the <see cref="RGBLuminanceSource"/> class.
@@ -177,7 +179,7 @@ begin
           r := TAlphaColorRec(color).R;
           g := TAlphaColorRec(color).G;
           b := TAlphaColorRec(color).B;
-          luminances[offset + x] := (3482*r + 11721*g + 1181*b) shr 14;
+          luminances[offset + x] := TMathUtils.Asr(3482*r + 11721*g + 1181*b, 14);
         end;
       end;
     finally
@@ -300,11 +302,11 @@ begin
     byte2 := rgb565RawData[index + 1];
 
     b5 := (byte1 and $1F);
-    g5 := (((byte1 and $E0) shr 5) or ((byte2 and $03) shl 3)) and $1F;
-    r5 := (byte2 shr 2) and $1F;
-    r8 := (r5 * 527 + 23) shr 6;
-    g8 := (g5 * 527 + 23) shr 6;
-    b8 := (b5 * 527 + 23) shr 6;
+    g5 := (TMathUtils.Asr(byte1 and $E0 , 5) or ((byte2 and $03) shl 3)) and $1F;
+    r5 := TMathUtils.Asr(byte2, 2) and $1F;
+    r8 := TMathUtils.Asr(r5 * 527 + 23, 6);
+    g8 := TMathUtils.Asr(g5 * 527 + 23, 6);
+    b8 := TMathUtils.Asr(b5 * 527 + 23, 6);
 
     // cheap, not fully accurate conversion
     //pixel := (byte2 shl 8) or byte1;
@@ -312,8 +314,8 @@ begin
     //g8 := (((pixel) and $07E0) shr 2) and $FF;
     //r8 := (((pixel) and $F800) shr 8);
 
-    luminances[luminanceIndex] := ((RChannelWeight * r8 + GChannelWeight * g8 +
-                                    BChannelWeight * b8) shr ChannelWeight);
+    luminances[luminanceIndex] := TMathUtils.Asr(RChannelWeight * r8 + GChannelWeight * g8 +
+                                    BChannelWeight * b8, ChannelWeight);
     Inc(index, 2);
     Inc(luminanceIndex);
   end;
@@ -338,8 +340,8 @@ begin
     Inc(rgbIndex);
     b := rgbRawBytes[rgbIndex];
     Inc(rgbIndex);
-    luminances[luminanceIndex] := ((RChannelWeight * r + GChannelWeight * g +
-                                    BChannelWeight * b) shr ChannelWeight);
+    luminances[luminanceIndex] := TMathUtils.Asr(RChannelWeight * r + GChannelWeight * g +
+                                    BChannelWeight * b,ChannelWeight);
     inc(luminanceIndex)
   end;
 end;
@@ -363,8 +365,8 @@ begin
     Inc(rgbIndex);
     r := rgbRawBytes[rgbIndex];
     Inc(rgbIndex);
-    luminances[luminanceIndex] := ((RChannelWeight * r + GChannelWeight * g +
-                                    BChannelWeight * b) shr ChannelWeight);
+    luminances[luminanceIndex] := TMathUtils.Asr(RChannelWeight * r + GChannelWeight * g +
+                                    BChannelWeight * b,ChannelWeight);
     Inc(luminanceIndex)
   end;
 end;
@@ -388,8 +390,8 @@ begin
     Inc(rgbIndex);
     b := rgbRawBytes[rgbIndex];
     Inc(rgbIndex, 2);
-    luminances[luminanceIndex] := ((RChannelWeight * r + GChannelWeight * g +
-                                    BChannelWeight * b) shr ChannelWeight);
+    luminances[luminanceIndex] := TMathUtils.Asr(RChannelWeight * r + GChannelWeight * g +
+                                    BChannelWeight * b, ChannelWeight);
     Inc(luminanceIndex);
   end;
 end;
@@ -413,8 +415,8 @@ begin
     Inc(rgbIndex);
     r := rgbRawBytes[rgbIndex];
     Inc(rgbIndex, 2);
-    luminances[luminanceIndex] := ((RChannelWeight * r + GChannelWeight * g +
-                                    BChannelWeight * b) shr ChannelWeight);
+    luminances[luminanceIndex] := TMathUtils.Asr(RChannelWeight * r + GChannelWeight * g +
+                                    BChannelWeight * b, ChannelWeight);
     Inc(luminanceIndex);
   end;
 end;
@@ -443,9 +445,9 @@ begin
     alpha := rgbRawBytes[rgbIndex];
     Inc(rgbIndex);
 
-    luminance := ((RChannelWeight * r + GChannelWeight * g +
-                   BChannelWeight * b) shr ChannelWeight);
-    luminances[luminanceIndex] := (((luminance * alpha) shr 8) + (255 * (255 - alpha) shr 8));
+    luminance := TMathUtils.Asr(RChannelWeight * r + GChannelWeight * g +
+                   BChannelWeight * b, ChannelWeight);
+    luminances[luminanceIndex] := (TMathUtils.Asr(luminance * alpha, 8) + TMathUtils.Asr(255 * (255 - alpha), 8));
     Inc(luminanceIndex);
   end;
 end;
@@ -474,9 +476,9 @@ begin
     alpha := rgbRawBytes[rgbIndex];
     Inc(rgbIndex);
 
-    luminance := ((RChannelWeight * r + GChannelWeight * g +
-                   BChannelWeight * b) shr ChannelWeight);
-    luminances[luminanceIndex] := (((luminance * alpha) shr 8) + (255 * (255 - alpha) shr 8));
+    luminance := TMathUtils.Asr(RChannelWeight * r + GChannelWeight * g +
+                   BChannelWeight * b, ChannelWeight);
+    luminances[luminanceIndex] := TMathUtils.Asr(luminance * alpha, 8) + TMathUtils.Asr(255 * (255 - alpha), 8);
     Inc(luminanceIndex);
   end;
 end;
@@ -505,9 +507,9 @@ begin
     b := rgbRawBytes[rgbIndex];
     Inc(rgbIndex);
 
-    luminance := ((RChannelWeight * r + GChannelWeight * g +
-                   BChannelWeight * b) shr ChannelWeight);
-    luminances[luminanceIndex] := (((luminance * alpha) shr 8) + (255 * (255 - alpha) shr 8));
+    luminance := TMathUtils.Asr(RChannelWeight * r + GChannelWeight * g +
+                   BChannelWeight * b, ChannelWeight);
+    luminances[luminanceIndex] := TMathUtils.Asr(luminance * alpha,8) + TMathUtils.Asr(255 * (255 - alpha),8);
     Inc(luminanceIndex);
   end;
 end;
