@@ -1,4 +1,4 @@
-unit CharacterSetECI;
+unit ZXing.CharacterSetECI;
 
 {
   * Copyright 2008 ZXing authors

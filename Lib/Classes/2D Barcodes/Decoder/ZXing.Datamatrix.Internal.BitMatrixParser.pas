@@ -24,7 +24,7 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
-  DecodeHintType,
+  ZXing.DecodeHintType,
   ZXing.Common.BitMatrix,
   ZXing.QrCode.Internal.FormatInformation,
   ZXing.Common.Detector.MathUtils,

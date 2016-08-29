@@ -16,13 +16,13 @@
   * Implemented by E. Spelt for Delphi
 }
 
-unit BinaryBitmap;
+unit ZXing.BinaryBitmap;
 
 interface
 
 uses
   System.SysUtils,
-  Binarizer,
+  ZXing.Binarizer,
   ZXing.LuminanceSource,
   ZXing.Common.BitArray,
   ZXing.Common.BitMatrix;

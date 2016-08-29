@@ -1,4 +1,4 @@
-unit StringUtils;
+unit ZXing.StringUtils;
 
 {
   * Copyright 2008 ZXing authors
@@ -19,7 +19,7 @@ unit StringUtils;
 }
 interface
 
-uses SysUtils, Generics.Collections, DecodeHintType;
+uses SysUtils, Generics.Collections, ZXing.DecodeHintType;
 
 type
 
@@ -66,9 +66,9 @@ var
   utf8bom, canBeISO88591, canBeShiftJIS, canBeUTF8: boolean;
 
 begin
-  if ((hints <> nil) and hints.ContainsKey(DecodeHintType.CHARACTER_SET)) then
+  if ((hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.CHARACTER_SET)) then
   begin
-    characterSet := string(hints[DecodeHintType.CHARACTER_SET]);
+    characterSet := string(hints[ZXing.DecodeHintType.CHARACTER_SET]);
     if (characterSet <> '') then
     begin
       Result := characterSet;

@@ -25,7 +25,7 @@ uses
   FMX.Graphics,
   FMX.Objects,
   SysUtils,
-  ScanManager,
+  ZXing.ScanManager,
   ZXing.BarcodeFormat,
   ZXing.ReadResult;
 

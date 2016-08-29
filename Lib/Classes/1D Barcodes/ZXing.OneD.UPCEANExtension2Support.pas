@@ -26,10 +26,10 @@ uses
   System.Math,
   ZXing.Reader,
   ZXing.BarcodeFormat,
-  BinaryBitmap, 
+  ZXing.BinaryBitmap,
   ZXing.ReadResult,
-  DecodeHintType,
-  ResultMetadataType,
+  ZXing.DecodeHintType,
+  ZXing.ResultMetadataType,
   ZXing.ResultPoint,
   ZXing.Common.BitArray;
 
@@ -183,7 +183,7 @@ begin
      exit;
 
   dictionary1 := TDictionary<TResultMetadataType, TObject>.Create;
-  dictionary1[ResultMetadataType.ISSUE_NUMBER] := TObject(raw);
+  dictionary1[ZXing.ResultMetadataType.ISSUE_NUMBER] := TObject(raw);
   Result := dictionary1;
 end;
 

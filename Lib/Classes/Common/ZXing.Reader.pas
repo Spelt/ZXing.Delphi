@@ -24,9 +24,9 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
-  BinaryBitmap,
+  ZXing.BinaryBitmap,
   ZXing.ReadResult,
-  DecodeHintType;
+  ZXing.DecodeHintType;
 
 type
   /// <summary>

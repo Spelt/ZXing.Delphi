@@ -113,7 +113,7 @@ type
   end;
 
 implementation
-uses Helpers;
+uses ZXing.Helpers;
 
 /// <summary>
 /// Initializes a new instance of the <see cref="RGBLuminanceSource"/> class.

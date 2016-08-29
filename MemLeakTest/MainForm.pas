@@ -17,8 +17,8 @@ uses
   FMX.Controls.Presentation,
   FMX.StdCtrls,
   FMX.Objects,
-  ScanManager,
-  ResultMetaDataType,
+  ZXing.ScanManager,
+  ZXing.ResultMetaDataType,
   ZXing.BarcodeFormat,
   ZXing.ReadResult,
   ZXing.ResultPoint;

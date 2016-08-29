@@ -17,7 +17,7 @@
   * Restructured by K. Gossens
 }
 
-unit DecodeHintType;
+unit ZXing.DecodeHintType;
 
 interface
 

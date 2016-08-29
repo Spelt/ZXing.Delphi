@@ -24,7 +24,7 @@ interface
 uses 
   SysUtils, 
   Generics.Collections, 
-  DecodeHintType, 
+  ZXing.DecodeHintType,
   ZXing.Common.BitMatrix, 
   ZXing.QrCode.Internal.Version,
   ZXing.QrCode.Internal.FormatInformation, 
@@ -219,7 +219,14 @@ begin
             // If we've made a whole byte, save it off
             if (bitsRead = 8) then
             begin
-              Result[resultOffset] := Byte(currentByte);
+//              if resultoffset > high(Result) then
+//                 raise EProgrammerNotFound.CreateFmt('resultoffset %d> high(Result) %d',[resultOffset,high(Result)])
+//              else if resultoffset < 0 then
+//                 raise EProgrammerNotFound.CreateFmt('resultoffset %d<0!',[resultOffset]);
+
+              if (resultoffset>=0) and  (resultoffset <= high(Result)) then // minchiata aggiunta da carlo
+                  Result[resultOffset] := Byte(currentByte);
+
               Inc(resultOffset);
               bitsRead := 0;
               currentByte := 0;

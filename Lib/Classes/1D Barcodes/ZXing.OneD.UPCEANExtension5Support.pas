@@ -25,11 +25,11 @@ uses
   System.Generics.Collections, 
   System.Math,
   ZXing.Reader,
-  BinaryBitmap, 
+  ZXing.BinaryBitmap,
   ZXing.ReadResult,
   ZXing.BarcodeFormat,
-  DecodeHintType,
-  ResultMetadataType,
+  ZXing.DecodeHintType,
+  ZXing.ResultMetadataType,
   ZXing.ResultPoint,
   ZXing.Common.BitArray,
   ZXing.Common.Detector.MathUtils;
@@ -251,7 +251,7 @@ begin
      Result := nil;
 
   dictionary1 := TDictionary<TResultMetadataType, TObject>.Create();
-  dictionary1[ResultMetadataType.SUGGESTED_PRICE] := TObject(value);
+  dictionary1[ZXing.ResultMetadataType.SUGGESTED_PRICE] := TObject(value);
 
   Result := dictionary1;
 end;

@@ -1,4 +1,4 @@
-unit ScanManager;
+unit ZXing.ScanManager;
 
 interface
 
@@ -9,13 +9,13 @@ uses
   ZXing.LuminanceSource,
   ZXing.RGBLuminanceSource,
   ZXing.InvertedLuminanceSource,
-  HybridBinarizer,
-  BinaryBitmap,
-  MultiFormatReader,
+  ZXing.HybridBinarizer,
+  ZXing.BinaryBitmap,
+  ZXing.MultiFormatReader,
   ZXing.BarcodeFormat,
   ZXing.ResultPoint,
   ZXing.ReadResult,
-  DecodeHintType;
+  ZXing.DecodeHintType;
 
 type
   TScanManager = class
@@ -112,12 +112,12 @@ begin
   if ((format <> TBarcodeFormat.Auto)) then
   begin
 
-    if (hints.TryGetValue(DecodeHintType.POSSIBLE_FORMATS, o)) then
+    if (hints.TryGetValue(ZXing.DecodeHintType.POSSIBLE_FORMATS, o)) then
        listFormats := o as TList<TBarcodeFormat>
     else
       begin
         listFormats := TList<TBarcodeFormat>.Create();
-        hints.Add(DecodeHintType.POSSIBLE_FORMATS, listFormats);
+        hints.Add(ZXing.DecodeHintType.POSSIBLE_FORMATS, listFormats);
       end;
 
     if (listFormats.Count = 0) then

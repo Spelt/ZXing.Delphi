@@ -1,4 +1,4 @@
-unit BitSource;
+unit ZXing.BitSource;
 
 {
   * Copyright 2008 ZXing authors

@@ -30,7 +30,7 @@ uses
   ZXing.Common.BitArray,
   ZXing.OneD.UPCEANReader,
   ZXing.ReadResult,
-  DecodeHintType,
+  ZXing.DecodeHintType,
   ZXing.ResultPoint,
   ZXing.BarcodeFormat;
 

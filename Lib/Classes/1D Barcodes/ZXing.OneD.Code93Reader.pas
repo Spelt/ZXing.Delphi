@@ -28,7 +28,7 @@ uses
   ZXing.OneD.OneDReader,
   ZXing.Common.BitArray, 
   ZXing.ReadResult,
-  DecodeHintType, 
+  ZXing.DecodeHintType,
   ZXing.ResultPoint, 
   ZXing.BarcodeFormat,
   ZXing.Common.Detector.MathUtils;

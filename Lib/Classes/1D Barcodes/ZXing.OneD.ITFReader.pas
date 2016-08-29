@@ -28,10 +28,10 @@ uses
   ZXing.OneD.OneDReader,
   ZXing.Common.BitArray, 
   ZXing.ReadResult,
-  DecodeHintType, 
+  ZXing.DecodeHintType,
   ZXing.ResultPoint, 
   ZXing.BarcodeFormat,
-  Helpers;
+  ZXing.Helpers;
 
 type
   /// <summary>
@@ -152,9 +152,9 @@ begin
 
   allowedLengths := nil;
   maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
-  if ((hints <> nil) and hints.ContainsKey(DecodeHintType.ALLOWED_LENGTHS)) then
+  if ((hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.ALLOWED_LENGTHS)) then
   begin
-    allowedLengths := TArray<Integer>(hints[DecodeHintType.ALLOWED_LENGTHS]);
+    allowedLengths := TArray<Integer>(hints[ZXing.DecodeHintType.ALLOWED_LENGTHS]);
     maxAllowedLength := 0
   end;
 
