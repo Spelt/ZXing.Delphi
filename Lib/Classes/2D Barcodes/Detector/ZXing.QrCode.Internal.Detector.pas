@@ -28,7 +28,7 @@ uses
   ZXing.Common.BitMatrix,
   ZXing.ResultPoint,
   ZXing.Common.DetectorResult,
-  DecodeHintType,
+  ZXing.DecodeHintType,
   ZXing.Common.PerspectiveTransform,
   ZXing.QrCode.Internal.FinderPatternInfo,
   ZXing.QrCode.Internal.FinderPatternFinder,
@@ -36,7 +36,7 @@ uses
   ZXing.QrCode.Internal.AlignmentPattern,
   ZXing.QrCode.Internal.AlignmentPatternFinder,
   ZXing.QrCode.Internal.Version,
-  DefaultGridSampler,
+  ZXing.DefaultGridSampler,
   ZXing.Common.Detector.MathUtils;
 
 type

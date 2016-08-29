@@ -18,7 +18,7 @@
   * Delphi Implementation by E. Spelt and K. Gossens
 }
 
-unit MultiFormatReader;
+unit ZXing.MultiFormatReader;
 
 interface
 
@@ -26,11 +26,11 @@ uses
   System.SysUtils,
   System.Rtti,
   System.Generics.Collections,
-  RegularExpressions,
+  System.RegularExpressions,
   ZXing.ReadResult,
   ZXing.Reader,
-  DecodeHintType,
-  BinaryBitmap,
+  ZXing.DecodeHintType,
+  ZXing.BinaryBitmap,
   ZXing.BarcodeFormat,
   ZXing.ResultPoint,
 
@@ -191,16 +191,16 @@ begin
   FHints := Value;
 
   tryHarder := (Value <> nil) and
-    (Value.ContainsKey(DecodeHintType.TRY_HARDER));
+    (Value.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
 
-  if ((Value = nil) or (not Value.ContainsKey(DecodeHintType.POSSIBLE_FORMATS)))
+  if ((Value = nil) or (not Value.ContainsKey(ZXing.DecodeHintType.POSSIBLE_FORMATS)))
   then
   begin
     formats := nil;
   end
   else
   begin
-    formats := Value[DecodeHintType.POSSIBLE_FORMATS] as TList<TBarcodeFormat>
+    formats := Value[ZXing.DecodeHintType.POSSIBLE_FORMATS] as TList<TBarcodeFormat>
   end;
 
   // add readers from the hints
@@ -297,7 +297,7 @@ begin
 
   rpCallBack := nil;
   if ((FHints <> nil) and
-    (FHints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
+    (FHints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
   begin
     // rpCallBack := FHints[DecodeHintType.NEED_RESULT_POINT_CALLBACK]
     // as TResultPointCallback(nil);

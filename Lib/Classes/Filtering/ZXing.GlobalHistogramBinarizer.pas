@@ -1,4 +1,4 @@
-unit GlobalHistogramBinarizer;
+unit ZXing.GlobalHistogramBinarizer;
 {
   * Copyright 2009 ZXing authors
   *
@@ -21,7 +21,7 @@ interface
 
 uses 
   SysUtils, 
-  Binarizer, 
+  ZXing.Binarizer,
   ZXing.LuminanceSource,
   ZXing.Common.BitArray, 
   ZXing.Common.Detector.MathUtils;

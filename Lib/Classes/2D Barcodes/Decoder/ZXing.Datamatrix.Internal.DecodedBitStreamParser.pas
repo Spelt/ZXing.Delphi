@@ -24,8 +24,8 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
-  DecoderResult,
-  BitSource;
+  ZXing.DecoderResult,
+  ZXing.BitSource;
 
 type
   /// <summary>

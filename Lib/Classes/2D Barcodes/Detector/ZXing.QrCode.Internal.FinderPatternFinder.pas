@@ -28,7 +28,7 @@ uses
   System.Generics.Collections,
   ZXing.Common.BitMatrix,
   ZXing.ResultPoint,
-  DecodeHinttype,
+  ZXing.DecodeHinttype,
   ZXing.QrCode.Internal.FinderPatternInfo,
   ZXing.QrCode.Internal.FinderPattern;
 
@@ -511,8 +511,8 @@ var
 begin
   Result := nil;
 
-  tryHarder := (hints <> nil) and (hints.ContainsKey(DecodeHinttype.TRY_HARDER));
-  pureBarcode := (hints <> nil) and (hints.ContainsKey(DecodeHinttype.PURE_BARCODE));
+  tryHarder := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHinttype.TRY_HARDER));
+  pureBarcode := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHinttype.PURE_BARCODE));
   maxI := Self.image.Height;
   maxJ := Self.image.Width;
   // We are looking for black/white/black/white/black modules in

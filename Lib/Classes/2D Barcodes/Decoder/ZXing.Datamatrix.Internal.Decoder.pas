@@ -24,13 +24,13 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
-  DecodeHintType,
+  ZXing.DecodeHintType,
   ZXing.Common.BitMatrix,
   ZXing.Datamatrix.Internal.BitMatrixParser,
   ZXing.Datamatrix.Internal.DataBlock,
   ZXing.Common.ReedSolomon.ReedSolomonDecoder,
   ZXing.Common.ReedSolomon.GenericGF,
-  DecoderResult,
+  ZXing.DecoderResult,
   ZXing.Datamatrix.Internal.DecodedBitStreamParser;
 
 type

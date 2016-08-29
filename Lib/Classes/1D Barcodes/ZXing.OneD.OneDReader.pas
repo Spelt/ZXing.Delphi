@@ -27,10 +27,10 @@ uses
   System.Generics.Collections, 
   Math,
   ZXing.Reader,
-  BinaryBitmap, 
+  ZXing.BinaryBitmap,
   ZXing.ReadResult, 
-  DecodeHintType, 
-  ResultMetadataType,
+  ZXing.DecodeHintType,
+  ZXing.ResultMetadataType,
   ZXing.ResultPoint, 
   ZXing.Common.BitArray, 
   ZXing.Common.Detector.MathUtils;
@@ -189,10 +189,10 @@ begin
   end;
 
   tryHarder := (hints <> nil) and
-    (hints.ContainsKey(DecodeHintType.TRY_HARDER));
+    (hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
 
   tryHarderWithoutRotation := (hints <> nil) and
-    (hints.ContainsKey(DecodeHintType.TRY_HARDER_WITHOUT_ROTATION));
+    (hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER_WITHOUT_ROTATION));
 
   if (tryHarder and ((not tryHarderWithoutRotation) and image.RotateSupported))
   then
@@ -208,15 +208,15 @@ begin
     metadata := Result.ResultMetadata;
     orientation := 270;
     if ((metadata <> nil) and metadata.ContainsKey
-      (ResultMetadataType.orientation)) then
+      (ZXing.ResultMetadataType.orientation)) then
     begin
       // But if we found it reversed in doDecode(), add in that result here:
       orientation :=
-        (orientation + Integer(metadata[ResultMetadataType.orientation]
+        (orientation + Integer(metadata[ZXing.ResultMetadataType.orientation]
         )) mod 360;
     end;
 
-    Result.putMetadata(ResultMetadataType.orientation, TObject(orientation));
+    Result.putMetadata(ZXing.ResultMetadataType.orientation, TObject(orientation));
     // Update result points
     points := Result.ResultPoints;
     if (points <> nil) then
@@ -297,13 +297,13 @@ begin
         // don't want to clutter with noise from every single row scan -- just the scans
         // that start on the center line.
         if ((hints <> nil) and
-          hints.ContainsKey(DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then
+          hints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then
         begin
           newHints := TDictionary<TDecodeHintType, TObject>.Create;
           for Key in hints.Keys do
           begin
 
-            if (Key <> DecodeHintType.NEED_RESULT_POINT_CALLBACK) then
+            if (Key <> ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK) then
             begin
               newHints.Add(Key, hints[Key]);
             end;

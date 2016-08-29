@@ -49,7 +49,7 @@ uses
   FMX.Controls3D,
   ZXing.BarcodeFormat,
   ZXing.ReadResult,
-  ScanManager;
+  ZXing.ScanManager;
 
 type
   TMainForm = class(TForm)

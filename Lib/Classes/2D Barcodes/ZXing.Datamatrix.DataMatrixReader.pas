@@ -30,13 +30,13 @@ uses
   ZXing.BarcodeFormat,
   ZXing.ReadResult,
   ZXing.Reader,
-  DecodeHintType,
-  DecoderResult,
+  ZXing.DecodeHintType,
+  ZXing.DecoderResult,
   ZXing.Common.DetectorResult,
-  ResultMetadataType,
+  ZXing.ResultMetadataType,
   ZXing.ResultPoint,
   ZXing.Common.BitMatrix,
-  BinaryBitmap,
+  ZXing.BinaryBitmap,
   ZXing.Datamatrix.Internal.Decoder,
   ZXing.Datamatrix.Internal.Detector;
 

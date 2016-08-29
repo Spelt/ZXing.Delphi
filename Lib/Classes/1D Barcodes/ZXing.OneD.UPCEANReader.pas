@@ -30,9 +30,9 @@ uses
   ZXing.Common.BitArray,
   ZXing.OneD.UPCEANExtensionSupport,
   ZXing.OneD.EANManufacturerOrgSupport,
-  ResultMetadataType,
+  ZXing.ResultMetadataType,
   ZXing.ReadResult,
-  DecodeHintType,
+  ZXing.DecodeHintType,
   ZXing.ResultPoint,
   ZXing.BarcodeFormat;
 

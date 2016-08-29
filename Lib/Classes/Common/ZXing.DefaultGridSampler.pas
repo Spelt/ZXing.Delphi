@@ -18,7 +18,7 @@
   * Delphi Implementation by E. Spelt and K. Gossens
 }
 
-unit DefaultGridSampler;
+unit ZXing.DefaultGridSampler;
 
 interface
 

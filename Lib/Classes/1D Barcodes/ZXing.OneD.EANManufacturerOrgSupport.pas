@@ -29,10 +29,10 @@ uses
   ZXing.OneD.UPCEANExtension2Support,
   ZXing.OneD.UPCEANExtension5Support,
   ZXing.Reader,
-  BinaryBitmap,
+  ZXing.BinaryBitmap,
   ZXing.ReadResult,
-  DecodeHintType,
-  ResultMetadataType,
+  ZXing.DecodeHintType,
+  ZXing.ResultMetadataType,
   ZXing.ResultPoint,
   ZXing.Common.BitArray,
   ZXing.Common.Detector.MathUtils;

@@ -24,10 +24,10 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
-  DecodeHintType,
+  ZXing.DecodeHintType,
   ZXing.Common.BitMatrix,
   ZXing.QrCode.Internal.BitMatrixParser,
-  DecoderResult,
+  ZXing.DecoderResult,
   ZXing.Common.ReedSolomon.ReedSolomonDecoder,
   ZXing.Common.ReedSolomon.GenericGF,
   ZXing.QrCode.Internal.QRCodeDecoderMetaData,

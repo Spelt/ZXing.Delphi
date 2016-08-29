@@ -27,7 +27,7 @@ uses
   System.Generics.Defaults,
   System.Generics.Collections,
   ZXing.Common.BitMatrix,
-  DefaultGridSampler,
+  ZXing.DefaultGridSampler,
   ZXing.Common.DetectorResult,
   ZXing.ResultPoint,
   ZXing.Common.GridSampler,

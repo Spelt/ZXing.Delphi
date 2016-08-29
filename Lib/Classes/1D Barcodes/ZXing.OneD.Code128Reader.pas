@@ -25,11 +25,11 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   System.Math,
-  Helpers,
+  ZXing.Helpers,
   ZXing.OneD.OneDReader,
   ZXing.Common.BitArray,
   ZXing.ReadResult,
-  DecodeHintType,
+  ZXing.DecodeHintType,
   ZXing.ResultPoint,
   ZXing.BarcodeFormat;
 
@@ -275,7 +275,7 @@ var
   resultPointLeft, resultPointRight: IResultPoint;
 begin
   convertFNC1 := (hints <> nil) and
-    (hints.ContainsKey(DecodeHintType.ASSUME_GS1));
+    (hints.ContainsKey(ZXing.DecodeHintType.ASSUME_GS1));
 
   startPatternInfo := FindStartPattern(row);
   if (startPatternInfo = nil) then

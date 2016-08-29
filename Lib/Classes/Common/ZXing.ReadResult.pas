@@ -24,7 +24,7 @@ uses
   System.SysUtils,
   Generics.Collections,
   ZXing.ResultPoint,
-  ResultMetadataType,
+  ZXing.ResultMetadataType,
   ZXing.BarcodeFormat;
 
 type

@@ -16,7 +16,7 @@
   * Implemented by E. Spelt for Delphi
 }
 
-unit ResultMetadataType;
+unit ZXing.ResultMetadataType;
 
 interface
 

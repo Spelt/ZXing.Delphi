@@ -27,7 +27,7 @@ uses
   Generics.Collections,
   ZXing.Common.BitArray,
   ZXing.BarcodeFormat,
-  Helpers,
+  ZXing.Helpers,
   ZXing.Common.Detector.MathUtils;
 
 type

@@ -1,4 +1,4 @@
-unit Helpers;
+unit ZXing.Helpers;
 
 {
   * Copyright 2008 ZXing authors

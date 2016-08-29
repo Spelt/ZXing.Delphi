@@ -1,4 +1,4 @@
-unit Binarizer;
+unit ZXing.Binarizer;
 {
   * Copyright 2009 ZXing authors
   *

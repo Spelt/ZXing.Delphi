@@ -1,4 +1,4 @@
-unit DecoderResult;
+unit ZXing.DecoderResult;
 
 {
   * Copyright 2008 ZXing authors

@@ -1,4 +1,4 @@
-unit HybridBinarizer;
+unit ZXing.HybridBinarizer;
 {
   * Copyright 2009 ZXing authors
   *
@@ -21,10 +21,10 @@ interface
 
 uses 
   SysUtils, 
-  GlobalHistogramBinarizer, 
+  ZXing.GlobalHistogramBinarizer,
   ZXing.LuminanceSource,
-  ZXing.Common.BitMatrix, 
-  binarizer,
+  ZXing.Common.BitMatrix,
+  ZXing.binarizer,
   ZXing.Common.Detector.MathUtils;
 
 /// <summary> This class implements a local thresholding algorithm, which while slower than the
