@@ -64,7 +64,7 @@ type
     /// <returns>formatted interpretation of raw content as a {@link TMap} mapping
     /// one {@link TResultMetadataType} to appropriate value, or {@code nil} if not known</returns>
     class function parseExtensionString(
-      const raw: string): TDictionary<TResultMetadataType, TObject>; static;
+      const raw: string): TResultMetadata; static;
 
     class function parseExtension5String(const raw: String): String; static;
   public
@@ -100,7 +100,7 @@ var
   res : TStringBuilder;
   ending : Integer;
   resultString : String;
-  extensionData : TDictionary<TResultMetadataType, TObject>;
+  extensionData : TResultMetadata;
   resultPoints : TArray<IResultPoint>;
   extensionResult : TReadResult;
 begin
@@ -235,10 +235,10 @@ begin
 end;
 
 class function TUPCEANExtension5Support.parseExtensionString(
-  const raw: String): TDictionary<TResultMetadataType, TObject>;
+  const raw: String): TResultMetadata;
 var
   value: String;
-  dictionary1: TDictionary<TResultMetadataType, TObject>;
+  dictionary1: TResultMetadata;
 begin
   Result := nil;
   if (Length(raw) <> 5)
@@ -246,12 +246,13 @@ begin
      exit;
 
   value := TUPCEANExtension5Support.parseExtension5String(raw);
+
   if (Length(value) = 0)
   then
      Result := nil;
 
-  dictionary1 := TDictionary<TResultMetadataType, TObject>.Create();
-  dictionary1[ZXing.ResultMetadataType.SUGGESTED_PRICE] := TObject(value);
+  dictionary1 := TResultMetadata.Create();
+  dictionary1[ZXing.ResultMetadataType.SUGGESTED_PRICE] := TResultMetadata.CreateStringMetadata(value);
 
   Result := dictionary1;
 end;

@@ -25,6 +25,7 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   ZXing.DecoderResult,
+  ZXing.ByteSegments,
   ZXing.BitSource;
 
 type
@@ -55,7 +56,7 @@ type
     class function decodeEdifactSegment(bits: TBitSource;
       res: TStringBuilder): boolean;
     class function decodeBase256Segment(bits: TBitSource; res: TStringBuilder;
-      byteSegments: TList < TArray < Byte >> ): boolean;
+      byteSegments:IByteSegments ): boolean;
     class function decodeAsciiSegment(bits: TBitSource; res: TStringBuilder;
       resultTrailer: TStringBuilder; var mode: TMode): boolean;
     class procedure parseTwoBytes(firstByte: Integer; secondByte: Integer;
@@ -75,14 +76,14 @@ class function TDecodedBitStreamParser.decode(bytes: TArray<Byte>)
 var
   bits: TBitSource;
   res, resultTrailer: TStringBuilder;
-  byteSegments: TList<TArray<Byte>>;
+  byteSegments: IByteSegments;
   mode: TMode;
 
 begin
   bits := TBitSource.Create(bytes);
   res := TStringBuilder.Create(100);
   resultTrailer := TStringBuilder.Create(0);
-  byteSegments := TList < TArray < Byte >>.Create();
+  byteSegments :=  ByteSegmentsCreate;
 
   try
 
@@ -136,7 +137,7 @@ begin
           TMode.BASE256_ENCODE:
             begin
               if (not TDecodedBitStreamParser.decodeBase256Segment(bits, res,
-                byteSegments)) then
+                    byteSegments)) then
               begin
                 result := nil;
                 exit;
@@ -431,7 +432,7 @@ end;
 /// See ISO 16022:2006, 5.2.9 and Annex B, B.2
 /// </summary>
 class function TDecodedBitStreamParser.decodeBase256Segment(bits: TBitSource;
-  res: TStringBuilder; byteSegments: TList < TArray < Byte >> ): boolean;
+  res: TStringBuilder; byteSegments: IByteSegments ): boolean;
 var
   i, Count, codewordPosition, d1: Integer;
   bytes: TArray<Byte>;

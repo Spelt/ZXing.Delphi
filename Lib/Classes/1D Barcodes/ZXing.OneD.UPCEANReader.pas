@@ -534,7 +534,7 @@ begin
   extensionResult := extensionReader.decodeRow(rowNumber, row, endRange[1]);
   if (extensionResult <> nil) then
   begin
-    decodeResult.putMetadata(TResultMetadataType.UPC_EAN_EXTENSION, TObject(extensionResult.Text));
+    decodeResult.putMetadata(TResultMetadataType.UPC_EAN_EXTENSION, TResultMetaData.CreateStringMetadata(extensionResult.Text));
     decodeResult.putAllMetadata(extensionResult.ResultMetadata);
     decodeResult.addResultPoints(extensionResult.ResultPoints);
     extensionLength := Length(extensionResult.Text);
@@ -569,7 +569,7 @@ begin
         countryID := eanManSupport.lookupCountryIdentifier(resultString);
         if (countryID <> '')
         then
-           decodeResult.putMetadata(TResultMetadataType.POSSIBLE_COUNTRY, TObject(countryID));
+           decodeResult.putMetadata(TResultMetadataType.POSSIBLE_COUNTRY, TResultMetaData.CreateStringMetadata(countryID));
       end;
   end;
 

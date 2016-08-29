@@ -53,6 +53,7 @@ var
 
 implementation
 
+
 {$R *.fmx}
 { TForm2 }
 
@@ -62,7 +63,8 @@ var
   bmp: TBitmap;
   ScanManager: TScanManager;
   rs: TReadResult;
-  obj : TObject;
+  obj : IMetaData;
+  strMetadata: IStringMetaData;
   ResultPoint: IResultPoint;
 const
   iSize = 5;
@@ -80,9 +82,9 @@ begin
           rs.ResultMetaData.ContainsKey(TResultMetaDataType.ERROR_CORRECTION_LEVEL) then
       begin
         obj := rs.ResultMetaData.Items[TResultMetaDataType.ERROR_CORRECTION_LEVEL];
-        if (obj is TStringObject)
+        if Supports(obj,IStringMetaData,strMetadata)
         then
-           edResult.Text := edResult.Text + ' (ECLevel: ' + TStringObject(obj).Value + ')';
+           edResult.Text := edResult.Text + ' (ECLevel: ' + strMetadata.Value + ')';
       end;
       bmp.Canvas.BeginScene;
       try

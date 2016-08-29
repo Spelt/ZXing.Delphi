@@ -31,6 +31,7 @@ uses
   ZXing.DecoderResult,
   ZXing.CharacterSetECI,
   ZXing.StringUtils,
+  ZXing.ByteSegments,
   ZXing.QrCode.Internal.Mode,
   ZXing.Common.Detector.MathUtils;
 
@@ -60,7 +61,7 @@ type
     class function decodeByteSegment(const bits: TBitSource;
       const res: TStringBuilder; count: Integer;
       const currentCharacterSetECI: TCharacterSetECI;
-      const byteSegments: TList<TArray<Byte>>;
+      const byteSegments: IByteSegments;
       const hints: TDictionary<TDecodeHintType, TObject>): Boolean; static;
 
     /// <summary>
@@ -110,7 +111,7 @@ class function TDecodedBitStreamParser.decode(const bytes: TArray<Byte>;
 var
   Mode: TMode;
   bits: TBitSource;
-  byteSegments: TList<TArray<Byte>>;
+  byteSegments: IByteSegments;
   fc1InEffect: Boolean;
   symbolSequence,
   parityData,
@@ -124,7 +125,7 @@ begin
 
   bits := TBitSource.Create(bytes);
   res := TStringBuilder.Create(50);
-  byteSegments := TList<TArray<Byte>>.Create();
+  byteSegments := ByteSegmentsCreate();
   byteSegments.Capacity := 1;
   symbolSequence := -1;
   parityData := -1;
@@ -329,7 +330,7 @@ end;
 class function TDecodedBitStreamParser.decodeByteSegment(const bits: TBitSource;
   const res: TStringBuilder; count: Integer;
   const currentCharacterSetECI: TCharacterSetECI;
-  const byteSegments: TList<TArray<Byte>>;
+  const byteSegments: IByteSegments;
   const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
 var
   Enc:TEncoding;

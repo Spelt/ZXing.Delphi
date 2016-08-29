@@ -77,6 +77,7 @@ type
   end;
 
 implementation
+uses ZXing.ByteSegments;
 
 { TDataMatrixReader }
 
@@ -107,7 +108,7 @@ var
   points: TArray<IResultPoint>;
   bits: TBitMatrix;
   DetectorResult: TDetectorResult;
-  byteSegments: TList<TArray<Byte>>;
+  ByteSegments: IByteSegments;
 begin
   Result := nil;
   DetectorResult := nil;
@@ -149,14 +150,13 @@ begin
     Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
       points, TBarcodeFormat.DATA_MATRIX);
 
-    byteSegments := DecoderResult.byteSegments;
+    ByteSegments := DecoderResult.ByteSegments;
 
-    if (byteSegments <> nil) then
-      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
+    if (ByteSegments <> nil) then
+      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, TResultMetaData.CreateByteSegmentsMetadata( byteSegments));
 
     if (Length(DecoderResult.ECLevel) <> 0) then
-      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
-        TStringObject.Create(DecoderResult.ECLevel));
+      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, TResultMetaData.CreateStringMetadata(DecoderResult.ECLevel));
 
   finally
 

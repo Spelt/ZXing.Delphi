@@ -19,14 +19,16 @@ unit ZXing.DecoderResult;
 }
 interface
 
-uses SysUtils, Generics.Collections;
+uses SysUtils,
+     Generics.Collections,
+     ZXIng.ByteSegments;
 
 type
   TDecoderResult = class
   private
     function GetStructuredAppend: boolean;
   public
-    ByteSegments: TList<TArray<Byte>>;
+    ByteSegments: IByteSegments;
     ECLevel: string;
     Erasures: Integer;
     ErrorsCorrected: Integer;
@@ -37,9 +39,9 @@ type
     Text: string;
 
     constructor Create(RawBytes: TArray<Byte>; const Text: string;
-      ByteSegments: TList<TArray<Byte>>; ECLevel: string); overload;
+      ByteSegments: IByteSegments; ECLevel: string); overload;
     constructor Create(RawBytes: TArray<Byte>; const Text: string;
-      ByteSegments: TList<TArray<Byte>>; ECLevel: string; saSequence: Integer;
+      ByteSegments: IByteSegments; ECLevel: string; saSequence: Integer;
       saParity: Integer); overload;
     destructor Destroy; override;
 
@@ -51,13 +53,13 @@ implementation
 { TDecoderResult }
 
 constructor TDecoderResult.Create(RawBytes: TArray<Byte>; const Text: String;
-  ByteSegments: TList<TArray<Byte>>; ECLevel: String);
+  ByteSegments: IByteSegments; ECLevel: String);
 begin
   Self.Create(RawBytes, Text, ByteSegments, ECLevel, -1, -1);
 end;
 
 constructor TDecoderResult.Create(RawBytes: TArray<Byte>; const Text: string;
-  ByteSegments: TList<TArray<Byte>>; ECLevel: string;
+  ByteSegments: IByteSegments; ECLevel: string;
   saSequence, saParity: Integer);
 begin
   if ((RawBytes = nil) and (Text = ''))
@@ -77,7 +79,7 @@ begin
   if Assigned(ByteSegments)
   then
      ByteSegments.Clear;
-  FreeAndNil(ByteSegments);
+
   RawBytes := nil;
   FreeAndNil(Other);
 

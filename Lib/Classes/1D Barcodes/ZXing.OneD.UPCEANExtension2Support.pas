@@ -55,8 +55,7 @@ type
     /// </summary>
     /// <param name="raw">raw content of extension</param>
     /// <returns>formatted interpretation of raw content as a {@link TMap} mapping
-    class function parseExtensionString(const raw: String):
-      TDictionary<TResultMetadataType, TObject>; static;
+    class function parseExtensionString(const raw: String): TResultMetadata; static;
   public
     class function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const extensionStartRange: TArray<Integer>): TReadResult;
@@ -88,7 +87,7 @@ var
   ending : Integer;
   resultString : String;
   extensionResult : TReadResult;
-  extensionData : TDictionary<TResultMetadataType, TObject>;
+  extensionData : TResultMetadata;
   resultPoints : TArray<IResultPoint>;
 begin
   Result := nil;
@@ -171,10 +170,9 @@ begin
   Result := rowOffset;
 end;
 
-class function TUPCEANExtension2Support.parseExtensionString(
-  const raw: String): TDictionary<TResultMetadataType, TObject>;
+class function TUPCEANExtension2Support.parseExtensionString(const raw: String): TResultMetadata;
 var
-  dictionary1: TDictionary<TResultMetadataType, TObject>;
+  dictionary1: TResultMetadata;
 begin
   Result := nil;
 
@@ -182,8 +180,8 @@ begin
   then
      exit;
 
-  dictionary1 := TDictionary<TResultMetadataType, TObject>.Create;
-  dictionary1[ZXing.ResultMetadataType.ISSUE_NUMBER] := TObject(raw);
+  dictionary1 := TResultMetadata.Create;
+  dictionary1[ZXing.ResultMetadataType.ISSUE_NUMBER] := TResultMetaData.CreateStringMetadata(raw);
   Result := dictionary1;
 end;
 

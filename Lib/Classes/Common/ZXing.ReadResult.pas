@@ -25,27 +25,53 @@ uses
   Generics.Collections,
   ZXing.ResultPoint,
   ZXing.ResultMetadataType,
-  ZXing.BarcodeFormat;
+  ZXing.BarcodeFormat,
+  ZXing.ByteSegments;
 
 type
-  TStringObject = class(TObject)
-  private
-    FValue: String;
+
+  IMetaData = Interface
+    ['{27AEB2C5-D775-44C6-9816-3E69025CA57C}']
+  end;
+
+  IStringMetadata = interface(IMetaData)
+     ['{8073F897-30AD-49B7-AE0B-B187D3373163}']
+     function Value:String;
+  end;
+
+  IIntegerMetadata = interface(IMetaData)
+     ['{CA60A23A-57ED-4C8E-9886-4F23B832A90C}']
+     function Value:Integer;
+  end;
+
+  IByteSegmentsMetadata = interface(IMetaData)
+     ['{CA60A23A-57ED-4C8E-9886-4F23B832A90C}']
+     function Value:IByteSegments;
+  end;
+
+  /// <summary>
+  ///  represents the metadata contained in a TReadResult and provides the
+  ///  helping functions needed to create them
+  /// </summary>
+  TResultMetaData = class(TDictionary<TResultMetadataType, IMetaData>)
   public
-    constructor Create(const AValue: String);
-    property Value: String read FValue;
+     constructor Create;
+     class function CreateStringMetadata(const Value:string) :IStringMetaData;
+     class function CreateIntegerMetadata(const Value:integer) :IIntegerMetaData;
+     class function CreateByteSegmentsMetadata(const Value:IByteSegments) :IByteSegmentsMetadata;
   end;
 
   TReadResult = class
   private
     FText: string;
     FTimeStamp: TDateTime;
-    FResultMetadata: TDictionary<TResultMetadataType, TObject>;
+    FResultMetadata: TResultMetaData;
     FRawBytes: TArray<Byte>;
     FResultPoints: TArray<IResultPoint>;
     FFormat: TBarcodeFormat;
 
     procedure SetText(const AValue: String);
+    procedure SetMetaData( const Value: TResultMetadata);
   public
     /// <summary>
     /// Initializes a new instance of the <see cref="TReadResult"/> class.
@@ -73,8 +99,10 @@ type
 
     function ToString: String; override;
 
-    property ResultMetaData: TDictionary<TResultMetadataType, TObject>
-      read FResultMetadata write FResultMetadata;
+    // we need a "write" procedure accessor because we need to properly deallocate
+    // existing instance if we overwrite it with another one
+    property ResultMetaData: TResultMetadata
+      read FResultMetadata write SetMetaData;
 
     /// <summary>
     /// Adds one metadata to the result
@@ -82,14 +110,13 @@ type
     /// <param name="type">The type.</param>
     /// <param name="value">The value.</param>
     procedure putMetadata(const ResultMetadataType: TResultMetadataType;
-      const Value: TObject);
+      const Value: IMetaData);
 
     /// <summary>
     /// Adds a list of metadata to the result
     /// </summary>
     /// <param name="metadata">The metadata.</param>
-    procedure putAllMetaData(const metaData: TDictionary<TResultMetadataType,
-      TObject>);
+    procedure putAllMetaData(const metaData: TResultMetadata);
 
     /// <summary>
     /// Adds the result points.
@@ -122,12 +149,97 @@ type
 
 implementation
 
-{ TStringObject }
 
-constructor TStringObject.Create(const AValue: String);
+{$REGION 'IMetaData implementations'}
+
+{ TStringMetadata }
+type
+  TStringMetadata = class(TInterfacedObject,IMetaData,IStringMetadata)
+  strict private
+    FValue: String;
+    function Value: String;
+  private
+    constructor Create(const AValue: String);
+  end;
+
+function TStringMetadata.Value: String;
 begin
+   result := FValue
+end;
+
+constructor TStringMetadata.Create(const AValue: string);
+begin
+  inherited Create;
   FValue := AValue;
 end;
+
+{ TIntegerMetadata }
+type
+  TIntegerMetadata = class(TInterfacedObject,IMetaData,IIntegerMetadata)
+  strict private
+    FValue: Integer;
+    function Value: Integer;
+  private
+    constructor Create(const AValue: Integer);
+  end;
+
+function TIntegerMetadata.Value: Integer;
+begin
+   result := FValue
+end;
+
+constructor TIntegerMetadata.Create(const AValue: Integer);
+begin
+  inherited Create;
+  FValue := AValue;
+end;
+
+
+{ TByteSegmentsMetadata }
+type
+  TByteSegmentsMetadata = class(TInterfacedObject,IMetaData,IByteSegmentsMetadata)
+  strict private
+    FValue: IByteSegments;
+    function Value: IByteSegments;
+  private
+    constructor Create(const AValue: IByteSegments);
+  end;
+
+function TByteSegmentsMetadata.Value: IByteSegments;
+begin
+   result := FValue
+end;
+
+constructor TByteSegmentsMetadata.Create(const AValue: IByteSegments);
+begin
+  inherited Create;
+  FValue := AValue;
+end;
+
+{ TResultMetadata }
+constructor TResultMetaData.Create;
+begin
+   inherited Create;
+end;
+
+class function TResultMetadata.CreateStringMetadata(const Value:string) :IStringMetaData;
+begin
+   result := TStringMetadata.Create(Value);
+end;
+
+class function TResultMetaData.CreateByteSegmentsMetadata(
+  const Value: IByteSegments): IByteSegmentsMetadata;
+begin
+   result := TByteSegmentsMetadata.Create(value);
+end;
+
+class function TResultMetadata.CreateIntegerMetadata(const Value:integer) :IIntegerMetaData;
+begin
+   result := TIntegerMetadata.Create(Value);
+end;
+
+{$ENDREGION 'IMetaData implementations'}
+
 
 { TReadResult }
 
@@ -168,6 +280,15 @@ begin
 end;
 
 // Added (KG): UTF-8 compatiblity
+procedure TReadResult.SetMetaData(const Value: TResultMetadata);
+begin
+  if value = FResultMetadata then
+    exit; // no change
+  if FResultMetadata<>nil then
+    FResultMetadata.Free; // we need to free existing object instance, for old-gen compilers
+  FResultMetadata := Value;
+end;
+
 procedure TReadResult.SetText(const AValue: String);
 begin
   FText := UTF8ToString(AValue);
@@ -176,15 +297,14 @@ begin
 end;
 
 procedure TReadResult.putMetadata(const ResultMetadataType: TResultMetadataType;
-  const Value: TObject);
+  const Value: IMetaData);
 begin
   if (FResultMetadata = nil) then
-    FResultMetadata := TDictionary<TResultMetadataType, TObject>.Create();
+    FResultMetadata := TResultMetadata.Create();
   FResultMetadata.AddOrSetValue(ResultMetadataType, Value);
 end;
 
-procedure TReadResult.putAllMetaData(const metaData
-  : TDictionary<TResultMetadataType, TObject>);
+procedure TReadResult.putAllMetaData(const metaData: TResultMetadata);
 var
   key: TResultMetadataType;
 begin

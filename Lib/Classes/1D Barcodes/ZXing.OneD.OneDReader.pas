@@ -177,7 +177,7 @@ function TOneDReader.decode(const image: TBinaryBitmap;
 var
   tryHarder, tryHarderWithoutRotation: Boolean;
   rotatedImage: TBinaryBitmap;
-  metadata: TDictionary<TResultMetadataType, TObject>;
+  metadata: TResultMetadata;
   orientation, height, i, l: Integer;
   points: TArray<IResultPoint>;
 
@@ -212,11 +212,14 @@ begin
     begin
       // But if we found it reversed in doDecode(), add in that result here:
       orientation :=
-        (orientation + Integer(metadata[ZXing.ResultMetadataType.orientation]
-        )) mod 360;
+        (
+           orientation
+           +
+           (metadata[ZXing.ResultMetadataType.orientation] as IIntegerMetadata).Value
+        ) mod 360;
     end;
 
-    Result.putMetadata(ZXing.ResultMetadataType.orientation, TObject(orientation));
+    Result.putMetadata(ZXing.ResultMetadataType.orientation, TResultMetaData.CreateIntegerMetadata(orientation));
     // Update result points
     points := Result.ResultPoints;
     if (points <> nil) then
