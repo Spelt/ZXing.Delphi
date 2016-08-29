@@ -9,6 +9,9 @@
         <Projects Include="aTestApp\aTestApp.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="vclTestApp\vclTestApp.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="MemLeakTest\Leaktest.dproj">
             <Dependencies/>
         </Projects>
@@ -38,6 +41,15 @@
     <Target Name="aTestApp:Make">
         <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Make"/>
     </Target>
+    <Target Name="vclTestApp">
+        <MSBuild Projects="vclTestApp\vclTestApp.dproj"/>
+    </Target>
+    <Target Name="vclTestApp:Clean">
+        <MSBuild Projects="vclTestApp\vclTestApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="vclTestApp:Make">
+        <MSBuild Projects="vclTestApp\vclTestApp.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Leaktest">
         <MSBuild Projects="MemLeakTest\Leaktest.dproj"/>
     </Target>
@@ -48,13 +60,13 @@
         <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="dUnitXTest;aTestApp;Leaktest"/>
+        <CallTarget Targets="dUnitXTest;aTestApp;vclTestApp;Leaktest"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean;Leaktest:Clean"/>
+        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean;vclTestApp:Clean;Leaktest:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make;Leaktest:Make"/>
+        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make;vclTestApp:Make;Leaktest:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

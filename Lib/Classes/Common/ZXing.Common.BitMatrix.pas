@@ -23,7 +23,11 @@ interface
 
 uses
   SysUtils,
-  Fmx.Graphics,
+{$IFDEF USE_VCL_BITMAP}
+  VCL.Graphics,
+{$ELSE}
+  FMX.Graphics,
+{$ENDIF}
   Generics.Collections,
   ZXing.Common.BitArray,
   ZXing.BarcodeFormat,

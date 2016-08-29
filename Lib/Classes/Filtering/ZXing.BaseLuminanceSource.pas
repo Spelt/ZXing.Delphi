@@ -23,7 +23,11 @@ interface
 uses
   System.SysUtils,
   System.UITypes,
+{$IFDEF USE_VCL_BITMAP}
+  VCL.Graphics,
+{$ELSE}
   FMX.Graphics,
+{$ENDIF}
   ZXing.LuminanceSource,
   ZXing.InvertedLuminanceSource;
 
