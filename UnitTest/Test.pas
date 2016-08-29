@@ -248,6 +248,14 @@ begin
     Assert.IsTrue(result.Text.Contains('gov.it'),
        'QR code result Text Incorrect: ' + result.Text);
 
+    result := Decode('QR_Droid_2663.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Contains('Version 40 QR Code'),
+       'QR code result Text Incorrect: ' + result.Text);
+
+
+
+
 
   finally
     FreeAndNil(result);
