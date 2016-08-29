@@ -128,7 +128,8 @@ begin
 
   CameraComponent1.CaptureSettingPriority := TVideoCaptureSettingPriority.FrameRate;
   LSettings := CameraComponent1.AvailableCaptureSettings;
-  CameraComponent1.CaptureSetting := LSettings[0];
+  if length(LSettings) > 0 then // do not assume that the program is running on system having a camera!
+     CameraComponent1.CaptureSetting := LSettings[0];
   {CaptureSetting := CameraComponent1.GetCaptureSetting;
   CaptureSetting.SetFrameRate(25, 30);
   CaptureSetting.Width  := 640;
