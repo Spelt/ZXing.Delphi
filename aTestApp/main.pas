@@ -66,8 +66,6 @@ type
     btnLoadFromFile: TButton;
     openDlg: TOpenDialog;
     Camera1: TCamera;
-    Button1: TButton;
-    Button2: TButton;
     procedure btnStartCameraClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnStopCameraClick(Sender: TObject);
@@ -76,9 +74,7 @@ type
     procedure CameraComponent1SampleBufferReady(Sender: TObject;
       const ATime: TMediaTime);
     procedure btnLoadFromFileClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
     procedure imgCameraClick(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
   private
     { Private declarations }
 
@@ -86,7 +82,6 @@ type
     FScanInProgress: Boolean;
     frameTake: Integer;
     procedure GetImage();
-    procedure AddResult(const AText: String);
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
     procedure ScanImage(scanBitmap: TBitmap;freeBitmap:boolean);
 
@@ -165,56 +160,12 @@ begin
   memo1.Lines.Clear;
 end;
 
-procedure TMainForm.AddResult(const AText: String);
-{var
-  FormatSettings: TFormatSettings;}
-begin
-  with memo1 do
-  begin
-    if Length(AText) > 0 then
-    begin
-      //FormatSettings := TFormatSettings.Create($409);
-      if (Lines.Count > 1)
-      then
-         Lines.Insert(0, '-------------------------------------------------------');
-      Lines.Insert(0, AText);
-      Lines.Insert(0, FormatDateTime('hh' + FormatSettings.TimeSeparator +
-                                     'nn' + FormatSettings.TimeSeparator +
-                                     'ss.zzz',
-                                     Now,
-                                     FormatSettings));
-    end;
-  end;
-end;
-
 procedure TMainForm.btnStopCameraClick(Sender: TObject);
 begin
   CameraComponent1.Active := False;
   btnLoadFromFile.Enabled := True;
 
 end; //
-
-procedure TMainForm.Button1Click(Sender: TObject);
-begin
-  Inc(curImgIdx);
-  if (curImgIdx > Pred(imgCamera.MultiResBitmap.Count))
-  then
-     curImgIdx := 1;
-
-  imgCamera.Bitmap := imgCamera.MultiResBitmap.Items[curImgIdx].Bitmap;
-end;
-
-procedure TMainForm.Button2Click(Sender: TObject);
-var
-  ReadResult: TReadResult;
-begin
-  //imgCamera.Bitmap := imgCamera.Bitmap.CreateThumbnail(640, 640);
-  ReadResult := FScanManager.Scan(imgCamera.Bitmap);
-  if (ReadResult <> nil) then
-  begin
-    AddResult(ReadResult.Text);
-  end;
-end;
 
 procedure TMainForm.CameraComponent1SampleBufferReady(Sender: TObject;
   const ATime: TMediaTime);
