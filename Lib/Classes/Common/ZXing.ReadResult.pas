@@ -291,9 +291,7 @@ end;
 
 procedure TReadResult.SetText(const AValue: String);
 begin
-  FText := UTF8ToString(AValue);
-  if (Length(FText) = 0) then
-    FText := AValue;
+  FText := AValue;
 end;
 
 procedure TReadResult.putMetadata(const ResultMetadataType: TResultMetadataType;
