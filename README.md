@@ -29,7 +29,8 @@ In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TF
 - v3.1 Date: 2016/06/28 (Super many thank to: Carlo Sirna)
 	- Memleak fixes for old gen compilers (win32/win64).
 	- Fix: QRCode ECI character set + extra unit test.
-	- Added 'Load Image' command in test project.
+	- Added VCL support (via IFDEF USE_VCL_BITMAP).
+	- Added 'Load Image from file' command in test project.
 	- Some other bug fixes.
 
 
