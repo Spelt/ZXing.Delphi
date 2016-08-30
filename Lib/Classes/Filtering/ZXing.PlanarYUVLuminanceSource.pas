@@ -24,7 +24,6 @@ uses
   System.SysUtils,
   System.UITypes,
   System.TypInfo,
-  FMX.Graphics,
   ZXing.LuminanceSource,
   ZXing.BaseLuminanceSource;
 

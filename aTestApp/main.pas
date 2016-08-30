@@ -212,8 +212,8 @@ begin
 
   ReadResult := nil;
 
-      try
-        FScanInProgress := True;
+  try
+    FScanInProgress := True;
     try
         ReadResult := FScanManager.Scan(scanBitmap);
     finally

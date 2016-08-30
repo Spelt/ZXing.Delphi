@@ -5,7 +5,11 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
+{$IFDEF USE_VCL_BITMAP}
+  VCL.Graphics,
+{$ELSE}
   FMX.Graphics,
+{$ENDIF}
   ZXing.LuminanceSource,
   ZXing.RGBLuminanceSource,
   ZXing.InvertedLuminanceSource,

@@ -24,7 +24,12 @@ uses
   System.SysUtils,
   System.UITypes,
   System.TypInfo,
+{$IFDEF USE_VCL_BITMAP}
+  Winapi.Windows,
+  VCL.Graphics,
+{$ELSE}
   FMX.Graphics,
+{$ENDIF}
   ZXing.LuminanceSource,
   ZXing.BaseLuminanceSource,
   ZXing.Common.Detector.MathUtils;
@@ -153,6 +158,38 @@ begin
   CalculateLuminance(rgbRawBytes, bitmapFormat);
 end;
 
+
+{$IFDEF USE_VCL_BITMAP}
+// VCL TBitmap implementation
+constructor TRGBLuminanceSource.CreateFromBitmap(const sourceBitmap: TBitmap; const width, height: Integer);
+type
+  TRGBTripleArray = ARRAY[Word] of TRGBTriple;
+  pRGBTripleArray = ^TRGBTripleArray; // Use a PByteArray for pf8bit color.
+
+var
+  x, y,
+  offset : Integer;
+  r, g, b : Byte;
+  P: pRGBTripleArray;
+
+begin
+  Self.Create(width, height);
+  sourceBitmap.PixelFormat := pf24bit;
+  for y := 0 to sourceBitmap.Height - 1 do
+  begin
+    offset := y * FWidth;
+    P := sourceBitmap.ScanLine[y];
+    for x := 0 to sourceBitmap.Width - 1 do
+    begin
+       r := P[x].rgbtRed;
+       g := P[x].rgbtGreen;
+       b := P[x].rgbtBlue;
+       luminances[offset + x] := TMathUtils.Asr(3482*r + 11721*g + 1181*b, 14);
+    end;
+  end;
+end;
+{$ELSE}
+// FMX TBitmap implementation
 constructor TRGBLuminanceSource.CreateFromBitmap(const sourceBitmap: TBitmap;
    const width, height: Integer);
 var
@@ -188,6 +225,7 @@ begin
     end;
   end;
 end;
+{$ENDIF}
 
 /// <summary>
 /// Should create a new luminance source with the right class type.
