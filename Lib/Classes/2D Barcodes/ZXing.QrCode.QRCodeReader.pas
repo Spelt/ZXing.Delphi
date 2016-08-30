@@ -100,6 +100,7 @@ type
   end;
 
 implementation
+uses ZXing.ByteSegments;
 
 { TQRCodeReader }
 
@@ -131,7 +132,7 @@ var
   bits: TBitMatrix;
   DetectorResult: TDetectorResult;
   data: TQRCodeDecoderMetaData;
-  byteSegments: TList<TArray<Byte>>;
+  byteSegments: IByteSegments;
 begin
   Result := nil;
   DecoderResult := nil;
@@ -185,18 +186,17 @@ begin
     byteSegments := DecoderResult.byteSegments;
 
     if (byteSegments <> nil) then
-      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, byteSegments);
+      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS,  TResultMetaData.CreateByteSegmentsMetadata(byteSegments));
 
     if (Length(DecoderResult.ecLevel) <> 0) then
-      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
-        TStringObject.Create(DecoderResult.ecLevel));
+      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, TResultMetaData.CreateStringMetadata(DecoderResult.ecLevel));
 
     if (DecoderResult.StructuredAppend) then
     begin
       Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
-        TObject(DecoderResult.StructuredAppendSequenceNumber));
+          TResultMetaData.CreateIntegerMetadata(DecoderResult.StructuredAppendSequenceNumber));
       Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
-        TObject(DecoderResult.StructuredAppendParity))
+        TResultMetaData.CreateIntegerMetadata(DecoderResult.StructuredAppendParity))
     end;
 
   finally

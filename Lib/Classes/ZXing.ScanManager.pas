@@ -72,7 +72,7 @@ end;
 procedure TScanManager.SetResultPointEvent(const AValue: TResultPointCallback);
 var
   ahKey: TDecodeHintType;
-  a: TResultPointCallback;
+//   a: TResultPointCallback; never used
   ahValue: TObject;
 begin
   FResultPointEvent := AValue;
