@@ -254,6 +254,13 @@ begin
        'QR code result Text Incorrect: ' + result.Text);
 
 
+    result := Decode('utf8-test.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.AreEqual(
+        #$0440#$0443#$0301#$0441#$0441#$043A#$0438#$0439#$20#$044F#$0437#$044B#$0301#$043A#$2C#$20'russkij'#$20'jazyk'#$20#$E8#$E0#$F2#$F9,
+        result.Text,
+        false);
+
 
 
 
@@ -283,13 +290,18 @@ begin
     // WRONG Encoding: How we can get the correct encoding (umlaut) here... :(
     {result := Decode('dmc2.png', TBarcodeFormat.DATA_MATRIX);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('Beispiel für Wikipedia'),
+    Assert.IsTrue(result.Text.Equals('Beispiel f'#$FC'r Wikipedia'),
       'DataMatrix code result Text Incorrect: ' + result.Text);}
 
     result := Decode('dmc3.png', TBarcodeFormat.DATA_MATRIX);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('Wikipédia, l''encyclopédie libre'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+    //  'Wikipédia, l''encyclopédie libre':
+    //  I escaped the above string because this source is not saved in UTF-8 format but in ascii, using the west european encoding
+    // if your don't have a west-european windows installation, all the editors you use would try to interpret the non-ascii characters
+    // whith the actual local charset. if this is the case you will not see the accented letters in this comment
+    // ASCII charset, you risk the compiler to generate the wrong utf8 string when compiling this source
+    Assert.IsTrue(result.Text.Equals('Wikip'#$E9'dia, l''encyclop'#$E9'die libre',
+      'DataMatrix code result Text Incorrect: ' + result.Text));
 
     // Not working yet
     {result := Decode('dmc4.png', TBarcodeFormat.DATA_MATRIX);
