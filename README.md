@@ -3,12 +3,12 @@ ZXing Barcode Scanning Library for Delphi XE7-10 Berlin and Appmethod.
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/master/zxing.Delphi.picture1.png )
 
-ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib. It is aimed at all of the FireMonkey mobile platforms.
+ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib. It is aimed at all of the FireMonkey mobile platforms and, starting from v3.1, it fully supports also Windows VCL applications (no dependencies on FMX.Graphics unit).
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
 
 Its compatible with in Delphi XE7 - 10 Berlin and AppMethod and tested with IOS 8.x, 9.x, Android, Windows 32/64 and OSX. 
-The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows applications.  
+The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows (VCL or Firemonkey) applications.  
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
@@ -17,7 +17,7 @@ Just include the source files and add it in your existing projects and build the
 In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TFocusMode.ContinuousAutoFocus.
 
 ###Features
-- Native compiled barcode scanning for all FireMonkey platforms (IOS/Android/Windows/OSX).
+- Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
 - 100% free. No license fees. Just free.
 - Speed
 - Barcodes: QR-Code, Code128, Code93, ITF, DataMatrix
@@ -117,7 +117,7 @@ ZXing.Delphi is a project that I've put together with the work of others.  So na
 - P. B. Hofstede
 - Kai Gossens
 - Raphael Büchler
-- Cralo Sirna
+- Carlo Sirna
 
 
 ###License
