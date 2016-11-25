@@ -21,7 +21,7 @@ uses
 
   SysUtils, Generics.Collections,
   OneDReader, DecodeHintType, BitArray, ReadResult, BarcodeFormat,
-  Code128Reader, Code93Reader, ITFReader;
+  Code128Reader, Code93Reader, Code39Reader, ITFReader;
 
 /// <summary>
 /// <author>dswitkin@google.com (Daniel Switkin)</author>
@@ -122,7 +122,7 @@ begin
         (hints.ContainsKey(DecodeHintType.USE_CODE_39_EXTENDED_MODE)) and
         Boolean(hints[DecodeHintType.USE_CODE_39_EXTENDED_MODE]);
 
-      // readers.Add(new Code39Reader(useCode39CheckDigit, useCode39ExtendedMode))
+       readers.Add(TCode39Reader.Create(useCode39CheckDigit,useCode39ExtendedMode))
     end;
 
     if (possibleFormats.Contains(BarcodeFormat.CODE_93)) or
@@ -171,7 +171,7 @@ begin
     // MSI needs to be activated explicit
 
     // readers.Add(new MultiFormatUPCEANReader(hints));
-    // readers.Add(new Code39Reader(useCode39CheckDigit, useCode39ExtendedMode));
+    readers.Add(TCode39Reader.Create(useCode39CheckDigit,useCode39ExtendedMode));
     // readers.Add(new CodaBarReader());
     readers.Add(TCode93Reader.Create());
     readers.Add(TCode128Reader.Create);
