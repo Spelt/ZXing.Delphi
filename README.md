@@ -1,5 +1,5 @@
 # ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE7-10 Berlin and Appmethod. 
+ZXing Barcode Scanning Library for Delphi XE to Berlin and Appmethod. 
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/master/zxing.Delphi.picture1.png )
 
@@ -14,30 +14,37 @@ Just include the source files and add it in your existing projects and build the
 
 
 ##Important note:
-In Delphi 10 Seattle it is necessary for Androids to setting the Focusmode to TFocusMode.ContinuousAutoFocus.
+
+- BREAKING CHANGES: from version 3.0 the folder structure is massively changed.  
+- In Delphi 10 Seattle you may have to fiddle witht TFocusMode.ContinuousAutoFocus. Perhaps maybe you can set a fixed focus.
+
+
 
 ###Features
 - Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
 - 100% free. No license fees. Just free.
 - Speed
-- Barcodes: QR-Code, Code128, Code93, ITF, DataMatrix
+- Barcodes: QR-Code, Code128, Code93, ITF, EAN8, EAN13, DataMatrix (beta)
 - Simple API
 - Unit tests provided
 	
 
 ###Changes
+- v3.2 Date: 2016/11/27 
+	- Added EAN8, EAN13 (many requests)
+	- v3 becomes master branch
+
 - v3.1 Date: 2016/06/28 (Super many thank to: Carlo Sirna)
+	- Added VCL support (via IFDEF USE_VCL_BITMAP).
 	- Memleak fixes for old gen compilers (win32/win64).
 	- Fix: QRCode ECI character set + extra unit test.
-	- Added VCL support (via IFDEF USE_VCL_BITMAP).
 	- Added 'Load Image from file' command in test project.
 	- UTF-8 fixed bug + added unit test
 	- Some other bug fixes.
 
-
 - v3.0 Date: 2016/04/28 (Great many thanks to: Kai Gossens and Raphael Büchler)
 
-	- Added DataMatrix.
+	- Added DataMatrix (BETA).
 	- ResultPoint event added.
 	- Support for inverted 1D/2D code types.
 	- Better OneDReader scan strategy

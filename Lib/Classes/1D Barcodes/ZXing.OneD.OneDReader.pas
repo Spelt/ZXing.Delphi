@@ -312,8 +312,8 @@ begin
             end;
 
           end;
-          hints := newHints;
 
+          hints := newHints;
         end;
       end;
 
@@ -343,7 +343,7 @@ begin
 
       Exit(ReadResult);
 
-    end; // attempt loop
+    end; //  loop
 
   end;
 

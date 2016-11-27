@@ -30,8 +30,10 @@ uses
   ZXing.ReadResult;
 
 type
+
   [TestFixture]
   TZXingDelphiTest = class(TObject)
+  private
 
   public
 
@@ -41,8 +43,10 @@ type
     [Test]
     procedure AllQRCode;
 
-    [Test]
-    procedure AllDataMatrixCode();
+    (*
+      [Test]
+      procedure AllDataMatrixCode();
+    *)
 
     [Test]
     procedure AllCode128();
@@ -53,6 +57,15 @@ type
     [Test]
     procedure AllCodeITF;
 
+    [Test]
+    procedure AllCodeEAN8;
+
+    [Test]
+    procedure AllCodeEAN13;
+
+    { [Test]
+      procedure AllCodeEAN8;
+    }
     [Test]
     procedure AutoTypes();
 
@@ -84,12 +97,11 @@ begin
     result := Decode('q33.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('Never gonna give you up, ' + #$0A +
-                                     'Never gonna let you down ' + #$0A +
-                                     'Never gonna run around and desert you ' + #$0A +
-                                     'Never gonna make you cry, ' + #$0A +
-                                     'Never gonna say goodbye ' + #$0A +
-                                     'Never gonna tell a lie and hurt you'),
-      'QR code result Text Incorrect: ' + result.Text);
+      'Never gonna let you down ' + #$0A +
+      'Never gonna run around and desert you ' + #$0A +
+      'Never gonna make you cry, ' + #$0A + 'Never gonna say goodbye ' + #$0A +
+      'Never gonna tell a lie and hurt you'), 'QR code result Text Incorrect: '
+      + result.Text);
 
     result := Decode('q1.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
@@ -220,18 +232,18 @@ begin
 
     result := Decode('qr-a1.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('a1'),
-      'QR code result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('a1'), 'QR code result Text Incorrect: ' +
+      result.Text);
 
     result := Decode('qr-1a.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('1a'),
-      'QR code result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('1a'), 'QR code result Text Incorrect: ' +
+      result.Text);
 
     result := Decode('qr-12.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('12'),
-      'QR code result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('12'), 'QR code result Text Incorrect: ' +
+      result.Text);
 
     result := Decode('QRHiddenInBottom.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
@@ -240,124 +252,123 @@ begin
 
     result := Decode('big QR.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Contains('Version 40 QR Code can contain up to 1852 chars.'),
-       'QR code result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Contains
+      ('Version 40 QR Code can contain up to 1852 chars.'),
+      'QR code result Text Incorrect: ' + result.Text);
 
     result := Decode('CarloTest.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Contains('gov.it'),
-       'QR code result Text Incorrect: ' + result.Text);
+      'QR code result Text Incorrect: ' + result.Text);
 
     result := Decode('QR_Droid_2663.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Contains('Version 40 QR Code'),
-       'QR code result Text Incorrect: ' + result.Text);
-
+      'QR code result Text Incorrect: ' + result.Text);
 
     result := Decode('utf8-test.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.AreEqual(
-        #$0440#$0443#$0301#$0441#$0441#$043A#$0438#$0439#$20#$044F#$0437#$044B#$0301#$043A#$2C#$20'russkij'#$20'jazyk'#$20#$E8#$E0#$F2#$F9,
-        result.Text,
-        false);
-
-
-
+    Assert.AreEqual
+      (#$0440#$0443#$0301#$0441#$0441#$043A#$0438#$0439#$20#$044F#$0437#$044B#$0301#$043A#$2C#$20'russkij'#$20'jazyk'#$20#$E8#$E0#$F2#$F9,
+      result.Text, false);
 
   finally
     FreeAndNil(result);
   end;
 end;
 
-procedure TZXingDelphiTest.AllDataMatrixCode();
-var
+(*
+  procedure TZXingDelphiTest.AllDataMatrixCode();
+  var
   result: TReadResult;
-begin
+  begin
   try
 
-    Result := Decode('DatamatrixHiddenInBottom.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  Result := Decode('DatamatrixHiddenInBottom.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-//    //exit;
+  //    //exit;
 
-    result := Decode('dmc1.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  result := Decode('dmc1.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-    // WRONG Encoding: How we can get the correct encoding (umlaut) here... :(
-    {result := Decode('dmc2.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('Beispiel f'#$FC'r Wikipedia'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);}
+  // WRONG Encoding: How we can get the correct encoding (umlaut) here... :(
+  {result := Decode('dmc2.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('Beispiel f'#$FC'r Wikipedia'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);}
 
-    result := Decode('dmc3.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    //  'Wikipédia, l''encyclopédie libre':
-    //  I escaped the above string because this source is not saved in UTF-8 format but in ascii, using the west european encoding
-    // if your don't have a west-european windows installation, all the editors you use would try to interpret the non-ascii characters
-    // whith the actual local charset. if this is the case you will not see the accented letters in this comment
-    // ASCII charset, you risk the compiler to generate the wrong utf8 string when compiling this source
-    Assert.IsTrue(result.Text.Equals('Wikip'#$E9'dia, l''encyclop'#$E9'die libre',
-      'DataMatrix code result Text Incorrect: ' + result.Text));
+  result := Decode('dmc3.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  //  'Wikipédia, l''encyclopédie libre':
+  //  I escaped the above string because this source is not saved in UTF-8 format but in ascii, using the west european encoding
+  // if your don't have a west-european windows installation, all the editors you use would try to interpret the non-ascii characters
+  // whith the actual local charset. if this is the case you will not see the accented letters in this comment
+  // ASCII charset, you risk the compiler to generate the wrong utf8 string when compiling this source
+  Assert.IsTrue(result.Text.Equals('Wikip'#$E9'dia, l''encyclop'#$E9'die libre',
+  'DataMatrix code result Text Incorrect: ' + result.Text));
 
-    // Not working yet
-    {result := Decode('dmc4.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('??'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);}
+  // Not working yet
+  {result := Decode('dmc4.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('??'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);}
 
-    result := Decode('dmc5.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('Pause Hi-Tech' + #$0A +
-                                     'Tech tips for the non-geek' + #$0A +
-                                     'http://www.pausehitech.com'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  result := Decode('dmc5.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('Pause Hi-Tech' + #$0A +
+  'Tech tips for the non-geek' + #$0A +
+  'http://www.pausehitech.com'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-    result := Decode('dmc6.bmp', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('12345678'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  result := Decode('dmc6.bmp', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('12345678'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-    result := Decode('dmc7.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('DataMatrix'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  result := Decode('dmc7.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('DataMatrix'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-    result := Decode('dmc8.jpg', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('http://www.labeljoy.com'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  result := Decode('dmc8.jpg', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://www.labeljoy.com'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-    result := Decode('dmc9.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123Test123Test123Test123Test123' +
-                                     'Test123'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  result := Decode('dmc9.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123Test123Test123Test123Test123' +
+  'Test123'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-    Result := Decode('dmc8.jpg', TBarcodeFormat.Auto);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('http://www.labeljoy.com'),
-      'DataMatrix code result Text Incorrect: ' + result.Text);
+  Result := Decode('dmc8.jpg', TBarcodeFormat.Auto);
+  Assert.IsNotNull(result, ' Nil result ');
+  Assert.IsTrue(result.Text.Equals('http://www.labeljoy.com'),
+  'DataMatrix code result Text Incorrect: ' + result.Text);
 
-    result := Decode('Code128.png', TBarcodeFormat.DATA_MATRIX);
-    Assert.IsNull(result, ' Should be Nil result ');
+  result := Decode('Code128.png', TBarcodeFormat.DATA_MATRIX);
+  Assert.IsNull(result, ' Should be Nil result ');
 
   finally
-    FreeAndNil(result);
+  FreeAndNil(result);
   end;
-end;
+  end;
+
+*)
 
 procedure TZXingDelphiTest.AllCode128();
 var
@@ -375,16 +386,15 @@ begin
     Assert.IsTrue(result.Text.Equals('1234567'),
       'Code 128 result Text Incorrect: ' + result.Text);
 
-
     result := Decode('Code128HiddenInBottom.png', TBarcodeFormat.CODE_128);
     Assert.IsNotNull(result, ' Nil result: Code128HiddenInBottom');
     Assert.IsTrue(result.Text.Equals('1234567'),
       'Code 128 result Text Incorrect: ' + result.Text);
 
     result := Decode('Code128HiddenInTop.png', TBarcodeFormat.CODE_128);
-      Assert.IsNotNull(result, ' Nil result: Code128HiddenInTop');
-      Assert.IsTrue(result.Text.Equals('1234567'),
-        'Code 128 result Text Incorrect: ' + result.Text);
+    Assert.IsNotNull(result, ' Nil result: Code128HiddenInTop');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 128 result Text Incorrect: ' + result.Text);
 
   finally
     FreeAndNil(result);
@@ -458,6 +468,78 @@ begin
   end;
 end;
 
+{
+  procedure TZXingDelphiTest.AllCodeEAN8();
+  var
+  result: TReadResult;
+  begin
+  try
+  result := Decode('ean8.png', TBarcodeFormat.EAN_8);
+  Assert.IsNotNull(result, ' nil result ');
+  Assert.IsTrue(result.Text.Equals('12345670'),
+  'Code EAN8 - 1 result Text Incorrect: ' + result.Text);
+
+  finally
+  FreeAndNil(result);
+  end;
+  end;
+}
+
+procedure TZXingDelphiTest.AllCodeEAN13();
+var
+  result: TReadResult;
+begin
+  try
+
+    result := Decode('ean13.gif', TBarcodeFormat.EAN_13);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567890128'),
+      'Code EAN13 - 1 result Text Incorrect: ' + result.Text);
+
+    result := Decode('EAN13-2-big-hidden in bottom.png', TBarcodeFormat.EAN_13);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567890128'),
+      'Code EAN13 - 1 result Text Incorrect: ' + result.Text);
+
+
+    result := Decode('EAN13-2-big-hidden in top.png', TBarcodeFormat.EAN_13);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567890128'),
+      'Code EAN13 - 1 result Text Incorrect: ' + result.Text);
+
+
+
+  finally
+    FreeAndNil(result);
+  end;
+end;
+
+procedure TZXingDelphiTest.AllCodeEAN8;
+var
+  result: TReadResult;
+begin
+  try
+    result := Decode('ean8.png', TBarcodeFormat.EAN_8);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('12345670'),
+      'Code EAN8 - 1 result Text Incorrect: ' + result.Text);
+
+    result := Decode('EAN8-big-hidden in top.png', TBarcodeFormat.EAN_8);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('12345670'),
+      'Code EAN8 - 1 result Text Incorrect: ' + result.Text);
+
+    result := Decode('EAN8-big-hidden in bottom.png', TBarcodeFormat.EAN_8);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('12345670'),
+      'Code EAN8 - 1 result Text Incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
+
+end;
+
 procedure TZXingDelphiTest.AutoTypes;
 var
   result: TReadResult;
@@ -513,10 +595,18 @@ begin
     Assert.IsTrue(result.Text.Equals('12345678900098'),
       'ITF - 3 result Text Incorrect: ' + result.Text);
 
-    result := Decode('dmc7.png', TBarcodeFormat.Auto);
-    Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('DataMatrix'),
+    (*
+      result := Decode('dmc7.png', TBarcodeFormat.Auto);
+      Assert.IsNotNull(result, ' Nil result ');
+      Assert.IsTrue(result.Text.Equals('DataMatrix'),
       'DataMatrix code result Text Incorrect: ' + result.Text);
+    *)
+
+    result := Decode('EAN13-2-big-hidden in bottom.png', TBarcodeFormat.Auto);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567890128'),
+      'Code EAN13 - 1 result Text Incorrect: ' + result.Text);
+
 
 
   finally
@@ -524,9 +614,9 @@ begin
   end;
 end;
 
-////////////////////////////////////////////////////////////////////////////////
-//// Helpers below                                                         /////
-////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////
+/// / Helpers below                                                         /////
+/// /////////////////////////////////////////////////////////////////////////////
 
 function TZXingDelphiTest.Decode(Filename: String; CodeFormat: TBarcodeFormat)
   : TReadResult;
@@ -561,7 +651,8 @@ begin
   end;
 end;
 
-
 initialization
-  TDUnitX.RegisterTestFixture(TZXingDelphiTest);
+
+TDUnitX.RegisterTestFixture(TZXingDelphiTest);
+//ReportMemoryLeaksOnShutdown := true;
 end.

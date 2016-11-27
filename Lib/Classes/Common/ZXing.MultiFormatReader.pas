@@ -39,13 +39,13 @@ uses
   ZXing.OneD.Code128Reader,
   ZXing.OneD.Code93Reader,
   ZXing.OneD.ITFReader,
-
+  ZXing.OneD.EAN13Reader,
+  ZXing.OneD.EAN8Reader,
   {
 
     Not yet implemented
 
     ZXing.OneD.UPCEANReader,
-    ZXing.OneD.EAN13Reader,
 
   }
 
@@ -190,8 +190,8 @@ var
 begin
   FHints := Value;
 
-  tryHarder := (Value <> nil) and
-    (Value.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
+//  tryHarder := (Value <> nil) and
+//    (Value.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
 
   if ((Value = nil) or (not Value.ContainsKey(ZXing.DecodeHintType.POSSIBLE_FORMATS)))
   then
@@ -235,13 +235,17 @@ begin
     then
        readers.Add(TDataMatrixReader.Create);
 
- {
-    // TODO: Not yet implemented!
+
     if (formats.Contains(TBarcodeFormat.EAN_13))
     then
        readers.Add(TEAN13Reader.Create());
 
-    if (formats.Contains(TBarcodeFormat.UPC_EAN_EXTENSION))
+    if (formats.Contains(TBarcodeFormat.EAN_8))
+    then
+       readers.Add(TEAN8Reader.Create());
+
+
+{    if (formats.Contains(TBarcodeFormat.UPC_EAN_EXTENSION))
     then
        readers.Add(TUPCEANReader.Create());
 
@@ -254,12 +258,12 @@ begin
 
     // 1D readers
     readers.Add(TCode128Reader.Create);
+    readers.Add(TEAN13Reader.Create());
+    readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());
     readers.Add(TITFReader.Create());
 
- {
-    readers.Add(TEAN13Reader.Create());
-    readers.Add(TUPCEANReader.Create());
+  {  readers.Add(TUPCEANReader.Create());
   }
 
     // 2D readers

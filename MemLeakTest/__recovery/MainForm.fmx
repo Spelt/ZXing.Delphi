@@ -85,14 +85,14 @@ object Form2: TForm2
     Position.X = 232.000000000000000000
     Position.Y = 24.000000000000000000
     Size.Width = 369.000000000000000000
-    Size.Height = 297.000000000000000000
+    Size.Height = 337.000000000000000000
     Size.PlatformDefault = False
   end
   object edResult: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
     TabOrder = 10
     Position.X = 232.000000000000000000
-    Position.Y = 328.000000000000000000
+    Position.Y = 376.000000000000000000
     Size.Width = 369.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False

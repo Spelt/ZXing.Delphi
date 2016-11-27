@@ -21,7 +21,7 @@ unit ZXing.OneD.EANManufacturerOrgSupport;
 
 interface
 
-uses 
+uses
   System.SysUtils,
   System.Classes,
   System.Generics.Collections,
@@ -47,12 +47,9 @@ type
   /// </summary>
   TEANManufacturerOrgSupport = class sealed
   private
-    class var
-      ranges : TList<TArray<Integer>>;
-      countryIdentifiers : TStringList;
-
-    class procedure InitializeClass; static;
-    class procedure FinalizeClass; static;
+  var
+    ranges: TList<TArray<Integer>>;
+    countryIdentifiers: TStringList;
 
     procedure add(const range: TArray<Integer>; const id: string);
     procedure initIfNeeded;
@@ -69,7 +66,7 @@ implementation
 
 constructor TEANManufacturerOrgSupport.Create;
 begin
-  ranges := TList<TArray<Integer>>.Create;
+  ranges := TList < TArray < Integer >>.Create;
   countryIdentifiers := TStringList.Create;
 end;
 
@@ -80,14 +77,12 @@ begin
   inherited;
 end;
 
-function TEANManufacturerOrgSupport.lookupCountryIdentifier(
-  const productCode: String): String;
+function TEANManufacturerOrgSupport.lookupCountryIdentifier(const productCode
+  : String): String;
 var
-  i, prefix,
-  max: Integer;
-  range : TArray<Integer>;
-  start,
-  ending : Integer;
+  i, prefix, max: Integer;
+  range: TArray<Integer>;
+  start, ending: Integer;
 begin
   Result := '';
 
@@ -98,14 +93,12 @@ begin
   begin
     range := ranges[i];
     start := range[0];
-    if (prefix < start)
-    then
-       exit;
-    if (Length(range) = 1)
-    then
-       ending := start
+    if (prefix < start) then
+      exit;
+    if (Length(range) = 1) then
+      ending := start
     else
-       ending := range[1];
+      ending := range[1];
     if (prefix <= ending) then
     begin
       Result := countryIdentifiers[i];
@@ -117,8 +110,8 @@ end;
 procedure TEANManufacturerOrgSupport.add(const range: TArray<Integer>;
   const id: string);
 begin
-  ranges.Add(range);
-  countryIdentifiers.Add(id);
+  ranges.add(range);
+  countryIdentifiers.add(id);
 end;
 
 procedure TEANManufacturerOrgSupport.initIfNeeded;
@@ -234,20 +227,4 @@ begin
   end;
 end;
 
-class procedure TEANManufacturerOrgSupport.InitializeClass();
-begin
-  ranges := TList<TArray<Integer>>.Create;
-  countryIdentifiers := TStringList.Create;
-end;
-
-class procedure TEANManufacturerOrgSupport.FinalizeClass();
-begin
-  countryIdentifiers.Free;
-  ranges.Free;
-end;
-
-initialization
-  TEANManufacturerOrgSupport.InitializeClass;
-finalization
-  TEANManufacturerOrgSupport.FinalizeClass;
 end.
