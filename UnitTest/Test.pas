@@ -25,6 +25,8 @@ uses
   FMX.Graphics,
   FMX.Objects,
   SysUtils,
+  System.Generics.Collections,
+  ZXing.DecodeHintType,
   ZXing.ScanManager,
   ZXing.BarcodeFormat,
   ZXing.ReadResult;
@@ -38,7 +40,9 @@ type
   public
 
     function GetImage(Filename: string): TBitmap;
-    function Decode(Filename: String; CodeFormat: TBarcodeFormat): TReadResult;
+    function Decode(Filename: String; CodeFormat: TBarcodeFormat;
+      additionalHints: TDictionary<TDecodeHintType, TObject> = nil)
+      : TReadResult;
 
     [Test]
     procedure AllQRCode;
@@ -76,8 +80,10 @@ implementation
 procedure TZXingDelphiTest.AllQRCode();
 var
   result: TReadResult;
+  hints: TDictionary<TDecodeHintType, TObject>;
 begin
   try
+
     result := Decode('qrcode.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('http://google.com'),
@@ -271,6 +277,14 @@ begin
     Assert.AreEqual
       (#$0440#$0443#$0301#$0441#$0441#$043A#$0438#$0439#$20#$044F#$0437#$044B#$0301#$043A#$2C#$20'russkij'#$20'jazyk'#$20#$E8#$E0#$F2#$F9,
       result.Text, false);
+
+    // this one will only work when PURE_BARCODE is existing in the additional hints.
+    hints := TDictionary<TDecodeHintType, TObject>.Create();
+    hints.Add(TDecodeHintType.PURE_BARCODE, nil);
+    result := Decode('qr problem 1.jpg', TBarcodeFormat.QR_CODE, hints);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Contains('gov.it/'),
+      'QR code result Text Incorrect: ' + result.Text);
 
   finally
     FreeAndNil(result);
@@ -501,13 +515,10 @@ begin
     Assert.IsTrue(result.Text.Equals('1234567890128'),
       'Code EAN13 - 1 result Text Incorrect: ' + result.Text);
 
-
     result := Decode('EAN13-2-big-hidden in top.png', TBarcodeFormat.EAN_13);
     Assert.IsNotNull(result, ' nil result ');
     Assert.IsTrue(result.Text.Equals('1234567890128'),
       'Code EAN13 - 1 result Text Incorrect: ' + result.Text);
-
-
 
   finally
     FreeAndNil(result);
@@ -607,8 +618,6 @@ begin
     Assert.IsTrue(result.Text.Equals('1234567890128'),
       'Code EAN13 - 1 result Text Incorrect: ' + result.Text);
 
-
-
   finally
     FreeAndNil(result);
   end;
@@ -618,15 +627,19 @@ end;
 /// / Helpers below                                                         /////
 /// /////////////////////////////////////////////////////////////////////////////
 
-function TZXingDelphiTest.Decode(Filename: String; CodeFormat: TBarcodeFormat)
-  : TReadResult;
+function TZXingDelphiTest.Decode(Filename: String; CodeFormat: TBarcodeFormat;
+  additionalHints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
   bmp: TBitmap;
   ScanManager: TScanManager;
+  hints: TDictionary<TDecodeHintType, TObject>;
 begin
   bmp := GetImage(Filename);
   try
-    ScanManager := TScanManager.Create(CodeFormat, nil);
+    hints := TDictionary<TDecodeHintType, TObject>.Create();
+    //hints.Add(TDecodeHintType.PURE_BARCODE, nil);
+
+    ScanManager := TScanManager.Create(CodeFormat, additionalHints);
     result := ScanManager.Scan(bmp);
   finally
     FreeAndNil(bmp);
@@ -654,5 +667,6 @@ end;
 initialization
 
 TDUnitX.RegisterTestFixture(TZXingDelphiTest);
-//ReportMemoryLeaksOnShutdown := true;
+
+// ReportMemoryLeaksOnShutdown := true;
 end.
