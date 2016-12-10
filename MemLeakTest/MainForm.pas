@@ -37,6 +37,7 @@ type
     btnEAN8: TButton;
     btnUPC_a: TButton;
     btnUPCE: TButton;
+    btnCode39: TButton;
     procedure btnCode128Click(Sender: TObject);
     procedure btnQRCodeClick(Sender: TObject);
     procedure btnDataMatrixClick(Sender: TObject);
@@ -47,6 +48,7 @@ type
     procedure btnEAN8Click(Sender: TObject);
     procedure btnUPC_aClick(Sender: TObject);
     procedure btnUPCEClick(Sender: TObject);
+    procedure btnCode39Click(Sender: TObject);
   private
     procedure OnScanManagerResultPoint(const point: IResultPoint);
     function GetImage(const Filename: string): TBitmap;
@@ -142,6 +144,11 @@ end;
 procedure TForm2.btnCode128Click(Sender: TObject);
 begin
   Decode('Code128.png', TBarcodeFormat.CODE_128);
+end;
+
+procedure TForm2.btnCode39Click(Sender: TObject);
+begin
+  Decode('Code39.png', TBarcodeFormat.CODE_39);
 end;
 
 procedure TForm2.btnCode93Click(Sender: TObject);

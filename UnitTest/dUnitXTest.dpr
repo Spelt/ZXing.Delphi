@@ -86,7 +86,8 @@ uses
   ZXIng.ByteSegments in '..\Lib\Classes\Common\ZXIng.ByteSegments.pas',
   ZXing.OneD.EAN8Reader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.EAN8Reader.pas',
   ZXing.OneD.UPCAReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCAReader.pas',
-  ZXing.OneD.UPCEReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEReader.pas';
+  ZXing.OneD.UPCEReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEReader.pas',
+  ZXing.OneD.Code39Reader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.Code39Reader.pas';
 
 var
   runner : ITestRunner;

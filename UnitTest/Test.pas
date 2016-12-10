@@ -37,13 +37,15 @@ type
   TZXingDelphiTest = class(TObject)
   private
 
-
   public
 
     function GetImage(Filename: string): TBitmap;
     function Decode(Filename: String; CodeFormat: TBarcodeFormat;
       additionalHints: TDictionary<TDecodeHintType, TObject> = nil)
       : TReadResult;
+
+    [Test]
+    procedure AllCode39();
 
     [Test]
     procedure AllUpcA();
@@ -308,7 +310,7 @@ begin
     Assert.IsTrue(result.Text.Equals('123456789012'),
       'upca result Text Incorrect: ' + result.Text);
 
-   result := Decode('upca 2.gif', TBarcodeFormat.UPC_A);
+    result := Decode('upca 2.gif', TBarcodeFormat.UPC_A);
     Assert.IsNotNull(result, ' nil result ');
     Assert.IsTrue(result.Text.Equals('725272730706'),
       'upca 1 result Text Incorrect: ' + result.Text);
@@ -317,7 +319,6 @@ begin
     Assert.IsNotNull(result, ' nil result ');
     Assert.IsTrue(result.Text.Equals('232323232312'),
       'upca 2 result Text Incorrect: ' + result.Text);
-
 
   finally
     FreeAndNil(result);
@@ -331,31 +332,58 @@ begin
   try
     result := Decode('upce.png', TBarcodeFormat.UPC_E);
     Assert.IsNotNull(result, ' nil result ');
-    Assert.IsTrue(result.Text.Equals('01234565'),
-      'upce result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('01234565'), 'upce result Text Incorrect: '
+      + result.Text);
 
     result := Decode('upceHiddenInBottom.png', TBarcodeFormat.UPC_E);
     Assert.IsNotNull(result, ' nil result ');
-    Assert.IsTrue(result.Text.Equals('01234565'),
-      'upce result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('01234565'), 'upce result Text Incorrect: '
+      + result.Text);
 
     result := Decode('upc-e_09999008.png', TBarcodeFormat.UPC_E);
     Assert.IsNotNull(result, ' nil result ');
-    Assert.IsTrue(result.Text.Equals('09999008'),
-      'upce result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('09999008'), 'upce result Text Incorrect: '
+      + result.Text);
 
     result := Decode('upc-e_09999992.png', TBarcodeFormat.UPC_E);
     Assert.IsNotNull(result, ' nil result ');
-    Assert.IsTrue(result.Text.Equals('09999992'),
-      'upce result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('09999992'), 'upce result Text Incorrect: '
+      + result.Text);
 
   finally
     FreeAndNil(result);
   end;
 end;
 
+procedure TZXingDelphiTest.AllCode39;
+var
+  result: TReadResult;
+begin
+  try
+    result := Decode('code39.png', TBarcodeFormat.CODE_39);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 39 result Text incorrect: ' + result.Text);
 
+    result := Decode('code39 ABC 123456789.png', TBarcodeFormat.CODE_39);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('ABC 123456789'),
+      'Code 39 result Text incorrect: ' + result.Text);
 
+    result := Decode('code39 Hello World.png', TBarcodeFormat.CODE_39);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('HELLO $WORLD$'),
+      'Code 39 result Text incorrect: ' + result.Text);
+
+    result := Decode('code39HiddenInBottom.png', TBarcodeFormat.CODE_39);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('HELLO $WORLD$'),
+      'Code 39 result Text incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
+end;
 
 procedure TZXingDelphiTest.AllDataMatrixCode();
 var
@@ -662,8 +690,8 @@ begin
 
     result := Decode('upce.png', TBarcodeFormat.Auto);
     Assert.IsNotNull(result, ' nil result ');
-    Assert.IsTrue(result.Text.Equals('01234565'),
-      'upce result Text Incorrect: ' + result.Text);
+    Assert.IsTrue(result.Text.Equals('01234565'), 'upce result Text Incorrect: '
+      + result.Text);
 
     result := Decode('EAN13-2-big-hidden in bottom.png', TBarcodeFormat.Auto);
     Assert.IsNotNull(result, ' nil result ');

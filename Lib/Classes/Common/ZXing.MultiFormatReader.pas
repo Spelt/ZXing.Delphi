@@ -43,18 +43,11 @@ uses
   ZXing.OneD.EAN8Reader,
   ZXing.OneD.UPCAReader,
   ZXing.OneD.UPCEReader,
-  {
-
-    Not yet implemented
-
-    ZXing.OneD.UPCEANReader,
-
-  }
+  ZXing.OneD.Code39Reader,
 
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
   ZXing.Datamatrix.DataMatrixReader;
-
 
 /// <summary>
 /// MultiFormatReader is a convenience class and the main entry point into the library for most uses.
@@ -100,7 +93,7 @@ type
     /// <returns> The contents of the image
     /// </returns>
     /// <throws>  ReaderException Any errors which occurred </throws>
-   function decode(const image: TBinaryBitmap;
+    function decode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload;
 
     /// <summary> Decode an image using the state set up by calling setHints() previously. Continuous scan
@@ -138,16 +131,16 @@ begin
   result := DecodeInternal(image)
 end;
 
-function TMultiFormatReader.Decode(const image: TBinaryBitmap; WithHints: Boolean)
-  : TReadResult;
+function TMultiFormatReader.decode(const image: TBinaryBitmap;
+  WithHints: Boolean): TReadResult;
 begin
   result := DecodeInternal(image)
 end;
 
 function TMultiFormatReader.decode(const image: TBinaryBitmap;
-      hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+  hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 begin
-  Fhints := Hints;
+  FHints := hints;
   result := DecodeInternal(image)
 end;
 
@@ -178,7 +171,6 @@ begin
   readers := nil;
 end;
 
-
 function TMultiFormatReader.Get_Hints: TDictionary<TDecodeHintType, TObject>;
 begin
   result := FHints;
@@ -187,22 +179,23 @@ end;
 procedure TMultiFormatReader.Set_Hints(const Value: TDictionary<TDecodeHintType,
   TObject>);
 var
-  tryHarder: Boolean;
+  tryHarder, useCode39CheckDigit, useCode39ExtendedMode: Boolean;
   formats: TList<TBarcodeFormat>;
 begin
   FHints := Value;
 
-//  tryHarder := (Value <> nil) and
-//    (Value.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
+  // tryHarder := (Value <> nil) and
+  // (Value.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
 
-  if ((Value = nil) or (not Value.ContainsKey(ZXing.DecodeHintType.POSSIBLE_FORMATS)))
-  then
+  if ((Value = nil) or
+    (not Value.ContainsKey(ZXing.DecodeHintType.POSSIBLE_FORMATS))) then
   begin
     formats := nil;
   end
   else
   begin
-    formats := Value[ZXing.DecodeHintType.POSSIBLE_FORMATS] as TList<TBarcodeFormat>
+    formats := Value[ZXing.DecodeHintType.POSSIBLE_FORMATS]
+      as TList<TBarcodeFormat>
   end;
 
   // add readers from the hints
@@ -233,34 +226,35 @@ begin
       readers.Add(TQRCodeReader.Create())
     end;
 
-    if formats.Contains(TBarcodeFormat.DATA_MATRIX)
-    then
-       readers.Add(TDataMatrixReader.Create);
+    if formats.Contains(TBarcodeFormat.DATA_MATRIX) then
+      readers.Add(TDataMatrixReader.Create);
 
+    if (formats.Contains(TBarcodeFormat.EAN_13)) then
+      readers.Add(TEAN13Reader.Create());
 
-    if (formats.Contains(TBarcodeFormat.EAN_13))
-    then
-       readers.Add(TEAN13Reader.Create());
+    if (formats.Contains(TBarcodeFormat.EAN_8)) then
+      readers.Add(TEAN8Reader.Create());
 
-    if (formats.Contains(TBarcodeFormat.EAN_8))
-    then
-       readers.Add(TEAN8Reader.Create());
+    if (formats.Contains(TBarcodeFormat.UPC_A)) then
+      readers.Add(TUPCAReader.Create());
 
-    if (formats.Contains(TBarcodeFormat.UPC_A))
-    then
-       readers.Add(TUPCAReader.Create());
+    if (formats.Contains(TBarcodeFormat.UPC_E)) then
+      readers.Add(TUPCEReader.Create());
 
-    if (formats.Contains(TBarcodeFormat.UPC_E))
-    then
-       readers.Add(TUPCEReader.Create());
+    if (formats.Contains(TBarcodeFormat.CODE_39)) then
+    begin
+      useCode39CheckDigit := hints.ContainsKey
+        (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT) and
+        hints.ContainsKey(TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT);
 
+      useCode39ExtendedMode := hints.ContainsKey
+        (TDecodeHintType.USE_CODE_39_EXTENDED_MODE) and
+        hints.ContainsKey(TDecodeHintType.USE_CODE_39_EXTENDED_MODE);
 
-{    if (formats.Contains(TBarcodeFormat.UPC_EAN_EXTENSION))
-    then
-       readers.Add(TUPCEANReader.Create());
+      readers.Add(TCode39Reader.Create(useCode39CheckDigit,
+        useCode39ExtendedMode));
 
- }
-
+    end;
   end;
 
   if (readers.Count = 0) then // must be auto, add them all
@@ -269,14 +263,22 @@ begin
     // 1D readers
     readers.Add(TCode128Reader.Create());
     readers.Add(TUPCAReader.Create());
-     readers.Add(TUPCEReader.Create());
+    readers.Add(TUPCEReader.Create());
     readers.Add(TEAN13Reader.Create());
     readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());
     readers.Add(TITFReader.Create());
+    useCode39CheckDigit := hints.ContainsKey
+      (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT) and hints.ContainsKey
+      (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT);
 
-  {  readers.Add(TUPCEANReader.Create());
-  }
+    useCode39ExtendedMode := hints.ContainsKey
+      (TDecodeHintType.USE_CODE_39_EXTENDED_MODE) and hints.ContainsKey
+      (TDecodeHintType.USE_CODE_39_EXTENDED_MODE);
+
+    readers.Add(TCode39Reader.Create(useCode39CheckDigit,
+      useCode39ExtendedMode));
+
 
     // 2D readers
     readers.Add(TQRCodeReader.Create());
@@ -324,7 +326,7 @@ begin
 
     Reader := readers[i];
     Reader.Reset();
-    result := Reader.Decode(image, FHints);
+    result := Reader.decode(image, FHints);
     if result <> nil then
     begin
 
@@ -346,4 +348,3 @@ begin
 end;
 
 end.
-

@@ -50,11 +50,11 @@ object Form2: TForm2
   end
   object btnDummy: TButton
     Position.X = 24.000000000000000000
-    Position.Y = 456.000000000000000000
+    Position.Y = 504.000000000000000000
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 9
+    TabOrder = 10
     Text = 'Dummy'
     OnClick = btnDummyClick
   end
@@ -64,7 +64,7 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 8
+    TabOrder = 9
     Text = 'DataMatrix'
     OnClick = btnDataMatrixClick
   end
@@ -85,14 +85,14 @@ object Form2: TForm2
     Position.X = 232.000000000000000000
     Position.Y = 24.000000000000000000
     Size.Width = 369.000000000000000000
-    Size.Height = 433.000000000000000000
+    Size.Height = 481.000000000000000000
     Size.PlatformDefault = False
   end
   object edResult: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 12
+    TabOrder = 13
     Position.X = 232.000000000000000000
-    Position.Y = 472.000000000000000000
+    Position.Y = 520.000000000000000000
     Size.Width = 369.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -113,7 +113,7 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 7
+    TabOrder = 8
     Text = 'UPCA'
     OnClick = btnUPC_aClick
   end
@@ -123,8 +123,18 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 6
+    TabOrder = 7
     Text = 'UPCE'
     OnClick = btnUPCEClick
+  end
+  object btnCode39: TButton
+    Position.X = 24.000000000000000000
+    Position.Y = 456.000000000000000000
+    Size.Width = 193.000000000000000000
+    Size.Height = 41.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    Text = 'Code 39'
+    OnClick = btnCode39Click
   end
 end
