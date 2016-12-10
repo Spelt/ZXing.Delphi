@@ -27,7 +27,6 @@ Just include the source files and add it in your existing projects and build the
 | UPC-E      | Code 93       | Data Matrix (Center images only)
 | EAN-8      | Code 128      | 
 | EAN-13     | ITF           | 
-|            |            	 |
 
 
 ###Features
