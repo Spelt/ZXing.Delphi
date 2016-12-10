@@ -57,7 +57,7 @@ type
     usingCheckDigit: boolean;
     extendedMode: boolean;
   public
-    function DecodeRow(const rowNumber: Integer; const row: IBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       override;
 
@@ -128,9 +128,11 @@ begin
             if ((next >= 'A') and (next <= 'Z')) then
             begin
               decodedChar := Char(ord(next) + 32);
-            end;
+            end
+            else
             begin
-              exit('');
+              decoded.Clear;
+              break;
             end
           end;
         '$':
@@ -138,9 +140,11 @@ begin
             if ((next >= 'A') and (next <= 'Z')) then
             begin
               decodedChar := Char(ord(next) - 64);
-            end;
+            end
+            else
             begin
-              exit('');
+              decoded.Clear;
+              break;
             end
           end;
         '%':
@@ -151,7 +155,8 @@ begin
               decodedChar := Char(ord(next) - 11)
             else
             begin
-              exit('');
+              decoded.Clear;
+              break;
             end;
 
           end;
@@ -164,9 +169,11 @@ begin
             else if (next = 'Z') then
             begin
               decodedChar := ':';
-            end;
+            end
+            else
             begin
-              exit('');
+              decoded.Clear;
+              break;
             end
           end;
 
