@@ -43,11 +43,11 @@ type
 
   private
     class var decodeMiddleCounters: TArray<Integer>;
-  protected
-      class function decodeMiddle(const row: IBitArray;
+  public
+    class function decodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
-  public
+
     function BarcodeFormat: TBarcodeFormat; override;
     constructor Create; override;
     destructor Destroy; override;
@@ -57,7 +57,7 @@ implementation
 
 function TEAN8Reader.BarcodeFormat: TBarcodeFormat;
 begin
-  result:=TBarcodeFormat.EAN_8;
+  result := TBarcodeFormat.EAN_8;
 end;
 
 constructor TEAN8Reader.Create;
@@ -72,7 +72,7 @@ begin
   inherited;
 end;
 
-class function TEAN8Reader.DecodeMiddle(const row: IBitArray;
+class function TEAN8Reader.decodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
   const resultString: TStringBuilder): Integer;
 var
@@ -93,7 +93,7 @@ begin
     if (not TUPCEANReader.decodeDigit(row, counters, rowOffset,
       TUPCEANReader.L_PATTERNS, bestMatch)) then
     begin
-      Result := -1;
+      result := -1;
       exit
     end;
 
@@ -110,7 +110,7 @@ begin
     TUPCEANReader.MIDDLE_PATTERN);
   if (middleRange = nil) then
   begin
-    Result := -1;
+    result := -1;
     exit
   end;
 
@@ -121,7 +121,7 @@ begin
     if (not TUPCEANReader.decodeDigit(row, counters, rowOffset,
       TUPCEANReader.L_PATTERNS, bestMatch)) then
     begin
-      Result := -1;
+      result := -1;
       exit
     end;
 
@@ -134,10 +134,8 @@ begin
     inc(x)
   end;
 
-  Result := rowOffset;
+  result := rowOffset;
 
 end;
-
-
 
 end.

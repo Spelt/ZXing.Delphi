@@ -402,6 +402,7 @@
         <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPattern.pas"/>
         <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPattern.pas"/>
         <DCCReference Include="..\Lib\Classes\Common\ZXIng.ByteSegments.pas"/>
+        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.EAN8Reader.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -589,12 +590,6 @@
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_LaunchImageLandscape_2048x1536.png" Configuration="Debug" Class="iPad_Launch2048x1536">
                     <Platform Name="iOSDevice32">
                         <RemoteName>Default-Landscape@2x~ipad.png</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="..\Lib\Classes\Filtering\RGBLuminanceSource.Pas" Configuration="Debug" Class="ProjectFile">
-                    <Platform Name="Win32">
-                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

@@ -41,6 +41,8 @@ uses
   ZXing.OneD.ITFReader,
   ZXing.OneD.EAN13Reader,
   ZXing.OneD.EAN8Reader,
+  ZXing.OneD.UPCAReader,
+  ZXing.OneD.UPCEReader,
   {
 
     Not yet implemented
@@ -244,6 +246,14 @@ begin
     then
        readers.Add(TEAN8Reader.Create());
 
+    if (formats.Contains(TBarcodeFormat.UPC_A))
+    then
+       readers.Add(TUPCAReader.Create());
+
+    if (formats.Contains(TBarcodeFormat.UPC_E))
+    then
+       readers.Add(TUPCEReader.Create());
+
 
 {    if (formats.Contains(TBarcodeFormat.UPC_EAN_EXTENSION))
     then
@@ -257,7 +267,9 @@ begin
   begin
 
     // 1D readers
-    readers.Add(TCode128Reader.Create);
+    readers.Add(TCode128Reader.Create());
+    readers.Add(TUPCAReader.Create());
+     readers.Add(TUPCEReader.Create());
     readers.Add(TEAN13Reader.Create());
     readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());

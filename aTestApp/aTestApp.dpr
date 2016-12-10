@@ -75,7 +75,8 @@ uses
   ZXing.ResultPointImplementation in '..\Lib\Classes\Common\ZXing.ResultPointImplementation.pas',
   ZXing.QrCode.Internal.AlignmentPattern in '..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPattern.pas',
   ZXing.QrCode.Internal.FinderPattern in '..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPattern.pas',
-  ZXIng.ByteSegments in '..\Lib\Classes\Common\ZXIng.ByteSegments.pas';
+  ZXIng.ByteSegments in '..\Lib\Classes\Common\ZXIng.ByteSegments.pas',
+  ZXing.OneD.EAN8Reader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.EAN8Reader.pas';
 
 {$R *.res}
 

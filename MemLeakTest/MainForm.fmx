@@ -2,7 +2,7 @@ object Form2: TForm2
   Left = 0
   Top = 0
   Caption = 'Form2'
-  ClientHeight = 487
+  ClientHeight = 687
   ClientWidth = 618
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -50,11 +50,11 @@ object Form2: TForm2
   end
   object btnDummy: TButton
     Position.X = 24.000000000000000000
-    Position.Y = 360.000000000000000000
+    Position.Y = 456.000000000000000000
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 7
+    TabOrder = 9
     Text = 'Dummy'
     OnClick = btnDummyClick
   end
@@ -64,7 +64,7 @@ object Form2: TForm2
     Size.Width = 193.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 6
+    TabOrder = 8
     Text = 'DataMatrix'
     OnClick = btnDataMatrixClick
   end
@@ -85,14 +85,14 @@ object Form2: TForm2
     Position.X = 232.000000000000000000
     Position.Y = 24.000000000000000000
     Size.Width = 369.000000000000000000
-    Size.Height = 297.000000000000000000
+    Size.Height = 433.000000000000000000
     Size.PlatformDefault = False
   end
   object edResult: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 10
+    TabOrder = 12
     Position.X = 232.000000000000000000
-    Position.Y = 328.000000000000000000
+    Position.Y = 472.000000000000000000
     Size.Width = 369.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -106,5 +106,25 @@ object Form2: TForm2
     TabOrder = 2
     Text = 'EAN8'
     OnClick = btnEAN8Click
+  end
+  object btnUPC_a: TButton
+    Position.X = 24.000000000000000000
+    Position.Y = 360.000000000000000000
+    Size.Width = 193.000000000000000000
+    Size.Height = 41.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 7
+    Text = 'UPCA'
+    OnClick = btnUPC_aClick
+  end
+  object btnUPCE: TButton
+    Position.X = 24.000000000000000000
+    Position.Y = 408.000000000000000000
+    Size.Width = 193.000000000000000000
+    Size.Height = 41.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    Text = 'UPCE'
+    OnClick = btnUPCEClick
   end
 end

@@ -96,18 +96,6 @@ type
     L_PATTERNS: TArray<TArray<Integer>>;
 
     /// <summary>
-    /// Subclasses override this to decode the portion of a barcode between the start
-    /// and end guard patterns.
-    /// </summary>
-    /// <param name="row">row of black/white values to search</param>
-    /// <param name="startRange">start/end offset of start guard pattern</param>
-    /// <param name="resultString"><see cref="StringBuilder" />to append decoded chars to</param>
-    /// <returns>horizontal offset of first pixel after the "middle" that was decoded or -1 if decoding could not complete successfully</returns>
-    class function decodeMiddle(const row: IBitArray;
-      const startRange: TArray<Integer>; const resultString: TStringBuilder)
-      : Integer; virtual; abstract;
-
-    /// <summary>
     /// Decodes the end.
     /// </summary>
     /// <param name="row">The row.</param>
@@ -133,6 +121,18 @@ type
     /// </summary>
     constructor Create; virtual;
     destructor Destroy; override;
+
+    /// <summary>
+    /// Subclasses override this to decode the portion of a barcode between the start
+    /// and end guard patterns.
+    /// </summary>
+    /// <param name="row">row of black/white values to search</param>
+    /// <param name="startRange">start/end offset of start guard pattern</param>
+    /// <param name="resultString"><see cref="StringBuilder" />to append decoded chars to</param>
+    /// <returns>horizontal offset of first pixel after the "middle" that was decoded or -1 if decoding could not complete successfully</returns>
+    class function decodeMiddle(const row: IBitArray;
+      const startRange: TArray<Integer>; const resultString: TStringBuilder)
+      : Integer; virtual; abstract;
 
     /// <summary>
     /// Get the format of this decoder.
@@ -173,7 +173,7 @@ type
     /// </returns>
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
-      override;
+      overload; override;
 
     /// <summary>
     /// <p>Like decodeRow(int, BitArray, java.util.Map), but
@@ -258,7 +258,7 @@ begin
   START_END_PATTERN := nil;
   MIDDLE_PATTERN := nil;
   L_PATTERNS := nil;
-  L_AND_G_PATTERNS:=nil;
+  L_AND_G_PATTERNS := nil;
 
 end;
 
@@ -344,6 +344,7 @@ begin
       foundStart := row.isRange(quietStart, start, false);
   end;
 
+  counters:=nil;
   Result := startRange;
 end;
 
@@ -356,6 +357,7 @@ begin
   counters := TArray<Integer>.Create();
   SetLength(counters, Length(pattern));
   Result := findGuardPattern(row, rowOffset, whiteFirst, pattern, counters);
+  counters:=nil;
 end;
 
 class function TUPCEANReader.findGuardPattern(const row: IBitArray;
@@ -441,14 +443,13 @@ begin
 end;
 
 function TUPCEANReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
-
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
   startRange: TArray<Integer>;
 begin
   startRange := findStartGuardPattern(row);
   if startRange = nil then
-    Exit(nil);
+    exit(nil);
 
   Result := DoDecodeRow(rowNumber, row, startRange, hints);
 end;
@@ -536,6 +537,8 @@ begin
     decodeResult.putAllMetadata(extensionResult.ResultMetadata);
     decodeResult.addResultPoints(extensionResult.resultPoints);
     extensionLength := Length(extensionResult.Text);
+    extensionResult.Free;
+
     if (hints <> nil) and
       (hints.ContainsKey(TDecodeHintType.ALLOWED_EAN_EXTENSIONS)) then
       allowedExtensions := TArray<Integer>

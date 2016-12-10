@@ -83,7 +83,10 @@ uses
   ZXing.ResultPointImplementation in '..\Lib\Classes\Common\ZXing.ResultPointImplementation.pas',
   ZXing.QrCode.Internal.AlignmentPatternImplementation in '..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPatternImplementation.pas',
   ZXing.QrCode.Internal.FinderPatternImplementation in '..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPatternImplementation.pas',
-  ZXIng.ByteSegments in '..\Lib\Classes\Common\ZXIng.ByteSegments.pas';
+  ZXIng.ByteSegments in '..\Lib\Classes\Common\ZXIng.ByteSegments.pas',
+  ZXing.OneD.EAN8Reader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.EAN8Reader.pas',
+  ZXing.OneD.UPCAReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCAReader.pas',
+  ZXing.OneD.UPCEReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEReader.pas';
 
 var
   runner : ITestRunner;

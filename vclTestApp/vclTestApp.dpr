@@ -74,7 +74,10 @@ uses
   ZXing.InvertedLuminanceSource in '..\Lib\Classes\Filtering\ZXing.InvertedLuminanceSource.pas',
   ZXing.LuminanceSource in '..\Lib\Classes\Filtering\ZXing.LuminanceSource.pas',
   ZXing.PlanarYUVLuminanceSource in '..\Lib\Classes\Filtering\ZXing.PlanarYUVLuminanceSource.pas',
-  ZXing.RGBLuminanceSource in '..\Lib\Classes\Filtering\ZXing.RGBLuminanceSource.pas';
+  ZXing.RGBLuminanceSource in '..\Lib\Classes\Filtering\ZXing.RGBLuminanceSource.pas',
+  ZXing.OneD.EAN8Reader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.EAN8Reader.pas',
+  ZXing.OneD.UPCAReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCAReader.pas',
+  ZXing.OneD.UPCEReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEReader.pas';
 
 {$R *.res}
 

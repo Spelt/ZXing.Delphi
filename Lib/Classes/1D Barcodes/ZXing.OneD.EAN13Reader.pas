@@ -88,7 +88,14 @@ type
     class procedure InitializeClass; static;
     class procedure FinalizeClass; static;
   protected
+    public
     /// <summary>
+    /// Initializes a new instance of the <see cref="TEAN13Reader"/> class.
+    /// </summary>
+    constructor Create; override;
+    destructor Destroy; override;
+
+      /// <summary>
     /// Subclasses override this to decode the portion of a barcode between the start
     /// and end guard patterns.
     /// </summary>
@@ -101,12 +108,8 @@ type
     class function decodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
-  public
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TEAN13Reader"/> class.
-    /// </summary>
-    constructor Create; override;
-    destructor Destroy; override;
+
+
 
     /// <summary>
     /// Get the format of this decoder.
