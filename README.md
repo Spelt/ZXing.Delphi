@@ -19,17 +19,32 @@ Just include the source files and add it in your existing projects and build the
 - In Delphi 10 Seattle you may have to fiddle witht TFocusMode.ContinuousAutoFocus. Perhaps maybe you can set a fixed focus.
 
 
+## Supported Formats
+
+| 1D product | 1D industrial | 2D
+| ---------- | ------------- | --------------
+| UPC-A      | Code 39       | QR Code
+| UPC-E      | Code 93       | Data Matrix (Center images only)
+| EAN-8      | Code 128      | 
+| EAN-13     | ITF           | 
+|            |            	 |
+
 
 ###Features
 - Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
 - 100% free. No license fees. Just free.
 - Speed
-- Barcodes: QR-Code, Code128, Code93, ITF, EAN8, EAN13, DataMatrix (beta)
 - Simple API
 - Unit tests provided
+- Test projects provided
 	
 
 ###Changes
+- v3.3 Date: 2016/11/27 (Thanks for Nano103 for adding Code 39)
+	- Added UPC-A, UPC-E, Code 39
+	- Now Delphi is listed at the official zxing page: https://github.com/zxing/zxing	
+	- Added tip section.
+
 - v3.2 Date: 2016/11/27 
 	- Added EAN8, EAN13 (many requests)
 	- v3 becomes master branch
@@ -77,13 +92,19 @@ Just include the source files and add it in your existing projects and build the
  	- Base classes 1D barcode implemented.	
  	- Implemented Code 128 + unit test.
 
+###Tips - How to optimize an already fast library.
+- Try not to scan every incoming frame. 
+- Use autoformat scanning with care, with automatic on every frame is passed to every barcode format. For example: If you want to scan only EAN-8, set the scan format for only EAN-8. 
+- For mobile: try not to scan every frame, skip every n frame. Scanning 4 frames in a second should be good for most purposes. Safes CPU and battery.
+- For mobile: try setting your camera not to a high resolution. 640x480 is for most purposes perfect. More resolutions means more pixels to scan means slower. Saves CPU and battery. 
 	
-#Help wanted
-Although it works extremely well, it works currently only with a few barcodes.For me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
+	
+	
+###Other barcodes?
+Although it works extremely well, we still miss a few barcodes.For me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
 
-The base classes I already implemented so if you need to have another Barcode like Code39 you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy (or just ask and I convert the raw classes for you). 
+The base classes are already implemented so if you need to have another Barcode like Code39 (already done :-) ) you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy (or just ask and I convert the raw classes for you). 
 
-Only with your help we can get all the barcodes here! A unit test project is included and you have to include tests for the barcode types you include.
 
 **If you want to help:** Let us/me know which barcode you planning to implement. There is no point in converting barcodes multiple times :-)
 
@@ -113,32 +134,34 @@ FReadResult := FScanManager.Scan(scanBitmap);
 
 ```
 
-Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. I created a test app to show you how just to do that. Its included.  It makes use of the new Firemonkey parallel lib. In the testApp the resolution of the camera is set to medium (FMX.Media.TVideoCaptureQuality.MediumQuality) on my iPhone 6. This is only possible since XE8 and equivalent Appmethod.  Its also good to mention that how higher the resolution the more time it takes to scan a bitmap. Some scaling could probably work too.
+Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. I created a test app to show you how just to do that. Its included.  It makes use of the new Firemonkey parallel lib. In the testApp the resolution of the camera is set to medium (FMX.Media.TVideoCaptureQuality.MediumQuality) on my iPhone 6. This is only possible since XE8 and equivalent Appmethod. Its also good to mention that how higher the resolution the more time it takes to scan a bitmap. Some scaling could probably work too.
 
 
 ###Thanks
 ZXing.Delphi is a project that I've put together with the work of others.  So naturally, I'd like to thank everyone who's helped out in any way.  Those of you I know have helped I'm listing here, but anyone else that was involved, please let me know!
 
+- The ZXing Project Authors - Sean Owen.
 - J. Dick at Redth at https://github.com/Redth/ZXing.Net.Mobile
-- The ZXing Project Authors
+- Carlo Sirna
 - P. B. Hofstede
 - Kai Gossens
 - Raphael Büchler
-- Carlo Sirna
+- Nano103
 
 
-###License
-Apache ZXing.Net.Mobile Copyright 2012 The Apache Software Foundation
-This product includes software developed at The Apache Software Foundation (http://www.apache.org/).
-
-
-### ZXing.Net
-ZXing.Net is released under the Apache 2.0 license.
-ZXing.Net can be found here: http://code.google.com/p/zxing/
+### ZXing.Delphi
+ZXing.Delphi is released under the Apache 2.0 license.
+ZXing.Delphi can be found here:https://github.com/Spelt/ZXing.Delphi
 A copy of the Apache 2.0 license can be found here: http://www.apache.org/licenses/LICENSE-2.0
 
 
 ### ZXing
 ZXing is released under the Apache 2.0 license.
 ZXing can be found here: http://code.google.com/p/zxing/
+A copy of the Apache 2.0 license can be found here: http://www.apache.org/licenses/LICENSE-2.0
+
+
+### ZXing.Net
+ZXing.Net is released under the Apache 2.0 license.
+ZXing.Net can be found here: http://code.google.com/p/zxing/
 A copy of the Apache 2.0 license can be found here: http://www.apache.org/licenses/LICENSE-2.0
