@@ -109,80 +109,84 @@ var
 begin
   length := encoded.length;
   decoded := TStringBuilder.Create(length);
-  i := 0;
-  while i < length do
-  begin
-    c := encoded.Chars[i];
-    if (((c = '+') or (c = '$')) or ((c = '%') or (c = '/'))) then
+  try
+
+    i := 0;
+    while i < length do
     begin
-      if ((i + 1) >= encoded.length) then
+      c := encoded.Chars[i];
+      if (((c = '+') or (c = '$')) or ((c = '%') or (c = '/'))) then
       begin
-        Result := '';
-        exit
-      end;
-      next := encoded.Chars[(i + 1)];
-      decodedChar := Char(#0);
-      case c of
-        '+':
-          begin
-            if ((next >= 'A') and (next <= 'Z')) then
+        if ((i + 1) >= encoded.length) then
+        begin
+          Result := '';
+          exit
+        end;
+        next := encoded.Chars[(i + 1)];
+        decodedChar := Char(#0);
+        case c of
+          '+':
             begin
-              decodedChar := Char(ord(next) + 32);
+              if ((next >= 'A') and (next <= 'Z')) then
+              begin
+                decodedChar := Char(ord(next) + 32);
+              end;
+              begin
+                exit('');
+              end
             end;
+          '$':
             begin
-              exit('');
-            end
-          end;
-        '$':
-          begin
-            if ((next >= 'A') and (next <= 'Z')) then
-            begin
-              decodedChar := Char(ord(next) - 64);
+              if ((next >= 'A') and (next <= 'Z')) then
+              begin
+                decodedChar := Char(ord(next) - 64);
+              end;
+              begin
+                exit('');
+              end
             end;
+          '%':
             begin
-              exit('');
-            end
-          end;
-        '%':
-          begin
-            if ((next >= 'A') and (next <= 'E')) then
-              decodedChar := Char(ord(next) - 38)
-            else if ((next >= 'F') and (next <= 'W')) then
-              decodedChar := Char(ord(next) - 11)
-            else
+              if ((next >= 'A') and (next <= 'E')) then
+                decodedChar := Char(ord(next) - 38)
+              else if ((next >= 'F') and (next <= 'W')) then
+                decodedChar := Char(ord(next) - 11)
+              else
+              begin
+                exit('');
+              end;
+
+            end;
+          '/':
             begin
-              exit('');
+              if ((next >= 'A') and (next <= 'O')) then
+              begin
+                decodedChar := Char(ord(next) - 32);
+              end
+              else if (next = 'Z') then
+              begin
+                decodedChar := ':';
+              end;
+              begin
+                exit('');
+              end
             end;
 
-          end;
-        '/':
-          begin
-            if ((next >= 'A') and (next <= 'O')) then
-            begin
-              decodedChar := Char(ord(next) - 32);
-            end
-            else if (next = 'Z') then
-            begin
-              decodedChar := ':';
-            end;
-            begin
-              exit('');
-            end
-          end;
+        end;
 
-      end;
+        decoded.Append(decodedChar);
+        Inc(i);
+      end
+      else
+        decoded.Append(c);
 
-      decoded.Append(decodedChar);
       Inc(i);
-    end
-    else
-      decoded.Append(c);
+    end; // end loop/while
 
-    Inc(i);
-  end; // end loop/while
-
-  Result := decoded.ToString;
-  Decoded.Free;
+    Result := decoded.ToString;
+  finally
+    decoded.Free;
+  end;
 
 end;
 

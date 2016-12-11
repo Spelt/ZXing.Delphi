@@ -60,7 +60,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    class function decodeMiddle(const row: IBitArray;
+    class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const res: TStringBuilder)
       : Integer; override;
 
@@ -170,7 +170,7 @@ begin
     TUPCEReader.MIDDLE_END_PATTERN);
 end;
 
-class function TUPCEReader.decodeMiddle(const row: IBitArray;
+class function TUPCEReader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>; const res: TStringBuilder): Integer;
 var
   bestMatch: Integer;
