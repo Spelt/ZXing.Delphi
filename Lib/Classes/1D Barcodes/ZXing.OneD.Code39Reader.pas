@@ -166,10 +166,9 @@ begin
               else if (next = 'Z') then
               begin
                 decodedChar := ':';
-              end;
-              begin
-                exit('');
               end
+              else
+                exit('');
             end;
 
         end;
@@ -305,7 +304,7 @@ begin
   end;
 
   Left := (start[1] + start[0]) / 2;
-  Right := (lastStart + lastPatternSize) / 2;
+  Right := lastStart + (lastPatternSize / 2);
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
