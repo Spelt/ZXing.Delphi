@@ -1,4 +1,5 @@
 unit main;
+
 {
   * Copyright 2015 E Spelt for test project stuff
   *
@@ -63,7 +64,6 @@ type
     ToolBar3: TToolBar;
     CameraComponent1: TCameraComponent;
     Memo1: TMemo;
-    btnLoadFromFile: TButton;
     openDlg: TOpenDialog;
     Camera1: TCamera;
     procedure btnStartCameraClick(Sender: TObject);
@@ -73,25 +73,19 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure CameraComponent1SampleBufferReady(Sender: TObject;
       const ATime: TMediaTime);
-    procedure btnLoadFromFileClick(Sender: TObject);
     procedure imgCameraClick(Sender: TObject);
   private
     { Private declarations }
 
     FScanManager: TScanManager;
     FScanInProgress: Boolean;
-    frameTake: Integer;
+    FFrameTake: Integer;
     procedure GetImage();
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
-    procedure ScanImage(scanBitmap: TBitmap;freeBitmap:boolean);
-
-  public
-    { Public declarations }
   end;
 
 var
   MainForm: TMainForm;
-  curImgIdx : Integer = 0;
 
 implementation
 
@@ -100,38 +94,18 @@ implementation
 procedure TMainForm.FormCreate(Sender: TObject);
 var
   AppEventSvc: IFMXApplicationEventService;
-  CaptureSetting : TVideoCaptureSetting;
-  LSettings: TArray<TVideoCaptureSetting>;
 begin
 
-  lblScanStatus.Text := '';
-  frameTake := 0;
-
-  { by default, we start with Front Camera and Flash Off }
-  { cbFrontCamera.IsChecked := True;
-    CameraComponent1.Kind := FMX.Media.TCameraKind.ckFrontCamera;
-
-    cbFlashOff.IsChecked := True;
-    if CameraComponent1.HasFlash then
-    CameraComponent1.FlashMode := FMX.Media.TFlashMode.fmFlashOff;
-  }
-
-  { Add platform service to see camera state. }
   if TPlatformServices.Current.SupportsPlatformService
     (IFMXApplicationEventService, IInterface(AppEventSvc)) then
+  begin
     AppEventSvc.SetApplicationEventHandler(AppEvent);
+  end;
 
-  CameraComponent1.CaptureSettingPriority := TVideoCaptureSettingPriority.FrameRate;
-  LSettings := CameraComponent1.AvailableCaptureSettings;
-  if length(LSettings) > 0 then // do not assume that the program is running on system having a camera!
-     CameraComponent1.CaptureSetting := LSettings[0];
-  {CaptureSetting := CameraComponent1.GetCaptureSetting;
-  CaptureSetting.SetFrameRate(25, 30);
-  CaptureSetting.Width  := 640;
-  CaptureSetting.Height := 480;}
-  CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.CaptureSettings;
+  lblScanStatus.Text := '';
+  FFrameTake := 0;
 
-  CameraComponent1.SetCaptureSetting(CaptureSetting);
+  CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
   lblScanStatus.Text := '';
   FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 end;
@@ -141,31 +115,20 @@ begin
   FScanManager.Free;
 end;
 
-procedure TMainForm.btnLoadFromFileClick(Sender: TObject);
-begin
-  if not openDlg.Execute then exit;
-  imgCamera.Bitmap.LoadFromFile(openDlg.FileName);
-  ScanImage(imgCamera.Bitmap,false);
-end;
-
 procedure TMainForm.btnStartCameraClick(Sender: TObject);
 begin
-  btnLoadFromFile.Enabled := false;
-  CameraComponent1.Active := False;
+  CameraComponent1.Active := false;
   CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
   CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
   CameraComponent1.Active := True;
-
   lblScanStatus.Text := '';
-  memo1.Lines.Clear;
+  Memo1.Lines.Clear;
 end;
 
 procedure TMainForm.btnStopCameraClick(Sender: TObject);
 begin
-  CameraComponent1.Active := False;
-  btnLoadFromFile.Enabled := True;
-
-end; //
+  CameraComponent1.Active := false;
+end;
 
 procedure TMainForm.CameraComponent1SampleBufferReady(Sender: TObject;
   const ATime: TMediaTime);
@@ -176,87 +139,78 @@ end;
 procedure TMainForm.GetImage;
 var
   scanBitmap: TBitmap;
+  ReadResult: TReadResult;
 
 begin
   CameraComponent1.SampleBufferToBitmap(imgCamera.Bitmap, True);
 
   if (FScanInProgress) then
   begin
-    Exit;
+    exit;
   end;
 
-  {
-    inc(frameTake);
-    if (frameTake mod 4 <> 0) then
-    begin
-    Exit;
-    end;
-  }
+  { This code will take every 4 frame. }
+  inc(FFrameTake);
+  if (FFrameTake mod 4 <> 0) then
+  begin
+    exit;
+  end;
+
+
 
   scanBitmap := TBitmap.Create();
   scanBitmap.Assign(imgCamera.Bitmap);
-
-  TTask.Run(
-    procedure
-    begin
-        ScanImage(scanBitmap,true);
-     end);
-end;
-
-
-procedure TMainForm.ScanImage(scanBitmap:TBitmap;freeBitmap:boolean);
-var ReadResult: TReadResult;
-begin
-  if scanBitmap = nil then
-   exit;
-
   ReadResult := nil;
 
-  try
-    FScanInProgress := True;
-    try
-        ReadResult := FScanManager.Scan(scanBitmap);
-    finally
-        FScanInProgress := False;
-       if freeBitmap then
-         scanBitmap.Free;
-    end;
-      except
-        on E: Exception do
-        begin
-      ReadResult.Free;
-          TThread.Synchronize(nil,
-            procedure
-            begin
-           lblScanStatus.Text := E.Message;
-              // lblScanResults.Text := '';
-            end);
+// There is bug in Delphi Berlin 10.1 update 2 which causes the TTask and
+// the TThread.Synchronize to cause exceptions. Uncomment in any other version.
+// See: https://quality.embarcadero.com/browse/RSP-16377?jql=project%20%3D%20RSP%20AND%20issuetype%20%3D%20Bug%20AND%20affectedVersion%20%3D%20%2210.1%20Berlin%20Update%202%22%20AND%20status%20%3D%20Open%20ORDER%20BY%20priority%20DESC
 
-          Exit;
+//  TTask.Run(
+//    procedure
+//    begin
+      try
+        FScanInProgress := True;
+        try
+          ReadResult := FScanManager.Scan(scanBitmap);
+        except
+          on E: Exception do
+          begin
+//            TThread.Synchronize(nil,
+//              procedure
+//              begin
+                lblScanStatus.Text := E.Message;
+//              end);
 
+            exit;
+          end;
         end;
 
+//        TThread.Synchronize(nil,
+//          procedure
+//          begin
+
+            if (length(lblScanStatus.Text) > 10) then
+            begin
+              lblScanStatus.Text := '*';
+            end;
+
+            lblScanStatus.Text := lblScanStatus.Text + '*';
+            if (ReadResult <> nil) then
+            begin
+              Memo1.Lines.Insert(0, ReadResult.Text);
+            end;
+
+//          end);
+
+      finally
+        ReadResult.Free;
+        scanBitmap.Free;
+        FScanInProgress := false;
       end;
 
-      TThread.Synchronize(nil,
-        procedure
-        begin
+//    end);
 
-          if (length(lblScanStatus.Text) > 10) then
-          begin
-            lblScanStatus.Text := '*';
-          end;
-
-          lblScanStatus.Text := lblScanStatus.Text + '*';
-
-      if (ReadResult <> nil) then
-          begin
-        memo1.Lines.Insert(0,ReadResult.Text);
-          end;
-
-          FreeAndNil(ReadResult);
-
-    end);
 end;
 
 procedure TMainForm.imgCameraClick(Sender: TObject);
@@ -269,10 +223,9 @@ function TMainForm.AppEvent(AAppEvent: TApplicationEvent;
 AContext: TObject): Boolean;
 begin
   case AAppEvent of
-    TApplicationEvent.WillBecomeInactive,
-    TApplicationEvent.EnteredBackground,
-    TApplicationEvent.WillTerminate :
-      CameraComponent1.Active := False;
+    TApplicationEvent.WillBecomeInactive, TApplicationEvent.EnteredBackground,
+      TApplicationEvent.WillTerminate:
+      CameraComponent1.Active := false;
   end;
 end;
 
