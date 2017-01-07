@@ -131,7 +131,7 @@ begin
               begin
                 decodedChar := Char(ord(next) + 32);
               end
-			  else
+              else
               begin
                 exit('');
               end
@@ -142,7 +142,7 @@ begin
               begin
                 decodedChar := Char(ord(next) - 64);
               end
-			  else
+              else
               begin
                 exit('');
               end
