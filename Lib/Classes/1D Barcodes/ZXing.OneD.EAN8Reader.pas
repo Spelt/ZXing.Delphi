@@ -42,9 +42,9 @@ type
   TEAN8Reader = class(TUPCEANReader)
 
   private
-    class var decodeMiddleCounters: TArray<Integer>;
+    class var DecodeMiddleCounters: TArray<Integer>;
   public
-    class function decodeMiddle(const row: IBitArray;
+    class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
 
@@ -63,16 +63,16 @@ end;
 constructor TEAN8Reader.Create;
 begin
   inherited;
-  SetLength(decodeMiddleCounters, 4);
+  SetLength(DecodeMiddleCounters, 4);
 end;
 
 destructor TEAN8Reader.Destroy;
 begin
-  decodeMiddleCounters := nil;
+  DecodeMiddleCounters := nil;
   inherited;
 end;
 
-class function TEAN8Reader.decodeMiddle(const row: IBitArray;
+class function TEAN8Reader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
   const resultString: TStringBuilder): Integer;
 var
@@ -80,7 +80,7 @@ var
   counter: Integer;
   counters, middleRange: TArray<Integer>;
 begin
-  counters := self.decodeMiddleCounters;
+  counters := self.DecodeMiddleCounters;
   counters[0] := 0;
   counters[1] := 0;
   counters[2] := 0;

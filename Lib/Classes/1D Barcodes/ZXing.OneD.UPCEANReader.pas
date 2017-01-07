@@ -130,7 +130,7 @@ type
     /// <param name="startRange">start/end offset of start guard pattern</param>
     /// <param name="resultString"><see cref="StringBuilder" />to append decoded chars to</param>
     /// <returns>horizontal offset of first pixel after the "middle" that was decoded or -1 if decoding could not complete successfully</returns>
-    class function decodeMiddle(const row: IBitArray;
+    class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; virtual; abstract;
 
@@ -490,7 +490,7 @@ begin
 
   res := decodeRowStringBuffer;
   res.Length := 0;
-  endStart := decodeMiddle(row, startGuardRange, res);
+  endStart := DecodeMiddle(row, startGuardRange, res);
   if (endStart < 0) then
     exit;
 

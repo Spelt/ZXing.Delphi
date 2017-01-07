@@ -57,7 +57,7 @@ type
     usingCheckDigit: boolean;
     extendedMode: boolean;
   public
-    function decodeRow(const rowNumber: Integer; const row: IBitArray;
+    function DecodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       override;
 
@@ -109,87 +109,83 @@ var
 begin
   length := encoded.length;
   decoded := TStringBuilder.Create(length);
-  i := 0;
-  while i < length do
-  begin
-    c := encoded.Chars[i];
-    if (((c = '+') or (c = '$')) or ((c = '%') or (c = '/'))) then
+  try
+
+    i := 0;
+    while i < length do
     begin
-      if ((i + 1) >= encoded.length) then
+      c := encoded.Chars[i];
+      if (((c = '+') or (c = '$')) or ((c = '%') or (c = '/'))) then
       begin
-        Result := '';
-        exit
-      end;
-      next := encoded.Chars[(i + 1)];
-      decodedChar := Char(#0);
-      case c of
-        '+':
-          begin
-            if ((next >= 'A') and (next <= 'Z')) then
+        if ((i + 1) >= encoded.length) then
+        begin
+          Result := '';
+          exit
+        end;
+        next := encoded.Chars[(i + 1)];
+        decodedChar := Char(#0);
+        case c of
+          '+':
             begin
-              decodedChar := Char(ord(next) + 32);
-            end
-            else
+              if ((next >= 'A') and (next <= 'Z')) then
+              begin
+                decodedChar := Char(ord(next) + 32);
+              end;
+              begin
+                exit('');
+              end
+            end;
+          '$':
             begin
-              decoded.Clear;
-              break;
-            end
-          end;
-        '$':
-          begin
-            if ((next >= 'A') and (next <= 'Z')) then
+              if ((next >= 'A') and (next <= 'Z')) then
+              begin
+                decodedChar := Char(ord(next) - 64);
+              end;
+              begin
+                exit('');
+              end
+            end;
+          '%':
             begin
-              decodedChar := Char(ord(next) - 64);
-            end
-            else
+              if ((next >= 'A') and (next <= 'E')) then
+                decodedChar := Char(ord(next) - 38)
+              else if ((next >= 'F') and (next <= 'W')) then
+                decodedChar := Char(ord(next) - 11)
+              else
+              begin
+                exit('');
+              end;
+
+            end;
+          '/':
             begin
-              decoded.Clear;
-              break;
-            end
-          end;
-        '%':
-          begin
-            if ((next >= 'A') and (next <= 'E')) then
-              decodedChar := Char(ord(next) - 38)
-            else if ((next >= 'F') and (next <= 'W')) then
-              decodedChar := Char(ord(next) - 11)
-            else
-            begin
-              decoded.Clear;
-              break;
+              if ((next >= 'A') and (next <= 'O')) then
+              begin
+                decodedChar := Char(ord(next) - 32);
+              end
+              else if (next = 'Z') then
+              begin
+                decodedChar := ':';
+              end
+              else
+                exit('');
             end;
 
-          end;
-        '/':
-          begin
-            if ((next >= 'A') and (next <= 'O')) then
-            begin
-              decodedChar := Char(ord(next) - 32);
-            end
-            else if (next = 'Z') then
-            begin
-              decodedChar := ':';
-            end
-            else
-            begin
-              decoded.Clear;
-              break;
-            end
-          end;
+        end;
 
-      end;
+        decoded.Append(decodedChar);
+        Inc(i);
+      end
+      else
+        decoded.Append(c);
 
-      decoded.Append(decodedChar);
       Inc(i);
-    end
-    else
-      decoded.Append(c);
+    end; // end loop/while
 
-    Inc(i);
-  end; // end loop/while
-
-  Result := decoded.ToString;
-  Decoded.Free;
+    Result := decoded.ToString;
+  finally
+    decoded.Free;
+  end;
 
 end;
 
@@ -308,7 +304,7 @@ begin
   end;
 
   Left := (start[1] + start[0]) / 2;
-  Right := (lastStart + lastPatternSize) / 2;
+  Right := lastStart + (lastPatternSize / 2);
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);

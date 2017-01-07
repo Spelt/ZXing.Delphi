@@ -47,7 +47,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    class function decodeMiddle(const row: IBitArray;
+    class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
 
@@ -88,11 +88,11 @@ begin
   result := TUPCAReader.maybeReturnResult(self.EAN13Reader.decode(image, hints))
 end;
 
-class function TUPCAReader.decodeMiddle(const row: IBitArray;
+class function TUPCAReader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
   const resultString: TStringBuilder): Integer;
 begin
-  result := self.EAN13Reader.decodeMiddle(row, startRange, resultString)
+  result := self.EAN13Reader.DecodeMiddle(row, startRange, resultString)
 end;
 
 function TUPCAReader.decodeRow(const rowNumber: Integer; const row: IBitArray;

@@ -57,7 +57,7 @@ object MainForm: TMainForm
       Size.Width = 750.000000000000000000
       Size.Height = 272.000000000000000000
       Size.PlatformDefault = False
-      WrapMode = Center
+      WrapMode = Stretch
       OnClick = imgCameraClick
     end
     object Memo1: TMemo
@@ -96,19 +96,9 @@ object MainForm: TMainForm
         Size.Width = 183.000000000000000000
         Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
-        TabOrder = 3
+        TabOrder = 2
         Text = 'Start Camera'
         OnClick = btnStartCameraClick
-      end
-      object btnLoadFromFile: TButton
-        Align = Left
-        Position.X = 334.000000000000000000
-        Size.Width = 235.000000000000000000
-        Size.Height = 48.000000000000000000
-        Size.PlatformDefault = False
-        TabOrder = 2
-        Text = 'Load Image from File...'
-        OnClick = btnLoadFromFileClick
       end
     end
     object Camera1: TCamera

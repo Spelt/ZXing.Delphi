@@ -105,7 +105,7 @@ type
     /// <returns>
     /// horizontal offset of first pixel after the "middle" that was decoded or -1 if decoding could not complete successfully
     /// </returns>
-    class function decodeMiddle(const row: IBitArray;
+    class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
 
@@ -134,7 +134,7 @@ begin
   inherited;
 end;
 
-class function TEAN13Reader.decodeMiddle(const row: IBitArray;
+class function TEAN13Reader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
   const resultString: TStringBuilder): Integer;
 var
