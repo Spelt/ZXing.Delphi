@@ -130,7 +130,8 @@ begin
               if ((next >= 'A') and (next <= 'Z')) then
               begin
                 decodedChar := Char(ord(next) + 32);
-              end;
+              end
+              else
               begin
                 exit('');
               end
@@ -140,7 +141,8 @@ begin
               if ((next >= 'A') and (next <= 'Z')) then
               begin
                 decodedChar := Char(ord(next) - 64);
-              end;
+              end
+              else
               begin
                 exit('');
               end
