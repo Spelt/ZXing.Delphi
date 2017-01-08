@@ -39,6 +39,9 @@ Just include the source files and add it in your existing projects and build the
 	
 
 ###Changes
+- v3.3.1 Date: 2017/01/08 (Thanks for Nano103)
+	- Bug fix in Code39
+
 - v3.3 Date: 2016/12/10 (Thanks for Nano103 for adding Code 39)
 	- Added UPC-A, UPC-E, Code 39
 	- Now Delphi is listed at the official zxing page: https://github.com/zxing/zxing	
