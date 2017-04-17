@@ -107,7 +107,7 @@ begin
 
   CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.HighQuality;
   lblScanStatus.Text := '';
-  FScanManager := TScanManager.Create(TBarcodeFormat.CODE_39, nil);
+  FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
