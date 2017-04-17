@@ -1,5 +1,5 @@
 # ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE to Berlin and Appmethod. 
+ZXing Barcode Scanning Library for Delphi XE to 10.2 Tokyo. 
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing.Delphi.picture2.png )
 
@@ -7,7 +7,7 @@ ZXing.Delphi is a native Object Pascal library that is based on the well known o
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
 
-Its compatible with in Delphi XE7 - 10 Berlin and AppMethod and tested with IOS 8.x, 9.x, Android, Windows 32/64 and OSX. 
+Its compatible with in Delphi XE7 - 10 Tokyo and tested with IOS 8.x, 9.x, 10x Android, Windows 32/64 and OSX. 
 The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows (VCL or Firemonkey) applications.  
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
