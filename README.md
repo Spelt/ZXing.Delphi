@@ -1,5 +1,5 @@
 # ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE to Berlin and Appmethod. 
+ZXing Barcode Scanning Library for Delphi XE to 10.2 Tokyo. 
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing.Delphi.picture2.png )
 
@@ -7,13 +7,13 @@ ZXing.Delphi is a native Object Pascal library that is based on the well known o
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
 
-Its compatible with in Delphi XE7 - 10 Berlin and AppMethod and tested with IOS 8.x, 9.x, Android, Windows 32/64 and OSX. 
+Its compatible with in Delphi XE7 - 10 Tokyo and tested with IOS 8.x, 9.x, 10x Android, Windows 32/64 and OSX. 
 The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows (VCL or Firemonkey) applications.  
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
 
-##Important note:
+## Important note:
 
 - BREAKING CHANGES: from version 3.0 the folder structure is massively changed.  
 - In Delphi 10 Seattle you may have to fiddle witht TFocusMode.ContinuousAutoFocus. Perhaps maybe you can set a fixed focus.
@@ -29,7 +29,7 @@ Just include the source files and add it in your existing projects and build the
 | EAN-13     | ITF           | 
 
 
-###Features
+### Features
 - Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
 - 100% free. No license fees. Just free.
 - Speed
@@ -38,7 +38,7 @@ Just include the source files and add it in your existing projects and build the
 - Test projects provided
 	
 
-###Changes
+### Changes
 - v3.3.1 Date: 2017/01/08 (Thanks for Nano103)
 	- Bug fix in Code39
 
@@ -94,7 +94,7 @@ Just include the source files and add it in your existing projects and build the
  	- Base classes 1D barcode implemented.	
  	- Implemented Code 128 + unit test.
 
-###Tips - How to optimize an already fast library.
+### Tips - How to optimize an already fast library.
 - Try not to scan every incoming frame. 
 - Use autoformat scanning with care, with automatic on every frame is passed to every barcode format. For example: If you want to scan only EAN-8, set the scan format for only EAN-8. 
 - For mobile: try not to scan every frame, skip every n frame. Scanning 4 frames in a second should be good for most purposes. Safes CPU and battery.
@@ -102,7 +102,7 @@ Just include the source files and add it in your existing projects and build the
 	
 	
 	
-###Other barcodes?
+### Other barcodes?
 Although it works extremely well, we still miss a few barcodes.For me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
 
 The base classes are already implemented so if you need to have another Barcode like Code39 (already done :-) ) you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy (or just ask and I convert the raw classes for you). 
@@ -111,7 +111,7 @@ The base classes are already implemented so if you need to have another Barcode 
 **If you want to help:** Let us/me know which barcode you planning to implement. There is no point in converting barcodes multiple times :-)
 
 
-###'What is different compared to the original source and what do I need to know if I implement a barcode?' How did you do it?
+### 'What is different compared to the original source and what do I need to know if I implement a barcode?' How did you do it?
 - I convert C# files to pascal via: 
 	- Build it in .NET
 	- Decompile it with 'Reflector 6' (which has a Delphi decompile function) to Delphi.NET 
@@ -139,7 +139,7 @@ FReadResult := FScanManager.Scan(scanBitmap);
 Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. I created a test app to show you how just to do that. Its included.  It makes use of the new Firemonkey parallel lib. In the testApp the resolution of the camera is set to medium (FMX.Media.TVideoCaptureQuality.MediumQuality) on my iPhone 6. This is only possible since XE8 and equivalent Appmethod. Its also good to mention that how higher the resolution the more time it takes to scan a bitmap. Some scaling could probably work too.
 
 
-###Thanks
+### Thanks
 ZXing.Delphi is a project that I've put together with the work of others.  So naturally, I'd like to thank everyone who's helped out in any way.  Those of you I know have helped I'm listing here, but anyone else that was involved, please let me know!
 
 - The ZXing Project Authors - Sean Owen.

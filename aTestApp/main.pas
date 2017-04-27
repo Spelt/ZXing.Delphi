@@ -105,7 +105,7 @@ begin
   lblScanStatus.Text := '';
   FFrameTake := 0;
 
-  CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
+  CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.HighQuality;
   lblScanStatus.Text := '';
   FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 end;
@@ -163,12 +163,12 @@ begin
   ReadResult := nil;
 
 // There is bug in Delphi Berlin 10.1 update 2 which causes the TTask and
-// the TThread.Synchronize to cause exceptions. Uncomment in any other version.
+// the TThread.Synchronize to cause exceptions.
 // See: https://quality.embarcadero.com/browse/RSP-16377?jql=project%20%3D%20RSP%20AND%20issuetype%20%3D%20Bug%20AND%20affectedVersion%20%3D%20%2210.1%20Berlin%20Update%202%22%20AND%20status%20%3D%20Open%20ORDER%20BY%20priority%20DESC
 
-//  TTask.Run(
-//    procedure
-//    begin
+  TTask.Run(
+    procedure
+    begin
       try
         FScanInProgress := True;
         try
@@ -176,19 +176,19 @@ begin
         except
           on E: Exception do
           begin
-//            TThread.Synchronize(nil,
-//              procedure
-//              begin
+            TThread.Synchronize(nil,
+              procedure
+              begin
                 lblScanStatus.Text := E.Message;
-//              end);
+              end);
 
             exit;
           end;
         end;
 
-//        TThread.Synchronize(nil,
-//          procedure
-//          begin
+        TThread.Synchronize(nil,
+          procedure
+          begin
 
             if (length(lblScanStatus.Text) > 10) then
             begin
@@ -201,7 +201,7 @@ begin
               Memo1.Lines.Insert(0, ReadResult.Text);
             end;
 
-//          end);
+          end);
 
       finally
         ReadResult.Free;
@@ -209,7 +209,7 @@ begin
         FScanInProgress := false;
       end;
 
-//    end);
+    end);
 
 end;
 
