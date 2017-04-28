@@ -33,7 +33,7 @@ Just include the source files and add it in your existing projects and build the
 	
 
 ### Changes
--v3.4
+- v3.4
 	- Added an advanced test app. Featuring faster camera, sound, barcode marker,warning for slow camera and a cool HUD. It makes use of huge camera performance tweak. See Readme in the uMain.pas and https://quality.embarcadero.com/browse/RSP-10592 
 	- Little cleanup	
 	
