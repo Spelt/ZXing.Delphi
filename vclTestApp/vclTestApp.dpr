@@ -1,4 +1,4 @@
-program vclTestApp;
+program VclTestApp;
 
 uses
   Vcl.Forms,

@@ -114,8 +114,6 @@ function TWhiteRectangleDetector.containsBlackPoint(a: Integer; b: Integer;
 var
   x, y: Integer;
 begin
-  x := 0;
-  y := 0;
   if (horizontal) then
   begin
     x := a;

@@ -13,12 +13,6 @@ The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
 
-## Important note:
-
-- BREAKING CHANGES: from version 3.0 the folder structure is massively changed.  
-- In Delphi 10 Seattle you may have to fiddle witht TFocusMode.ContinuousAutoFocus. Perhaps maybe you can set a fixed focus.
-
-
 ## Supported Formats
 
 | 1D product | 1D industrial | 2D
@@ -39,6 +33,10 @@ Just include the source files and add it in your existing projects and build the
 	
 
 ### Changes
+-v3.4
+	- Added an advanced test app. Featuring faster camera, sound, barcode marker,warning for slow camera and a cool HUD. It makes use of huge camera performance tweak. See Readme in the uMain.pas and https://quality.embarcadero.com/browse/RSP-10592 
+	- Little cleanup	
+	
 - v3.3.1 Date: 2017/01/08 (Thanks for Nano103)
 	- Bug fix in Code39
 
@@ -60,8 +58,8 @@ Just include the source files and add it in your existing projects and build the
 	- Some other bug fixes.
 
 - v3.0 Date: 2016/04/28 (Great many thanks to: Kai Gossens and Raphael Büchler)
-
-	- Added DataMatrix (BETA).
+	- Massive folder restructuring
+	- Added DataMatrix (centered only).
 	- ResultPoint event added.
 	- Support for inverted 1D/2D code types.
 	- Better OneDReader scan strategy

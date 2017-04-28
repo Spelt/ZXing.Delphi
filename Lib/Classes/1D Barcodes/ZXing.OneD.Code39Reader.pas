@@ -57,7 +57,7 @@ type
     usingCheckDigit: boolean;
     extendedMode: boolean;
   public
-    function DecodeRow(const rowNumber: Integer; const row: IBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       override;
 
@@ -191,7 +191,7 @@ begin
 
 end;
 
-function TCode39Reader.DecodeRow(const rowNumber: Integer; const row: IBitArray;
+function TCode39Reader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
   decodedChar: Char;

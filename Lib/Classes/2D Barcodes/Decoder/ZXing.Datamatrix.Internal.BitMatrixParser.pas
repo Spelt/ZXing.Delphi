@@ -507,7 +507,7 @@ end;
 
 function TBitMatrixParser.extractDataRegion(BitMatrix: TBitMatrix): TBitMatrix;
 var
-  i, j, symbolSizeRows, symbolSizeColumns, dataRegionSizeRows,
+  i, j, symbolSizeRows, dataRegionSizeRows,
     dataRegionSizeColumns, numDataRegionsRow, numDataRegionsColumn,
     sizeDataRegionRow, sizeDataRegionColumn, dataRegionRow, dataRegionRowOffset,
     dataRegionColumn, dataRegionColumnOffset, readRowOffset, writeRowOffset,
@@ -515,7 +515,6 @@ var
   bitMatrixWithoutAlignment: TBitMatrix;
 begin
   symbolSizeRows := Version.symbolSizeRows;
-  symbolSizeColumns := Version.symbolSizeColumns;
 
   if (BitMatrix.Height <> symbolSizeRows) then
     raise EArgumentException.Create
@@ -532,8 +531,6 @@ begin
 
   bitMatrixWithoutAlignment := TBitMatrix.Create(sizeDataRegionColumn,
     sizeDataRegionRow);
-
-  dataRegionRow := 0;
 
   for dataRegionRow := 0 to Pred(numDataRegionsRow) do
   begin

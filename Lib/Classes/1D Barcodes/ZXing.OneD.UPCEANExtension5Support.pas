@@ -246,10 +246,10 @@ begin
      exit;
 
   value := TUPCEANExtension5Support.parseExtension5String(raw);
-
-  if (Length(value) = 0)
-  then
-     Result := nil;
+//
+//  if (Length(value) = 0)
+//  then
+//     Result := nil;
 
   dictionary1 := TResultMetadata.Create();
   dictionary1[ZXing.ResultMetadataType.SUGGESTED_PRICE] := TResultMetadata.CreateStringMetadata(value);

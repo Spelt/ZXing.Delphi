@@ -95,7 +95,6 @@ begin
       begin
         if (not TDecodedBitStreamParser.decodeAsciiSegment(bits, res,
           resultTrailer, mode)) then
-          result := nil;
       end
       else
       begin

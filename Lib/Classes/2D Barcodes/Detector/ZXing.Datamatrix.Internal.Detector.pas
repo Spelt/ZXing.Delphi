@@ -137,7 +137,6 @@ var
   dimensionTop, dimensionRight, dimension, dimensionCorrected: Integer;
 begin
   Result := nil;
-  pointCount := nil;
 
   if (FrectangleDetector = nil) then
     // can be null, if the image is to small

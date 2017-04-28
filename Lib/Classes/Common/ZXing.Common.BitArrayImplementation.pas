@@ -25,7 +25,6 @@ type
     function GetBit(i: Integer): Boolean;
     procedure SetBit(i: Integer; Value: Boolean);
     function makeArray(Size: Integer): TArray<Integer>;
-    procedure BitArray(bits: TArray<Integer>; size: Integer);
     procedure ensureCapacity(size: Integer);
 
 
@@ -74,13 +73,6 @@ begin
   Fsize := Size;
   Fbits := makeArray(Size);
   InitLookup();
-end;
-
-// For testing only
-procedure TBitArrayImplementation.BitArray(bits: TArray<Integer>; size: Integer);
-begin
-  Fbits := bits;
-  Fsize := size;
 end;
 
 procedure TBitArrayImplementation.ensureCapacity(size: Integer);
@@ -388,7 +380,7 @@ var
 begin
   if (ending < start) then
   begin
-    Result := False; // there is a bug here some how. We just exits with fals
+    Result := False; // there is a bug here some how. We just exits with false
     //exit;
     //raise EArgumentException.Create('End is greater then start');
   end;

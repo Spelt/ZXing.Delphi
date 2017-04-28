@@ -129,7 +129,6 @@ begin
   byteSegments.Capacity := 1;
   symbolSequence := -1;
   parityData := -1;
-  Mode := nil;
   try
     try
       currentCharacterSetECI := nil;

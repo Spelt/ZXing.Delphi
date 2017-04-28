@@ -22,20 +22,20 @@ unit ZXing.OneD.Code93Reader;
 interface
 
 uses
-  System.SysUtils, 
-  System.Generics.Collections, 
-  Math, 
+  System.SysUtils,
+  System.Generics.Collections,
+  Math,
   ZXing.OneD.OneDReader,
-  ZXing.Common.BitArray, 
+  ZXing.Common.BitArray,
   ZXing.ReadResult,
   ZXing.DecodeHintType,
-  ZXing.ResultPoint, 
+  ZXing.ResultPoint,
   ZXing.BarcodeFormat,
   ZXing.Common.Detector.MathUtils;
 
 type
   /// <summary>
-  ///   <p>Decodes Code 93 barcodes.</p>
+  /// <p>Decodes Code 93 barcodes.</p>
   /// <see cref="TCode39Reader" />
   /// </summary>
   TCode93Reader = class sealed(TOneDReader)
@@ -66,7 +66,8 @@ type
     destructor Destroy; override;
 
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
-      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      override;
   end;
 
 implementation
@@ -167,8 +168,7 @@ begin
   try
     i := 0;
     next := Char(0);
-    decodedChar := Char(0);
-
+    c := Char(0);
     while ((i < length)) do
     begin
 
@@ -266,9 +266,7 @@ function TCode93Reader.decodeRow(const rowNumber: Integer; const row: IBitArray;
 var
   decodedChar: Char;
   lastStart: Integer;
-  index, nextStart,
-  counter, aEnd,
-  pattern, lastPatternSize: Integer;
+  index, nextStart, counter, aEnd, pattern, lastPatternSize: Integer;
   start: TArray<Integer>;
   resultString: String;
   Left, Right: Single;
@@ -362,18 +360,17 @@ begin
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
   resultPoints := [resultPointLeft, resultPointRight];
 
-  resultPointCallback := nil; // it is a local variable: it doesn't get NIL as default value, and the following ifs do not assign a value for all possible cases
+  resultPointCallback := nil;
+  // it is a local variable: it doesn't get NIL as default value, and the following ifs do not assign a value for all possible cases
 
   if ((hints = nil) or
-      (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK)))
-  then
-     resultPointCallback := nil
+    (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
+    resultPointCallback := nil
   else
   begin
     obj := hints[TDecodeHintType.NEED_RESULT_POINT_CALLBACK];
-    if (obj is TResultPointEventObject)
-    then
-       resultPointCallback := TResultPointEventObject(obj).Event;
+    if (obj is TResultPointEventObject) then
+      resultPointCallback := TResultPointEventObject(obj).Event;
   end;
 
   if Assigned(resultPointCallback) then

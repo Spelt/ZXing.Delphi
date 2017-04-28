@@ -106,8 +106,7 @@ end;
 
 function TFinderPattern.aboutEquals(const moduleSize, i, j: Single): Boolean;
 var
-  moduleSizeDiff,
-  x, y: Single;
+  moduleSizeDiff : Single;
 begin
   Result := false;
 

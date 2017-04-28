@@ -1,4 +1,4 @@
-program Project6;
+program DUnitXTest;
 
 {$IFNDEF TESTINSIGHT}
 {$APPTYPE CONSOLE}

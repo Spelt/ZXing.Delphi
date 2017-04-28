@@ -3,16 +3,19 @@
         <ProjectGuid>{72263279-BD40-4924-B404-E92C43F54569}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="UnitTest\dUnitXTest.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="aTestApp\aTestApp.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="vclTestApp\vclTestApp.dproj">
+        <Projects Include="UnitTest\DUnitXTest.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="MemLeakTest\Leaktest.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="aTestApp\FmxTestApp.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="AdvancedTestApp\FmxAdvancedTestApp.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="vclTestApp\VclTestApp.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -23,32 +26,14 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="dUnitXTest">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
+    <Target Name="DUnitXTest">
+        <MSBuild Projects="UnitTest\DUnitXTest.dproj"/>
     </Target>
-    <Target Name="dUnitXTest:Clean">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Clean"/>
+    <Target Name="DUnitXTest:Clean">
+        <MSBuild Projects="UnitTest\DUnitXTest.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="dUnitXTest:Make">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="aTestApp">
-        <MSBuild Projects="aTestApp\aTestApp.dproj"/>
-    </Target>
-    <Target Name="aTestApp:Clean">
-        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="aTestApp:Make">
-        <MSBuild Projects="aTestApp\aTestApp.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="vclTestApp">
-        <MSBuild Projects="vclTestApp\vclTestApp.dproj"/>
-    </Target>
-    <Target Name="vclTestApp:Clean">
-        <MSBuild Projects="vclTestApp\vclTestApp.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="vclTestApp:Make">
-        <MSBuild Projects="vclTestApp\vclTestApp.dproj" Targets="Make"/>
+    <Target Name="DUnitXTest:Make">
+        <MSBuild Projects="UnitTest\DUnitXTest.dproj" Targets="Make"/>
     </Target>
     <Target Name="Leaktest">
         <MSBuild Projects="MemLeakTest\Leaktest.dproj"/>
@@ -59,14 +44,41 @@
     <Target Name="Leaktest:Make">
         <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Make"/>
     </Target>
+    <Target Name="FmxTestApp">
+        <MSBuild Projects="aTestApp\FmxTestApp.dproj"/>
+    </Target>
+    <Target Name="FmxTestApp:Clean">
+        <MSBuild Projects="aTestApp\FmxTestApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FmxTestApp:Make">
+        <MSBuild Projects="aTestApp\FmxTestApp.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="FmxAdvancedTestApp">
+        <MSBuild Projects="AdvancedTestApp\FmxAdvancedTestApp.dproj"/>
+    </Target>
+    <Target Name="FmxAdvancedTestApp:Clean">
+        <MSBuild Projects="AdvancedTestApp\FmxAdvancedTestApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FmxAdvancedTestApp:Make">
+        <MSBuild Projects="AdvancedTestApp\FmxAdvancedTestApp.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="VclTestApp">
+        <MSBuild Projects="vclTestApp\VclTestApp.dproj"/>
+    </Target>
+    <Target Name="VclTestApp:Clean">
+        <MSBuild Projects="vclTestApp\VclTestApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="VclTestApp:Make">
+        <MSBuild Projects="vclTestApp\VclTestApp.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="dUnitXTest;aTestApp;vclTestApp;Leaktest"/>
+        <CallTarget Targets="DUnitXTest;Leaktest;FmxTestApp;FmxAdvancedTestApp;VclTestApp"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="dUnitXTest:Clean;aTestApp:Clean;vclTestApp:Clean;Leaktest:Clean"/>
+        <CallTarget Targets="DUnitXTest:Clean;Leaktest:Clean;FmxTestApp:Clean;FmxAdvancedTestApp:Clean;VclTestApp:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="dUnitXTest:Make;aTestApp:Make;vclTestApp:Make;Leaktest:Make"/>
+        <CallTarget Targets="DUnitXTest:Make;Leaktest:Make;FmxTestApp:Make;FmxAdvancedTestApp:Make;VclTestApp:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

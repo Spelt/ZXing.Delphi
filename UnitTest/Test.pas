@@ -712,11 +712,11 @@ function TZXingDelphiTest.Decode(Filename: String; CodeFormat: TBarcodeFormat;
 var
   bmp: TBitmap;
   ScanManager: TScanManager;
-  hints: TDictionary<TDecodeHintType, TObject>;
+//  hints: TDictionary<TDecodeHintType, TObject>;
 begin
   bmp := GetImage(Filename);
   try
-    hints := TDictionary<TDecodeHintType, TObject>.Create();
+    //hints := TDictionary<TDecodeHintType, TObject>.Create();
     // hints.Add(TDecodeHintType.PURE_BARCODE, nil);
 
     ScanManager := TScanManager.Create(CodeFormat, additionalHints);
