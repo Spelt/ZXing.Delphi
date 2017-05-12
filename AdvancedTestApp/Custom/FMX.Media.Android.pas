@@ -1,24 +1,24 @@
-{*******************************************************}
-{                                                       }
-{              Delphi FireMonkey Platform               }
-{                                                       }
-{ Copyright(c) 2016 Embarcadero Technologies, Inc.      }
-{              All rights reserved                      }
-{                                                       }
-{*******************************************************}
+{ ******************************************************* }
+{ }
+{ Delphi FireMonkey Platform }
+{ }
+{ Copyright(c) 2012-2017 Embarcadero Technologies, Inc. }
+{ All rights reserved }
+{ }
+{ ******************************************************* }
 
 { Changes made by Erik van Bilsen to TAndroidVideoCaptureDevice (look for "EvB"):
   * Instead of creating a new callback buffer with every frame, we allocate
-    3 callback buffers up front, and reuse the buffer passed to OnPreviewFrame.
+  3 callback buffers up front, and reuse the buffer passed to OnPreviewFrame.
   * Removed SharedBuffer, SharedBufferBytes and QueueSection since these are
-     not needed anymore.
+  not needed anymore.
   * Added an array of 3 buffers instead.
   * Perform optimized YUV-to-RGB conversion instead of compressing YUV to a
-    JPEG stream and then decompressing it again to a RGB bitmap.
+  JPEG stream and then decompressing it again to a RGB bitmap.
   * Perform optimized image rotation instead of using FireMonkey bitmap
-    rotation.
+  rotation.
   * There are both Delphi versions and NEON versions of the optimized routines
-    mentioned above.  }
+  mentioned above. }
 
 unit FMX.Media.Android;
 
@@ -27,8 +27,10 @@ interface
 {$SCOPEDENUMS ON}
 
 uses
-  Androidapi.JNI.Media, Androidapi.JNI.VideoView, Androidapi.JNI.App, Androidapi.JNI.Widget, System.Types,
-  System.Messaging, FMX.Media, Androidapi.JNI.Embarcadero, FMX.Platform.Android, Androidapi.JNIBridge,
+  Androidapi.JNI.Media, Androidapi.JNI.VideoView, Androidapi.JNI.App,
+  Androidapi.JNI.Widget, System.Types,
+  System.Messaging, FMX.Media, Androidapi.JNI.Embarcadero, FMX.Platform.Android,
+  Androidapi.JNIBridge,
   Androidapi.JNI.GraphicsContentViewText, Androidapi.JNI.JavaTypes;
 
 type
@@ -42,6 +44,7 @@ type
     FPlayer: JMediaPlayer;
     FVolume: Single;
   protected
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
     procedure SeekToBegin;
     function GetDuration: TMediaTime; override;
     function GetCurrent: TMediaTime; override;
@@ -64,19 +67,18 @@ type
   end;
 
   TAndroidVideo = class(TMedia)
-  private
-    type
-      TCommonVolume = class
-      strict private
-        FAudioService: JObject;
-        FAudioManager: JAudioManager;
-        FMaxVolume: Integer;
-        procedure SetVolume(const Value: Single);
-        function GetVolume: Single;
-      public
-        constructor Create;
-        property Value: Single read GetVolume write SetVolume;
-      end;
+  private type
+    TCommonVolume = class
+    strict private
+      FAudioService: JObject;
+      FAudioManager: JAudioManager;
+      FMaxVolume: Integer;
+      procedure SetVolume(const Value: Single);
+      function GetVolume: Single;
+    public
+      constructor Create;
+      property Value: Single read GetVolume write SetVolume;
+    end;
   private
     FVolume: TCommonVolume;
     FScale: Single;
@@ -93,6 +95,7 @@ type
     function InstanceCreated: Boolean;
     function IsVideoEnabled: Boolean;
   protected
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
     procedure SeekToBegin;
     function GetDuration: TMediaTime; override;
     function GetCurrent: TMediaTime; override;
@@ -117,8 +120,10 @@ type
 implementation
 
 uses
-  Androidapi.Bitmap, Androidapi.JNI.Hardware, Androidapi.Gles, Androidapi.JNI.Os, System.RTLConsts, Androidapi.Helpers,
-  System.Math, System.SysUtils, System.SyncObjs, System.Generics.Collections, FMX.Consts, FMX.Types, FMX.Surfaces,
+  Androidapi.Bitmap, Androidapi.JNI.Hardware, Androidapi.Gles,
+  Androidapi.JNI.Os, System.RTLConsts, Androidapi.Helpers,
+  System.Math, System.SysUtils, System.SyncObjs, System.Generics.Collections,
+  FMX.Consts, FMX.Types, FMX.Surfaces,
   FMX.Graphics, FMX.Helpers.Android, FMX.Forms, FMX.Platform, FastUtils;
 
 const
@@ -164,7 +169,8 @@ type
 
   TAndroidVideoCaptureCallback = class(TJavaLocal, JCamera_PreviewCallback)
   private
-    [weak] FCaptureDevice: TAndroidVideoCaptureDevice;
+    [weak]
+    FCaptureDevice: TAndroidVideoCaptureDevice;
   public
     procedure onPreviewFrame(AData: TJavaArray<Byte>; ACamera: JCamera); cdecl;
   end;
@@ -176,22 +182,22 @@ type
     LowestJpegQuality = 50;
     DefaultCaptureTimeInterval = 33;
     JPEGQualityKey = 'jpeg-quality';
-    BUFFER_COUNT = 3;                    // EvB: Added
+    BUFFER_COUNT = 3; // EvB: Added
   private
     SurfaceSection: TCriticalSection;
     UpdatedSection: TCriticalSection;
-//    QueueSection: TCriticalSection;   // EvB: Removed
+    // QueueSection: TCriticalSection;   // EvB: Removed
 
     FCameraId: Integer;
     FCapturing: Boolean;
     FCaptureTimerInterval: Integer;
     FVideoConversionJPEGQuality: Integer;
     PreviewBufferSize: TPoint;
-//    SharedBuffer: TJavaArray<Byte>;   // EvB: Removed
+    // SharedBuffer: TJavaArray<Byte>;   // EvB: Removed
     SharedBufferSize: TPoint;
-//    SharedBufferBytes: Integer;       // EvB: Removed
-//    QueuedBufferCount: Integer;       // EvB: Removed
-//    SharedBufferFormat: Integer;      // EvB: Removed
+    // SharedBufferBytes: Integer;       // EvB: Removed
+    // QueuedBufferCount: Integer;       // EvB: Removed
+    // SharedBufferFormat: Integer;      // EvB: Removed
     SharedSurface: TBitmapSurface;
     SharedSurfaceUpdated: Boolean;
     SurfaceTexture: JSurfaceTexture;
@@ -199,7 +205,7 @@ type
     CapturePollingTimer: TTimer;
     ManualBitmapRotation: Integer;
     FOrientationChangedId: Integer;
-    FBuffers: array [0..BUFFER_COUNT - 1] of TJavaArray<Byte>; // EvB: Added
+    FBuffers: array [0 .. BUFFER_COUNT - 1] of TJavaArray<Byte>; // EvB: Added
     class var FCallback: TAndroidVideoCaptureCallback;
     class var FCurrentCamera: JCamera;
     class var FCurrentCameraID: Integer;
@@ -207,17 +213,20 @@ type
     function GetManualBitmapRotation: Integer;
     procedure CopyBufferToSurface(AnArray: TJavaArray<Byte>; ACamera: JCamera);
     function GetCamera: JCamera;
-//    procedure AddQueueBuffer;         // EvB: Removed
-//    procedure RemoveQueueBuffer;      // EvB: Removed
-    procedure AddCallbackBuffers;       // EvB: Added
-    procedure DeleteCallbackBuffers;    // EvB: Added
+    // procedure AddQueueBuffer;         // EvB: Removed
+    // procedure RemoveQueueBuffer;      // EvB: Removed
+    procedure AddCallbackBuffers; // EvB: Added
+    procedure DeleteCallbackBuffers; // EvB: Added
     procedure OnCaptureTimer(Sender: TObject);
-    procedure OrientationChangedHandler(const Sender: TObject; const Msg: TMessage);
+    procedure OrientationChangedHandler(const Sender: TObject;
+      const Msg: TMessage);
   protected
     procedure DoStartCapture; override;
     procedure DoStopCapture; override;
-    procedure DoSampleBufferToBitmap(const ABitmap: TBitmap; const ASetSize: Boolean); override;
-    function GetDeviceProperty(const Prop: TCaptureDevice.TProperty): string; override;
+    procedure DoSampleBufferToBitmap(const ABitmap: TBitmap;
+      const ASetSize: Boolean); override;
+    function GetDeviceProperty(const Prop: TCaptureDevice.TProperty)
+      : string; override;
     function GetDeviceState: TCaptureDeviceState; override;
     function GetPosition: TDevicePosition; override;
     procedure DoSetQuality(const Value: TVideoCaptureQuality); override;
@@ -231,13 +240,16 @@ type
     procedure SetFocusMode(const Value: TFocusMode); override;
     class function GetCallbackInstance: TAndroidVideoCaptureCallback;
     function GetCaptureSetting: TVideoCaptureSetting; override;
-    function DoSetCaptureSetting(const ASetting: TVideoCaptureSetting): Boolean; override;
-    function DoGetAvailableCaptureSettings: TArray<TVideoCaptureSetting>; override;
+    function DoSetCaptureSetting(const ASetting: TVideoCaptureSetting)
+      : Boolean; override;
+    function DoGetAvailableCaptureSettings
+      : TArray<TVideoCaptureSetting>; override;
   public
     property CameraId: Integer read FCameraId;
     property Camera: JCamera read GetCamera;
 
-    constructor Create(const AManager: TCaptureDeviceManager; const ADefault: Boolean); override;
+    constructor Create(const AManager: TCaptureDeviceManager;
+      const ADefault: Boolean); override;
     destructor Destroy; override;
   end;
 
@@ -301,18 +313,20 @@ end;
 {$ENDREGION}
 {$REGION 'TAndroidVideoCaptureDevice'}
 
-procedure TAndroidVideoCaptureCallback.onPreviewFrame(AData: TJavaArray<Byte>; ACamera: JCamera);
+procedure TAndroidVideoCaptureCallback.onPreviewFrame(AData: TJavaArray<Byte>;
+  ACamera: JCamera);
 begin
   if FCaptureDevice <> nil then
   begin
     if FCaptureDevice.FCapturing then
       FCaptureDevice.CopyBufferToSurface(AData, ACamera);
-//    FCaptureDevice.RemoveQueueBuffer;
+    // FCaptureDevice.RemoveQueueBuffer;
     ACamera.addCallbackBuffer(AData);
   end;
 end;
 
-constructor TAndroidVideoCaptureDevice.Create(const AManager: TCaptureDeviceManager; const ADefault: Boolean);
+constructor TAndroidVideoCaptureDevice.Create(const AManager
+  : TCaptureDeviceManager; const ADefault: Boolean);
 begin
   inherited;
 
@@ -320,13 +334,17 @@ begin
   FCaptureTimerInterval := DefaultCaptureTimeInterval;
   FVideoConversionJPEGQuality := MediumJpegQuality;
 
-  SurfaceSection:= TCriticalSection.Create;
-  UpdatedSection:= TCriticalSection.Create;
-//  QueueSection:= TCriticalSection.Create; // EvB: Remove
+  SurfaceSection := TCriticalSection.Create;
+  UpdatedSection := TCriticalSection.Create;
+  // QueueSection:= TCriticalSection.Create; // EvB: Remove
+
+  CapturePollingTimer := TTimer.Create(nil);
+  CapturePollingTimer.Interval := FCaptureTimerInterval;
+  CapturePollingTimer.OnTimer := OnCaptureTimer;
 
   FCapturing := False;
-  FOrientationChangedId := TMessageManager.DefaultManager.SubscribeToMessage(TOrientationChangedMessage,
-    OrientationChangedHandler);
+  FOrientationChangedId := TMessageManager.DefaultManager.SubscribeToMessage
+    (TOrientationChangedMessage, OrientationChangedHandler);
 end;
 
 // EvB: Added
@@ -340,12 +358,18 @@ end;
 
 destructor TAndroidVideoCaptureDevice.Destroy;
 begin
-  TMessageManager.DefaultManager.Unsubscribe(TOrientationChangedMessage, FOrientationChangedId);
+  TMessageManager.DefaultManager.Unsubscribe(TOrientationChangedMessage,
+    FOrientationChangedId);
   DoStopCapture;
 
-//  QueueSection.Free; // EvB: Remove
+  FreeAndNil(CapturePollingTimer);
+
+  // QueueSection.Free; // EvB: Remove
   UpdatedSection.Free;
   SurfaceSection.Free;
+
+  FCurrentCamera.release;
+  FCurrentCamera := nil;
 
   inherited;
 end;
@@ -364,14 +388,15 @@ begin
   Result := FCurrentCamera;
 end;
 
-function TAndroidVideoCaptureDevice.GetDeviceProperty(const Prop: TCaptureDevice.TProperty): string;
+function TAndroidVideoCaptureDevice.GetDeviceProperty
+  (const Prop: TCaptureDevice.TProperty): string;
 begin
   case Prop of
     TCaptureDevice.TProperty.UniqueID:
       Result := FCameraId.ToString;
 
-    else
-      Result := '';
+  else
+    Result := '';
   end;
 end;
 
@@ -383,7 +408,8 @@ begin
     Result := TCaptureDeviceState.Stopped;
 end;
 
-procedure TAndroidVideoCaptureDevice.DoSetQuality(const Value: TVideoCaptureQuality);
+procedure TAndroidVideoCaptureDevice.DoSetQuality
+  (const Value: TVideoCaptureQuality);
 var
   Params: JCamera_Parameters;
   SettingsList: TArray<TVideoCaptureSetting>;
@@ -402,10 +428,14 @@ begin
     if Length(SettingsList) > 0 then
     begin
       case Value of
-        TVideoCaptureQuality.PhotoQuality: CaptureSetting := SettingsList[0];
-        TVideoCaptureQuality.HighQuality: CaptureSetting := SettingsList[0];
-        TVideoCaptureQuality.MediumQuality: CaptureSetting := SettingsList[Length(SettingsList) div 2];
-        TVideoCaptureQuality.LowQuality: CaptureSetting := SettingsList[High(SettingsList)];
+        TVideoCaptureQuality.PhotoQuality:
+          CaptureSetting := SettingsList[0];
+        TVideoCaptureQuality.HighQuality:
+          CaptureSetting := SettingsList[0];
+        TVideoCaptureQuality.MediumQuality:
+          CaptureSetting := SettingsList[Length(SettingsList) div 2];
+        TVideoCaptureQuality.LowQuality:
+          CaptureSetting := SettingsList[High(SettingsList)];
       end;
     end;
 
@@ -414,28 +444,29 @@ begin
     begin
 
       case Value of
-        TVideoCaptureQuality.PhotoQuality: ;
+        TVideoCaptureQuality.PhotoQuality:
+          ;
         TVideoCaptureQuality.HighQuality:
-        begin
-          Params.setPictureFormat(TJImageFormat.JavaClass.JPEG);
-          Params.&set(StringToJString(JPEGQualityKey), HighestJpegQuality);
-          Params.setJpegQuality(HighestJpegQuality);
-          FVideoConversionJPEGQuality := HighestJpegQuality;
-        end;
+          begin
+            Params.setPictureFormat(TJImageFormat.JavaClass.JPEG);
+            Params.&set(StringToJString(JPEGQualityKey), HighestJpegQuality);
+            Params.setJpegQuality(HighestJpegQuality);
+            FVideoConversionJPEGQuality := HighestJpegQuality;
+          end;
         TVideoCaptureQuality.MediumQuality:
-        begin
-          Params.setPictureFormat(TJImageFormat.JavaClass.JPEG);
-          Params.&set(StringToJString(JPEGQualityKey), MediumJpegQuality);
-          Params.setJpegQuality(MediumJpegQuality);
-          FVideoConversionJPEGQuality := MediumJpegQuality;
-        end;
+          begin
+            Params.setPictureFormat(TJImageFormat.JavaClass.JPEG);
+            Params.&set(StringToJString(JPEGQualityKey), MediumJpegQuality);
+            Params.setJpegQuality(MediumJpegQuality);
+            FVideoConversionJPEGQuality := MediumJpegQuality;
+          end;
         TVideoCaptureQuality.LowQuality:
-        begin
-          Params.setPictureFormat(TJImageFormat.JavaClass.JPEG);
-          Params.&set(StringToJString(JPEGQualityKey), LowestJpegQuality);
-          Params.setJpegQuality(LowestJpegQuality);
-          FVideoConversionJPEGQuality := LowestJpegQuality;
-        end;
+          begin
+            Params.setPictureFormat(TJImageFormat.JavaClass.JPEG);
+            Params.&set(StringToJString(JPEGQualityKey), LowestJpegQuality);
+            Params.setJpegQuality(LowestJpegQuality);
+            FVideoConversionJPEGQuality := LowestJpegQuality;
+          end;
       end;
       Camera.setParameters(Params);
     end;
@@ -452,7 +483,8 @@ begin
 
   if CameraInfo.facing = TJCamera_CameraInfo.JavaClass.CAMERA_FACING_BACK then
     Result := TDevicePosition.Back
-  else if CameraInfo.facing = TJCamera_CameraInfo.JavaClass.CAMERA_FACING_FRONT then
+  else if CameraInfo.facing = TJCamera_CameraInfo.JavaClass.CAMERA_FACING_FRONT
+  then
     Result := TDevicePosition.Front
   else
     Result := TDevicePosition.Unspecified;
@@ -468,7 +500,8 @@ begin
   if Params <> nil then
   begin
     Size := Params.getPreviewSize;
-    Result := TVideoCaptureSetting.Create(Size.width, Size.height, Params.getPreviewFrameRate);
+    Result := TVideoCaptureSetting.Create(Size.width, Size.height,
+      Params.getPreviewFrameRate);
   end;
 end;
 
@@ -517,15 +550,17 @@ begin
   if Params = nil then
     Exit(inherited);
 
-  FlashMode := Params.getFlashMode;
+  FlashMode := Params.GetFlashMode;
   if FlashMode = nil then
     Exit(inherited);
 
   FlashModeText := JStringToString(FlashMode);
 
-  if SameText(FlashModeText, JStringToString(TJCamera_Parameters.JavaClass.FLASH_MODE_ON)) then
+  if SameText(FlashModeText,
+    JStringToString(TJCamera_Parameters.JavaClass.FLASH_MODE_ON)) then
     Result := TFlashMode.FlashOn
-  else if SameText(FlashModeText, JStringToString(TJCamera_Parameters.JavaClass.FLASH_MODE_AUTO)) then
+  else if SameText(FlashModeText,
+    JStringToString(TJCamera_Parameters.JavaClass.FLASH_MODE_AUTO)) then
     Result := TFlashMode.AutoFlash
   else
     Result := TFlashMode.FlashOff;
@@ -541,13 +576,13 @@ begin
 
   case Value of
     TFlashMode.AutoFlash:
-      Params.setFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_AUTO);
+      Params.SetFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_AUTO);
 
     TFlashMode.FlashOff:
-      Params.setFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_OFF);
+      Params.SetFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_OFF);
 
     TFlashMode.FlashOn:
-      Params.setFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_ON);
+      Params.SetFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_ON);
   end;
 
   Camera.setParameters(Params);
@@ -563,17 +598,22 @@ begin
   if Params = nil then
     Exit(inherited);
 
-  FocusMode := Params.getFocusMode;
+  FocusMode := Params.GetFocusMode;
   if FocusMode = nil then
     Exit(inherited);
 
   FocusModeText := JStringToString(FocusMode);
 
-  if SameText(FocusModeText, JStringToString(TJCamera_Parameters.JavaClass.FOCUS_MODE_AUTO)) then
+  if SameText(FocusModeText,
+    JStringToString(TJCamera_Parameters.JavaClass.FOCUS_MODE_AUTO)) then
     Result := TFocusMode.AutoFocus
-  else if SameText(FocusModeText, JStringToString(TJCamera_Parameters.JavaClass.FOCUS_MODE_CONTINUOUS_VIDEO)) then
+  else if SameText(FocusModeText,
+    JStringToString(TJCamera_Parameters.JavaClass.FOCUS_MODE_CONTINUOUS_VIDEO))
+  then
     Result := TFocusMode.ContinuousAutoFocus
-  else if SameText(FocusModeText, JStringToString(TJCamera_Parameters.JavaClass.FOCUS_MODE_CONTINUOUS_PICTURE)) then
+  else if SameText(FocusModeText,
+    JStringToString(TJCamera_Parameters.JavaClass.FOCUS_MODE_CONTINUOUS_PICTURE))
+  then
     Result := TFocusMode.ContinuousAutoFocus
   else
     Result := TFocusMode.Locked;
@@ -589,13 +629,14 @@ begin
 
   case Value of
     TFocusMode.AutoFocus:
-      Params.setFocusMode(TJCamera_Parameters.JavaClass.FOCUS_MODE_AUTO);
+      Params.SetFocusMode(TJCamera_Parameters.JavaClass.FOCUS_MODE_AUTO);
 
     TFocusMode.ContinuousAutoFocus:
-      Params.setFocusMode(TJCamera_Parameters.JavaClass.FOCUS_MODE_CONTINUOUS_PICTURE);
+      Params.SetFocusMode
+        (TJCamera_Parameters.JavaClass.FOCUS_MODE_CONTINUOUS_PICTURE);
 
     TFocusMode.Locked:
-      Params.setFocusMode(TJCamera_Parameters.JavaClass.FOCUS_MODE_FIXED);
+      Params.SetFocusMode(TJCamera_Parameters.JavaClass.FOCUS_MODE_FIXED);
   end;
 
   Camera.setParameters(Params);
@@ -610,11 +651,12 @@ begin
   if Params = nil then
     Exit(inherited);
 
-  FlashMode := Params.getFlashMode;
+  FlashMode := Params.GetFlashMode;
   if FlashMode = nil then
     Exit(inherited);
 
-  if SameText(JStringToString(FlashMode), JStringToString(TJCamera_Parameters.JavaClass.FLASH_MODE_TORCH)) then
+  if SameText(JStringToString(FlashMode),
+    JStringToString(TJCamera_Parameters.JavaClass.FLASH_MODE_TORCH)) then
     Result := TTorchMode.ModeOn
   else
     Result := TTorchMode.ModeOff
@@ -632,45 +674,45 @@ begin
     TTorchMode.ModeOff:
       if GetTorchMode = TTorchMode.ModeOn then
       begin
-        Params.setFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_OFF);
+        Params.SetFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_OFF);
         Camera.setParameters(Params);
       end;
 
     TTorchMode.ModeOn:
       if GetTorchMode = TTorchMode.ModeOff then
       begin
-        Params.setFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_TORCH);
+        Params.SetFlashMode(TJCamera_Parameters.JavaClass.FLASH_MODE_TORCH);
         Camera.setParameters(Params);
       end;
   end;
 end;
 
 // EvB: Removed
-{procedure TAndroidVideoCaptureDevice.AddQueueBuffer;
-begin
+{ procedure TAndroidVideoCaptureDevice.AddQueueBuffer;
+  begin
   QueueSection.Acquire;
   try
-    if QueuedBufferCount < 1 then
-    begin
-      FreeAndNil(SharedBuffer);
-      SharedBuffer := TJavaArray<Byte>.Create(SharedBufferBytes);
-      Camera.addCallbackBuffer(SharedBuffer);
-      Inc(QueuedBufferCount);
-    end;
-  finally
-    QueueSection.Release;
+  if QueuedBufferCount < 1 then
+  begin
+  FreeAndNil(SharedBuffer);
+  SharedBuffer := TJavaArray<Byte>.Create(SharedBufferBytes);
+  Camera.addCallbackBuffer(SharedBuffer);
+  Inc(QueuedBufferCount);
   end;
-end;
+  finally
+  QueueSection.Release;
+  end;
+  end;
 
-procedure TAndroidVideoCaptureDevice.RemoveQueueBuffer;
-begin
+  procedure TAndroidVideoCaptureDevice.RemoveQueueBuffer;
+  begin
   QueueSection.Acquire;
   try
-    QueuedBufferCount := Max(QueuedBufferCount - 1, 0);
+  QueuedBufferCount := Max(QueuedBufferCount - 1, 0);
   finally
-    QueueSection.Release;
+  QueueSection.Release;
   end;
-end;}
+  end; }
 
 function TAndroidVideoCaptureDevice.GetManualBitmapRotation: Integer;
 var
@@ -717,11 +759,11 @@ begin
     Exit;
 
   // Workaround for Google Glass
-  if TPlatformServices.Current.GlobalFlags.ContainsKey(EnableGlassFPSWorkaround) and
-    TPlatformServices.Current.GlobalFlags[EnableGlassFPSWorkaround] then
+  if TPlatformServices.Current.GlobalFlags.ContainsKey(EnableGlassFPSWorkaround)
+    and TPlatformServices.Current.GlobalFlags[EnableGlassFPSWorkaround] then
   begin
     Params.setPreviewFpsRange(30000, 30000);
-//    Camera.setParameters(Params); // EvB: Remove
+    // Camera.setParameters(Params); // EvB: Remove
   end;
 
   // EvB: Added BEGIN
@@ -740,16 +782,17 @@ begin
     SharedBufferSize := TPoint.Create(PreviewSize.width, PreviewSize.height);
 
   { EvB: Remove
-  SharedBufferFormat := Params.getPreviewFormat;
-  SharedBufferBytes := SharedBufferSize.X * SharedBufferSize.Y *
-    (TJImageFormat.JavaClass.getBitsPerPixel(SharedBufferFormat));}
+    SharedBufferFormat := Params.getPreviewFormat;
+    SharedBufferBytes := SharedBufferSize.X * SharedBufferSize.Y *
+    (TJImageFormat.JavaClass.getBitsPerPixel(SharedBufferFormat)); }
 
   GetCallbackInstance.FCaptureDevice := Self;
 
   SharedSurface := TBitmapSurface.Create;
   { EvB: Replace
-  SharedSurface.SetSize(SharedBufferSize.X, SharedBufferSize.Y, TPixelFormat.RGBA); }
-  SharedSurface.SetSize(PreviewSize.width, PreviewSize.height, TPixelFormat.RGBA);
+    SharedSurface.SetSize(SharedBufferSize.X, SharedBufferSize.Y, TPixelFormat.RGBA); }
+  SharedSurface.SetSize(PreviewSize.width, PreviewSize.height,
+    TPixelFormat.RGBA);
   SharedSurfaceUpdated := False;
 
   // In Android 3.0 changed the behaviour of onPreviewFrame
@@ -757,8 +800,8 @@ begin
 
   if TOSVersion.Check(3, 0) then
   begin
-	  if SurfaceTexture <> nil then
-	    SurfaceTexture.release;
+    if SurfaceTexture <> nil then
+      SurfaceTexture.release;
 
     glGenTextures(1, @SurfaceTextureId);
     glBindTexture(GL_TEXTURE_2D, SurfaceTextureId);
@@ -770,17 +813,13 @@ begin
     Camera.setPreviewDisplay(nil);
 
   // reset buffer
-//  QueuedBufferCount := 0; // EvB: Remove
-  AddCallbackBuffers;       // EvB: Add
+  // QueuedBufferCount := 0; // EvB: Remove
+  AddCallbackBuffers; // EvB: Add
   Camera.setPreviewCallbackWithBuffer(GetCallbackInstance);
   Camera.startPreview;
-//  AddQueueBuffer;         // EvB: Remove
+  // AddQueueBuffer;         // EvB: Remove
 
   FCapturing := True;
-
-  CapturePollingTimer := TTimer.Create(nil);
-  CapturePollingTimer.Interval := FCaptureTimerInterval;
-  CapturePollingTimer.OnTimer := OnCaptureTimer;
   CapturePollingTimer.Enabled := True;
 end;
 
@@ -789,13 +828,13 @@ begin
   if FCapturing then
   begin
     FCapturing := False;
-    FreeAndNil(CapturePollingTimer);
+    CapturePollingTimer.Enabled := False;
 
     SurfaceSection.Acquire;
     try
       FreeAndNil(SharedSurface);
     finally
-      SurfaceSection.Release;
+      SurfaceSection.release;
     end;
   end;
 
@@ -826,8 +865,8 @@ begin
 end;
 
 { EvB: Original version:
-procedure TAndroidVideoCaptureDevice.CopyBufferToSurface(AnArray: TJavaArray<Byte>; ACamera: JCamera);
-var
+  procedure TAndroidVideoCaptureDevice.CopyBufferToSurface(AnArray: TJavaArray<Byte>; ACamera: JCamera);
+  var
   Image: JYuvImage;
   Rect: JRect;
   Stream: JByteArrayOutputStream;
@@ -836,68 +875,68 @@ var
   Matrix: JMatrix;
   ScaledSize: TPoint;
   SurfaceIsAlive: Boolean;
-begin
+  begin
   if (SharedBuffer <> nil) and (SharedSurface <> nil) then
   begin
-    SurfaceSection.Acquire;
-    try
-      Image := TJYuvImage.JavaClass.init(SharedBuffer, SharedBufferFormat, PreviewBufferSize.X, PreviewBufferSize.Y,
-        nil);
-    finally
-      SurfaceSection.Release;
-    end;
-
-    Rect := TJRect.JavaClass.init(0, 0, Image.getWidth, Image.getHeight);
-    Stream := TJByteArrayOutputStream.JavaClass.init(0);
-    Image.compressToJpeg(Rect, FVideoConversionJPEGQuality, Stream);
-
-    // Some resources are freed as early as possible to reduce impact on working memory.
-    Rect := nil;
-    Image := nil;
-
-    LoadOptions := TJBitmapFactory_Options.JavaClass.init;
-    Bitmap := TJBitmapFactory.JavaClass.decodeByteArray(Stream.toByteArray, 0, Stream.Size, LoadOptions);
-    Stream := nil;
-
-    if ManualBitmapRotation <> 0 then
-    begin
-      ScaledSize := SharedBufferSize;
-      if (ManualBitmapRotation div 90) mod 2 > 0 then
-        ScaledSize := TPoint.Create(SharedBufferSize.Y, SharedBufferSize.X);
-
-      TempBitmap := TJBitmap.JavaClass.createScaledBitmap(Bitmap, ScaledSize.X, ScaledSize.Y, True);
-
-      Matrix := TJMatrix.JavaClass.init;
-      Matrix.postRotate(ManualBitmapRotation);
-
-      Bitmap := TJBitmap.JavaClass.createBitmap(TempBitmap, 0, 0, TempBitmap.getWidth, TempBitmap.getHeight, Matrix,
-        True);
-      Matrix := nil;
-      TempBitmap := nil;
-    end;
-
-    SurfaceSection.Acquire;
-    try
-      SurfaceIsAlive := SharedSurface <> nil;
-      if SurfaceIsAlive then
-        JBitmapToSurface(Bitmap, SharedSurface);
-    finally
-      SurfaceSection.Release;
-    end;
-
-    Bitmap := nil;
-
-    if SurfaceIsAlive then
-    begin
-      UpdatedSection.Acquire;
-      try
-        SharedSurfaceUpdated := True;
-      finally
-        UpdatedSection.Release;
-      end;
-    end;
+  SurfaceSection.Acquire;
+  try
+  Image := TJYuvImage.JavaClass.init(SharedBuffer, SharedBufferFormat, PreviewBufferSize.X, PreviewBufferSize.Y,
+  nil);
+  finally
+  SurfaceSection.Release;
   end;
-end;}
+
+  Rect := TJRect.JavaClass.init(0, 0, Image.getWidth, Image.getHeight);
+  Stream := TJByteArrayOutputStream.JavaClass.init(0);
+  Image.compressToJpeg(Rect, FVideoConversionJPEGQuality, Stream);
+
+  // Some resources are freed as early as possible to reduce impact on working memory.
+  Rect := nil;
+  Image := nil;
+
+  LoadOptions := TJBitmapFactory_Options.JavaClass.init;
+  Bitmap := TJBitmapFactory.JavaClass.decodeByteArray(Stream.toByteArray, 0, Stream.Size, LoadOptions);
+  Stream := nil;
+
+  if ManualBitmapRotation <> 0 then
+  begin
+  ScaledSize := SharedBufferSize;
+  if (ManualBitmapRotation div 90) mod 2 > 0 then
+  ScaledSize := TPoint.Create(SharedBufferSize.Y, SharedBufferSize.X);
+
+  TempBitmap := TJBitmap.JavaClass.createScaledBitmap(Bitmap, ScaledSize.X, ScaledSize.Y, True);
+
+  Matrix := TJMatrix.JavaClass.init;
+  Matrix.postRotate(ManualBitmapRotation);
+
+  Bitmap := TJBitmap.JavaClass.createBitmap(TempBitmap, 0, 0, TempBitmap.getWidth, TempBitmap.getHeight, Matrix,
+  True);
+  Matrix := nil;
+  TempBitmap := nil;
+  end;
+
+  SurfaceSection.Acquire;
+  try
+  SurfaceIsAlive := SharedSurface <> nil;
+  if SurfaceIsAlive then
+  JBitmapToSurface(Bitmap, SharedSurface);
+  finally
+  SurfaceSection.Release;
+  end;
+
+  Bitmap := nil;
+
+  if SurfaceIsAlive then
+  begin
+  UpdatedSection.Acquire;
+  try
+  SharedSurfaceUpdated := True;
+  finally
+  UpdatedSection.Release;
+  end;
+  end;
+  end;
+  end; }
 
 // EvB: Added
 procedure TAndroidVideoCaptureDevice.AddCallbackBuffers;
@@ -915,7 +954,8 @@ begin
 end;
 
 { EvB: "Fast" version: }
-procedure TAndroidVideoCaptureDevice.CopyBufferToSurface(AnArray: TJavaArray<Byte>; ACamera: JCamera);
+procedure TAndroidVideoCaptureDevice.CopyBufferToSurface
+  (AnArray: TJavaArray<Byte>; ACamera: JCamera);
 var
   YPtr, UPtr, VPtr: PByte;
   YStride, UVStride, YSize, UVSize: Integer;
@@ -934,18 +974,17 @@ begin
       VPtr := YPtr + YSize;
       UPtr := VPtr + UVSize;
 
-      YV12ToRGBA(YPtr, UPtr, VPtr, SharedSurface.Bits,
-        YStride, UVStride, PreviewBufferSize.X shl 2,
-        PreviewBufferSize.X, PreviewBufferSize.Y);
+      YV12ToRGBA(YPtr, UPtr, VPtr, SharedSurface.Bits, YStride, UVStride,
+        PreviewBufferSize.X shl 2, PreviewBufferSize.X, PreviewBufferSize.Y);
     finally
-      SurfaceSection.Release;
+      SurfaceSection.release;
     end;
 
     UpdatedSection.Acquire;
     try
       SharedSurfaceUpdated := True;
     finally
-      UpdatedSection.Release;
+      UpdatedSection.release;
     end;
   end;
 end;
@@ -959,7 +998,7 @@ begin
     UpdatePending := SharedSurfaceUpdated and (SharedSurface <> nil);
     SharedSurfaceUpdated := False;
   finally
-    UpdatedSection.Release;
+    UpdatedSection.release;
   end;
 
   if UpdatePending then
@@ -968,85 +1007,86 @@ begin
       OnSampleBufferReady(Self, 0);
   end;
 
-//  AddQueueBuffer; // EvB: Removed
+  // AddQueueBuffer; // EvB: Removed
 end;
 
 { EvB: Original version:
-procedure TAndroidVideoCaptureDevice.DoSampleBufferToBitmap(const ABitmap: TBitmap; const ASetSize: Boolean);
+  procedure TAndroidVideoCaptureDevice.DoSampleBufferToBitmap(const ABitmap: TBitmap; const ASetSize: Boolean);
 
   procedure DrawBitmapScaled(Source, Dest: TBitmap);
   var
-    PrevScale: Single;
+  PrevScale: Single;
   begin
-    PrevScale := Dest.BitmapScale;
-    Dest.BitmapScale := 1;
-    try
-      if Dest.Canvas.BeginScene then
-      try
-        Dest.Canvas.DrawBitmap(Source, TRectF.Create(0, 0, Source.Width, Source.Height), TRectF.Create(0, 0,
-          Dest.Width, Dest.Height), 1);
-      finally
-        Dest.Canvas.EndScene;
-      end;
-    finally
-      Dest.BitmapScale := PrevScale;
-    end;
+  PrevScale := Dest.BitmapScale;
+  Dest.BitmapScale := 1;
+  try
+  if Dest.Canvas.BeginScene then
+  try
+  Dest.Canvas.DrawBitmap(Source, TRectF.Create(0, 0, Source.Width, Source.Height), TRectF.Create(0, 0,
+  Dest.Width, Dest.Height), 1);
+  finally
+  Dest.Canvas.EndScene;
+  end;
+  finally
+  Dest.BitmapScale := PrevScale;
+  end;
   end;
 
-var
+  var
   BiData: TBitmapData;
   TempBitmap: TBitmap;
   I: Integer;
-begin
+  begin
   if not FCapturing then
-    Exit;
+  Exit;
 
   if ASetSize then
-    ABitmap.SetSize(SharedBufferSize.X, SharedBufferSize.Y);
+  ABitmap.SetSize(SharedBufferSize.X, SharedBufferSize.Y);
 
   SurfaceSection.Acquire;
   try
-    if SharedSurface <> nil then
-    begin
-      if (SharedSurface.Width = ABitmap.Width) and (SharedSurface.Height = ABitmap.Height) then
-      begin // Bitmap has exact size, so can copy directly.
-        if ABitmap.Map(TMapAccess.Write, BiData) then
-        try
-          for I := 0 to SharedBufferSize.Y - 1 do
-            Move(SharedSurface.Scanline[I]^, BiData.GetScanline(I)^, SharedBufferSize.X * SharedSurface.BytesPerPixel);
-        finally
-          ABitmap.Unmap(BiData);
-        end;
-      end
-      else
-      begin // Bitmap has different size, rescaling is needed.
-        TempBitmap := TBitmap.Create;
-        try
-          TempBitmap.SetSize(SharedBufferSize.X, SharedBufferSize.Y);
-          if TempBitmap.Map(TMapAccess.Write, BiData) then
-          begin
-            try
-              for I := 0 to SharedBufferSize.Y - 1 do
-                Move(SharedSurface.Scanline[I]^, BiData.GetScanline(I)^, SharedBufferSize.X *
-                  SharedSurface.BytesPerPixel);
-            finally
-              TempBitmap.Unmap(BiData);
-            end;
-
-            DrawBitmapScaled(TempBitmap, ABitmap);
-          end;
-        finally
-          TempBitmap := nil;
-        end;
-      end;
-    end;
+  if SharedSurface <> nil then
+  begin
+  if (SharedSurface.Width = ABitmap.Width) and (SharedSurface.Height = ABitmap.Height) then
+  begin // Bitmap has exact size, so can copy directly.
+  if ABitmap.Map(TMapAccess.Write, BiData) then
+  try
+  for I := 0 to SharedBufferSize.Y - 1 do
+  Move(SharedSurface.Scanline[I]^, BiData.GetScanline(I)^, SharedBufferSize.X * SharedSurface.BytesPerPixel);
   finally
-    SurfaceSection.Release;
+  ABitmap.Unmap(BiData);
   end;
-end;}
+  end
+  else
+  begin // Bitmap has different size, rescaling is needed.
+  TempBitmap := TBitmap.Create;
+  try
+  TempBitmap.SetSize(SharedBufferSize.X, SharedBufferSize.Y);
+  if TempBitmap.Map(TMapAccess.Write, BiData) then
+  begin
+  try
+  for I := 0 to SharedBufferSize.Y - 1 do
+  Move(SharedSurface.Scanline[I]^, BiData.GetScanline(I)^, SharedBufferSize.X *
+  SharedSurface.BytesPerPixel);
+  finally
+  TempBitmap.Unmap(BiData);
+  end;
+
+  DrawBitmapScaled(TempBitmap, ABitmap);
+  end;
+  finally
+  TempBitmap := nil;
+  end;
+  end;
+  end;
+  finally
+  SurfaceSection.Release;
+  end;
+  end; }
 
 { EvB: Fast version: }
-procedure TAndroidVideoCaptureDevice.DoSampleBufferToBitmap(const ABitmap: TBitmap; const ASetSize: Boolean);
+procedure TAndroidVideoCaptureDevice.DoSampleBufferToBitmap
+  (const ABitmap: TBitmap; const ASetSize: Boolean);
 var
   Map: TBitmapData;
 begin
@@ -1060,67 +1100,70 @@ begin
   try
     if (SharedSurface <> nil) then
     begin
-      Assert(SharedSurface.Width = PreviewBufferSize.X);
-      Assert(SharedSurface.Height = PreviewBufferSize.Y);
+      Assert(SharedSurface.width = PreviewBufferSize.X);
+      Assert(SharedSurface.height = PreviewBufferSize.Y);
       if (ABitmap.Map(TMapAccess.Write, Map)) then
-      try
-        {$IFOPT C+}
-        if ((ManualBitmapRotation div 90) mod 2 > 0) then
-        begin
-          Assert(Map.Width = SharedSurface.Height);
-          Assert(Map.Height = SharedSurface.Width);
-        end
-        else
-        begin
-          Assert(Map.Width = SharedSurface.Width);
-          Assert(Map.Height = SharedSurface.Height);
+        try
+{$IFOPT C+}
+          if ((ManualBitmapRotation div 90) mod 2 > 0) then
+          begin
+            Assert(Map.width = SharedSurface.height);
+            Assert(Map.height = SharedSurface.width);
+          end
+          else
+          begin
+            Assert(Map.width = SharedSurface.width);
+            Assert(Map.height = SharedSurface.height);
+          end;
+{$ENDIF}
+          RotateBitmap(SharedSurface.Bits, Map.Data, SharedSurface.width,
+            SharedSurface.height, ManualBitmapRotation);
+        finally
+          ABitmap.Unmap(Map);
         end;
-        {$ENDIF}
-
-        RotateBitmap(SharedSurface.Bits, Map.Data, SharedSurface.Width,
-          SharedSurface.Height, ManualBitmapRotation);
-      finally
-        ABitmap.Unmap(Map);
-      end;
     end;
   finally
-    SurfaceSection.Release;
+    SurfaceSection.release;
   end;
 end;
 
-function TAndroidVideoCaptureDevice.DoSetCaptureSetting(const ASetting: TVideoCaptureSetting): Boolean;
+function TAndroidVideoCaptureDevice.DoSetCaptureSetting(const ASetting
+  : TVideoCaptureSetting): Boolean;
 var
   Params: JCamera_Parameters;
 begin
   Params := Camera.getParameters;
   if Params <> nil then
   begin
-    Params.setPreviewSize(ASetting.Width, ASetting.Height);
+    Params.setPreviewSize(ASetting.width, ASetting.height);
     Params.setPreviewFrameRate(Round(ASetting.FrameRate));
     Camera.setParameters(Params);
   end;
   Result := Params <> nil;
 end;
 
-procedure TAndroidVideoCaptureDevice.OrientationChangedHandler(const Sender: TObject; const Msg: TMessage);
+procedure TAndroidVideoCaptureDevice.OrientationChangedHandler
+  (const Sender: TObject; const Msg: TMessage);
 begin
   if FCapturing then
   begin
     ManualBitmapRotation := GetManualBitmapRotation;
 
     if (ManualBitmapRotation div 90) mod 2 > 0 then
-      SharedBufferSize := TPoint.Create(PreviewBufferSize.Y, PreviewBufferSize.X)
+      SharedBufferSize := TPoint.Create(PreviewBufferSize.Y,
+        PreviewBufferSize.X)
     else
       SharedBufferSize := PreviewBufferSize;
 
-//    if SharedSurface <> nil then // EvB: Removed
-//      SharedSurface.SetSize(SharedBufferSize.X, SharedBufferSize.Y, TPixelFormat.RGBA);
+    // if SharedSurface <> nil then // EvB: Removed
+    // SharedSurface.SetSize(SharedBufferSize.X, SharedBufferSize.Y, TPixelFormat.RGBA);
 
     SharedSurfaceUpdated := False;
   end;
 end;
 
-function TAndroidVideoCaptureDevice.DoGetAvailableCaptureSettings: TArray<TVideoCaptureSetting>;
+function TAndroidVideoCaptureDevice.DoGetAvailableCaptureSettings
+  : TArray<TVideoCaptureSetting>;
 var
   Params: JCamera_Parameters;
   Size: JCamera_Size;
@@ -1137,12 +1180,13 @@ begin
     try
       SizeList := Params.getSupportedPreviewSizes;
       FramerateList := Params.getSupportedPreviewFrameRates;
-      for I := 0 to SizeList.size - 1 do
+      for I := 0 to SizeList.Size - 1 do
       begin
         Size := TJCamera_Size.Wrap(SizeList.get(I));
-        for J := 0 to FramerateList.size - 1 do
+        for J := 0 to FramerateList.Size - 1 do
         begin
-          Setting := TVideoCaptureSetting.Create(Size.width, Size.height, TJInteger.Wrap(FramerateList.get(J)).intValue);
+          Setting := TVideoCaptureSetting.Create(Size.width, Size.height,
+            TJInteger.Wrap(FramerateList.get(J)).intValue);
           List.Add(Setting);
         end;
       end;
@@ -1153,7 +1197,8 @@ begin
   end;
 end;
 
-class function TAndroidVideoCaptureDevice.GetCallbackInstance: TAndroidVideoCaptureCallback;
+class function TAndroidVideoCaptureDevice.GetCallbackInstance
+  : TAndroidVideoCaptureCallback;
 begin
   if FCallback = nil then
     FCallback := TAndroidVideoCaptureCallback.Create;
@@ -1174,17 +1219,21 @@ begin
   FPlayer := TJMediaPlayer.JavaClass.init;
   FPlayer.setDataSource(StringToJString(FileName));
   FPlayer.prepare;
-  AudioService := TAndroidHelper.Activity.getSystemService(TJContext.JavaClass.AUDIO_SERVICE);
+  AudioService := TAndroidHelper.Activity.getSystemService
+    (TJContext.JavaClass.AUDIO_SERVICE);
   if AudioService <> nil then
-    AudioManager := TJAudioManager.Wrap((AudioService as ILocalObject).GetObjectID);
+    AudioManager := TJAudioManager.Wrap((AudioService as ILocalObject)
+      .GetObjectID);
   if AudioManager <> nil then
   begin
-    MaxVolume := AudioManager.getStreamMaxVolume(TJAudioManager.JavaClass.STREAM_MUSIC);
-    FVolume := AudioManager.getStreamVolume(TJAudioManager.JavaClass.STREAM_MUSIC);
+    MaxVolume := AudioManager.getStreamMaxVolume
+      (TJAudioManager.JavaClass.STREAM_MUSIC);
+    FVolume := AudioManager.getStreamVolume
+      (TJAudioManager.JavaClass.STREAM_MUSIC);
     if MaxVolume > 0 then
-      FVolume := FVolume / MaxVolume ;
+      FVolume := FVolume / MaxVolume;
     if FVolume > 1 then
-      FVolume := 1 ;
+      FVolume := 1;
   end;
 end;
 
@@ -1205,7 +1254,7 @@ end;
 
 function TAndroidMedia.GetDuration: TMediaTime;
 begin
-  Result := FPlayer.getDuration;
+  Result := FPlayer.GetDuration;
 end;
 
 function TAndroidMedia.GetMediaState: TMediaState;
@@ -1237,6 +1286,13 @@ begin
     Result := 0;
 end;
 
+function TAndroidMedia.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  Result := E_NOTIMPL;
+  if FPlayer <> nil then
+    Result := FPlayer.QueryInterface(IID, Obj);
+end;
+
 procedure TAndroidMedia.SeekToBegin;
 begin
   FPlayer.seekTo(0);
@@ -1244,7 +1300,7 @@ end;
 
 procedure TAndroidMedia.SetCurrent(const Value: TMediaTime);
 var
-  NewPos : Integer;
+  NewPos: Integer;
 begin
   if FPlayer <> nil then
   begin
@@ -1265,7 +1321,7 @@ begin
     FVolume := 1;
 
   if FPlayer <> nil then
-    FPlayer.setVolume(FVolume, FVolume);
+    FPlayer.SetVolume(FVolume, FVolume);
 end;
 
 procedure TAndroidMedia.UpdateMediaFromControl;
@@ -1292,7 +1348,6 @@ begin
 end;
 
 {$ENDREGION}
-
 {$REGION 'TAndroidVideoCodec'}
 
 function TAndroidVideoCodec.CreateFromFile(const AFileName: string): TMedia;
@@ -1300,7 +1355,6 @@ begin
   Result := TAndroidVideo.Create(AFileName);
 end;
 {$ENDREGION}
-
 {$REGION 'TAndroidVideo'}
 
 constructor TAndroidVideo.Create(const AFileName: string);
@@ -1313,7 +1367,8 @@ begin
   FVideoEnabled := False;
   inherited Create(AFileName);
 
-  if TPlatformServices.Current.SupportsPlatformService(IFMXScreenService, ScreenSrv) then
+  if TPlatformServices.Current.SupportsPlatformService(IFMXScreenService,
+    ScreenSrv) then
     FScale := ScreenSrv.GetScreenScale
   else
     FScale := DefaultScale;
@@ -1328,14 +1383,15 @@ procedure TAndroidVideo.CheckVideo;
 const
   CYes = 'yes';
 var
-  MMR : JMediaMetadataRetriever;
+  MMR: JMediaMetadataRetriever;
 begin
   if TOSVersion.Check(4, 0) and (FileExists(FileName)) then
   begin
     MMR := TJMediaMetadataRetriever.JavaClass.init;
     MMR.setDataSource(StringToJString(FileName));
-    FVideoEnabled := (CYes
-      = JStringToString(MMR.extractMetadata(TJMediaMetadataRetriever.JavaClass.METADATA_KEY_HAS_VIDEO))) and
+    FVideoEnabled :=
+      (CYes = JStringToString(MMR.extractMetadata
+      (TJMediaMetadataRetriever.JavaClass.METADATA_KEY_HAS_VIDEO))) and
       (Control <> nil);
     MMR := nil;
   end
@@ -1345,7 +1401,8 @@ end;
 
 procedure TAndroidVideo.RealignView;
 const
-  VideoExtraSpace = 100; // To be sure that destination rect will fit to fullscreen
+  VideoExtraSpace = 100;
+  // To be sure that destination rect will fit to fullscreen
 var
   VideoRect: TRectF;
   RoundedRect: TRect;
@@ -1357,17 +1414,38 @@ begin
   LSizeF := TPointF.Create(Control.Size.Size.cx, Control.Size.Size.cy);
   LRealSize := Control.LocalToAbsolute(LSizeF) * FScale;
   LRealBounds := TRectF.Create(LRealPosition, LRealSize);
-  VideoRect := TRectF.Create(0, 0, FVideoSize.Width * VideoExtraSpace, FVideoSize.Height * VideoExtraSpace);
+  VideoRect := TRectF.Create(0, 0, FVideoSize.width * VideoExtraSpace,
+    FVideoSize.height * VideoExtraSpace);
   RoundedRect := VideoRect.FitInto(LRealBounds).Round;
   if not Control.ParentedVisible then
     RoundedRect.Left := Round(Screen.Size.cx * FScale);
   TUIThreadCaller.Call<TRect>(
-    procedure (R: TRect)
+    procedure(R: TRect)
+    var
+      ShouldBeReloaded: Boolean;
+      LCurrentTime: Integer;
+      LStarted: Boolean;
     begin
       if FJNativeLayout <> nil then
       begin
+        ShouldBeReloaded := (FVideoPlayer.getWidth <> R.width) or
+          ((FVideoPlayer.getHeight <> R.height));
+        if ShouldBeReloaded then
+        begin
+          LCurrentTime := FVideoPlayer.getCurrentPosition;
+          LStarted := FVideoPlayer.isPlaying;
+          FVideoPlayer.setVisibility(TJView.JavaClass.INVISIBLE);
+        end;
         FJNativeLayout.setPosition(R.TopLeft.X, R.TopLeft.Y);
-        FJNativeLayout.setSize(R.Width, R.Height);
+        FJNativeLayout.SetSize(R.width, R.height);
+        begin
+          FVideoPlayer.setVisibility(TJView.JavaClass.VISIBLE);
+          FVideoPlayer.setVideoPath(StringToJString(FileName));
+          FJNativeLayout.SetSize(R.width, R.height);
+          FVideoPlayer.seekTo(LCurrentTime);
+          if LStarted then
+            FVideoPlayer.start;
+        end;
       end;
     end, RoundedRect);
 end;
@@ -1379,7 +1457,8 @@ begin
   MediaPlayer := TJMediaPlayer.JavaClass.init;
   MediaPlayer.setDataSource(StringToJString(FileName));
   MediaPlayer.prepare;
-  FVideoSize := TSize.Create(MediaPlayer.getVideoWidth, MediaPlayer.getVideoHeight);
+  FVideoSize := TSize.Create(MediaPlayer.getVideoWidth,
+    MediaPlayer.getVideoHeight);
   MediaPlayer := nil;
 end;
 
@@ -1444,7 +1523,7 @@ begin
   if IsVideoEnabled then
   begin
     if AllAssigned then
-      Result := FVideoPlayer.getDuration;
+      Result := FVideoPlayer.GetDuration;
   end
   else
     Result := FJustAudio.GetDuration;
@@ -1471,7 +1550,7 @@ end;
 function TAndroidVideo.GetVideoSize: TPointF;
 begin
   if IsVideoEnabled then
-    Result := PointF(FVideoSize.Width, FVideoSize.Height)
+    Result := PointF(FVideoSize.width, FVideoSize.height)
   else
     Result := PointF(0, 0);
 end;
@@ -1576,17 +1655,30 @@ begin
   Result := FVideoEnabled;
 end;
 
-{$ENDREGION}
+function TAndroidVideo.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  Result := E_NOTIMPL;
+  if (FVideoPlayer <> nil) and (FVideoPlayer.QueryInterface(IID, Obj) = S_OK)
+  then
+    Exit(S_OK);
+  if (FJNativeLayout <> nil) and (FJNativeLayout.QueryInterface(IID, Obj) = S_OK)
+  then
+    Exit(S_OK);
+end;
 
+{$ENDREGION}
 { TAndroidVideo.TVolume }
 
 constructor TAndroidVideo.TCommonVolume.Create;
 begin
-  FAudioService := TAndroidHelper.Activity.getSystemService(TJContext.JavaClass.AUDIO_SERVICE);
+  FAudioService := TAndroidHelper.Activity.getSystemService
+    (TJContext.JavaClass.AUDIO_SERVICE);
   if FAudioService <> nil then
-    FAudioManager := TJAudioManager.Wrap((FAudioService as ILocalObject).GetObjectID);
+    FAudioManager := TJAudioManager.Wrap((FAudioService as ILocalObject)
+      .GetObjectID);
   if FAudioManager <> nil then
-    FMaxVolume := FAudioManager.getStreamMaxVolume(TJAudioManager.JavaClass.STREAM_MUSIC);
+    FMaxVolume := FAudioManager.getStreamMaxVolume
+      (TJAudioManager.JavaClass.STREAM_MUSIC);
 end;
 
 function TAndroidVideo.TCommonVolume.GetVolume: Single;
@@ -1594,13 +1686,15 @@ begin
   if FMaxVolume = 0 then
     Result := 0
   else
-    Result := Min(1, FAudioManager.getStreamVolume(TJAudioManager.JavaClass.STREAM_MUSIC) / FMaxVolume);
+    Result := Min(1, FAudioManager.getStreamVolume
+      (TJAudioManager.JavaClass.STREAM_MUSIC) / FMaxVolume);
 end;
 
 procedure TAndroidVideo.TCommonVolume.SetVolume(const Value: Single);
 begin
   if FAudioManager <> nil then
-    FAudioManager.setStreamVolume(TJAudioManager.JavaClass.STREAM_MUSIC, Round(Value * FMaxVolume), 0);
+    FAudioManager.setStreamVolume(TJAudioManager.JavaClass.STREAM_MUSIC,
+      Round(Value * FMaxVolume), 0);
 end;
 
 { TVideoPool }
@@ -1620,7 +1714,7 @@ begin
   LItem.VideoPlayer := TJVideoView.JavaClass.init(TAndroidHelper.Activity);
   LItem.VideoPlayer.requestFocus(0);
   LItem.NativeLayout.setPosition(50, 50);
-  LItem.NativeLayout.setSize(50, 50);
+  LItem.NativeLayout.SetSize(50, 50);
   LItem.NativeLayout.setControl(LItem.VideoPlayer);
   FReadyToUse.Add(LItem);
 end;
@@ -1667,17 +1761,26 @@ begin
 end;
 
 initialization
-  VideoPool := TVideoPool.Create;
-  TMediaCodecManager.RegisterMediaCodecClass('.mov', SVMOVFiles, TMediaType.Video, TAndroidVideoCodec);
-  TMediaCodecManager.RegisterMediaCodecClass('.m4v', SVM4VFiles, TMediaType.Video, TAndroidVideoCodec);
-  TMediaCodecManager.RegisterMediaCodecClass('.mp4', SVMP4Files, TMediaType.Video, TAndroidVideoCodec);
-  TMediaCodecManager.RegisterMediaCodecClass('.3gp', SV3GPFiles, TMediaType.Video, TAndroidVideoCodec);
-  TMediaCodecManager.RegisterMediaCodecClass('.mp3', SVMP3Files, TMediaType.Audio, TAndroidMediaCodec);
-  TMediaCodecManager.RegisterMediaCodecClass('.caf', SVCAFFiles, TMediaType.Audio, TAndroidMediaCodec);
 
-  TMediaCodecManager.RegisterMediaCodecClass(SAllFilesExt, SDefault, TMediaType.Video, TAndroidMediaCodec);
+VideoPool := TVideoPool.Create;
+TMediaCodecManager.RegisterMediaCodecClass('.mov', SVMOVFiles, TMediaType.Video,
+  TAndroidVideoCodec);
+TMediaCodecManager.RegisterMediaCodecClass('.m4v', SVM4VFiles, TMediaType.Video,
+  TAndroidVideoCodec);
+TMediaCodecManager.RegisterMediaCodecClass('.mp4', SVMP4Files, TMediaType.Video,
+  TAndroidVideoCodec);
+TMediaCodecManager.RegisterMediaCodecClass('.3gp', SV3GPFiles, TMediaType.Video,
+  TAndroidVideoCodec);
+TMediaCodecManager.RegisterMediaCodecClass('.mp3', SVMP3Files, TMediaType.Audio,
+  TAndroidMediaCodec);
+TMediaCodecManager.RegisterMediaCodecClass('.caf', SVCAFFiles, TMediaType.Audio,
+  TAndroidMediaCodec);
+
+TMediaCodecManager.RegisterMediaCodecClass(SAllFilesExt, SDefault,
+  TMediaType.Video, TAndroidMediaCodec);
 
 finalization
-  VideoPool.Free;
+
+VideoPool.Free;
 
 end.
