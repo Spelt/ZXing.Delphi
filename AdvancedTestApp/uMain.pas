@@ -87,7 +87,7 @@ type
   TFormMain = class(TForm)
     Layout2: TLayout;
     Memo1: TMemo;
-    ToolBar3: TToolBar;
+    ToolBar3: TRectangle;
     SwitchScanning: TSwitch;
     LabelFPS: TLabel;
     btnBackCamera: TSpeedButton;
@@ -146,6 +146,8 @@ var
 implementation
 
 {$R *.fmx}
+
+
 
 procedure TFormMain.FormCreate(Sender: TObject);
 var
@@ -222,7 +224,7 @@ begin
   FaLblScanning.Enabled := False;
   FActive := False;
   DisplaySlowWarning(False);
-  // CameraComponent1.Active := False; // WARNING: CAUSES A CRASH WITH THE CAMERA SPEED TWEAK
+  CameraComponent1.Active := False; // WARNING: CAUSES A CRASH WITH THE CAMERA SPEED TWEAK
   LabelFPS.Text := '';
 end;
 
@@ -407,7 +409,6 @@ var
   I: Integer;
 begin
 
-  CameraComponent1.Active := False;
   StopCapture();
   CameraComponent1.Kind := CameraKind;
 

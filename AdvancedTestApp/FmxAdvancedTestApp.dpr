@@ -80,9 +80,12 @@ uses
   ZXing.OneD.UPCAReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCAReader.pas',
   ZXing.OneD.Code39Reader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.Code39Reader.pas',
   ZXing.OneD.UPCEReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEReader.pas',
-  AudioManager in 'AudioManager\AudioManager.pas';
+  AudioManager in 'AudioManager\AudioManager.pas',
+  FMX.Media.Android in 'Custom\FMX.Media.Android.pas',
+  FastUtils in 'SIMD\FastUtils.pas';
 
 {$R *.res}
+{$ASSERTIONS OFF}
 
 begin
   Application.Initialize;
