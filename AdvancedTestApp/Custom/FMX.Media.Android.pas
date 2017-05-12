@@ -803,8 +803,9 @@ begin
   begin
     FCurrentCamera.setPreviewCallbackWithBuffer(nil);
     FCurrentCamera.stopPreview;
-    FCurrentCamera.release;
-    FCurrentCamera := nil;
+
+    // FCurrentCamera.release;
+    // FCurrentCamera := nil;
 
     // EvB: Added BEGIN
     if (SurfaceTexture <> nil) then
