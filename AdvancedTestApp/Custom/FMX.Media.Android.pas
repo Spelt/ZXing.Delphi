@@ -180,9 +180,9 @@ type
     HighestJpegQuality = 100;
     MediumJpegQuality = 75;
     LowestJpegQuality = 50;
-    DefaultCaptureTimeInterval = 33;
+    DefaultCaptureTimeInterval = 20; // was 33 = 30fps, 20 = 50fps
     JPEGQualityKey = 'jpeg-quality';
-    BUFFER_COUNT = 3; // EvB: Added
+    BUFFER_COUNT = 10; // EvB: Added ES: Changed from 3 to 10
   private
     SurfaceSection: TCriticalSection;
     UpdatedSection: TCriticalSection;
@@ -190,6 +190,7 @@ type
 
     FCameraId: Integer;
     FCapturing: Boolean;
+    FCaptureTimerIntervalBusy: Boolean;
     FCaptureTimerInterval: Integer;
     FVideoConversionJPEGQuality: Integer;
     PreviewBufferSize: TPoint;
@@ -342,6 +343,7 @@ begin
   CapturePollingTimer.Interval := FCaptureTimerInterval;
   CapturePollingTimer.OnTimer := OnCaptureTimer;
 
+  FCaptureTimerIntervalBusy := False;
   FCapturing := False;
   FOrientationChangedId := TMessageManager.DefaultManager.SubscribeToMessage
     (TOrientationChangedMessage, OrientationChangedHandler);
@@ -993,6 +995,10 @@ procedure TAndroidVideoCaptureDevice.OnCaptureTimer(Sender: TObject);
 var
   UpdatePending: Boolean;
 begin
+  if (FCaptureTimerIntervalBusy) then
+    Exit;
+  FCaptureTimerIntervalBusy := True;
+
   UpdatedSection.Acquire;
   try
     UpdatePending := SharedSurfaceUpdated and (SharedSurface <> nil);
@@ -1006,6 +1012,8 @@ begin
     if Assigned(OnSampleBufferReady) then
       OnSampleBufferReady(Self, 0);
   end;
+
+  FCaptureTimerIntervalBusy := False;
 
   // AddQueueBuffer; // EvB: Removed
 end;
