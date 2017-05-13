@@ -75,3 +75,4 @@ __history/
 *.identcache
 *.dsk
 *.dsk
+*.DS_Store
