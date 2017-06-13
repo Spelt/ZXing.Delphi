@@ -1,5 +1,5 @@
 ﻿# ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE to 10.2 Tokyo. 
+ZXing Barcode Scanning Library for Delphi XE7 to 10.2 Tokyo. 
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing.Delphi.picture2.png )
 
