@@ -114,7 +114,13 @@ type
     /// and a UPC or EAN barcode is found but an extension is not, then no result will be returned
     /// at all.
     /// </summary>
-    ALLOWED_EAN_EXTENSIONS);
+    ALLOWED_EAN_EXTENSIONS,
+    /// <summary>
+    /// Allowes for inversion of an image.
+    ///  Add the to invert the image
+    /// </summary>
+    ENABLE_INVERSION
+    );
 
 implementation
 
