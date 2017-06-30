@@ -49,7 +49,7 @@ Just include the source files and add it in your existing projects and build the
 	- Added EAN8, EAN13 (many requests)
 	- v3 becomes master branch
 
-- v3.1 Date: 2016/06/28 (Super many thank to: Carlo Sirna)
+- v3.1 Date: 2016/06/28 (Super many thanks to: Carlo Sirna)
 	- Added VCL support (via IFDEF USE_VCL_BITMAP).
 	- Memleak fixes for old gen compilers (win32/win64).
 	- Fix: QRCode ECI character set + extra unit test.
@@ -136,6 +136,7 @@ FReadResult := FScanManager.Scan(scanBitmap);
 
 Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. I created a test app to show you how just to do that. Its included.  It makes use of the new Firemonkey parallel lib. In the testApp the resolution of the camera is set to medium (FMX.Media.TVideoCaptureQuality.MediumQuality) on my iPhone 6. This is only possible since XE8 and equivalent Appmethod. Its also good to mention that how higher the resolution the more time it takes to scan a bitmap. Some scaling could probably work too.
 
+Andrea Magni has a very nice blog post about an Android ZXing example from a training excerise of his. You can find it [here](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/)
 
 ### Thanks
 ZXing.Delphi is a project that I've put together with the work of others.  So naturally, I'd like to thank everyone who's helped out in any way.  Those of you I know have helped I'm listing here, but anyone else that was involved, please let me know!
