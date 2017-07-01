@@ -1,5 +1,5 @@
-# ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE to 10.2 Tokyo. 
+﻿# ZXing.Delphi
+ZXing Barcode Scanning Library for Delphi XE7 to 10.2 Tokyo. 
 
 ![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing.Delphi.picture2.png )
 
@@ -166,3 +166,7 @@ A copy of the Apache 2.0 license can be found here: http://www.apache.org/licens
 ZXing.Net is released under the Apache 2.0 license.
 ZXing.Net can be found here: http://code.google.com/p/zxing/
 A copy of the Apache 2.0 license can be found here: http://www.apache.org/licenses/LICENSE-2.0
+
+
+### Other
+You can install [Delphinus package manager](https://github.com/Memnarch/Delphinus/wiki/Installing-Delphinus) and install ZXing.Delphi as a package there. (Delphinus-Support)

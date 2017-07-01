@@ -1,0 +1,14 @@
+{
+  "search_pathes": [{
+    "pathes": "Lib\\Classes;Lib\\Classes\\1D Barcodes;Lib\\Classes\\2D Barcodes;Lib\\Classes\\2D Barcodes\\Decoder;Lib\\Classes\\2D Barcodes\\Detector;Lib\\Classes\\Common;Lib\\Classes\\Common\\Detector;Lib\\Classes\\Common\\ReedSolomon;Lib\\Classes\\Filtering",
+    "platforms": "Win32;Win64;Android"
+  }],
+  "browsing_pathes": [{
+    "pathes": "Lib\\Classes;Lib\\Classes\\1D Barcodes;Lib\\Classes\\2D Barcodes;Lib\\Classes\\2D Barcodes\\Decoder;Lib\\Classes\\2D Barcodes\\Detector;Lib\\Classes\\Common;Lib\\Classes\\Common\\Detector;Lib\\Classes\\Common\\ReedSolomon;Lib\\Classes\\Filtering",
+    "platforms": "Win32;Win64;Android"
+  }],
+  "source_folders": [{
+    "folder": ".",
+    "recursive": true
+  }]
+}

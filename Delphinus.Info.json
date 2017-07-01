@@ -1,0 +1,13 @@
+{
+  "id": "{40D2A4D5-2EB5-49FC-8190-CBE3D51D14DA}",
+  "name": "ZXing",
+  "picture": "logo.png",
+  "license_type": "Apache 2.0",
+  "license_file": "LICENSE",
+  "platforms": "Win32;Win64;Android",
+  "package_compiler_min": 28,
+  "package_compiler_max": 32,
+  "compiler_min": 28,
+  "compiler_max": 32,
+  "first_version": "3.4.1"
+}
