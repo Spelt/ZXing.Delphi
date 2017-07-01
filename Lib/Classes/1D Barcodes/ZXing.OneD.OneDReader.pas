@@ -17,22 +17,21 @@
   * Delphi Implementation by E. Spelt and K. Gossens
 }
 
-
 unit ZXing.OneD.OneDReader;
 
 interface
 
-uses 
-  System.SysUtils, 
-  System.Generics.Collections, 
+uses
+  System.SysUtils,
+  System.Generics.Collections,
   Math,
   ZXing.Reader,
   ZXing.BinaryBitmap,
-  ZXing.ReadResult, 
+  ZXing.ReadResult,
   ZXing.DecodeHintType,
   ZXing.ResultMetadataType,
-  ZXing.ResultPoint, 
-  ZXing.Common.BitArray, 
+  ZXing.ResultPoint,
+  ZXing.Common.BitArray,
   ZXing.Common.Detector.MathUtils;
 
 type
@@ -127,7 +126,8 @@ type
     /// String which the barcode encodes
     /// </returns>
     function decode(const image: TBinaryBitmap;
-      hints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload; virtual;
+      hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      overload; virtual;
 
     /// <summary>
     /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
@@ -212,14 +212,12 @@ begin
     begin
       // But if we found it reversed in doDecode(), add in that result here:
       orientation :=
-        (
-           orientation
-           +
-           (metadata[ZXing.ResultMetadataType.orientation] as IIntegerMetadata).Value
-        ) mod 360;
+        (orientation + (metadata[ZXing.ResultMetadataType.orientation]
+        as IIntegerMetadata).Value) mod 360;
     end;
 
-    Result.putMetadata(ZXing.ResultMetadataType.orientation, TResultMetaData.CreateIntegerMetadata(orientation));
+    Result.putMetadata(ZXing.ResultMetadataType.orientation,
+      TResultMetadata.CreateIntegerMetadata(orientation));
     // Update result points
     points := Result.ResultPoints;
     if (points <> nil) then
@@ -228,7 +226,8 @@ begin
       l := Length(points) - 1;
       for i := 0 to l do
       begin
-        points[i] := TResultPointHelpers.CreateResultPoint(height - points[i].Y - 1, points[i].X);
+        points[i] := TResultPointHelpers.CreateResultPoint
+          (height - points[i].Y - 1, points[i].X);
       end;
     end;
 
@@ -240,19 +239,18 @@ function TOneDReader.doDecode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 
 var
-  attempt, X, rowNumber, rowStepsAboveOrBelow, width, height, middle,
-    rowStep, maxLines: Integer;
+  attempt, X, rowNumber, rowStepsAboveOrBelow, width, height, middle, rowStep,
+    maxLines: Integer;
   row: IBitArray;
-  isAbove: Boolean;
-  newHints: TDictionary<TDecodeHintType, TObject>;
+  isAbove, hadResultPointCallBack: Boolean;
   ReadResult: TReadResult;
   points: TArray<IResultPoint>;
-  Key: TDecodeHintType;
-
+  obj: TObject;
 begin
   width := image.width;
   height := image.height;
-  row := TBitArrayHelpers.CreateBitArray(width); // row is a interfaced object: we don't need to free it explicitly
+  row := TBitArrayHelpers.CreateBitArray(width);
+  // row is a interfaced object: we don't need to free it explicitly
 
   middle := TMathUtils.Asr(height, 1);
 
@@ -290,35 +288,36 @@ begin
     for attempt := 0 to 1 do
     begin
 
+      hadResultPointCallBack := false;
       if (attempt = 1) then
       begin
         // trying again?
         row.Reverse();
-        // row.reverse(); // reverse the row and continue
+
+
         // This means we will only ever draw result points *once* in the life of this method
         // since we want to avoid drawing the wrong points after flipping the row, and,
         // don't want to clutter with noise from every single row scan -- just the scans
         // that start on the center line.
+
         if ((hints <> nil) and
-          hints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK)) then
+          (hints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK)))
+        then
         begin
-          newHints := TDictionary<TDecodeHintType, TObject>.Create;
-          for Key in hints.Keys do
-          begin
-
-            if (Key <> ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK) then
-            begin
-              newHints.Add(Key, hints[Key]);
-            end;
-
-          end;
-
-          hints := newHints;
+          hints.TryGetValue
+            (ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK, obj);
+          hints.Remove(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK);
+          hadResultPointCallBack := true;
         end;
       end;
 
       // Look for a barcode
-      ReadResult := DecodeRow(rowNumber, row, hints);
+      ReadResult := decodeRow(rowNumber, row, hints);
+      if hadResultPointCallBack then
+      begin
+        hints.Add(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK, obj);
+      end;
+
       if (ReadResult = nil) then
       begin
         continue;
@@ -333,20 +332,19 @@ begin
         points := ReadResult.ResultPoints;
         if (points <> nil) then
         begin
-          points[0] := TResultPointHelpers.CreateResultPoint(width - points[0].X - 1,
-            points[0].Y);
-          points[1] := TResultPointHelpers.CreateResultPoint(width - points[1].X - 1,
-            points[1].Y);
+          points[0] := TResultPointHelpers.CreateResultPoint
+            (width - points[0].X - 1, points[0].Y);
+          points[1] := TResultPointHelpers.CreateResultPoint
+            (width - points[1].X - 1, points[1].Y);
         end;
 
       end;
 
       Exit(ReadResult);
 
-    end; //  loop
+    end; // loop
 
   end;
-
 
   Result := nil;
 end;
@@ -354,13 +352,8 @@ end;
 class function TOneDReader.patternMatchVariance(counters,
   pattern: TArray<Integer>; maxIndividualVariance: Integer): Integer;
 var
-  scaledPattern,
-  variance,
-  counter,
-  totalVariance,
-  X, unitBarWidth, i,
-  patternLength,
-  numCounters, total: Integer;
+  scaledPattern, variance, counter, totalVariance, X, unitBarWidth, i,
+    patternLength, numCounters, total: Integer;
 begin
   Result := High(Integer);
 
@@ -373,11 +366,10 @@ begin
     patternLength := patternLength + pattern[i];
   end;
 
-  if (total < patternLength)
-  then
-     // If we don't even have one pixel per unit of bar width, assume this is too small
-     // to reliably match, so fail:
-     exit;
+  if (total < patternLength) then
+    // If we don't even have one pixel per unit of bar width, assume this is too small
+    // to reliably match, so fail:
+    Exit;
 
   // We're going to fake floating-point math in integers. We just need to use more bits.
   // Scale up patternLength so that intermediate values below like scaledCounter will have
@@ -392,15 +384,13 @@ begin
     counter := counters[X] shl INTEGER_MATH_SHIFT;
     scaledPattern := pattern[X] * unitBarWidth;
 
-    if (counter > scaledPattern)
-    then
-       variance := counter - scaledPattern
+    if (counter > scaledPattern) then
+      variance := counter - scaledPattern
     else
-       variance := scaledPattern - counter;
+      variance := scaledPattern - counter;
 
-    if (variance > maxIndividualVariance)
-    then
-       exit;
+    if (variance > maxIndividualVariance) then
+      Exit;
 
     totalVariance := totalVariance + variance;
   end;
@@ -502,5 +492,7 @@ begin
 end;
 
 initialization
-  TOneDReader.InitializeClass();
+
+TOneDReader.InitializeClass();
+
 end.

@@ -25,13 +25,12 @@ type
   TScanManager = class
   private
     FEnableInversion: Boolean;
+    FHints: TDictionary<TDecodeHintType, TObject>;
     FResultPointEvent: TResultPointCallback;
     FMultiFormatReader: TMultiFormatReader;
-    hints: TDictionary<TDecodeHintType, TObject>;
     listFormats: TList<TBarcodeFormat>;
 
-    function GetMultiFormatReader(const format: TBarcodeFormat;
-      const additionalHints: TDictionary<TDecodeHintType, TObject>)
+    function GetMultiFormatReader(const format: TBarcodeFormat)
       : TMultiFormatReader;
 
     procedure SetResultPointEvent(const AValue: TResultPointCallback);
@@ -40,7 +39,7 @@ type
 
     function Scan(const pBitmapForScan: TBitmap): TReadResult;
     constructor Create(const format: TBarcodeFormat;
-      const additionalHints: TDictionary<TDecodeHintType, TObject>);
+      Hints: TDictionary<TDecodeHintType, TObject>);
 
     property OnResultPoint: TResultPointCallback read FResultPointEvent
       write SetResultPointEvent;
@@ -49,36 +48,41 @@ type
 implementation
 
 constructor TScanManager.Create(const format: TBarcodeFormat;
-  const additionalHints: TDictionary<TDecodeHintType, TObject>);
+  Hints: TDictionary<TDecodeHintType, TObject>);
 begin
   inherited Create;
   FEnableInversion := False;
-  FMultiFormatReader := GetMultiFormatReader(format, additionalHints);
+  FHints := Hints;
+  FMultiFormatReader := GetMultiFormatReader(format);
 end;
 
 destructor TScanManager.Destroy;
+var
+  hint: TPair<TDecodeHintType, TObject>;
+  o: TObject;
 begin
-  if Assigned(listFormats) then
-  begin
-    listFormats.Clear;
-    listFormats.Free;
-  end;
-
-  if Assigned(hints) then
+  if Assigned(FHints) then
   begin
 
-    hints.Clear();
-    hints.Free;
+    for hint in FHints do
+    begin
+      o := hint.Value;
+      if Assigned(o) then
+        o.Free;
+      o := nil;
+    end;
+
+    FHints.Clear();
+    FreeAndNil(FHints);
   end;
 
-  FMultiFormatReader.Free;
+  FreeAndNil(FMultiFormatReader);
   inherited;
 end;
 
 procedure TScanManager.SetResultPointEvent(const AValue: TResultPointCallback);
 var
   ahKey: TDecodeHintType;
-  // a: TResultPointCallback; never used
   ahValue: TObject;
 begin
   FResultPointEvent := AValue;
@@ -87,47 +91,42 @@ begin
   if Assigned(FResultPointEvent) then
   begin
     ahValue := TResultPointEventObject.Create(FResultPointEvent);
-    hints.AddOrSetValue(ahKey, ahValue);
+    FHints.AddOrSetValue(ahKey, ahValue);
   end
   else
-    hints.Remove(ahKey);
+  begin
+    if Fhints.TryGetValue(ahKey, ahValue) then
+    begin
+      ahValue.Free;
+      ahValue := nil;
+      FHints.Remove(ahKey);
+    end;
+  end;
 end;
 
-function TScanManager.GetMultiFormatReader(const format: TBarcodeFormat;
-  const additionalHints: TDictionary<TDecodeHintType, TObject>)
+function TScanManager.GetMultiFormatReader(const format: TBarcodeFormat)
   : TMultiFormatReader;
 var
-  ahKey: TDecodeHintType;
-  ahValue: TObject;
   o: TObject;
 
 begin
   Result := TMultiFormatReader.Create;
-  hints := TDictionary<TDecodeHintType, TObject>.Create();
   listFormats := nil;
 
-  if (additionalHints <> nil) then
+  if FHints = nil then
+    FHints := TDictionary<TDecodeHintType, TObject>.Create();
+
+  if FHints.ContainsKey(ZXing.DecodeHintType.ENABLE_INVERSION) then
+    FEnableInversion := true;
+
+  if format <> TBarcodeFormat.Auto then
   begin
-    for ahKey in additionalHints.Keys do
-    begin
-      ahValue := additionalHints[ahKey];
-      hints.Add(ahKey, ahValue);
-    end;
-
-    if hints.ContainsKey(ZXing.DecodeHintType.ENABLE_INVERSION) then
-      FEnableInversion := true;
-
-  end;
-
-  if ((format <> TBarcodeFormat.Auto)) then
-  begin
-
-    if (hints.TryGetValue(ZXing.DecodeHintType.POSSIBLE_FORMATS, o)) then
+    if (FHints.TryGetValue(ZXing.DecodeHintType.POSSIBLE_FORMATS, o)) then
       listFormats := o as TList<TBarcodeFormat>
     else
     begin
       listFormats := TList<TBarcodeFormat>.Create();
-      hints.Add(ZXing.DecodeHintType.POSSIBLE_FORMATS, listFormats);
+      FHints.Add(ZXing.DecodeHintType.POSSIBLE_FORMATS, listFormats);
     end;
 
     if (listFormats.Count = 0) then
@@ -137,7 +136,7 @@ begin
 
   end;
 
-  Result.hints := hints;
+  Result.Hints := FHints;
 end;
 
 function TScanManager.Scan(const pBitmapForScan: TBitmap): TReadResult;
