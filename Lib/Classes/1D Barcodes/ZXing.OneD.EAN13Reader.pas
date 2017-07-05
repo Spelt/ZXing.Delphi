@@ -89,11 +89,6 @@ type
     class procedure FinalizeClass; static;
   protected
     public
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TEAN13Reader"/> class.
-    /// </summary>
-    constructor Create; override;
-    destructor Destroy; override;
 
       /// <summary>
     /// Subclasses override this to decode the portion of a barcode between the start
@@ -121,18 +116,6 @@ type
 implementation
 
 { TEAN13Reader }
-
-constructor TEAN13Reader.Create();
-begin
-  inherited;
-  SetLength(decodeMiddleCounters, 4);
-end;
-
-destructor TEAN13Reader.Destroy;
-begin
-  decodeMiddleCounters := nil;
-  inherited;
-end;
 
 class function TEAN13Reader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
@@ -216,11 +199,13 @@ class procedure TEAN13Reader.InitializeClass;
 begin
   FIRST_DIGIT_ENCODINGS := TArray<Integer>.Create($00, $0B, $0D, $0E, $13, $19,
     $1C, $15, $16, $1A);
+  SetLength(decodeMiddleCounters, 4);
 end;
 
 class procedure TEAN13Reader.FinalizeClass;
 begin
   FIRST_DIGIT_ENCODINGS := nil;
+  decodeMiddleCounters := nil;
 end;
 
 initialization

@@ -43,14 +43,15 @@ type
 
   private
     class var DecodeMiddleCounters: TArray<Integer>;
+
+    class procedure DoInitialize();
+    class procedure DoFinalize();
   public
     class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
 
     function BarcodeFormat: TBarcodeFormat; override;
-    constructor Create; override;
-    destructor Destroy; override;
   end;
 
 implementation
@@ -60,16 +61,14 @@ begin
   result := TBarcodeFormat.EAN_8;
 end;
 
-constructor TEAN8Reader.Create;
-begin
-  inherited;
-  SetLength(DecodeMiddleCounters, 4);
-end;
-
-destructor TEAN8Reader.Destroy;
+class procedure TEAN8Reader.DoFinalize;
 begin
   DecodeMiddleCounters := nil;
-  inherited;
+end;
+
+class procedure TEAN8Reader.DoInitialize;
+begin
+  SetLength(DecodeMiddleCounters, 4);
 end;
 
 class function TEAN8Reader.DecodeMiddle(const row: IBitArray;
@@ -137,5 +136,13 @@ begin
   result := rowOffset;
 
 end;
+
+initialization
+
+TEAN8Reader.DoInitialize;
+
+finalization
+
+TEAN8Reader.DoFinalize;
 
 end.

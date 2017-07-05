@@ -41,12 +41,11 @@ type
   private
     class var EAN13Reader: TUPCEANReader;
     class function maybeReturnResult(pResult: TReadResult): TReadResult; static;
+    class procedure DoInitialize();
+    class procedure DoFinalize();
   protected
 
   public
-    constructor Create; override;
-    destructor Destroy; override;
-
     class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
@@ -70,16 +69,14 @@ implementation
 
 { TUPCAReader }
 
-constructor TUPCAReader.Create;
-begin
-  inherited;
-  EAN13Reader := TEAN13Reader.Create();
-end;
-
-destructor TUPCAReader.Destroy;
+class procedure TUPCAReader.DoFinalize;
 begin
   EAN13Reader.Free;
-  inherited;
+end;
+
+class procedure TUPCAReader.DoInitialize;
+begin
+  EAN13Reader := TEAN13Reader.Create();
 end;
 
 function TUPCAReader.decode(const image: TBinaryBitmap;
@@ -130,5 +127,14 @@ begin
   result := pResult;
 
 end;
+
+initialization
+
+TUPCAReader.DoInitialize;
+
+finalization
+
+TUPCAReader.DoFinalize;
+
 
 end.

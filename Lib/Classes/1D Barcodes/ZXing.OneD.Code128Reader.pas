@@ -33,7 +33,6 @@ uses
   ZXing.ResultPoint,
   ZXing.BarcodeFormat;
 
-
 var
   CODE_PATTERNS: TArray<TArray<Integer>>;
 
@@ -42,21 +41,20 @@ type
   /// <p>Decodes Code 128 barcodes.</p>
   /// </summary>
   TCode128Reader = class(TOneDReader)
-  private
-    const
-      CODE_SHIFT   =  98;
-      CODE_CODE_C  =  99;
-      CODE_CODE_B  = 100;
-      CODE_CODE_A  = 101;
-      CODE_FNC_1   = 102;
-      CODE_FNC_2   =  97;
-      CODE_FNC_3   =  96;
-      CODE_FNC_4_A = 101;
-      CODE_FNC_4_B = 100;
-      CODE_START_A = 103;
-      CODE_START_B = 104;
-      CODE_START_C = 105;
-      CODE_STOP    = 106;
+  private const
+    CODE_SHIFT = 98;
+    CODE_CODE_C = 99;
+    CODE_CODE_B = 100;
+    CODE_CODE_A = 101;
+    CODE_FNC_1 = 102;
+    CODE_FNC_2 = 97;
+    CODE_FNC_3 = 96;
+    CODE_FNC_4_A = 101;
+    CODE_FNC_4_B = 100;
+    CODE_START_A = 103;
+    CODE_START_B = 104;
+    CODE_START_C = 105;
+    CODE_STOP = 106;
 
     class var MAX_AVG_VARIANCE: Integer;
     class var MAX_INDIVIDUAL_VARIANCE: Integer;
@@ -64,19 +62,23 @@ type
     class function DecodeCode(row: IBitArray; counters: TArray<Integer>;
       rowOffset: Integer; var code: Integer): Boolean;
 
+    class procedure DoInitialize();
+    class procedure DoFinalize();
   public
-    constructor Create();
-    destructor Destroy(); override;
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
-      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
-
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      override;
   end;
 
 implementation
 
-constructor TCode128Reader.Create();
+class procedure TCode128Reader.DoFinalize;
 begin
-  inherited;
+  CODE_PATTERNS := nil;
+end;
+
+class procedure TCode128Reader.DoInitialize;
+begin
   CODE_PATTERNS := [[2, 1, 2, 2, 2, 2], // 0
   [2, 2, 2, 1, 2, 2], [2, 2, 2, 2, 2, 1], [1, 2, 1, 2, 2, 3],
     [1, 2, 1, 3, 2, 2], [1, 3, 1, 2, 2, 2], // 5
@@ -124,12 +126,7 @@ begin
 
   MAX_AVG_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.25);
   MAX_INDIVIDUAL_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.7);
-end;
 
-destructor TCode128Reader.Destroy;
-begin
-  CODE_PATTERNS := nil;
-  inherited;
 end;
 
 class function TCode128Reader.FindStartPattern(row: IBitArray): TArray<Integer>;
@@ -250,24 +247,19 @@ begin
   result := code >= 0;
 end;
 
-function TCode128Reader.decodeRow(const rowNumber: Integer; const row: IBitArray;
-  const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+function TCode128Reader.decodeRow(const rowNumber: Integer;
+  const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
 var
-  shiftUpperMode, upperMode,
-  lastCharacterWasPrintable,
-  convertFNC1, done,
-  unshift, isNextShifted: Boolean;
+  shiftUpperMode, upperMode, lastCharacterWasPrintable, convertFNC1, done,
+    unshift, isNextShifted: Boolean;
   counters, startPatternInfo: TArray<Integer>;
-  lastPatternSize, multiplier,
-  checksumTotal, code,
-  lastCode, nextStart,
-  lastStart, startCode,
-  codeSet, l, rawCodesSize: Integer;
+  lastPatternSize, multiplier, checksumTotal, code, lastCode, nextStart,
+    lastStart, startCode, codeSet, l, rawCodesSize: Integer;
   rawCodes: TList<Byte>;
   rawBytes: TArray<Byte>;
   aResult: String;
-  counter,
-  resultLength, i: Integer;
+  counter, resultLength, i: Integer;
   left, right: Single;
   resultPointCallback: TResultPointCallback;
   obj: TObject;
@@ -600,9 +592,8 @@ begin
       // Unshift back to another code set if we were shifted
       if (unshift) then
       begin
-        if (codeSet = CODE_CODE_A)
-        then
-           codeSet := CODE_CODE_B
+        if (codeSet = CODE_CODE_A) then
+          codeSet := CODE_CODE_B
         else
           codeSet := CODE_CODE_A;
       end;
@@ -666,20 +657,19 @@ begin
     resultPointRight := TResultPointHelpers.CreateResultPoint(right, rowNumber);
     resultPoints := [resultPointLeft, resultPointRight];
 
-    resultPointCallback := nil; // had to add this initialization because the following if/else construct does not assign a value
-                                // for all possible cases. Being resultPointCallback a local variable it is not initialized by default to null,
-                                // so you could get unpredictable results
+    resultPointCallback := nil;
+    // had to add this initialization because the following if/else construct does not assign a value
+    // for all possible cases. Being resultPointCallback a local variable it is not initialized by default to null,
+    // so you could get unpredictable results
 
     if ((hints = nil) or
-      (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK)))
-    then
-       resultPointCallback := nil
+      (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
+      resultPointCallback := nil
     else
     begin
       obj := hints[TDecodeHintType.NEED_RESULT_POINT_CALLBACK];
-      if (obj is TResultPointEventObject)
-      then
-         resultPointCallback := TResultPointEventObject(obj).Event;
+      if (obj is TResultPointEventObject) then
+        resultPointCallback := TResultPointEventObject(obj).Event;
     end;
 
     if Assigned(resultPointCallback) then
@@ -694,5 +684,13 @@ begin
   result := TReadResult.Create(aResult, rawBytes, resultPoints,
     TBarcodeFormat.CODE_128);
 end;
+
+initialization
+
+TCode128Reader.DoInitialize;
+
+finalization
+
+TCode128Reader.DoFinalize;
 
 end.

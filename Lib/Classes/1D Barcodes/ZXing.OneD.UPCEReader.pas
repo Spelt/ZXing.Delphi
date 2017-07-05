@@ -57,9 +57,6 @@ type
       : TArray<Integer>; override;
 
   public
-    constructor Create; override;
-    destructor Destroy; override;
-
     class function DecodeMiddle(const row: IBitArray;
       const startRange: TArray<Integer>; const res: TStringBuilder)
       : Integer; override;
@@ -73,18 +70,6 @@ type
 implementation
 
 { TUPCEReader }
-
-constructor TUPCEReader.Create;
-begin
-  inherited;
-  decodeMiddleCounters := TArray<Integer>.Create(0,0,0,0);
-end;
-
-destructor TUPCEReader.Destroy;
-begin
-  decodeMiddleCounters := nil;
-  inherited;
-end;
 
 class function TUPCEReader.determineNumSysAndCheckDigit
   (resultString: TStringBuilder; lgPatternFound: Integer): boolean;
@@ -229,12 +214,14 @@ begin
     T2DIntArray.Create(TArray<Integer>.Create($38, $34, 50, $31, $2C, $26, $23,
     $2A, $29, $25), TArray<Integer>.Create(7, 11, 13, 14, $13, $19, $1C, $15,
     $16, $1A));
+  decodeMiddleCounters := TArray<Integer>.Create(0,0,0,0);
 end;
 
 class procedure TUPCEReader.DoFinalize;
 begin
   MIDDLE_END_PATTERN := nil;
   NUMSYS_AND_CHECK_DIGIT_PATTERNS := nil;
+  decodeMiddleCounters := nil;
 end;
 
 initialization
