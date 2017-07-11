@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<BorlandProject>
-	<Transactions>
-    <Transaction>1899-12-30 00:00:00.000.498,C:\Dev\Delphi\ZXing\ZXingDelphi.groupproj=C:\Users\Edward\Documents\Embarcadero\Studio\Projects\ProjectGroup2.groupproj</Transaction>
-  </Transactions>
-	<Default.Personality>
-		<Projects ActiveProject="C:\Dev\Delphi\ZXing\UnitTest\DUnitXTest.dproj"/>
-	</Default.Personality>
-</BorlandProject>
