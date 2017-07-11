@@ -499,6 +499,21 @@ begin
     Assert.IsTrue(result.Text.Equals('1234567'),
       'Code 128 result Text Incorrect: ' + result.Text);
 
+    result := Decode('code128 upsidedown.png', TBarcodeFormat.CODE_128);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 128 result Text Incorrect: ' + result.Text);
+
+
+    result := Decode('code128 upsidedownchidden in bottom.png', TBarcodeFormat.CODE_128);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567'),
+      'Code 128 result Text Incorrect: ' + result.Text);
+
+
+
+
+
   finally
     FreeAndNil(result);
   end;
