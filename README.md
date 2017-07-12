@@ -1,4 +1,4 @@
-﻿<img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/Logo.png"/>
+﻿<img align="right" src="Logo.png"/>
 
 # ZXing.Delphi
 ZXing Barcode Scanning Library for Delphi XE to 10.2 Tokyo. 
