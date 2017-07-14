@@ -1,4 +1,4 @@
-<img align="right" src="zxing-logo.png"/>
+<img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing-logo.png"/>
 # ZXing.Delphi
 ZXing Barcode Scanning Library for Delphi XE to 10.2 Tokyo. 
 
@@ -12,7 +12,6 @@ The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
-![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing.Delphi.picture2.png )
 
 ## Supported Formats
 
