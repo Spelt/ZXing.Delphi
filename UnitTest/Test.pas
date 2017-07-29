@@ -29,6 +29,7 @@ uses
   ZXing.DecodeHintType,
   ZXing.ScanManager,
   ZXing.BarcodeFormat,
+  ZXing.Resultpoint,
   ZXing.ReadResult;
 
 type
@@ -476,6 +477,7 @@ end;
 procedure TZXingDelphiTest.AllCode128();
 var
   result: TReadResult;
+  x0, x1, y0, y1: single;
 begin
   try
 
@@ -504,15 +506,23 @@ begin
     Assert.IsTrue(result.Text.Equals('1234567'),
       'Code 128 result Text Incorrect: ' + result.Text);
 
+    x0 := result.resultPoints[0].x;
+    y0 := result.resultPoints[0].y;
 
-    result := Decode('code128 upsidedownchidden in bottom.png', TBarcodeFormat.CODE_128);
+    x1 := result.resultPoints[1].x;
+    y1 := result.resultPoints[1].y;
+
+    result := Decode('code128 upsidedownchidden in bottom.png',
+      TBarcodeFormat.CODE_128);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1234567'),
       'Code 128 result Text Incorrect: ' + result.Text);
 
+    x0 := result.resultPoints[0].x;
+    y0 := result.resultPoints[0].y;
 
-
-
+    x1 := result.resultPoints[1].x;
+    y1 := result.resultPoints[1].y;
 
   finally
     FreeAndNil(result);
@@ -727,11 +737,11 @@ function TZXingDelphiTest.Decode(Filename: String; CodeFormat: TBarcodeFormat;
 var
   bmp: TBitmap;
   ScanManager: TScanManager;
-//  hints: TDictionary<TDecodeHintType, TObject>;
+  // hints: TDictionary<TDecodeHintType, TObject>;
 begin
   bmp := GetImage(Filename);
   try
-    //hints := TDictionary<TDecodeHintType, TObject>.Create();
+    // hints := TDictionary<TDecodeHintType, TObject>.Create();
     // hints.Add(TDecodeHintType.PURE_BARCODE, nil);
 
     ScanManager := TScanManager.Create(CodeFormat, additionalHints);
