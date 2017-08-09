@@ -309,12 +309,9 @@ begin
   if (metaData <> nil) then
   begin
     if (FResultMetadata = nil) then
-      FResultMetadata := metaData
-    else
-    begin
-      for key in metaData.Keys do
-        FResultMetadata.AddOrSetValue(key, metaData[key]);
-    end;
+      FResultMetadata := TResultMetadata.Create();
+    for key in metaData.Keys do
+      FResultMetadata.AddOrSetValue(key, metaData[key]);
   end;
 end;
 
