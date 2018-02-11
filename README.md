@@ -1,4 +1,4 @@
-# ZXing.Delphi
+﻿# ZXing.Delphi
 ZXing Barcode Scanning Library for Delphi XE to 10.2 Tokyo. 
 
 <img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing-logo.png"/>
@@ -35,6 +35,8 @@ Just include the source files and add it in your existing projects and build the
 	
 
 ### Changes
+- v3.5 
+	- Fixed a QRCode bug. Did not find the QRCode in some cases. Bugfix: https://github.com/Spelt/ZXing.Delphi/issues/65 
 - v3.4
 	- Added an advanced test app. Featuring faster camera, sound, barcode marker,warning for slow camera and a cool HUD. It makes use of huge camera performance tweak. See Readme in the uMain.pas and https://quality.embarcadero.com/browse/RSP-10592 
 	- Little cleanup	
