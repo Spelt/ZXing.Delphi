@@ -70,10 +70,10 @@ type
       /// <summary>
       /// support up to version 10 for mobile clients
       /// </summary>
-      MAX_MODULES: Integer = 57;
+      MAX_MODULES: Integer = 97;
     class function foundPatternCross(const stateCount: TArray<Integer>): Boolean; static;
     function handlePossibleCenter(stateCount: TArray<Integer>; i: Integer;
-      j: Integer; pureBarcode: boolean): boolean;
+      j: Integer): boolean;
     property image: TBitMatrix read FImage;
   public
     /// <summary>
@@ -562,7 +562,7 @@ begin
               if TFinderPatternFinder.foundPatternCross(stateCount) then
               begin
                 // Yes
-                confirmed := handlePossibleCenter(stateCount, i, j, pureBarcode);
+                confirmed := handlePossibleCenter(stateCount, i, j);
                 if (confirmed) then
                 begin
                   // Start examining every other line. Checking each line turned out to be too
@@ -629,7 +629,7 @@ begin
 
       if foundPatternCross(stateCount) then
       begin
-        confirmed := Self.handlePossibleCenter(stateCount, i, maxJ, pureBarcode);
+        confirmed := Self.handlePossibleCenter(stateCount, i, maxJ);
         if (confirmed) then
         begin
           iSkip := stateCount[0];
@@ -723,7 +723,7 @@ begin
 end;
 
 function TFinderPatternFinder.handlePossibleCenter(stateCount: TArray<Integer>;
-  i, j: Integer; pureBarcode: boolean): boolean;
+  i, j: Integer): boolean;
 var
   stateCountTotal, index: Integer;
   centerJ, centerI: Single;
@@ -753,8 +753,7 @@ begin
   centerJ := crossCheckHorizontal(Floor(centerJ), Floor(centerI), stateCount[2],
     stateCountTotal);
 
-  if ((centerJ <> -1) and (not pureBarcode or
-    self.crossCheckDiagonal(Floor(centerI), Floor(centerJ), stateCount[2],
+  if ((centerJ <> -1) and (self.crossCheckDiagonal(Floor(centerI), Floor(centerJ), stateCount[2],
     stateCountTotal))) then
   begin
     estimatedModuleSize := stateCountTotal / 7;
