@@ -61,14 +61,16 @@ var
   width,
   height : Integer;
   nudged : Boolean;
-  offset : Integer;
+  offset, maxOffset : Integer;
   x, y   : Single;
 begin
   width  := image.Width;
   height := image.Height;
   nudged := true;
   offset := 0;
-  while (((offset < Length(points)) and nudged)) do
+  maxOffset := Length(points) - 1; // points.length must be even
+
+  while ((offset < maxOffset) and nudged) do
   begin
     x := points[offset];
     y := points[(offset + 1)];

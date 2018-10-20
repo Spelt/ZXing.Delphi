@@ -174,7 +174,7 @@ var
   x, y,
   denominator: Single;
 begin
-  max := Length(points);
+
 
   a11 := Self.a11;
   a12 := Self.a12;
@@ -186,6 +186,7 @@ begin
   a32 := Self.a32;
   a33 := Self.a33;
   i := 0;
+  max := Length(points) - 1;
   while ((i < max)) do
   begin
     x := points[i];
