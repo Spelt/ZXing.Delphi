@@ -400,7 +400,7 @@ begin
     // Each 13 bits encodes a 2-byte character
     twoBytes := bits.readBits(13);
     assembledTwoBytes := (((twoBytes div $60) shl 8) or (twoBytes mod $60));
-    if (assembledTwoBytes < $003BF)
+    if (assembledTwoBytes < $00A00)
     then
        // In the 0xA1A1 to 0xAAFE range
        Inc(assembledTwoBytes, $0A1A1)
