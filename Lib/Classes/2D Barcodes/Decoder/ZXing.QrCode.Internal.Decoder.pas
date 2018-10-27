@@ -261,21 +261,16 @@ begin
         resultBytes[resultOffset] := codewordBytes[i];
         Inc(resultOffset);
       end;
-
-      DataBlock.Free;
     end;
-
-    dataBlocks := nil;
 
     // Decode the contents of that stream of bytes
     Result := TDecodedBitStreamParser.decode(resultBytes, Version,
       ecLevel, hints);
 
   finally
+    for DataBlock in dataBlocks do
+      DataBlock.Free;
     FreeAndNil(formatInfo);
-    resultBytes := nil;
-    codewordBytes := nil;
-    codeWords := nil;
   end;
 
 end;
