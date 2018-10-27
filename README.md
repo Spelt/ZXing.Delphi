@@ -36,6 +36,8 @@ Just include the source files and add it in your existing projects and build the
 	
 
 ### Changes
+- v3.6
+	- Fixed QRCode bug and QR Memleak (thanks to C. Pradelli)
 - v3.5 
 	- Fixed a QRCode bug. Did not find the QRCode in some cases. Bugfix: https://github.com/Spelt/ZXing.Delphi/issues/65 
 - v3.4
