@@ -1,4 +1,4 @@
-program Project3;
+program Webcam;
 
 uses
   Vcl.Forms,

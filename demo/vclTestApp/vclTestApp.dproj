@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{6B826825-AB00-41E0-B049-0C28B21DCC48}</ProjectGuid>
-        <ProjectVersion>18.2</ProjectVersion>
+        <ProjectVersion>18.4</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <MainSource>VclTestApp.dpr</MainSource>
         <Base>True</Base>
@@ -54,6 +54,7 @@
         <DCC_S>false</DCC_S>
         <DCC_F>false</DCC_F>
         <DCC_K>false</DCC_K>
+        <DCC_UnitSearchPath>..\..\Lib\Classes;..\..\Lib\Classes\Common;..\..\Lib\Classes\Common\Detector;..\..\Lib\Classes\Common\ReedSolomon;..\..\Lib\Classes\Filtering;..\..\Lib\Classes\1D Barcodes;..\..\Lib\Classes\2D Barcodes;..\..\Lib\Classes\2D Barcodes\Decoder;..\..\Lib\Classes\2D Barcodes\Detector;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
@@ -81,6 +82,8 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
+        <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -96,82 +99,6 @@
             <Form>mainFrm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\Lib\Classes\ZXing.ScanManager.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.Code128Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.Code93Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.EAN13Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.EANManufacturerOrgSupport.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.ITFReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.OneDReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEANExtension2Support.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEANExtension5Support.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEANExtensionSupport.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEANReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\ZXing.Datamatrix.DataMatrixReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\ZXing.QrCode.QRCodeReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.Datamatrix.Internal.BitMatrixParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.Datamatrix.Internal.DataBlock.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.Datamatrix.Internal.DecodedBitStreamParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.Datamatrix.Internal.Decoder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.Datamatrix.Internal.Version.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.BitMatrixParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.DataBlock.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.DataMask.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.DecodedBitStreamParser.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.Decoder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.ErrorCorrectionLevel.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.FormatInformation.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.Mode.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.QRCodeDecoderMetaData.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Decoder\ZXing.QrCode.Internal.Version.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.Datamatrix.Internal.Detector.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPattern.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPatternFinder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.AlignmentPatternImplementation.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.Detector.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPattern.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPatternFinder.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPatternImplementation.pas"/>
-        <DCCReference Include="..\Lib\Classes\2D Barcodes\Detector\ZXing.QrCode.Internal.FinderPatternInfo.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.BarcodeFormat.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.BitSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXIng.ByteSegments.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.CharacterSetECI.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Common.BitArray.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Common.BitArrayImplementation.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Common.BitMatrix.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Common.DetectorResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Common.GridSampler.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Common.PerspectiveTransform.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.DecodeHintType.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.DecoderResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.DefaultGridSampler.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.EncodeHintType.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Helpers.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.MultiFormatReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.ReadResult.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.ResultMetadataType.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.ResultPoint.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.ResultPointImplementation.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ZXing.StringUtils.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\Detector\ZXing.Common.Detector.MathUtils.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\Detector\ZXing.Common.Detector.WhiteRectangleDetector.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ReedSolomon\ZXing.Common.ReedSolomon.GenericGF.pas"/>
-        <DCCReference Include="..\Lib\Classes\Common\ReedSolomon\ZXing.Common.ReedSolomon.ReedSolomonDecoder.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.BaseLuminanceSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.Binarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.BinaryBitmap.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.GlobalHistogramBinarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.HybridBinarizer.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.InvertedLuminanceSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.LuminanceSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.PlanarYUVLuminanceSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\Filtering\ZXing.RGBLuminanceSource.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.EAN8Reader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCAReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEReader.pas"/>
-        <DCCReference Include="..\Lib\Classes\1D Barcodes\ZXing.OneD.Code39Reader.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -192,6 +119,10 @@
                 <Source>
                     <Source Name="MainSource">VclTestApp.dpr</Source>
                 </Source>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k250.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp250.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="3">
                 <DeployFile LocalName="Win32\Debug\VclTestApp.exe" Configuration="Debug" Class="ProjectOutput">

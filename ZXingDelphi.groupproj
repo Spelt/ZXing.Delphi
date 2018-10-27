@@ -3,19 +3,22 @@
         <ProjectGuid>{72263279-BD40-4924-B404-E92C43F54569}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="UnitTest\DUnitXTest.dproj">
+        <Projects Include="UnitTest\dUnitXTest.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="MemLeakTest\Leaktest.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="aTestApp\FmxTestApp.dproj">
+        <Projects Include="demo\advancedTestApp\FmxAdvancedTestApp.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="AdvancedTestApp\FmxAdvancedTestApp.dproj">
+        <Projects Include="demo\aTestApp\FmxTestApp.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="vclTestApp\VclTestApp.dproj">
+        <Projects Include="demo\vclTestApp\vclTestApp.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="demo\webcam\Webcam.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -26,14 +29,14 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="DUnitXTest">
-        <MSBuild Projects="UnitTest\DUnitXTest.dproj"/>
+    <Target Name="dUnitXTest">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
     </Target>
-    <Target Name="DUnitXTest:Clean">
-        <MSBuild Projects="UnitTest\DUnitXTest.dproj" Targets="Clean"/>
+    <Target Name="dUnitXTest:Clean">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="DUnitXTest:Make">
-        <MSBuild Projects="UnitTest\DUnitXTest.dproj" Targets="Make"/>
+    <Target Name="dUnitXTest:Make">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
     </Target>
     <Target Name="Leaktest">
         <MSBuild Projects="MemLeakTest\Leaktest.dproj"/>
@@ -44,41 +47,50 @@
     <Target Name="Leaktest:Make">
         <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Make"/>
     </Target>
-    <Target Name="FmxTestApp">
-        <MSBuild Projects="aTestApp\FmxTestApp.dproj"/>
-    </Target>
-    <Target Name="FmxTestApp:Clean">
-        <MSBuild Projects="aTestApp\FmxTestApp.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="FmxTestApp:Make">
-        <MSBuild Projects="aTestApp\FmxTestApp.dproj" Targets="Make"/>
-    </Target>
     <Target Name="FmxAdvancedTestApp">
-        <MSBuild Projects="AdvancedTestApp\FmxAdvancedTestApp.dproj"/>
+        <MSBuild Projects="demo\advancedTestApp\FmxAdvancedTestApp.dproj"/>
     </Target>
     <Target Name="FmxAdvancedTestApp:Clean">
-        <MSBuild Projects="AdvancedTestApp\FmxAdvancedTestApp.dproj" Targets="Clean"/>
+        <MSBuild Projects="demo\advancedTestApp\FmxAdvancedTestApp.dproj" Targets="Clean"/>
     </Target>
     <Target Name="FmxAdvancedTestApp:Make">
-        <MSBuild Projects="AdvancedTestApp\FmxAdvancedTestApp.dproj" Targets="Make"/>
+        <MSBuild Projects="demo\advancedTestApp\FmxAdvancedTestApp.dproj" Targets="Make"/>
     </Target>
-    <Target Name="VclTestApp">
-        <MSBuild Projects="vclTestApp\VclTestApp.dproj"/>
+    <Target Name="FmxTestApp">
+        <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj"/>
     </Target>
-    <Target Name="VclTestApp:Clean">
-        <MSBuild Projects="vclTestApp\VclTestApp.dproj" Targets="Clean"/>
+    <Target Name="FmxTestApp:Clean">
+        <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="VclTestApp:Make">
-        <MSBuild Projects="vclTestApp\VclTestApp.dproj" Targets="Make"/>
+    <Target Name="FmxTestApp:Make">
+        <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="vclTestApp">
+        <MSBuild Projects="demo\vclTestApp\vclTestApp.dproj"/>
+    </Target>
+    <Target Name="vclTestApp:Clean">
+        <MSBuild Projects="demo\vclTestApp\vclTestApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="vclTestApp:Make">
+        <MSBuild Projects="demo\vclTestApp\vclTestApp.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Webcam">
+        <MSBuild Projects="demo\webcam\Webcam.dproj"/>
+    </Target>
+    <Target Name="Webcam:Clean">
+        <MSBuild Projects="demo\webcam\Webcam.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Webcam:Make">
+        <MSBuild Projects="demo\webcam\Webcam.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="DUnitXTest;Leaktest;FmxTestApp;FmxAdvancedTestApp;VclTestApp"/>
+        <CallTarget Targets="dUnitXTest;Leaktest;FmxAdvancedTestApp;FmxTestApp;vclTestApp;Webcam"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="DUnitXTest:Clean;Leaktest:Clean;FmxTestApp:Clean;FmxAdvancedTestApp:Clean;VclTestApp:Clean"/>
+        <CallTarget Targets="dUnitXTest:Clean;Leaktest:Clean;FmxAdvancedTestApp:Clean;FmxTestApp:Clean;vclTestApp:Clean;Webcam:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="DUnitXTest:Make;Leaktest:Make;FmxTestApp:Make;FmxAdvancedTestApp:Make;VclTestApp:Make"/>
+        <CallTarget Targets="dUnitXTest:Make;Leaktest:Make;FmxAdvancedTestApp:Make;FmxTestApp:Make;vclTestApp:Make;Webcam:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

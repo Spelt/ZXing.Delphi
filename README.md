@@ -146,7 +146,7 @@ Andrea Magni has a very nice blog post about an Android ZXing example from a tra
 ### Thanks
 ZXing.Delphi is a project that I've put together with the work of others.  So naturally, I'd like to thank everyone who's helped out in any way.  Those of you I know have helped I'm listing here, but anyone else that was involved, please let me know!
 
-- The ZXing Project Authors - Sean Owen.
+- The ZXing main project author - Sean Owen.
 - J. Dick at Redth at https://github.com/Redth/ZXing.Net.Mobile
 - Carlo Sirna
 - P. B. Hofstede
