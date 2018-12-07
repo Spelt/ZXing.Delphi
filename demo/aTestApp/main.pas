@@ -28,6 +28,7 @@ uses
   System.Math.Vectors,
   System.Actions,
   System.Threading,
+  System.Permissions,
   FMX.Types,
   FMX.Controls,
   FMX.Forms,
@@ -76,11 +77,14 @@ type
     procedure imgCameraClick(Sender: TObject);
   private
     { Private declarations }
+    FPermissionCamera : String;
 
     FScanManager: TScanManager;
     FScanInProgress: Boolean;
     FFrameTake: Integer;
     procedure GetImage();
+    procedure CameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+    procedure ExplainReason(Sender: TObject; const APermissions: TArray<string>; const APostRationaleProc: TProc);
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
   end;
 
@@ -88,6 +92,13 @@ var
   MainForm: TMainForm;
 
 implementation
+uses
+{$IFDEF ANDROID}
+  Androidapi.Helpers,
+  Androidapi.JNI.JavaTypes,
+  Androidapi.JNI.Os,
+{$ENDIF}
+  FMX.DialogService;
 
 {$R *.fmx}
 
@@ -95,7 +106,6 @@ procedure TMainForm.FormCreate(Sender: TObject);
 var
   AppEventSvc: IFMXApplicationEventService;
 begin
-
   if TPlatformServices.Current.SupportsPlatformService
     (IFMXApplicationEventService, IInterface(AppEventSvc)) then
   begin
@@ -104,10 +114,11 @@ begin
 
   lblScanStatus.Text := '';
   FFrameTake := 0;
-
-  CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.HighQuality;
-  lblScanStatus.Text := '';
   FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+
+  {$IFDEF ANDROID}
+  FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
+  {$EndIf}
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -115,14 +126,36 @@ begin
   FScanManager.Free;
 end;
 
+procedure TMainForm.CameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+begin
+  if (Length(AGrantResults) = 1) and
+     (AGrantResults[0] = TPermissionStatus.Granted) then
+  begin
+    CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.HighQuality;
+    CameraComponent1.Active := false;
+    CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
+    CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
+    CameraComponent1.Active := True;
+    lblScanStatus.Text := '';
+    Memo1.Lines.Clear;
+  end
+  else
+    TDialogService.ShowMessage('Cannot scan for barcodes because the required permissions is not granted')
+end;
+
+procedure TMainForm.ExplainReason(Sender: TObject; const APermissions: TArray<string>; const APostRationaleProc: TProc);
+begin
+
+  TDialogService.ShowMessage('The app needs to access the camera to scan barcodes ...',
+                            procedure(const AResult: TModalResult)
+                            begin
+                              APostRationaleProc;
+                            end)
+end;
+
 procedure TMainForm.btnStartCameraClick(Sender: TObject);
 begin
-  CameraComponent1.Active := false;
-  CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
-  CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
-  CameraComponent1.Active := True;
-  lblScanStatus.Text := '';
-  Memo1.Lines.Clear;
+  PermissionsService.RequestPermissions([FPermissionCamera], CameraPermissionRequestResult, ExplainReason);
 end;
 
 procedure TMainForm.btnStopCameraClick(Sender: TObject);
@@ -155,8 +188,6 @@ begin
   begin
     exit;
   end;
-
-
 
   scanBitmap := TBitmap.Create();
   scanBitmap.Assign(imgCamera.Bitmap);

@@ -71,8 +71,8 @@ object MainForm: TMainForm
       Size.Height = 208.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
-      Viewport.Width = 750.000000000000000000
-      Viewport.Height = 208.000000000000000000
+      Viewport.Width = 746.000000000000000000
+      Viewport.Height = 204.000000000000000000
     end
     object ToolBar3: TToolBar
       Align = MostBottom
