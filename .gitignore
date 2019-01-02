@@ -1,3 +1,5 @@
+!demo\advancedTestApp\SIMD\libfastutils.a
+
 ### Windows ###
 # Image file caches
 Thumbs.db
