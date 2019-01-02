@@ -67,6 +67,7 @@ uses
   ZXing.ScanManager, FMX.ListBox, FMX.ExtCtrls, FMX.ScrollBox, FMX.Memo,
   FMX.Ani,
   FMX.Effects,
+  System.Permissions,
   AudioManager;
 
 const
@@ -118,6 +119,7 @@ type
     procedure TimerShowHitTimer(Sender: TObject);
 
   private
+		FPermissionCamera: string;
     FScanManager: TScanManager;
     FScanInProgress: Boolean;
     FFrameTake: Integer;
@@ -137,6 +139,11 @@ type
     procedure StartStopWatch;
     procedure DisplaySlowWarning(Show: Boolean);
     procedure MarkBarcode(resultPoints: TArray<IResultPoint>);
+    procedure AccessCameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>;
+      const AGrantResults: TArray<TPermissionStatus>);
+    procedure DisplayRationale(Sender: TObject; const APermissions: TArray<string>; const APostRationaleProc: TProc);
+    procedure ActivateCameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>;
+      const AGrantResults: TArray<TPermissionStatus>);
 
   end;
 
@@ -144,6 +151,14 @@ var
   FormMain: TFormMain;
 
 implementation
+
+uses
+{$IFDEF ANDROID}
+  Androidapi.Helpers,
+  Androidapi.JNI.JavaTypes,
+  Androidapi.JNI.Os,
+{$ENDIF}
+  FMX.DialogService;
 
 {$R *.fmx}
 
@@ -154,6 +169,14 @@ var
   AppEventSvc: IFMXApplicationEventService;
   AudioFilePath: string;
 begin
+
+{$IFDEF ANDROID}
+  FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
+{$ENDIF}
+  PermissionsService.RequestPermissions([FPermissionCamera], AccessCameraPermissionRequestResult, DisplayRationale);
+
+
+
 
   if TPlatformServices.Current.SupportsPlatformService
     (IFMXApplicationEventService, IInterface(AppEventSvc)) then
@@ -174,8 +197,6 @@ begin
   FFrameTake := 0;
   FScanInProgress := False;
 
-  CameraComponent1.Quality := TVideoCaptureQuality.MediumQuality;
-  CameraComponent1.FocusMode := TFocusMode.AutoFocus;
 
   UpdateCaptureSettings(TCameraKind.BackCamera);
   btnBackCamera.IsPressed := True;
@@ -196,6 +217,31 @@ begin
   FAudioMgr.Free
 end;
 
+procedure TFormMain.AccessCameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+begin
+  // 1 permission involved: CAMERA
+  if (Length(AGrantResults) = 1) and (AGrantResults[0] = TPermissionStatus.Granted) then
+    { Fill the resolutions. }
+  begin
+  	CameraComponent1.Quality := TVideoCaptureQuality.MediumQuality;
+	  CameraComponent1.FocusMode := TFocusMode.AutoFocus;
+  end
+  else
+    ShowMessage('Cannot access the camera because the required permission has not been granted')
+end;
+
+// Optional rationale display routine to display permission requirement rationale to the user
+procedure TFormMain.DisplayRationale(Sender: TObject; const APermissions: TArray<string>; const APostRationaleProc: TProc);
+begin
+  // Show an explanation to the user *asynchronously* - don't block this thread waiting for the user's response!
+  // After the user sees the explanation, invoke the post-rationale routine to request the permissions
+  TDialogService.ShowMessage('The app needs to access the camera in order to work',
+    procedure(const AResult: TModalResult)
+    begin
+      APostRationaleProc
+    end)
+end;
+
 { Make sure the camera is released if you're going away. }
 function TFormMain.AppEvent(AAppEvent: TApplicationEvent;
   AContext: TObject): Boolean;
@@ -208,14 +254,29 @@ end;
 
 procedure TFormMain.StartCapture;
 begin
+
   FBuffer.Clear(TAlphaColors.White);
   FActive := True;
   LabelFPS.Text := 'Starting capture...';
-  CameraComponent1.Active := True;
+  PermissionsService.RequestPermissions([FPermissionCamera], ActivateCameraPermissionRequestResult, DisplayRationale);
+
   StartStopWatch();
   lblScanning.Text := 'Scanning on';
   FaLblScanning.Enabled := True;
 end;
+
+procedure TFormMain.ActivateCameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+begin
+  // 1 permission involved: CAMERA
+  if (Length(AGrantResults) = 1) and (AGrantResults[0] = TPermissionStatus.Granted) then
+  begin
+    { Turn on the Camera }
+    CameraComponent1.Active := True;
+  end
+  else
+    ShowMessage('Cannot start the camera because the required permission has not been granted')
+end;
+
 
 procedure TFormMain.StopCapture;
 begin
@@ -238,8 +299,8 @@ procedure TFormMain.CameraComponent1SampleBufferReady(Sender: TObject;
   const ATime: TMediaTime);
 begin
   // Does not seem to be neccessary
-  // TThread.Synchronize(TThread.CurrentThread, SynchroniseBuffer);
-  SynchroniseBuffer();
+  TThread.Synchronize(TThread.CurrentThread, SynchroniseBuffer);
+ // SynchroniseBuffer();
 end;
 
 procedure TFormMain.SynchroniseBuffer;
@@ -385,6 +446,7 @@ end;
 
 procedure TFormMain.SwitchScanningSwitch(Sender: TObject);
 begin
+
   if (SwitchScanning.IsChecked) then
     StartCapture()
   else

@@ -48,8 +48,8 @@ object FormMain: TFormMain
         Size.Height = 75.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
-        Viewport.Width = 427.000000000000000000
-        Viewport.Height = 75.000000000000000000
+        Viewport.Width = 423.000000000000000000
+        Viewport.Height = 71.000000000000000000
       end
       object ListBox1: TListBox
         Align = Top
