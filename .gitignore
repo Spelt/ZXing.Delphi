@@ -93,7 +93,6 @@ Temporary Items
 *.tds
 *.dcu
 *.lib
-*.a
 *.o
 *.ocx
 
