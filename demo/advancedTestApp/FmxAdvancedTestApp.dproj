@@ -5,7 +5,7 @@
         <FrameworkType>FMX</FrameworkType>
         <MainSource>FmxAdvancedTestApp.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
+        <Config Condition="'$(Config)'==''">Release</Config>
         <Platform Condition="'$(Platform)'==''">Android</Platform>
         <TargetedPlatforms>1111</TargetedPlatforms>
         <AppType>Application</AppType>
@@ -327,7 +327,6 @@
         <DCC_DebugInformation>0</DCC_DebugInformation>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Android)'!=''">
-        <DCC_UnitSearchPath>simd;custom;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_Build>1</VerInfo_Build>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
@@ -424,8 +423,6 @@
         <DCCReference Include="AudioManager\AudioManager.pas">
             <Form>$R *.res</Form>
         </DCCReference>
-        <DCCReference Include="Custom\FMX.Media.Android.pas"/>
-        <DCCReference Include="Custom\FMX.Media.AVFoundation.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

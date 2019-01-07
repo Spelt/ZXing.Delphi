@@ -16,9 +16,7 @@ The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
 ## NOTE for 'Advanced test demo app' and Android with Rio.
-Due to incompatibility with external files used (libFastUtils.a and libfastutils-android.a). The camera is currently not working for Rio and Android. 
-More information can be found here: https://quality.embarcadero.com/browse/RSP-10592
-
+The Android camera is currently working better then ever for Rio and Android! Many thanks to: E. van Bilsen.
 
 
 
@@ -42,6 +40,9 @@ More information can be found here: https://quality.embarcadero.com/browse/RSP-1
 	
 
 ### Changes
+
+- v3.8.1
+	- In 'Advanced demo' added Rio compatible Android camera optimizing library (thanks to E. van Bilsen). 
 - v3.8
 	- Fixed missing files for 'advanced test demo app', due to incompatibility with the external used libFastUtils.a and libfastutils-android.a it is not supported for Rio and Android.
 	- Added in 'advanced test demo app' new Rio / Android 7+ code for the new permission model.
