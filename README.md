@@ -15,7 +15,7 @@ The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
-## NOTE for 'Advanced test demo app' and Android with Rio.
+### NOTE for 'Advanced test demo app' and Android with Rio.
 The Android camera is currently working better then ever for Rio and Android! Many thanks to: E. van Bilsen.
 
 
