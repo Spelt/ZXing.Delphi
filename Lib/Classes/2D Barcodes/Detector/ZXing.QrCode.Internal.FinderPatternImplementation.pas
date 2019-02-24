@@ -78,7 +78,6 @@ type
     property count : Integer read GetCount write SetCount;
   end;
 
-
 constructor TFinderPattern.Create(const posX, posY,
   estimatedModuleSize: Single; const count: Integer);
 begin
@@ -110,10 +109,7 @@ var
 begin
   Result := false;
 
-  x := Self.x;
-  y := Self.y;
-
-  if ((Abs(i - self.y) <= moduleSize) and (Abs(j - self.x) <= moduleSize)) then
+  if ((Abs(i - y) <= moduleSize) and (Abs(j - x) <= moduleSize)) then
   begin
     moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
 
@@ -121,8 +117,6 @@ begin
       (moduleSizeDiff <= self.estimatedModuleSize));
   end;
 end;
-
-
 
 procedure TFinderPattern.SetCount(value: integer);
 begin
@@ -136,8 +130,8 @@ var
   combinedX, combinedY: Single;
 begin
   combinedCount := (Self.count + 1);
-  combinedX := ((Self.count * Self.x) + j) / combinedCount;
-  combinedY := ((Self.count * Self.y) + i) / combinedCount;
+  combinedX := ((Self.count * x) + j) / combinedCount;
+  combinedY := ((Self.count * y) + i) / combinedCount;
   Result := TFinderPattern.Create(combinedX, combinedY,
     (((Self.count * Self.estimatedModuleSize) + newModuleSize) / combinedCount),
     combinedCount)
