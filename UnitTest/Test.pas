@@ -341,6 +341,17 @@ begin
 
 		hints := TDictionary<TDecodeHintType, TObject>.Create();
 		hints.Add(TDecodeHintType.PURE_BARCODE, nil);
+
+
+    result := Decode('beantest.jpg', TBarcodeFormat.QR_CODE, hints);
+		Assert.IsNotNull(result, ' Nil result ');
+		Assert.IsTrue(result.Text.Contains('ivaservizi.'),
+			'QR code result Text Incorrect: ' + result.Text);
+
+
+		hints := TDictionary<TDecodeHintType, TObject>.Create();
+		hints.Add(TDecodeHintType.PURE_BARCODE, nil);
+
 		result := Decode('qr problem 1.jpg', TBarcodeFormat.QR_CODE, hints);
 		Assert.IsNotNull(result, ' Nil result ');
 		Assert.IsTrue(result.Text.Contains('gov.it/'),
