@@ -266,8 +266,15 @@ begin
 end;
 
 destructor TReadResult.Destroy;
+var i:Integer;
 begin
-  resultPoints := nil;
+
+  for I := Low(FResultPoints) to High(FResultPoints) do
+  begin
+    FResultPoints[i] := nil;
+  end;
+
+  FResultPoints := nil;
   FRawBytes := nil;
 
   if FResultMetadata <> nil then

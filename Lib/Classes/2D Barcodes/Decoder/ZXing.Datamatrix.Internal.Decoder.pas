@@ -45,11 +45,9 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function correctErrors(codewordBytes: TArray<Byte>;
-      numDataCodewords: Integer): boolean;
+    function correctErrors(codewordBytes: TArray<Byte>; numDataCodewords: Integer): boolean;
     function decode(bits: TBitMatrix): TDecoderResult; overload;
-    function decode(image: TArray < TArray < boolean >> )
-      : TDecoderResult; overload;
+    function decode(image: TArray < TArray < boolean >> ): TDecoderResult; overload;
   end;
 
 implementation
@@ -79,8 +77,7 @@ end;
 /// <exception cref="FormatException">if the Data Matrix Code cannot be decoded</exception>
 /// <exception cref="ChecksumException">if error correction fails</exception>
 /// </summary>
-function TDataMatrixDecoder.decode(image: TArray < TArray < boolean >> )
-  : TDecoderResult;
+function TDataMatrixDecoder.decode(image: TArray < TArray < boolean >> ): TDecoderResult;
 var
   i, j: Integer;
   dimension: Integer;
@@ -159,6 +156,11 @@ begin
       numDataCodewords := DataBlock.numDataCodewords;
       if (not correctErrors(codewordBytes, numDataCodewords)) then
       begin
+        if Assigned(DataBlock) then
+          DataBlock.Free;
+        DataBlock := nil;
+        resultBytes := nil;
+        codewordBytes := nil;
         Result := nil;
         exit;
       end;
@@ -169,6 +171,7 @@ begin
       end;
 
       DataBlock.Free;
+      DataBlock := nil;
     end;
 
     // Decode the contents of that stream of bytes
@@ -176,6 +179,10 @@ begin
 
   finally
 
+    if Assigned(DataBlock) then
+      DataBlock.Free;
+
+    DataBlock := nil;
     resultBytes := nil;
     codewordBytes := nil;
     parser.Free;
@@ -190,8 +197,7 @@ end;
 /// <param name="codewordBytes">data and error correction codewords</param>
 /// <param name="numDataCodewords">number of codewords that are data bytes</param>
 /// </summary>
-function TDataMatrixDecoder.correctErrors(codewordBytes: TArray<Byte>;
-  numDataCodewords: Integer): boolean;
+function TDataMatrixDecoder.correctErrors(codewordBytes: TArray<Byte>; numDataCodewords: Integer): boolean;
 var
   i, numCodewords, numECCodewords: Integer;
   codewordsInts: TArray<Integer>;

@@ -328,6 +328,7 @@ var
   corr, norm, cos, sin: Single;
   c1, c2: IResultPoint;
   l1, l2: Integer;
+  rpT1, rpT2: TResultPointsAndTransitions;
 begin
   corr := (distance(bottomLeft, bottomRight) / dimensionTop);
   norm := distance(topLeft, topRight);
@@ -371,10 +372,23 @@ begin
     exit;
   end;
 
-  l1 := (Abs((dimensionTop - transitionsBetween(topLeft, c1).Transitions)) +
-    Abs((dimensionRight - transitionsBetween(bottomRight, c1).Transitions)));
-  l2 := (Abs((dimensionTop - transitionsBetween(topLeft, c2).Transitions)) +
-    Abs((dimensionRight - transitionsBetween(bottomRight, c2).Transitions)));
+  rpT1 := transitionsBetween(topLeft, c1);
+  rpT2 := transitionsBetween(bottomRight, c1);
+
+  l1 := (Abs((dimensionTop - rpT1.Transitions)) +
+    Abs((dimensionRight - rpT2.Transitions)));
+
+  FreeAndNil(rpT1);
+  FreeAndNil(rpT2);
+
+  rpT1 := transitionsBetween(topLeft, c2);
+  rpT2 := transitionsBetween(bottomRight, c2);
+
+  l2 := (Abs((dimensionTop - rpT1.Transitions)) +
+    Abs((dimensionRight - rpT2.Transitions)));
+
+  FreeAndNil(rpT1);
+  FreeAndNil(rpT2);
 
   if (l1 <= l2) then
   begin
@@ -595,11 +609,11 @@ end;
 destructor TDataMatrixDetector.TResultPointsAndTransitions.Destroy;
 begin
 
-  // if (Assigned(Self.From)) then
-  // FreeAndNil(Self.From);
-  //
-  // if (Assigned(Self.To_)) then
-  // FreeAndNil(Self.To_);
+// if (Assigned(Self.From)) then
+//    Self.From := nil;
+//
+// if (Assigned(Self.To_)) then
+//    Self.To_:=nil;
 
   inherited;
 end;
