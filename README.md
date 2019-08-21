@@ -42,7 +42,7 @@ The Android camera is currently working better then ever for Rio and Android! Ma
 
 ### Changes
 
-- v3.8.2
+- v3.8.3
 	- Some memleak fixes and simplified Advanced test app.
 - v3.8.1
 	- In 'Advanced demo' added Rio compatible Android camera optimizing library (thanks to E. van Bilsen). 
