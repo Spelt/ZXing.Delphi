@@ -1,5 +1,5 @@
 ﻿# ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE to 10.3 Rio. 
+ZXing Barcode Scanning Library for Delphi XE to 10.3.2 Rio. 
 
 <img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing-logo.png"/>
 
@@ -16,7 +16,8 @@ The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
 ### NOTE for 'Advanced test demo app' and Android with Rio.
-The Android camera is currently working better then ever for Rio and Android! Many thanks to: E. van Bilsen.
+The Android camera is currently working better then ever for Rio and Android! Many thanks to: E. van Bilsen. But, because of the close nature of the sources and used lib and the lack of support for this tweak I do recommend a third party native camera for Android.
+
 
 
 
@@ -41,6 +42,8 @@ The Android camera is currently working better then ever for Rio and Android! Ma
 
 ### Changes
 
+- v3.8.2
+	- Some memleak fixes and simplified Advanced test app.
 - v3.8.1
 	- In 'Advanced demo' added Rio compatible Android camera optimizing library (thanks to E. van Bilsen). 
 - v3.8
