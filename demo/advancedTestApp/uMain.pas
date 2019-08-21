@@ -107,6 +107,7 @@ type
     procedure CameraComponent1SampleBufferReady(Sender: TObject; const ATime: TMediaTime);
     procedure PopupBoxSettingChange(Sender: TObject);
     procedure TimerShowHitTimer(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
 
   private
     FCamera: TCameraComponent;
@@ -159,11 +160,6 @@ var
   AudioFilePath: string;
 begin
 
-{$IFDEF ANDROID}
-  FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
-{$ENDIF}
-  PermissionsService.RequestPermissions([FPermissionCamera], AccessCameraPermissionRequestResult, DisplayRationale);
-
   if TPlatformServices.Current.SupportsPlatformService(IFMXApplicationEventService, IInterface(AppEventSvc)) then
   begin
     AppEventSvc.SetApplicationEventHandler(AppEvent);
@@ -188,6 +184,15 @@ begin
   DisplaySlowWarning(False);
 
 end;
+
+procedure TFormMain.FormActivate(Sender: TObject);
+begin
+{$IFDEF ANDROID}
+  FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
+{$ENDIF}
+  PermissionsService.RequestPermissions([FPermissionCamera], AccessCameraPermissionRequestResult, DisplayRationale);
+end;
+
 
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
