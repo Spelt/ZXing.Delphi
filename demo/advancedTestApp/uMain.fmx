@@ -12,11 +12,6 @@ object FormMain: TFormMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignerMasterStyle = 0
-  object CameraComponent1: TCameraComponent
-    OnSampleBufferReady = CameraComponent1SampleBufferReady
-    Left = 144
-    Top = 168
-  end
   object TimerShowHit: TTimer
     Enabled = False
     OnTimer = TimerShowHitTimer
@@ -51,83 +46,6 @@ object FormMain: TFormMain
         Viewport.Width = 423.000000000000000000
         Viewport.Height = 71.000000000000000000
       end
-      object ListBox1: TListBox
-        Align = Top
-        Opacity = 0.500000000000000000
-        Size.Width = 427.000000000000000000
-        Size.Height = 105.000000000000000000
-        Size.PlatformDefault = False
-        TabOrder = 2
-        DisableFocusEffect = True
-        DefaultItemStyles.ItemStyle = ''
-        DefaultItemStyles.GroupHeaderStyle = ''
-        DefaultItemStyles.GroupFooterStyle = ''
-        Viewport.Width = 423.000000000000000000
-        Viewport.Height = 101.000000000000000000
-        object ListBoxItem1: TListBoxItem
-          Selectable = False
-          TextSettings.Font.StyleExt = {00070000000000000004000000}
-          StyledSettings = [Family, Size, FontColor, Other]
-          Padding.Top = 5.000000000000000000
-          Padding.Right = 5.000000000000000000
-          Padding.Bottom = 5.000000000000000000
-          Size.Width = 423.000000000000000000
-          Size.Height = 50.000000000000000000
-          Size.PlatformDefault = False
-          TabOrder = 0
-          Text = 'Camera'
-          object btnFrontCamera: TSpeedButton
-            StaysPressed = True
-            Align = Right
-            GroupName = 'grpCameraType'
-            Position.X = 218.000000000000000000
-            Position.Y = 5.000000000000000000
-            Size.Width = 100.000000000000000000
-            Size.Height = 40.000000000000000000
-            Size.PlatformDefault = False
-            StyleLookup = 'segmentedbuttonleft'
-            Text = 'Front'
-            OnClick = btnFrontCameraClick
-          end
-          object btnBackCamera: TSpeedButton
-            StaysPressed = True
-            Align = MostRight
-            GroupName = 'grpCameraType'
-            Position.X = 318.000000000000000000
-            Position.Y = 5.000000000000000000
-            Size.Width = 100.000000000000000000
-            Size.Height = 40.000000000000000000
-            Size.PlatformDefault = False
-            StyleLookup = 'segmentedbuttonright'
-            Text = 'Back'
-            OnClick = btnBackCameraClick
-          end
-        end
-        object ListBoxItem2: TListBoxItem
-          Selectable = False
-          TextSettings.Font.StyleExt = {00070000000000000004000000}
-          StyledSettings = [Family, Size, FontColor, Other]
-          Padding.Top = 5.000000000000000000
-          Padding.Right = 5.000000000000000000
-          Padding.Bottom = 5.000000000000000000
-          Position.Y = 50.000000000000000000
-          Size.Width = 423.000000000000000000
-          Size.Height = 50.000000000000000000
-          Size.PlatformDefault = False
-          TabOrder = 1
-          Text = 'Resolution'
-          object PopupBoxSetting: TPopupBox
-            Align = Right
-            Position.X = 218.000000000000000000
-            Position.Y = 5.000000000000000000
-            Size.Width = 200.000000000000000000
-            Size.Height = 40.000000000000000000
-            Size.PlatformDefault = False
-            TabOrder = 0
-            OnChange = PopupBoxSettingChange
-          end
-        end
-      end
       object RectVizer: TRectangle
         Align = Client
         Fill.Kind = None
@@ -138,7 +56,7 @@ object FormMain: TFormMain
         Padding.Bottom = 2.000000000000000000
         Opacity = 0.500000000000000000
         Size.Width = 427.000000000000000000
-        Size.Height = 474.000000000000000000
+        Size.Height = 579.000000000000000000
         Size.PlatformDefault = False
         Stroke.Kind = None
         object PlotGridVizer: TPlotGrid
@@ -148,14 +66,14 @@ object FormMain: TFormMain
           LineFill.Color = claWhite
           Marks = 100.000000000000000000
           Size.Width = 427.000000000000000000
-          Size.Height = 474.000000000000000000
+          Size.Height = 579.000000000000000000
           Size.PlatformDefault = False
           object Layout1: TLayout
             Align = Bottom
             Margins.Left = 2.000000000000000000
             Margins.Right = 2.000000000000000000
             Position.X = 2.000000000000000000
-            Position.Y = 453.000000000000000000
+            Position.Y = 558.000000000000000000
             Size.Width = 423.000000000000000000
             Size.Height = 21.000000000000000000
             Size.PlatformDefault = False

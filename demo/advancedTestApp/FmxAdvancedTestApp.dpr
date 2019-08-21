@@ -80,7 +80,7 @@ uses
   ZXing.OneD.UPCAReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCAReader.pas',
   ZXing.OneD.Code39Reader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.Code39Reader.pas',
   ZXing.OneD.UPCEReader in '..\Lib\Classes\1D Barcodes\ZXing.OneD.UPCEReader.pas',
-  AudioManager in 'AudioManager\AudioManager.pas' {$R *.res};
+  AudioManager in 'AudioManager\AudioManager.pas';
 
 {$R *.res}
 {$ASSERTIONS OFF}
