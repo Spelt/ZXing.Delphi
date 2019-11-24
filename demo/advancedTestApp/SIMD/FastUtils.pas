@@ -71,12 +71,15 @@ const
   {$IF Defined(IOS)}
   LIB_FAST_UTILS = 'libfastutils.a';
   _PU = '';
+  {$ELSEIF Defined(ANDROID64)}
+  LIB_FAST_UTILS = 'libfastutils-android-64.a';
+  _PU = '_';
   {$ELSEIF Defined(ANDROID)}
   {$IF (RTLVersion >= 33)}
-  { Delphi 10.3 Rio changed linking to Thumb mode. }
-  LIB_FAST_UTILS = 'libfastutils-android-thumb.a';
+  LIB_FAST_UTILS = 'libfastutils-android-32.a';
   {$ELSE}
-  LIB_FAST_UTILS = 'libfastutils-android.a';
+  { Delphi 10.2 and earlier use ARM mode (instead of Thumb). }
+  LIB_FAST_UTILS = 'libfastutils-android-arm.a';
   {$ENDIF}
   _PU = '_';
   {$ENDIF}
