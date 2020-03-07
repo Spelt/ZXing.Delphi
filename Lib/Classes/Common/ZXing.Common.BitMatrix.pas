@@ -93,12 +93,12 @@ implementation
 function TBitMatrix.getBit(x, y: Integer): Boolean;
 var
   offset, v, bits, shift: Integer;
-  uBits: LongWord;
+  uBits: Cardinal;
 begin
   offset := y * FrowSize + TMathUtils.Asr(x, 5);
   try
     bits := Fbits[offset];
-    uBits := LongWord(bits);
+    uBits := Cardinal(bits);
     shift := (x and $1F);
     v := TMathUtils.Asr(uBits, shift);
     Result := (v and 1) <> 0;

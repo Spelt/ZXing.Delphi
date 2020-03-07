@@ -117,6 +117,23 @@ begin
     FreeAndNil(result);
   end;
 
+  result := Decode('problem-qr-android 64bit.png', TBarcodeFormat.QR_CODE);
+  try
+    Assert.IsNotNull(result, ' Nil result ');
+  	Assert.IsTrue(result.Text.Contains('http://sintest/'), 'QR code result Text Incorrect: ' + result.Text);
+  finally
+  	FreeAndNil(result);
+  end;
+
+  result := Decode('problem-qr-IOS 64bit.png', TBarcodeFormat.QR_CODE);
+  try
+    Assert.IsNotNull(result, ' Nil result ');
+  	Assert.IsTrue(result.Text.Contains('SPD*'), 'QR code result Text Incorrect: ' + result.Text);
+  finally
+  	FreeAndNil(result);
+  end;
+
+
   try
     result := Decode('q1.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
@@ -530,6 +547,9 @@ begin
 
   try
 
+    result := Decode('problem-qr-android 64bit.png', TBarcodeFormat.QR_CODE, hints);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Contains('http://sintest/'), 'QR code result Text Incorrect: ' + result.Text);
     result := Decode('beantest.jpg', TBarcodeFormat.QR_CODE, hints);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Contains('ivaservizi.'), 'QR code result Text Incorrect: ' + result.Text);
