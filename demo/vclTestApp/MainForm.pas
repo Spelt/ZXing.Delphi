@@ -54,6 +54,7 @@ begin
     else
       log.Lines.Text := 'Unreadable!';
   finally
+    bmp.Free;
     ScanManager.Free;
     ReadResult.Free;
   end;
