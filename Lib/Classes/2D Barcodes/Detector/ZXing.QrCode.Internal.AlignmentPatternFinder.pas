@@ -263,7 +263,13 @@ class function TAlignmentPatternFinder.centerFromEnd(
   const stateCount: TArray<Integer>; const pEnd: Integer): Single;
 begin
   Result := (pEnd - stateCount[2]) - (stateCount[1] / 2.0);
+  {+}
+  {$IF CompilerVersion >= 33.00}
   if (Single.IsNaN(Result))
+  {$ELSE}
+  if (Result.SpecialType = TFloatSpecial.fsNan)
+  {$IFEND}
+  {+.}
   then
      Result := -1;
 end;

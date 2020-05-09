@@ -398,7 +398,17 @@ begin
         Inc(patternStart, (counters[0] + counters[1]));
         curCounter := TArray<Integer>.Create();
         SetLength(curCounter, Length(counters));
+        {+}
+        {$IF CompilerVersion >= 33.00}
         TArray.Copy<Integer>(counters, curCounter, 2, 0, (patternLength - 2));
+        {$ELSE}
+        // System.Generics.Collections.pas
+        // class procedure TArray.Copy<T>
+        //   class procedure Copy<T>(const Source: array of T; var Destination: array of T; SourceIndex, DestIndex, Count: NativeInt); overload; static;
+        //     System.Move(Pointer(@Source[SourceIndex])^, Pointer(@Destination[DestIndex])^, Count * SizeOf(T));
+        System.Move(Pointer(@counters[{SourceIndex:}2])^, Pointer(@curCounter[{DestIndex:}0])^, {Count:}(patternLength - 2) * SizeOf(Integer));
+        {$IFEND}
+        {+.}
         { curCounter[patternLength - 2] := 0;
           curCounter[patternLength - 1] := 0; }
         counters := curCounter;

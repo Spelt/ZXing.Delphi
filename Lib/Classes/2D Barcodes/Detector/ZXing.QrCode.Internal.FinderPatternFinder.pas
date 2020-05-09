@@ -153,7 +153,13 @@ var
 begin
   aResult := (pEnd - stateCount[4] - stateCount[3]) - (stateCount[2] / 2);
 
+  {+}
+  {$IF CompilerVersion >= 33.00}
   if (Single.IsNaN(aResult)) then
+  {$ELSE}
+  if (aResult.SpecialType = TFloatSpecial.fsNan) then
+  {$IFEND}
+  {+.}
   begin
     result := -1;
     exit
@@ -513,6 +519,9 @@ begin
 
   tryHarder := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHinttype.TRY_HARDER));
   pureBarcode := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHinttype.PURE_BARCODE));
+  {+}
+  if pureBarcode then ;
+  {+.}
   maxI := Self.image.Height;
   maxJ := Self.image.Width;
   // We are looking for black/white/black/white/black modules in
@@ -832,7 +841,7 @@ end;
 
 function TFinderPatternFinder.selectBestPatterns: TArray<IFinderPattern>;
 var
-	average, square, totalModuleSize: Double;
+  average, square, totalModuleSize: Double;
   size, stdDev, limit, avrsng: Single;
   center, possibleCenter, pattern: IFinderPattern;
   startSize, i: Integer;

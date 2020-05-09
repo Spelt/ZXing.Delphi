@@ -276,7 +276,13 @@ end;
 
 function TVersion.ToString: string;
 begin
+  {+}
+  {$IF CompilerVersion >= 33.00}
   Result := versionNumber.ToString();
+  {$ELSE}
+  Result := IntToStr(versionNumber);
+  {$IFEND}
+  {+.}
 end;
 
 Initialization

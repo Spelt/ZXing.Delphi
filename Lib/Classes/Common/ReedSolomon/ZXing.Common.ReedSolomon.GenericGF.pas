@@ -334,7 +334,13 @@ end;
 
 function TGenericGF.ToString: string;
 begin
+  {+}
+  {$IF CompilerVersion >= 33.00}
   Result := 'GF(0x' + Fprimitive.ToString() + ',' + size.ToString() + ')';
+  {$ELSE}
+  Result := 'GF(0x' + IntToStr(Fprimitive) + ',' + IntToStr(size) + ')';
+  {$IFEND}
+  {+.}
 end;
 
 /// /////////////////////////////////////////////////////////////////////////////

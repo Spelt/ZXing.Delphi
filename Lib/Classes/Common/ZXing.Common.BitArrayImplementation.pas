@@ -45,7 +45,7 @@ type
     function getNextUnset(from: Integer): Integer;
 
     procedure setBulk(i, newBits: Integer);
-   	procedure setRange(start, ending: Integer);
+    procedure setRange(start, ending: Integer);
     procedure appendBit(bit: Boolean);
     procedure Reverse();
     procedure clear();
@@ -375,12 +375,12 @@ var
   i, j,
   temp: Integer;
 begin
-  if (ending < start) then
-  begin
-    Result := False; // there is a bug here some how. We just exits with false
-    //exit;
-    //raise EArgumentException.Create('End is greater then start');
-  end;
+//  if (ending < start) then
+//  begin
+//    Result := False; // there is a bug here some how. We just exits with false
+//    //exit;
+//    //raise EArgumentException.Create('End is greater then start');
+//  end;
 
   if (ending = start) then
   begin
@@ -394,19 +394,19 @@ begin
   for i := firstInt to lastInt do
   begin
     if (i > firstInt)
-  	then
+    then
        firstBit := 0
     else
        firstBit := (start and $1F);
 
     if (i < lastInt)
-	  then
+    then
        lastBit := 31
     else
        lastBit := (ending and $1F);
 
     if ((firstBit = 0) and (lastBit = 31))
-  	then
+    then
        mask := -1
     else
     begin
@@ -418,10 +418,10 @@ begin
     // Return false if we're looking for 1s and the masked bits[i] isn't all 1s (that is,
     // equals the mask, or we're looking for 0s and the masked portion is not all 0s
     if (Value)
-	  then
+    then
        temp := mask
-  	else
-	   temp := 0;
+    else
+     temp := 0;
 
     if ((Fbits[i] and mask) <> (temp)) then
     begin

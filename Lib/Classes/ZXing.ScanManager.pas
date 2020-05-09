@@ -2,6 +2,10 @@ unit ZXing.ScanManager;
 
 interface
 
+{+}
+{$i ZXing.inc}
+{+.}
+
 uses
   System.SysUtils,
   System.Generics.Collections,
@@ -69,8 +73,13 @@ begin
       o := hint.Value;
       if Assigned(o) then
         o.Free;
-      o := nil;
+      {+}
+      //o := nil;
+      {+.}
     end;
+    {+}
+    o := nil; if o <> nil then ;
+    {+.}
 
     FHints.Clear();
     FreeAndNil(FHints);

@@ -47,12 +47,24 @@ end;
 
 class function TMathUtils.round(d: Single): Integer;
 begin
+  {+}
+  {$IF CompilerVersion >= 33.00}
   if (Single.IsNaN(d)) then
+  {$ELSE}
+  if (d.SpecialType = TFloatSpecial.fsNan) then
+  {$IFEND}
+  {+.}
   begin
     Result := 0;
     exit
   end;
+  {+}
+  {$IF CompilerVersion >= 33.00}
   if (Single.IsPositiveInfinity(d)) then
+  {$ELSE}
+  if (d.SpecialType = TFloatSpecial.fsInf) then
+  {$IFEND}
+  {+.}
   begin
     Result := $7fffffff;
     exit;

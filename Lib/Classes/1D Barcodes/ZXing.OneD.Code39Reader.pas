@@ -310,7 +310,15 @@ begin
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
+  {+}
+  {$IF CompilerVersion >= 33.00}
   resultPoints := [resultPointLeft, resultPointRight];
+  {$ELSE}
+  SetLength(resultPoints, 2);
+  resultPoints[0] := resultPointLeft;
+  resultPoints[1] := resultPointRight;
+  {$IFEND}
+  {+.}
 
   Result := TReadResult.Create(resultString, nil, resultPoints,
     TBarcodeFormat.CODE_39);

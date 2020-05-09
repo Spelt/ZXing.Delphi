@@ -133,6 +133,9 @@ begin
     try
       currentCharacterSetECI := nil;
       fc1InEffect := false;
+      {+}
+      Mode := TMode.TERMINATOR; if Mode <> TMode.TERMINATOR then ;
+      {+.}
       repeat
         // While still another segment to read...
         if (bits.available < 4)
@@ -567,7 +570,14 @@ begin
   end;
 
   raise EArgumentException.Create('Bad ECI bits starting with byte ' +
-     firstByte.toString());
+    {+}
+    {$IF CompilerVersion >= 33.00}
+     firstByte.toString()
+    {$ELSE}
+     IntToStr(firstByte)
+    {$IFEND}
+    {+.}
+  );
 end;
 
 class function TDecodedBitStreamParser.toAlphaNumericChar(

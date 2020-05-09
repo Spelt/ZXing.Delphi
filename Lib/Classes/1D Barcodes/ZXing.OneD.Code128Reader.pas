@@ -77,8 +77,25 @@ begin
   CODE_PATTERNS := nil;
 end;
 
+{+}
+{$IF CompilerVersion >= 33.00}
+{$ELSE}
+function cai(const A: array of integer): TArray<Integer>;
+//--var R: TArray<Integer> absolute A;
+//var i: Integer;
+begin
+  //--Result := R;
+  //SetLength(Result, Length(A)); for i := 0 to High(A) do Result[i] := A[i];
+  SetLength(Result, Length(A)); Move(A[0], Result[0], Length(A)*SizeOf(Result[0]));
+end;
+{$IFEND}
+{+.}
+
 class procedure TCode128Reader.DoInitialize;
 begin
+  {+}
+  {$IF CompilerVersion >= 33.00}
+
   CODE_PATTERNS := [[2, 1, 2, 2, 2, 2], // 0
   [2, 2, 2, 1, 2, 2], [2, 2, 2, 2, 2, 1], [1, 2, 1, 2, 2, 3],
     [1, 2, 1, 3, 2, 2], [1, 3, 1, 2, 2, 2], // 5
@@ -123,6 +140,119 @@ begin
   [3, 1, 1, 1, 4, 1], [4, 1, 1, 1, 3, 1], [2, 1, 1, 4, 1, 2],
     [2, 1, 1, 2, 1, 4], [2, 1, 1, 2, 3, 2], // 105
   [2, 3, 3, 1, 1, 1, 2]];
+
+  {$ELSE}
+
+  SetLength(CODE_PATTERNS, 107);
+  CODE_PATTERNS[0] := cai([2, 1, 2, 2, 2, 2]);
+  CODE_PATTERNS[1] := cai([2, 2, 2, 1, 2, 2]);
+  CODE_PATTERNS[2] := cai([2, 2, 2, 2, 2, 1]);
+  CODE_PATTERNS[3] := cai([1, 2, 1, 2, 2, 3]);
+  CODE_PATTERNS[4] := cai([1, 2, 1, 3, 2, 2]);
+  CODE_PATTERNS[5] := cai([1, 3, 1, 2, 2, 2]);
+  CODE_PATTERNS[6] := cai([1, 2, 2, 2, 1, 3]);
+  CODE_PATTERNS[7] := cai([1, 2, 2, 3, 1, 2]);
+  CODE_PATTERNS[8] := cai([1, 3, 2, 2, 1, 2]);
+  CODE_PATTERNS[9] := cai([2, 2, 1, 2, 1, 3]);
+  CODE_PATTERNS[10] := cai([2, 2, 1, 3, 1, 2]);
+  CODE_PATTERNS[11] := cai([2, 3, 1, 2, 1, 2]);
+  CODE_PATTERNS[12] := cai([1, 1, 2, 2, 3, 2]);
+  CODE_PATTERNS[13] := cai([1, 2, 2, 1, 3, 2]);
+  CODE_PATTERNS[14] := cai([1, 2, 2, 2, 3, 1]);
+  CODE_PATTERNS[15] := cai([1, 1, 3, 2, 2, 2]);
+  CODE_PATTERNS[16] := cai([1, 2, 3, 1, 2, 2]);
+  CODE_PATTERNS[17] := cai([1, 2, 3, 2, 2, 1]);
+  CODE_PATTERNS[18] := cai([2, 2, 3, 2, 1, 1]);
+  CODE_PATTERNS[19] := cai([2, 2, 1, 1, 3, 2]);
+  CODE_PATTERNS[20] := cai([2, 2, 1, 2, 3, 1]);
+  CODE_PATTERNS[21] := cai([2, 1, 3, 2, 1, 2]);
+  CODE_PATTERNS[22] := cai([2, 2, 3, 1, 1, 2]);
+  CODE_PATTERNS[23] := cai([3, 1, 2, 1, 3, 1]);
+  CODE_PATTERNS[24] := cai([3, 1, 1, 2, 2, 2]);
+  CODE_PATTERNS[25] := cai([3, 2, 1, 1, 2, 2]);
+  CODE_PATTERNS[26] := cai([3, 2, 1, 2, 2, 1]);
+  CODE_PATTERNS[27] := cai([3, 1, 2, 2, 1, 2]);
+  CODE_PATTERNS[28] := cai([3, 2, 2, 1, 1, 2]);
+  CODE_PATTERNS[29] := cai([3, 2, 2, 2, 1, 1]);
+  CODE_PATTERNS[30] := cai([2, 1, 2, 1, 2, 3]);
+  CODE_PATTERNS[31] := cai([2, 1, 2, 3, 2, 1]);
+  CODE_PATTERNS[32] := cai([2, 3, 2, 1, 2, 1]);
+  CODE_PATTERNS[33] := cai([1, 1, 1, 3, 2, 3]);
+  CODE_PATTERNS[34] := cai([1, 3, 1, 1, 2, 3]);
+  CODE_PATTERNS[35] := cai([1, 3, 1, 3, 2, 1]);
+  CODE_PATTERNS[36] := cai([1, 1, 2, 3, 1, 3]);
+  CODE_PATTERNS[37] := cai([1, 3, 2, 1, 1, 3]);
+  CODE_PATTERNS[38] := cai([1, 3, 2, 3, 1, 1]);
+  CODE_PATTERNS[39] := cai([2, 1, 1, 3, 1, 3]);
+  CODE_PATTERNS[40] := cai([2, 3, 1, 1, 1, 3]);
+  CODE_PATTERNS[41] := cai([2, 3, 1, 3, 1, 1]);
+  CODE_PATTERNS[42] := cai([1, 1, 2, 1, 3, 3]);
+  CODE_PATTERNS[43] := cai([1, 1, 2, 3, 3, 1]);
+  CODE_PATTERNS[44] := cai([1, 3, 2, 1, 3, 1]);
+  CODE_PATTERNS[45] := cai([1, 1, 3, 1, 2, 3]);
+  CODE_PATTERNS[46] := cai([1, 1, 3, 3, 2, 1]);
+  CODE_PATTERNS[47] := cai([1, 3, 3, 1, 2, 1]);
+  CODE_PATTERNS[48] := cai([3, 1, 3, 1, 2, 1]);
+  CODE_PATTERNS[49] := cai([2, 1, 1, 3, 3, 1]);
+  CODE_PATTERNS[50] := cai([2, 3, 1, 1, 3, 1]);
+  CODE_PATTERNS[51] := cai([2, 1, 3, 1, 1, 3]);
+  CODE_PATTERNS[52] := cai([2, 1, 3, 3, 1, 1]);
+  CODE_PATTERNS[53] := cai([2, 1, 3, 1, 3, 1]);
+  CODE_PATTERNS[54] := cai([3, 1, 1, 1, 2, 3]);
+  CODE_PATTERNS[55] := cai([3, 1, 1, 3, 2, 1]);
+  CODE_PATTERNS[56] := cai([3, 3, 1, 1, 2, 1]);
+  CODE_PATTERNS[57] := cai([3, 1, 2, 1, 1, 3]);
+  CODE_PATTERNS[58] := cai([3, 1, 2, 3, 1, 1]);
+  CODE_PATTERNS[59] := cai([3, 3, 2, 1, 1, 1]);
+  CODE_PATTERNS[60] := cai([3, 1, 4, 1, 1, 1]);
+  CODE_PATTERNS[61] := cai([2, 2, 1, 4, 1, 1]);
+  CODE_PATTERNS[62] := cai([4, 3, 1, 1, 1, 1]);
+  CODE_PATTERNS[63] := cai([1, 1, 1, 2, 2, 4]);
+  CODE_PATTERNS[64] := cai([1, 1, 1, 4, 2, 2]);
+  CODE_PATTERNS[65] := cai([1, 2, 1, 1, 2, 4]);
+  CODE_PATTERNS[66] := cai([1, 2, 1, 4, 2, 1]);
+  CODE_PATTERNS[67] := cai([1, 4, 1, 1, 2, 2]);
+  CODE_PATTERNS[68] := cai([1, 4, 1, 2, 2, 1]);
+  CODE_PATTERNS[69] := cai([1, 1, 2, 2, 1, 4]);
+  CODE_PATTERNS[70] := cai([1, 1, 2, 4, 1, 2]);
+  CODE_PATTERNS[71] := cai([1, 2, 2, 1, 1, 4]);
+  CODE_PATTERNS[72] := cai([1, 2, 2, 4, 1, 1]);
+  CODE_PATTERNS[73] := cai([1, 4, 2, 1, 1, 2]);
+  CODE_PATTERNS[74] := cai([1, 4, 2, 2, 1, 1]);
+  CODE_PATTERNS[75] := cai([2, 4, 1, 2, 1, 1]);
+  CODE_PATTERNS[76] := cai([2, 2, 1, 1, 1, 4]);
+  CODE_PATTERNS[77] := cai([4, 1, 3, 1, 1, 1]);
+  CODE_PATTERNS[78] := cai([2, 4, 1, 1, 1, 2]);
+  CODE_PATTERNS[79] := cai([1, 3, 4, 1, 1, 1]);
+  CODE_PATTERNS[80] := cai([1, 1, 1, 2, 4, 2]);
+  CODE_PATTERNS[81] := cai([1, 2, 1, 1, 4, 2]);
+  CODE_PATTERNS[82] := cai([1, 2, 1, 2, 4, 1]);
+  CODE_PATTERNS[83] := cai([1, 1, 4, 2, 1, 2]);
+  CODE_PATTERNS[84] := cai([1, 2, 4, 1, 1, 2]);
+  CODE_PATTERNS[85] := cai([1, 2, 4, 2, 1, 1]);
+  CODE_PATTERNS[86] := cai([4, 1, 1, 2, 1, 2]);
+  CODE_PATTERNS[87] := cai([4, 2, 1, 1, 1, 2]);
+  CODE_PATTERNS[88] := cai([4, 2, 1, 2, 1, 1]);
+  CODE_PATTERNS[89] := cai([2, 1, 2, 1, 4, 1]);
+  CODE_PATTERNS[90] := cai([2, 1, 4, 1, 2, 1]);
+  CODE_PATTERNS[91] := cai([4, 1, 2, 1, 2, 1]);
+  CODE_PATTERNS[92] := cai([1, 1, 1, 1, 4, 3]);
+  CODE_PATTERNS[93] := cai([1, 1, 1, 3, 4, 1]);
+  CODE_PATTERNS[94] := cai([1, 3, 1, 1, 4, 1]);
+  CODE_PATTERNS[95] := cai([1, 1, 4, 1, 1, 3]);
+  CODE_PATTERNS[96] := cai([1, 1, 4, 3, 1, 1]);
+  CODE_PATTERNS[97] := cai([4, 1, 1, 1, 1, 3]);
+  CODE_PATTERNS[98] := cai([4, 1, 1, 3, 1, 1]);
+  CODE_PATTERNS[99] := cai([1, 1, 3, 1, 4, 1]);
+  CODE_PATTERNS[100] := cai([1, 1, 4, 1, 3, 1]);
+  CODE_PATTERNS[101] := cai([3, 1, 1, 1, 4, 1]);
+  CODE_PATTERNS[102] := cai([4, 1, 1, 1, 3, 1]);
+  CODE_PATTERNS[103] := cai([2, 1, 1, 4, 1, 2]);
+  CODE_PATTERNS[104] := cai([2, 1, 1, 2, 1, 4]);
+  CODE_PATTERNS[105] := cai([2, 1, 1, 2, 3, 2]);
+  CODE_PATTERNS[106] := cai([2, 3, 3, 1, 1, 1, 2]);
+  {$IFEND}
+  {+.}
 
   MAX_AVG_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.25);
   MAX_INDIVIDUAL_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.7);
@@ -182,7 +312,13 @@ begin
           if row.isRange(Max(0, patternStart - (i - patternStart) div 2),
             patternStart, false) then
           begin
+            {+}
+            {$IF CompilerVersion >= 33.00}
             result := [patternStart, i, bestMatch];
+            {$ELSE}
+            result := cai([patternStart, i, bestMatch]);
+            {$IFEND}
+            {+.}
             exit;
           end
         end;
@@ -655,7 +791,15 @@ begin
 
     resultPointLeft := TResultPointHelpers.CreateResultPoint(left, rowNumber);
     resultPointRight := TResultPointHelpers.CreateResultPoint(right, rowNumber);
+    {+}
+    {$IF CompilerVersion >= 33.00}
     resultPoints := [resultPointLeft, resultPointRight];
+    {$ELSE}
+    SetLength(resultPoints, 2);
+    resultPoints[0] := resultPointLeft;
+    resultPoints[1] := resultPointRight;
+    {$IFEND}
+    {+.}
 
     resultPointCallback := nil;
     // had to add this initialization because the following if/else construct does not assign a value

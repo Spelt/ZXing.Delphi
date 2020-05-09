@@ -21,6 +21,10 @@ unit ZXing.Common.BitMatrix;
 
 interface
 
+{+}
+{$i ZXing.inc}
+{+.}
+
 uses
   SysUtils,
 {$IFDEF USE_VCL_BITMAP}

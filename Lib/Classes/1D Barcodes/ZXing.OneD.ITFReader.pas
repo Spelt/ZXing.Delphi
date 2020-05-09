@@ -87,6 +87,20 @@ implementation
 uses
   ZXing.Common.Detector.MathUtils;
 
+{+}
+{$IF CompilerVersion >= 33.00}
+{$ELSE}
+function cai(const A: array of integer): TArray<Integer>;
+//--var R: TArray<Integer> absolute A;
+//var i: Integer;
+begin
+  //--Result := R;
+  //SetLength(Result, Length(A)); for i := 0 to High(A) do Result[i] := A[i];
+  SetLength(Result, Length(A)); Move(A[0], Result[0], Length(A)*SizeOf(Result[0]));
+end;
+{$IFEND}
+{+.}
+
 { TITFReader }
 
 class procedure TITFReader.ClassInit();
@@ -94,6 +108,8 @@ begin
   MAX_AVG_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.42);
   MAX_INDIVIDUAL_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.78);
 
+  {+}
+  {$IF CompilerVersion >= 33.00}
   DEFAULT_ALLOWED_LENGTHS := [6, 8, 10, 12, 14];
 
   START_PATTERN := [N, N, N, N];
@@ -109,6 +125,26 @@ begin
   [N, N, N, W, W], // 7
   [W, N, N, W, N], // 8
   [N, W, N, W, N]]; // 9
+
+  {$ELSE}
+  DEFAULT_ALLOWED_LENGTHS := cai([6, 8, 10, 12, 14]);
+
+  START_PATTERN := cai([N, N, N, N]);
+  END_PATTERN_REVERSED := cai([N, N, W]);
+
+  SetLength(PATTERNS, 10);
+  PATTERNS[0] := cai([N, N, W, W, N]);
+  PATTERNS[1] := cai([W, N, N, N, W]);
+  PATTERNS[2] := cai([N, W, N, N, W]);
+  PATTERNS[3] := cai([W, W, N, N, N]);
+  PATTERNS[4] := cai([N, N, W, N, W]);
+  PATTERNS[5] := cai([W, N, W, N, N]);
+  PATTERNS[6] := cai([N, W, W, N, N]);
+  PATTERNS[7] := cai([N, N, N, W, W]);
+  PATTERNS[8] := cai([W, N, N, W, N]);
+  PATTERNS[9] := cai([N, W, N, W, N]);
+  {$IFEND}
+  {+.}
 end;
 
 function TITFReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
@@ -199,7 +235,15 @@ begin
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(startRange[1], rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(endRange[0], rowNumber);
+  {+}
+  {$IF CompilerVersion >= 33.00}
   resultPoints := [resultPointLeft, resultPointRight];
+  {$ELSE}
+  SetLength(resultPoints, 2);
+  resultPoints[0] := resultPointLeft;
+  resultPoints[1] := resultPointRight;
+  {$IFEND}
+  {+.}
 
   resultPointCallback := nil; // had to add this initialization because the following if/else construct does not assign a value
                             // for all possible cases. Being resultPointCallback a local variable it is not initialized by default to null,
@@ -411,7 +455,13 @@ begin
         if (PatternMatchVariance(counters, pattern, MAX_INDIVIDUAL_VARIANCE) <
           MAX_AVG_VARIANCE) then
         begin
+          {+}
+          {$IF CompilerVersion >= 33.00}
           Result := [patternStart, x];
+          {$ELSE}
+          Result := cai([patternStart, x]);
+          {$IFEND}
+          {+.}
           Exit(Result);
         end;
         inc(patternStart, (counters[0] + counters[1]));

@@ -47,7 +47,7 @@ type
     /// larger than width * height bytes on some platforms. Do not modify the contents
     /// of the result.
     /// </returns>
-	function Matrix: TArray<byte>; virtual; abstract;
+    function Matrix: TArray<byte>; virtual; abstract;
     /// <summary>
     /// Fetches one row of luminance data from the underlying platform's bitmap. Values range from
     /// 0 (black) to 255 (white). Because Java does not have an unsigned byte type, callers will have
@@ -60,7 +60,7 @@ type
     /// Always use the returned object, and ignore the .length of the array.
     /// </param>
     /// <returns> An array containing the luminance data.</returns>
-	function getRow(const y: Integer; row: TArray<byte>): TArray<byte>;
+    function getRow(const y: Integer; row: TArray<byte>): TArray<byte>;
       virtual; abstract;
 
     /// <summary>
@@ -72,35 +72,35 @@ type
     /// <param name="width">The width of the rectangle to crop.</param>
     /// <param name="height">The height of the rectangle to crop.</param>
     /// <returns> A cropped version of this object.</returns>
-	function crop(const left, top, width,
+    function crop(const left, top, width,
       height: Integer): TLuminanceSource; virtual;
     function invert(): TLuminanceSource; virtual;
     function ToString(): String; override;
 
     /// <returns> Whether this subclass supports counter-clockwise rotation.</returns>
-	function RotateSupported: Boolean; virtual;
+    function RotateSupported: Boolean; virtual;
     /// <returns> Whether this subclass supports cropping.</returns>
-	function CropSupported(): Boolean; virtual;
+    function CropSupported(): Boolean; virtual;
     /// <returns>Whether this subclass supports invertion.</returns>
-	function InversionSupported: Boolean; virtual;
+    function InversionSupported: Boolean; virtual;
 
     /// <summary>
     /// Returns a new object with rotated image data by 90 degrees counterclockwise.
     /// Only callable if <see cref="RotateSupported"/> is true.
     /// </summary>
     /// <returns>A rotated version of this object.</returns>
-	function rotateCounterClockwise(): TLuminanceSource; virtual;
+    function rotateCounterClockwise(): TLuminanceSource; virtual;
     /// <summary>
     /// Returns a new object with rotated image data by 45 degrees counterclockwise.
     /// Only callable if <see cref="RotateSupported"/> is true.
     /// </summary>
     /// <returns>A rotated version of this object.</returns>
-	function rotateCounterClockwise45(): TLuminanceSource; virtual;
+    function rotateCounterClockwise45(): TLuminanceSource; virtual;
 
     /// <returns> The height of the bitmap.</returns>
-	property Height: Integer read FHeight;
+    property Height: Integer read FHeight;
     /// <returns> The width of the bitmap.</returns>
-	property Width: Integer read FWidth;
+    property Width: Integer read FWidth;
   end;
 
 implementation

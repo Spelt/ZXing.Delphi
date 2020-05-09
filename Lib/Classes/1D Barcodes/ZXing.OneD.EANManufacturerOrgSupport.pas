@@ -77,6 +77,22 @@ begin
   inherited;
 end;
 
+{+}
+{$IF CompilerVersion >= 33.00}
+{$ELSE}
+resourcestring
+  SInvalidInteger2 = '''%s'' is not a valid integer value for %s type';
+function TIntegerHelper_Parse(const S: string): Integer;
+var
+  E: Integer;
+begin
+  Val(S, Result, E);
+  if not (E = 0) then
+    raise EConvertError.CreateResFmt(@SInvalidInteger2, [S, 'Integer']);
+end;
+{$IFEND}
+{+.}
+
 function TEANManufacturerOrgSupport.lookupCountryIdentifier(const productCode
   : String): String;
 var
@@ -87,7 +103,13 @@ begin
   Result := '';
 
   initIfNeeded;
+  {+}
+  {$IF CompilerVersion >= 33.00}
   prefix := Integer.Parse(productCode.Substring(0, 3));
+  {$ELSE}
+  prefix := TIntegerHelper_Parse(productCode.Substring(0, 3));
+  {$IFEND}
+  {+.}
   max := ranges.Count;
   for i := 0 to Pred(max) do
   begin

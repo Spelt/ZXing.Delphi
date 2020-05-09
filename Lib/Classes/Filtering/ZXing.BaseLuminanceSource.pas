@@ -20,6 +20,11 @@
 unit ZXing.BaseLuminanceSource;
 
 interface
+
+{+}
+{$i ZXing.inc}
+{+.}
+
 uses
   System.SysUtils,
   System.UITypes,
@@ -152,12 +157,12 @@ begin
   localLuminances := Matrix;
   for yold := 0 to Pred(Height) do
   begin
-     for xold := 0 to Pred(Width) do
-	 begin
-     ynew := newHeight - xold - 1;
-	   xnew := yold;
-     rotatedLuminances[ynew * newWidth + xnew] := localLuminances[yold * Width + xold];
-   end;
+    for xold := 0 to Pred(Width) do
+    begin
+      ynew := newHeight - xold - 1;
+      xnew := yold;
+      rotatedLuminances[ynew * newWidth + xnew] := localLuminances[yold * Width + xold];
+    end;
   end;
   Result := CreateLuminanceSource(rotatedLuminances, newWidth, newHeight);
 end;

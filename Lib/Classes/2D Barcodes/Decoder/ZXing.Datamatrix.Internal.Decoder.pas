@@ -119,6 +119,9 @@ begin
   // Construct a parser and read version, error-correction level
   parser := TBitMatrixParser.Create(bits);
 
+  {+}
+  DataBlock := nil;
+  {+.}
   try
 
     if (parser.Version = nil) then
@@ -181,8 +184,9 @@ begin
 
     if Assigned(DataBlock) then
       DataBlock.Free;
-
-    DataBlock := nil;
+    {+}
+    //DataBlock := nil;
+    {+.}
     resultBytes := nil;
     codewordBytes := nil;
     parser.Free;

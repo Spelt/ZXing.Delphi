@@ -169,6 +169,10 @@ begin
     i := 0;
     next := Char(0);
     c := Char(0);
+    {+}
+    if c <> Char(0) then ;
+    decodedChar := #0; if decodedChar <> #0 then ;
+    {+.}
     while ((i < length)) do
     begin
 
@@ -358,8 +362,15 @@ begin
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
+  {+}
+  {$IF CompilerVersion >= 33.00}
   resultPoints := [resultPointLeft, resultPointRight];
-
+  {$ELSE}
+  SetLength(resultPoints, 2);
+  resultPoints[0] := resultPointLeft;
+  resultPoints[1] := resultPointRight;
+  {$IFEND}
+  {+.}
   resultPointCallback := nil;
   // it is a local variable: it doesn't get NIL as default value, and the following ifs do not assign a value for all possible cases
 

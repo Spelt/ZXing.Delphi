@@ -55,7 +55,13 @@ var
   bitsToNotRead, bitsLeft, toRead, mask: Integer;
 begin
   if (((numBits < 1) or (numBits > $20)) or (numBits > available())) then
+  {+}
+  {$IF CompilerVersion >= 33.00}
     raise EArgumentException.Create(numBits.ToString + 'numBits');
+  {$ELSE}
+    raise EArgumentException.Create(IntToStr(numBits) + 'numBits');
+  {$IFEND}
+  {+.}
 
   Result := 0;
   if (BitOffset > 0) then

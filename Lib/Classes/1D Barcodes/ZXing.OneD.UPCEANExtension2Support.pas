@@ -114,6 +114,22 @@ begin
   Result := extensionResult;
 end;
 
+{+}
+{$IF CompilerVersion >= 33.00}
+{$ELSE}
+resourcestring
+  SInvalidInteger2 = '''%s'' is not a valid integer value for %s type';
+function TIntegerHelper_Parse(const S: string): Integer;
+var
+  E: Integer;
+begin
+  Val(S, Result, E);
+  if not (E = 0) then
+    raise EConvertError.CreateResFmt(@SInvalidInteger2, [S, 'Integer']);
+end;
+{$IFEND}
+{+.}
+
 class function TUPCEANExtension2Support.decodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>; const resultString: TStringBuilder): Integer;
 var
@@ -163,7 +179,13 @@ begin
   then
      exit;
 
+  {+}
+  {$IF CompilerVersion >= 33.00}
   if ((Integer.Parse(resultString.ToString) mod 4) <> checkParity)
+  {$ELSE}
+  if ((TIntegerHelper_Parse(resultString.ToString) mod 4) <> checkParity)
+  {$IFEND}
+  {+.}
   then
      exit;
 

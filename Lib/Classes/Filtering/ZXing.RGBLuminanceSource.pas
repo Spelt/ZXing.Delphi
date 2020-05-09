@@ -20,6 +20,11 @@
 unit ZXing.RGBLuminanceSource;
 
 interface
+
+{+}
+{$i ZXing.inc}
+{+.}
+
 uses
   System.SysUtils,
   System.UITypes,

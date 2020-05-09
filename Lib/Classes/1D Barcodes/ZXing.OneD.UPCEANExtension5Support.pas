@@ -257,6 +257,22 @@ begin
   Result := dictionary1;
 end;
 
+{+}
+{$IF CompilerVersion >= 33.00}
+{$ELSE}
+resourcestring
+  SInvalidInteger2 = '''%s'' is not a valid integer value for %s type';
+function TIntegerHelper_Parse(const S: string): Integer;
+var
+  E: Integer;
+begin
+  Val(S, Result, E);
+  if not (E = 0) then
+    raise EConvertError.CreateResFmt(@SInvalidInteger2, [S, 'Integer']);
+end;
+{$IFEND}
+{+.}
+
 class function TUPCEANExtension5Support.parseExtension5String(
   const raw: String): String;
 var
@@ -290,14 +306,39 @@ begin
     else currency := '';
   end;
 
+  {+}
+  {$IF CompilerVersion >= 33.00}
   rawAmount := Integer.Parse(raw.Substring(1));
+  {$ELSE}
+  rawAmount := TIntegerHelper_Parse(raw.Substring(1));
+  {$IFEND}
+  {+.}
+
+  {+}
+  {$IF CompilerVersion >= 33.00}
   unitsString := ((rawAmount div 100)).ToString;
+  {$ELSE}
+  unitsString := IntToStr(((rawAmount div 100)));
+  {$IFEND}
+  {+.}
   hundredths := (rawAmount mod 100);
   if (hundredths < 10)
   then
+    {+}
+    {$IF CompilerVersion >= 33.00}
      hundredthsString := '0' + hundredths.ToString
+    {$ELSE}
+     hundredthsString := '0' + IntToStr(hundredths)
+    {$IFEND}
+    {+.}
   else
+    {+}
+    {$IF CompilerVersion >= 33.00}
      hundredthsString := hundredths.ToString;
+    {$ELSE}
+     hundredthsString := IntToStr(hundredths);
+    {$IFEND}
+    {+.}
 
   Result := currency + unitsString + '.' + hundredthsString;
 end;

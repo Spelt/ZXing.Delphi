@@ -74,7 +74,14 @@ class function TECI.getECIByValue(value_Renamed: Integer): TECI;
 begin
   if ((value_Renamed < 0) or (value_Renamed > $F423F)) then
     raise EArgumentException.Create('Bad ECI value: ' +
-      value_Renamed.ToString());
+      {+}
+      {$IF CompilerVersion >= 33.00}
+      value_Renamed.ToString()
+      {$ELSE}
+      IntToStr(value_Renamed)
+      {$IFEND}
+      {+.}
+    );
 
   if (value_Renamed < 900) then
   begin
@@ -106,6 +113,20 @@ end;
 
 end;
 
+{+}
+{$IF CompilerVersion >= 33.00}
+{$ELSE}
+function cas(const A: array of string): TArray<string>;
+//--var R: TArray<string> absolute A;
+//var i: Integer;
+begin
+  //--Result := R;
+  //SetLength(Result, Length(A)); for i := 0 to High(A) do Result[i] := A[i];
+  SetLength(Result, Length(A)); Move(A[0], Result[0], Length(A)*SizeOf(Result[0]));
+end;
+{$IFEND}
+{+.}
+
 class constructor TCharacterSetECI.Create;
 begin
   NAME_TO_ECI:=TDictionary<string, TCharacterSetECI>.Create;
@@ -114,6 +135,8 @@ begin
   // if we clear the list, the objects contained get automatically destroyed
   AllocatedInstances:= TObjectList<TCharacterSetECI>.Create;
 
+  {+}
+  {$IF CompilerVersion >= 33.00}
   TCharacterSetECI.addCharacterSet(  0, ['CP437']);
   TCharacterSetECI.addCharacterSet(  1, ['ISO-8859-1','ISO8859_1']);
   TCharacterSetECI.addCharacterSet(  2, ['CP437']);
@@ -144,7 +167,39 @@ begin
   TCharacterSetECI.addCharacterSet($1C, ['BIG5']);
   TCharacterSetECI.addCharacterSet($1D, ['GB18030', 'GB2312', 'EUC_CN', 'GBK'] );
   TCharacterSetECI.addCharacterSet( 30, ['EUC-KR', 'EUC_KR']);
-
+  {$ELSE}
+  TCharacterSetECI.addCharacterSet(  0, cas(['CP437']));
+  TCharacterSetECI.addCharacterSet(  1, cas(['ISO-8859-1','ISO8859_1']));
+  TCharacterSetECI.addCharacterSet(  2, cas(['CP437']));
+  TCharacterSetECI.addCharacterSet(  3, cas(['ISO-8859-1', 'ISO8859_1']));
+  TCharacterSetECI.addCharacterSet(  4, cas(['ISO-8859-2', 'ISO8859_2']));
+  TCharacterSetECI.addCharacterSet(  5, cas(['ISO-8859-3', 'ISO8859_3']));
+  TCharacterSetECI.addCharacterSet(  6, cas(['ISO-8859-4', 'ISO8859_4']));
+  TCharacterSetECI.addCharacterSet(  7, cas(['ISO-8859-5', 'ISO8859_5']));
+  TCharacterSetECI.addCharacterSet(  8, cas(['ISO-8859-6', 'ISO8859_6']));
+  TCharacterSetECI.addCharacterSet(  9, cas(['ISO-8859-7', 'ISO8859_7']));
+  TCharacterSetECI.addCharacterSet( 10, cas(['ISO-8859-8', 'ISO8859_8']));
+  TCharacterSetECI.addCharacterSet( 11, cas(['ISO-8859-9', 'ISO8859_9']));
+  TCharacterSetECI.addCharacterSet( 12, cas(['ISO-8859-4', 'ISO-8859-10', 'ISO8859_10']));
+  TCharacterSetECI.addCharacterSet( 13, cas(['ISO-8859-11', 'ISO8859_11']));
+  TCharacterSetECI.addCharacterSet( 15, cas(['ISO-8859-13', 'ISO8859_13']));
+  TCharacterSetECI.addCharacterSet($10, cas(['ISO-8859-1', 'ISO-8859-14', 'ISO8859_14']));
+  TCharacterSetECI.addCharacterSet($11, cas(['ISO-8859-15', 'ISO8859_15']));
+  TCharacterSetECI.addCharacterSet($12, cas(['ISO-8859-3', 'ISO-8859-16', 'ISO8859_16']));
+  TCharacterSetECI.addCharacterSet( 20, cas(['SJIS', 'Shift_JIS']));
+  TCharacterSetECI.addCharacterSet($15, cas(['WINDOWS-1250','CP1250']));
+  TCharacterSetECI.addCharacterSet($16, cas(['WINDOWS-1251','CP1251']));
+  TCharacterSetECI.addCharacterSet($17, cas(['WINDOWS-1252','CP1252']));
+  TCharacterSetECI.addCharacterSet($18, cas(['WINDOWS-1256', 'CP1256']));
+  TCharacterSetECI.addCharacterSet($19, cas(['UTF-16BE','UNICODEBIG']));
+  TCharacterSetECI.addCharacterSet($1A, cas(['UTF-8', 'UTF8']));
+  TCharacterSetECI.addCharacterSet($1B, cas(['US-ASCII']));
+  TCharacterSetECI.addCharacterSet(170, cas(['US-ASCII']));
+  TCharacterSetECI.addCharacterSet($1C, cas(['BIG5']));
+  TCharacterSetECI.addCharacterSet($1D, cas(['GB18030', 'GB2312', 'EUC_CN', 'GBK']));
+  TCharacterSetECI.addCharacterSet( 30, cas(['EUC-KR', 'EUC_KR']));
+  {$IFEND}
+  {+.}
 end;
 
 class procedure TCharacterSetECI.addCharacterSet(value: Integer; encodingNames: TArray<string>);

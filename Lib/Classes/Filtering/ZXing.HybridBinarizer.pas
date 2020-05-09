@@ -103,6 +103,9 @@ begin
     Exit;
   end;
 
+  {+}
+  newMatrix := nil;
+  {+.}
   try
 
     source := self.LuminanceSource;
@@ -130,10 +133,16 @@ begin
         blackPoints, newMatrix);
 
       self.matrix := newMatrix;
+      {+}
+      newMatrix := nil;
+      {+.}
     end;
 
   finally
-    newMatrix := nil;
+    {+}
+    //newMatrix := nil;
+    newMatrix.Free;
+    {+.}
     SetLength(blackPoints,0);
     blackPoints := nil;
     luminances := nil;
