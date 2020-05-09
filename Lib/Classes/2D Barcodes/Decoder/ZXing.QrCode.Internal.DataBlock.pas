@@ -22,8 +22,8 @@ unit ZXing.QrCode.Internal.DataBlock;
 
 interface
 
-uses 
-  System.SysUtils, 
+uses
+  System.SysUtils,
   ZXing.QrCode.Internal.Version,
   ZXing.QrCode.Internal.ErrorCorrectionLevel;
 

@@ -78,8 +78,6 @@ type
     property Width: Integer read GetWidth;
     property Height: Integer read GetHeight;
 
-
-
   end;
 
 implementation

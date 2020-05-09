@@ -13,7 +13,7 @@
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Original Author: Sean Owen  
+  * Original Author: Sean Owen
   * Delphi Implementation by E. Spelt and K. Gossens
 }
 
@@ -60,11 +60,9 @@ begin
   result := ZXing.Common.BitArrayImplementation.NewBitArray;
 end;
 
-
 class function TBitArrayHelpers.CreateBitArray(const Size: Integer):IBitArray;
 begin
   result := ZXing.Common.BitArrayImplementation.NewBitArray(size);
 end;
-
 
 end.

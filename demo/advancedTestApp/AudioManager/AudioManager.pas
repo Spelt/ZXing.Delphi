@@ -1,4 +1,3 @@
-
 //---------------------------------------------------------------------------
 
 // This software is Copyright (c) 2017 Embarcadero Technologies, Inc.
@@ -86,7 +85,6 @@ begin
 end;
 {$ENDIF}
 
-
 constructor TAudioManager.Create;
 begin
   try
@@ -125,7 +123,6 @@ begin
       Raise Exception.create('[TAudioManager.Destroy] : '+E.message);
   end;
 end;
-
 
 function TAudioManager.AddSound(ASoundFile: string) : integer;
 var
@@ -206,7 +203,6 @@ begin
   end;
 end;
 
-
 procedure TAudioManager.PlaySound(AIndex: integer);
 var
   wRec: PSoundRec;
@@ -257,7 +253,6 @@ begin
   end;
 end;
 
-
 procedure TAudioManager.PlaySound(AName: String);
 var i : integer;
 begin
@@ -289,6 +284,4 @@ begin
     Result := nil;
 end;
 
-
 end.
-

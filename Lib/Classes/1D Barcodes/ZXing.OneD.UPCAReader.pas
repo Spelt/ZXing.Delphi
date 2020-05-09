@@ -136,5 +136,4 @@ finalization
 
 TUPCAReader.DoFinalize;
 
-
 end.

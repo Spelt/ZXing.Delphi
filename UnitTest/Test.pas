@@ -133,7 +133,6 @@ begin
   	FreeAndNil(result);
   end;
 
-
   try
     result := Decode('q1.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
@@ -730,7 +729,6 @@ begin
   finally
     FreeAndNil(result);
   end;
-
 
   // WRONG Encoding: How we can get the correct encoding (umlaut) here... :(
   { result := Decode('dmc2.png', TBarcodeFormat.DATA_MATRIX);

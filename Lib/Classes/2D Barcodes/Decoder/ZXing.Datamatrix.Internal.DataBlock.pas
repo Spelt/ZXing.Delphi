@@ -13,7 +13,7 @@
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Original Author: bbrown@google.com (Brian Brown)   
+  * Original Author: bbrown@google.com (Brian Brown)
   * Delphi Implementation by K. Gossens
 }
 
@@ -21,10 +21,10 @@ unit ZXing.Datamatrix.Internal.DataBlock;
 
 interface
 
-uses 
-  System.SysUtils, 
+uses
+  System.SysUtils,
   ZXing.Datamatrix.Internal.Version;
-  
+
 type
   /// <summary>
   /// <p>Encapsulates a block of data within a Data Matrix Code. Data Matrix Codes may split their data into
@@ -49,8 +49,8 @@ type
 
 implementation
 
-{ TDataBlock }  
-  
+{ TDataBlock }
+
 constructor TDataBlock.Create(const Acodewords: TArray<Byte>;
   const ANumDataCodewords: Integer);
 begin
@@ -89,7 +89,7 @@ var
 begin
   // Figure out the number and size of data blocks used by this version
   ecBlocks := version.ecBlocks;
-  
+
   // First count the total number of data blocks
   totalBlocks := 0;
   ecBlockArray := ecBlocks.ECBBlocksValue;
@@ -97,7 +97,7 @@ begin
   begin
     inc(totalBlocks, ecBlock.Count)
   end;
-    
+
   // Now establish DataBlocks of the appropriate size and number of data codewords
   result := TArray<TDataBlock>.Create();
   SetLength(result, totalBlocks);
@@ -115,13 +115,13 @@ begin
       Inc(numResultBlocks);
     end
   end;
-  
+
   // All blocks have the same amount of data, except that the last n
   // (where n may be 0) have 1 less byte. Figure out where these start.
   // TODO: There is only one case where there is a difference for Data Matrix for size 144
   longerBlocksTotalCodewords := Length(result[0].codewords);
   //shorterBlocksTotalCodewords := (longerBlocksTotalCodewords - 1);
-		 
+
   longerBlocksNumDataCodewords := (longerBlocksTotalCodewords - ecBlocks.ECCodewords);
   shorterBlocksNumDataCodewords := (longerBlocksNumDataCodewords - 1);
   // The last elements of result may be 1 element shorter for 144 matrix
@@ -135,20 +135,20 @@ begin
       Inc(rawCodewordsOffset);
     end;
   end;
-  
+
   // Fill out the last data block in the longer ones
   specialVersion := (version.versionNumber = 24);
-  if specialVersion 
-  then 
-     numLongerBlocks := 8 
-  else 
+  if specialVersion
+  then
+     numLongerBlocks := 8
+  else
      numLongerBlocks := numResultBlocks;
   for j := 0 to Pred(numLongerBlocks) do
   begin
     result[j].codewords[(longerBlocksNumDataCodewords - 1)] := rawCodewords[rawCodewordsOffset];
     Inc(rawCodewordsOffset);
   end;
-  
+
   // Now add in error correction blocks
   max := Length(result[0].codewords);
   for i := longerBlocksNumDataCodewords to Pred(max) do
@@ -160,7 +160,7 @@ begin
          jOffset := (j + 8) mod numResultBlocks
       else
          jOffset := j;
-      
+
 	  if (specialVersion and (jOffset > 7))
       then
          iOffset := (i - 1)
@@ -170,7 +170,7 @@ begin
       Inc(rawCodewordsOffset);
     end;
   end;
-  
+
   if (not (rawCodewordsOffset = Length(rawCodewords)))
   then
      raise EArgumentException.Create('Arguments error');

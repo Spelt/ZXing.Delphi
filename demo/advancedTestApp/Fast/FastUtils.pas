@@ -149,7 +149,6 @@ begin
   if (AWidth <= 0) or (AHeight <= 0) then
     Exit;
 
-
   Assert(Assigned(AYPtr));
   Assert(Assigned(AUPtr));
   Assert(Assigned(AVPtr));
@@ -159,7 +158,6 @@ begin
   Assert(ARGBAStride > 0);
   Assert((AWidth and 1) = 0);
   Assert((AHeight and 1) = 0);
-
 
   PaddedWidth := (AWidth + 1) and (not 1);
   RGBAExtra := (ARGBAStride - (4 * PaddedWidth)) + ARGBAStride;

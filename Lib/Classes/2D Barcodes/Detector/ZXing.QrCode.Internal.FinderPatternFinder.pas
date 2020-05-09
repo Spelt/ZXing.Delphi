@@ -21,7 +21,7 @@ unit ZXing.QrCode.Internal.FinderPatternFinder;
 
 interface
 
-uses 
+uses
   System.SysUtils,
   System.Math,
   System.Generics.Defaults,

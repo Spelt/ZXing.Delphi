@@ -1,7 +1,7 @@
 unit ZXing.ResultPointImplementation;
 
 interface
-uses system.SysUtils, 
+uses system.SysUtils,
      ZXing.ResultPoint;
 
 type
@@ -67,7 +67,6 @@ type
 function NewResultPoint:IResultPoint; overload;
 function NewResultPoint(const pX, pY: Single):IResultPoint; overload;
 
-
 implementation
 
 function NewResultPoint:IResultPoint;
@@ -80,9 +79,7 @@ begin
    result := TResultPoint.Create(px,py);
 end;
 
-
 { TResultPoint }
-
 
 constructor TResultPoint.Create;
 begin
@@ -155,14 +152,11 @@ begin
     bytesY[3];
 end;
 
-
 function TResultPoint.ToString: String;
 begin
   if (FToString = '') then
     FToString := Format('(%g),(%g)', [Fx, Fy]);
   Result := FToString;
 end;
-
-
 
 end.

@@ -279,7 +279,6 @@ begin
     readers.Add(TCode39Reader.Create(useCode39CheckDigit,
       useCode39ExtendedMode));
 
-
     // 2D readers
     readers.Add(TQRCodeReader.Create());
     readers.Add(TDataMatrixReader.Create)

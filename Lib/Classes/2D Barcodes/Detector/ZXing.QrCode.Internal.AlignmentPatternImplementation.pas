@@ -20,7 +20,6 @@
 
 unit ZXing.QrCode.Internal.AlignmentPatternImplementation;
 
-
 interface
 
 uses
@@ -33,11 +32,9 @@ uses
 // since even its declaration is in the implementation section of this unit
 function NewAlignmentPattern(const posX, posY, estimatedModuleSize: Single):IAlignmentPattern;
 
-
 implementation
 
 { TAlignmentPattern }
-
 
 type
   /// <summary> <p>Encapsulates an alignment pattern, which are the smaller square patterns found in
@@ -65,7 +62,6 @@ type
     function combineEstimate(const i, j,
       newModuleSize: Single): IAlignmentPattern;
   end;
-
 
 constructor TAlignmentPattern.Create(const posX, posY,
   estimatedModuleSize: Single);
@@ -100,9 +96,6 @@ begin
   combinedModuleSize := (estimatedModuleSize + newModuleSize) / 2.0;
   Result := TAlignmentPattern.Create(combinedX, combinedY, combinedModuleSize);
 end;
-
-
-
 
 function NewAlignmentPattern(const posX, posY, estimatedModuleSize: Single):IAlignmentPattern;
 begin

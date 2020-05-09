@@ -294,7 +294,6 @@ begin
         // trying again?
         row.Reverse();
 
-
         // This means we will only ever draw result points *once* in the life of this method
         // since we want to avoid drawing the wrong points after flipping the row, and,
         // don't want to clutter with noise from every single row scan -- just the scans

@@ -19,8 +19,8 @@ unit ZXing.BitSource;
 }
 interface
 
-uses 
-  SysUtils, 
+uses
+  SysUtils,
   ZXing.Common.Detector.MathUtils;
 
 type

@@ -27,7 +27,7 @@ uses
   ZXing.LuminanceSource,
   ZXing.BaseLuminanceSource;
 
-type 
+type
   /// <summary>
   /// Luminance source class which support different formats of images.
   /// </summary>
@@ -78,13 +78,13 @@ implementation
 /// <param name="width">The width.</param>
 /// <param name="height">The height.</param>
 /// <param name="reverseHoriz">if set to <c>true</c> [reverse horiz].</param>
-constructor TPlanarYUVLuminanceSource.Create(const yuvData: TArray<Byte>; 
-  const dataWidth, dataHeight, left, top, width, height: Integer; 
+constructor TPlanarYUVLuminanceSource.Create(const yuvData: TArray<Byte>;
+  const dataWidth, dataHeight, left, top, width, height: Integer;
   const reverseHoriz: Boolean);
 begin
   inherited Create(width, height);
-  
-  if ((left + width > dataWidth) or (top + height > dataHeight)) 
+
+  if ((left + width > dataWidth) or (top + height > dataHeight))
   then
      raise EArgumentException.Create('Crop rectangle does not fit within image data.');
 
@@ -93,7 +93,7 @@ begin
   Self.dataHeight := dataHeight;
   Self.left := left;
   Self.top := top;
-  if (reverseHoriz) 
+  if (reverseHoriz)
   then
      reverseHorizontal(width, height);
 end;
@@ -104,7 +104,7 @@ end;
 /// <param name="luminances">The luminances.</param>
 /// <param name="width">The width.</param>
 /// <param name="height">The height.</param>
-constructor TPlanarYUVLuminanceSource.Create(const luminances: TArray<Byte>; 
+constructor TPlanarYUVLuminanceSource.Create(const luminances: TArray<Byte>;
   const width, height: Integer);
 begin
   inherited Create(width, height);
@@ -136,10 +136,10 @@ end;
    width,
    offset: Integer;
  begin
-  if ((y < 0) or (y >= Height)) 
+  if ((y < 0) or (y >= Height))
   then
      raise EArgumentException.Create('Requested row is outside the image: ' + IntToStr(y));
-  
+
   width := Self.Width;
   if ((row = nil) or (Length(row) < width)) then
   begin
@@ -150,7 +150,7 @@ end;
 
   offset := (y + top) * dataWidth + left;
   row := Copy(yuvData, offset, width);
-  
+
   Result := row;
 end;
 

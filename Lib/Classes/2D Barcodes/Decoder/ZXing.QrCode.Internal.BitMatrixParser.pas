@@ -21,14 +21,14 @@ unit ZXing.QrCode.Internal.BitMatrixParser;
 
 interface
 
-uses 
-  SysUtils, 
-  Generics.Collections, 
+uses
+  SysUtils,
+  Generics.Collections,
   ZXing.DecodeHintType,
-  ZXing.Common.BitMatrix, 
+  ZXing.Common.BitMatrix,
   ZXing.QrCode.Internal.Version,
-  ZXing.QrCode.Internal.FormatInformation, 
-  ZXing.Common.Detector.MathUtils, 
+  ZXing.QrCode.Internal.FormatInformation,
+  ZXing.Common.Detector.MathUtils,
   ZXing.QrCode.Internal.DataMask;
 
 type

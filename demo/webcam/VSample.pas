@@ -60,23 +60,15 @@ Please note:
   - DSPack (http://www.progdigy.com/)
   - TVideoCapture by Egor Averchenkov (can be found at http://www.torry.net)
 
-
 ******************************************************************************)
 
-
-
 interface
-
-
-
 
 USES Windows, Messages, SysUtils, Classes, ActiveX, Forms,
      {$ifdef DXErr} DXErr9, {$endif}
      DirectShow9;
 
-
 { $ define REGISTER_FILTERGRAPH}
-
 
 CONST
   WM_GRAPHNOTIFY = WM_APP+1;
@@ -85,22 +77,16 @@ CONST
                                 // application hasn't defined a callback
                                 // routine via TVideoSample.SetCallBack(...).
 
-
 CONST  { Copied from OLE2.pas }
   {$EXTERNALSYM IID_IUnknown}
   IID_IUnknown: TGUID = (
     D1:$00000000;D2:$0000;D3:$0000;D4:($C0,$00,$00,$00,$00,$00,$00,$46));
-
-
 
 TYPE
   TPLAYSTATE      = (PS_Stopped,
                      {PS_Init,}
                      PS_Paused,
                      PS_Running);
-
-
-
 
 // ---= Pseudo-Interface for Frame Grabber Callback Routines =-------------
 // c.f. Delphi Help text "Delegating to a class-type property"
@@ -128,7 +114,6 @@ TYPE
                           CallBack    : TVideoSampleCallBack;
                           property SampleGrabberCB: TSampleGrabberCBImpl read FSampleGrabberCB implements TSampleGrabberCBInt;
                         end;
-
 
   TFormatInfo   = RECORD
                     Width,
@@ -231,23 +216,16 @@ TYPE
                       {$endif}
                   END;
 
-
-
 FUNCTION TGUIDEqual(const TG1, TG2 : TGUID): boolean;
 
 FUNCTION GetCaptureDeviceList(VAR SL: TStringList): HResult;
 
-
-
 implementation
-
-
 
 FUNCTION TGUIDEqual(const TG1, TG2 : TGUID): boolean;
 BEGIN
   Result := CompareMem(@TG1, @TG2, SizeOf(TGUID));
 END; {TGUIDEqual}
-
 
 { Get a list of all capture devices installed }
 FUNCTION GetCaptureDeviceList(VAR SL: TStringList): HResult;
@@ -332,12 +310,7 @@ begin
     SL.Add(st);
 end; {GetCaptureDeviceList}
 
-
-
-
-
 // ---= Sample Grabber callback routines =------------------------------------
-
 
 // In routine TVideoSample.GetInterfaces(..) the callback routine is defined
 // with pISampleGrabber.SetCallback(..,..). If the second parameter in that
@@ -365,8 +338,7 @@ end;
 // von pSample.GetPointer(ppBuffer) zurückgelieferte Adresse wiederholt sich
 // in einem 3-er Zyklus. Wenn das ein Feature von DirectShow ist und nicht
 // von der Kamera-Steuersoftware, dann könnte man selbst auf Double- oder
-// Triplebuffering verzichten. 
-
+// Triplebuffering verzichten.
 
 // In routine TVideoSample.GetInterfaces(..) the callback routine is defined
 // with pISampleGrabber.SetCallback(..,..). If the second parameter in that
@@ -383,13 +355,7 @@ begin
   Result := 0;
 end;
 
-
 // ---= End of Sample Grabber callback routines =---------------------------
-
-
-
-
-
 
 constructor TVideoSample.Create(VideoCanvasHandle: THandle; ForceRGB: boolean; WhichMethodToCallback: integer; VAR HR: HResult);
 begin
@@ -426,9 +392,6 @@ begin
 
   HR                := GetInterfaces(ForceRGB, WhichMethodToCallback);
 end;
-
-
-
 
 FUNCTION TVideoSample.GetInterfaces(ForceRGB: boolean; WhichMethodToCallback: integer): HRESULT;
 VAR
@@ -526,16 +489,12 @@ BEGIN
   {$ifdef DXErr} DXErrString := DXGetErrorDescription9A(Result); {$endif}
 end;
 
-
-
-
 FUNCTION TVideoSample.ConnectToCaptureDevice(DeviceName: string; VAR DeviceSelected: string; VAR ppIBFVideoSource: IBaseFilter): HRESULT;
 VAR
   pDevEnum   : ICreateDevEnum;
   pClassEnum : IEnumMoniker;
   Index      : integer;
   Found      : boolean;
-
 
           // see also: http://msdn.microsoft.com/en-us/library/ms787619.aspx
           FUNCTION CheckNextDeviceName(Name: string; VAR Found: boolean): HResult;
@@ -574,8 +533,6 @@ VAR
                   end;
               END;
           END; {CheckNextDeviceName}
-
-
 
 BEGIN
   DeviceSelected := '';
@@ -633,10 +590,6 @@ BEGIN
   UNTIL Found or (Result <> S_OK);
 end; {ConnectToCaptureDevice}
 
-
-
-
-
 procedure TVideoSample.ResizeVideoWindow();
 var
   rc : TRect;
@@ -649,9 +602,6 @@ begin
       pIVideoWindow.SetWindowPosition(0, 0, rc.right, rc.bottom);
     end;
 end; {ResizeVideoWindow}
-
-
-
 
 FUNCTION TVideoSample.SetupVideoWindow(): HRESULT;
 BEGIN
@@ -685,9 +635,6 @@ BEGIN
 
 end; {SetupVideoWindow}
 
-
-
-
 FUNCTION TVideoSample.RestartVideoEx(Visible: boolean):HRESULT;
 VAR
   pCut, pTyp : pGuiD;
@@ -703,7 +650,6 @@ BEGIN
    if (pIKsPropertySet = nil) then
     if not(S_OK = pIBFVideoSource.QueryInterface(IID_IKsPropertySet, pIKsPropertySet)) then
       pIKsPropertySet := nil;
-
 
     // Add Capture filter to our graph.
     Result := pIGraphBuilder.AddFilter(pIBFVideoSource, Widestring('Video Capture'));
@@ -751,7 +697,6 @@ BEGIN
         Dispose(pCut);
         exit;
       end;
-
 
     // Set video window style and position
     if Visible then
@@ -814,12 +759,10 @@ BEGIN
   Dispose(pCut);
 end; {RestartVideoEx}
 
-
 FUNCTION TVideoSample.RestartVideo: HRESULT;
 BEGIN
   Result := RestartVideoEx(FVisible);
 END; {RestartVideo}
-
 
 FUNCTION TVideoSample.StartVideo(CaptureDeviceName: string; Visible: boolean; VAR DeviceSelected: string):HRESULT;
 BEGIN
@@ -846,8 +789,6 @@ BEGIN
   Result := RestartVideo;
 end;
 
-
-
 FUNCTION TVideoSample.PauseVideo: HResult;
 BEGIN
   IF g_psCurrent = PS_Paused
@@ -863,7 +804,6 @@ BEGIN
     end
     else Result := S_FALSE;
 END;
-
 
 FUNCTION TVideoSample.ResumeVideo: HResult;
 BEGIN
@@ -881,8 +821,6 @@ BEGIN
     else Result := S_FALSE;
 END;
 
-
-
 FUNCTION TVideoSample.StopVideo: HResult;
 BEGIN
   // Stop previewing video data
@@ -890,8 +828,6 @@ BEGIN
   g_psCurrent := PS_Stopped;
   SetLength(FormatArr, 0);
 END;
-
-
 
 // Delete filter and pins bottom-up...
 PROCEDURE TVideoSample.DeleteBelow(const IBF: IBaseFilter);
@@ -930,15 +866,11 @@ BEGIN
     END;
 END; {DeleteBelow}
 
-
-
 PROCEDURE TVideoSample.DeleteCaptureGraph;
 BEGIN
   pIBFVideoSource.Stop;
   DeleteBelow(pIBFVideoSource);
 END;
-
-
 
 procedure TVideoSample.CloseInterfaces;
 begin
@@ -972,8 +904,6 @@ begin
   {$endif}
 end;
 
-
-
 function TVideoSample.GetImageBuffer(VAR pb : pbytearray; var Size: integer): HResult;
 VAR
   NewSize : integer;
@@ -1002,8 +932,6 @@ begin
     END;
 end;
 
-
-
 FUNCTION TVideoSample.SetPreviewState(nShow: boolean): HRESULT;
 BEGIN
   Result := S_OK;
@@ -1029,9 +957,6 @@ BEGIN
     end;
 end;
 
-
-
-
 FUNCTION TVideoSample.ShowPropertyDialogEx(const IBF: IUnknown; FilterName: PWideChar): HResult;
 VAR
   pProp      : ISpecifyPropertyPages;
@@ -1050,10 +975,6 @@ begin
    end;
 end;
 
-
-
-
-
 FUNCTION TVideoSample.ShowPropertyDialog: HResult;
 VAR
   FilterInfo : FILTER_INFO;
@@ -1062,8 +983,6 @@ begin
   if not(Failed(Result)) then
     Result := ShowPropertyDialogEx(pIBFVideoSource, FilterInfo.achName);
 end;
-
-
 
 FUNCTION TVideoSample.GetCaptureIAMStreamConfig(VAR pSC: IAMStreamConfig): HResult;
 BEGIN
@@ -1074,8 +993,6 @@ BEGIN
                                            IID_IAMStreamConfig, pSC);
 
 END;
-
-
 
 FUNCTION TVideoSample.ShowPropertyDialog_CaptureStream: HResult;
 VAR
@@ -1088,7 +1005,6 @@ BEGIN
   {$ifdef DXErr} DXErrString := DXGetErrorDescription9A(Result); {$endif}
   pIMediaControl.Run;
 END;
-
 
 (*
 PROCEDURE DumpMediaType(const mt: TAMMediaType; VAR Dump: TStringList);
@@ -1167,8 +1083,6 @@ BEGIN
     end;
 END;
 
-
-
 FUNCTION TVideoSample.SetVideoSizeByListIndex(ListIndex: integer): HResult;
 // Sets one of the supported video stream sizes listed in "FormatArr".
 // ListIndex is the index to one of the sizes from the stringlist received
@@ -1192,8 +1106,6 @@ BEGIN
 
   pIMediaControl.Run;
 END;
-
-
 
 FUNCTION TVideoSample.GetStreamInfo(VAR Width, Height: integer; VAR FourCC: dword): HResult;
 VAR
@@ -1229,11 +1141,6 @@ BEGIN
   //pIMediaControl.Run;  // If we don't stop it, we don't need to start it...
 END;
 
-
-
-
-
-
 // See also: http://msdn.microsoft.com/en-us/library/ms784400(VS.85).aspx
 FUNCTION TVideoSample.GetVideoPropAmpEx(    Prop                     : TVideoProcAmpProperty;
                                         VAR pMin, pMax,
@@ -1250,8 +1157,6 @@ BEGIN
     Result := pIAMVideoProcAmp.Get(Prop, pActual, pCapsFlags)
 END;
 
-
-
 FUNCTION TVideoSample.SetVideoPropAmpEx(    Prop           : TVideoProcAmpProperty;
                                             pCapsFlags     : TVideoProcAmpFlags;
                                             pActual        : longint): HResult;
@@ -1261,8 +1166,6 @@ BEGIN
     exit;
   Result := pIAMVideoProcAmp.Set_(Prop, pActual, pCapsFlags)
 END;
-
-
 
 PROCEDURE TVideoSample.GetVideoPropAmpPercent(Prop: TVideoProcAmpProperty; VAR AcPerCent: integer);
 VAR
@@ -1278,8 +1181,6 @@ BEGIN
     END
     ELSE AcPerCent := -1;
 END;
-
-
 
 PROCEDURE TVideoSample.SetVideoPropAmpPercent(Prop: TVideoProcAmpProperty; AcPerCent: integer);
 VAR
@@ -1306,8 +1207,6 @@ BEGIN
     END
 END;
 
-
-
 PROCEDURE TVideoSample.GetVideoSize(VAR Width, height: integer);
 VAR
   pBV : IBasicVideo;
@@ -1319,8 +1218,6 @@ BEGIN
 //  if pICapGraphBuild2.FindInterface(@PIN_CATEGORY_capture, @MEDIATYPE_Video, pIBFVideoSource, IID_IBasicVideo, pBV) = S_OK then
     pBV.GetVideoSize(Width, height);
 END; {GetVideoSize}
-
-
 
 FUNCTION TVideoSample.ShowVfWCaptureDlg: HResult;
 VAR
@@ -1348,8 +1245,6 @@ BEGIN
   pIMediaControl.Run;
 END;
 
-
-
 FUNCTION TVideoSample.GetExProp(   guidPropSet : TGuiD;
                                       dwPropID : TAMPropertyPin;
                                 pInstanceData  : pointer;
@@ -1361,8 +1256,6 @@ BEGIN
   Result := pIKsPropertySet.Get(guidPropSet, dwPropID, pInstanceData, cbInstanceData, pPropData, cbPropData, pcbReturned);
 END;
 
-
-
 FUNCTION TVideoSample.SetExProp(   guidPropSet : TGuiD;
                                       dwPropID : TAMPropertyPin;
                                 pInstanceData  : pointer;
@@ -1373,7 +1266,6 @@ BEGIN
   Result := pIKsPropertySet.Set_(guidPropSet, dwPropID, pInstanceData, cbInstanceData, pPropData, cbPropData);
 END;
 
-
 // Does work, if no GDI functions are called within callback!
 // See remark on http://msdn.microsoft.com/en-us/library/ms786692(VS.85).aspx
 PROCEDURE TVideoSample.SetCallBack(CB: TVideoSampleCallBack);
@@ -1382,13 +1274,10 @@ BEGIN
   SGrabberCB.FSampleGrabberCB.CallBack := CB;
 END;
 
-
 FUNCTION TVideoSample.GetPlayState: TPlayState;
 BEGIN
   Result := g_psCurrent;
 END;
-
-
 
 PROCEDURE TVideoSample.GetListOfVideoSizes(VidSize: TStringList);
 VAR
@@ -1406,9 +1295,6 @@ BEGIN
   FOR i := 0 TO Length(FormatArr)-1 DO
     VidSize.Add(IntToStr(FormatArr[i].Width)+'*'+IntToStr(FormatArr[i].Height) + '  (' + FormatArr[i].FourCC+')');
 END;
-
-
-
 
 {$ifdef REGISTER_FILTERGRAPH}
 
@@ -1460,8 +1346,6 @@ BEGIN
     result := hr;
 end;
 
-
-
 // Removes a filter graph from the Running Object Table
 procedure TVideoSample.RemoveGraphFromRot(pdwRegister: dword);
 VAR
@@ -1475,9 +1359,6 @@ begin
 end;
 
 {$endif}
-
-
-
 
 (*
 FUNCTION TVideoSample.GetStreamInfoTest(VAR Width, Height: integer; VAR FourCC: dword): HResult;
@@ -1520,13 +1401,6 @@ BEGIN
 END;
 *)
 
-
-
-
-
-
-
-
 destructor TVideoSample.Destroy;
 begin
   try
@@ -1541,8 +1415,6 @@ begin
         TSampleGrabberCB(SGrabberCB).FSampleGrabberCB := nil;
       end;
 
-
-
   finally
     try
       inherited destroy;
@@ -1550,15 +1422,5 @@ begin
     end;
   end;
 end;
-
-
-
-
-
-
-
-
-
-
 
 end.

@@ -22,7 +22,7 @@ unit ZXing.QrCode.Internal.AlignmentPatternFinder;
 
 interface
 
-uses 
+uses
   System.SysUtils,
   System.Math,
   System.Generics.Collections,

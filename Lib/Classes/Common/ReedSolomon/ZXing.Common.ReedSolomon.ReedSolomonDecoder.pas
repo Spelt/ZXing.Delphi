@@ -13,7 +13,7 @@
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Original Authors: Sean Owen and William Rucklidge  
+  * Original Authors: Sean Owen and William Rucklidge
   * Delphi Implementation by E. Spelt and K. Gossens
 }
 
@@ -21,8 +21,8 @@ unit ZXing.Common.ReedSolomon.ReedSolomonDecoder;
 
 interface
 
-uses 
-  System.SysUtils, 
+uses
+  System.SysUtils,
   // Hint: ZXing.Common.ReedSolomon.GenericGFPoly is implemented in GenericGF as second class
   ZXing.Common.ReedSolomon.GenericGF;
 
@@ -56,7 +56,7 @@ constructor TReedSolomonDecoder.Create(field: TGenericGF);
 begin
   self.field := field
 end;
-	  
+
 function TReedSolomonDecoder.decode(received: TArray<Integer>;
   twoS: Integer): boolean;
 var

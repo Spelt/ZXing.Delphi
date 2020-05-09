@@ -20,7 +20,7 @@ unit ZXing.Common.Detector.MathUtils;
 }
 interface
 
-uses 
+uses
   System.SysUtils;
 
 type
@@ -57,8 +57,6 @@ begin
     Result := $7fffffff;
     exit;
   end;
-
-
 
   if (d < 0)
   then

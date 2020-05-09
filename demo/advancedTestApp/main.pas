@@ -132,7 +132,6 @@ begin
 
 end;
 
-
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
   FBuffer.Free;

@@ -78,7 +78,7 @@ type
     /// <summary>
     /// 4 bytes per pixel with the channels red, green, blue and alpha
     /// </summary>
-    RGBA32); 
+    RGBA32);
 
   /// <summary>
   /// Luminance source class which support different formats of images.
@@ -157,7 +157,6 @@ begin
   inherited Create(width, height);
   CalculateLuminance(rgbRawBytes, bitmapFormat);
 end;
-
 
 {$IFDEF USE_VCL_BITMAP}
 // VCL TBitmap implementation

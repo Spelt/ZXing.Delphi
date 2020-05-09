@@ -60,7 +60,6 @@ type
     property IsProcessingCapture: Boolean read FIsProcessingCapture;
   end;
 
-
 implementation
 
 uses

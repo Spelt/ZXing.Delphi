@@ -22,9 +22,9 @@ unit ZXing.QrCode.Internal.DataMask;
 
 interface
 
-uses 
-  SysUtils, 
-  ZXing.Common.BitMatrix, 
+uses
+  SysUtils,
+  ZXing.Common.BitMatrix,
   ZXing.Common.Detector.MathUtils;
 
 type

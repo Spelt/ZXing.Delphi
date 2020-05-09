@@ -16,12 +16,11 @@
   * Delphi Implementation by E. Spelt and K. Gossens
 }
 
-
 unit ZXing.QrCode.Internal.QRCodeDecoderMetaData;
 
 interface
 
-uses 
+uses
   ZXing.ResultPoint;
 
 type

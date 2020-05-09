@@ -21,11 +21,11 @@ unit ZXing.QrCode.Internal.Version;
 
 interface
 
-uses 
+uses
   System.SysUtils,
   ZXing.Common.Bitmatrix,
   ZXing.QrCode.Internal.ErrorCorrectionLevel,
-  ZXing.QrCode.Internal.FormatInformation, 
+  ZXing.QrCode.Internal.FormatInformation,
   ZXing.Common.Detector.MathUtils;
 
 type
@@ -659,15 +659,14 @@ class procedure TVersion.ClassFinal();
 var version :Tversion;
 begin
   TVersion.VERSION_DECODE_INFO := nil;
-  
+
   for version in TVersion.BuildVersions do
   begin
     version.Free;
   end;
-  
+
   TVersion.BuildVersions :=nil;
 end;
-
 
 Initialization
 
@@ -676,6 +675,5 @@ TVersion.ClassInit();
 Finalization
 
 TVersion.ClassFinal();
-
 
 end.

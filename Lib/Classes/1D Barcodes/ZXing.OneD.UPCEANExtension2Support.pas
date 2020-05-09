@@ -20,9 +20,9 @@ unit ZXing.OneD.UPCEANExtension2Support;
 
 interface
 
-uses 
-  System.SysUtils, 
-  System.Generics.Collections, 
+uses
+  System.SysUtils,
+  System.Generics.Collections,
   System.Math,
   ZXing.Reader,
   ZXing.BarcodeFormat,

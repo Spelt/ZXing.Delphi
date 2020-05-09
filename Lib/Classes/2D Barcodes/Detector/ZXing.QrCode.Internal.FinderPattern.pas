@@ -61,7 +61,6 @@ type
     property count : Integer read GetCount  write SetCount;
   end;
 
-
   /// <summary>
   ///  contains all static methods for using IFinderPattern instances
   /// </summary>
@@ -86,8 +85,6 @@ class function TFinderPatternHelpers.CreateFinderPattern(const posX, posY, estim
 begin
    result :=  ZXing.QrCode.Internal.FinderPatternImplementation.NewFinderPattern(posX, posY, estimatedModuleSize);
 end;
-
-
 
 class procedure TFinderPatternHelpers.orderBestPatterns( const patterns: TArray<IFinderPattern>);
 var
@@ -141,7 +138,5 @@ begin
   patterns[1] := pointB;
   patterns[2] := pointC;
 end;
-
-
 
 end.

@@ -20,8 +20,8 @@ unit ZXing.OneD.UPCEANExtensionSupport;
 
 interface
 
-uses 
-  System.SysUtils, 
+uses
+  System.SysUtils,
   System.Generics.Collections,
   System.Math,
   ZXing.OneD.UPCEANExtension2Support,

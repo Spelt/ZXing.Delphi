@@ -11,4 +11,3 @@ Note: It is technically possible to include the FMX bitmap support in a VCL
  application and not use this define, but this leads to a bigger executable
  and if you deploy your application with runtime packages this would force you
  to deploy also the firemonkey runtime BPLs.
-

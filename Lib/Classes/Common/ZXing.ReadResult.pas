@@ -149,7 +149,6 @@ type
 
 implementation
 
-
 {$REGION 'IMetaData implementations'}
 
 { TStringMetadata }
@@ -193,7 +192,6 @@ begin
   inherited Create;
   FValue := AValue;
 end;
-
 
 { TByteSegmentsMetadata }
 type
@@ -239,7 +237,6 @@ begin
 end;
 
 {$ENDREGION 'IMetaData implementations'}
-
 
 { TReadResult }
 

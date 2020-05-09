@@ -31,7 +31,6 @@ uses vcl.imaging.pngImage,
      ZXing.BarCodeFormat,
      ZXing.ScanManager;
 
-
 {$R *.dfm}
 
 procedure TmainFrm.btnLoadFromFileClick(Sender: TObject);

@@ -19,11 +19,11 @@ unit ZXing.GlobalHistogramBinarizer;
 
 interface
 
-uses 
-  SysUtils, 
+uses
+  SysUtils,
   ZXing.Binarizer,
   ZXing.LuminanceSource,
-  ZXing.Common.BitArray, 
+  ZXing.Common.BitArray,
   ZXing.Common.Detector.MathUtils;
 
 type
@@ -73,8 +73,6 @@ end;
   (source: TLuminanceSource);
   begin
   Inherited Create(source);
-
-
 
   SetLength(luminances, 0);
   SetLength(buckets, LUMINANCE_BUCKETS);

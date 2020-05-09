@@ -93,8 +93,6 @@ type
        class function distance(const pattern1, pattern2: IResultPoint) : Single; static;
   end;
 
-
-
   /// <summary> Callback which is invoked when a possible result point (significant
   /// point in the barcode image such as a corner) is found.
   ///
@@ -125,7 +123,6 @@ begin
    result := ZXing.ResultPointImplementation.NewResultPoint(px,py);
 end;
 
-
 class function TResultPointHelpers.crossProductZ(const pointA, pointB,
   pointC: IResultPoint): Single;
 var
@@ -137,13 +134,11 @@ begin
     ((pointC.y - bY) * (pointA.x - bX));
 end;
 
-
 class function TResultPointHelpers.distance(const pattern1,
   pattern2: IResultPoint): Single;
 begin
   Result := TMathUtils.distance(pattern1.x, pattern1.y, pattern2.x, pattern2.y);
 end;
-
 
 class procedure TResultPointHelpers.orderBestPatterns(const patterns
   : TArray<IResultPoint>);
@@ -194,13 +189,11 @@ begin
   patterns[2] := pointC;
 end;
 
-
 { TResultPointEventObject }
 
 constructor TResultPointEventObject.Create(const AEvent: TResultPointCallback);
 begin
   Self.FResultPointCallback := AEvent;
 end;
-
 
 end.

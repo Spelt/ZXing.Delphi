@@ -22,14 +22,14 @@ unit ZXing.OneD.ITFReader;
 interface
 
 uses
-  System.SysUtils, 
-  System.Generics.Collections, 
-  Math, 
+  System.SysUtils,
+  System.Generics.Collections,
+  Math,
   ZXing.OneD.OneDReader,
-  ZXing.Common.BitArray, 
+  ZXing.Common.BitArray,
   ZXing.ReadResult,
   ZXing.DecodeHintType,
-  ZXing.ResultPoint, 
+  ZXing.ResultPoint,
   ZXing.BarcodeFormat,
   ZXing.Helpers;
 
@@ -204,7 +204,6 @@ begin
   resultPointCallback := nil; // had to add this initialization because the following if/else construct does not assign a value
                             // for all possible cases. Being resultPointCallback a local variable it is not initialized by default to null,
                             // so you could get unpredictable results
-
 
   if ((hints = nil) or
       (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK)))

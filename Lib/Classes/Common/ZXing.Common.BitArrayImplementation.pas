@@ -11,7 +11,6 @@ uses
   System.SysUtils,
   ZXing.Common.Detector.MathUtils;
 
-
 type
   /// <summary>
   /// A simple, fast array of bits, represented compactly by an array of ints internally.
@@ -26,7 +25,6 @@ type
     procedure SetBit(i: Integer; Value: Boolean);
     function makeArray(Size: Integer): TArray<Integer>;
     procedure ensureCapacity(size: Integer);
-
 
     function numberOfTrailingZeros(num: Integer): Integer;
     function GetBits: TArray<Integer>;
@@ -55,7 +53,6 @@ type
     function isRange(start, ending: Integer;
       const value: Boolean): Boolean;
   end;
-
 
 constructor TBitArrayImplementation.Create;
 begin
@@ -453,19 +450,14 @@ begin
   Dec(Fsize);
 end;
 
-
-
-
 function NewBitArray:IBitArray;
 begin
    result :=  TBitArrayImplementation.Create;
 end;
 
-
 function NewBitArray(const Size: Integer):IBitArray;
 begin
    result :=  TBitArrayImplementation.Create(size);
 end;
-
 
 end.

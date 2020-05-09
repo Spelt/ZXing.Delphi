@@ -22,20 +22,20 @@ unit ZXing.EncodeHintType;
 interface
 
 type
-  TEncodeHintType = (AZTEC_LAYERS = 15, 
-                     CHARACTER_SET = 4, 
+  TEncodeHintType = (AZTEC_LAYERS = 15,
+                     CHARACTER_SET = 4,
 					 CODE128_FORCE_CODESET_B = 13,
-                     DATA_MATRIX_DEFAULT_ENCODATION = 14,					 
-					 DATA_MATRIX_SHAPE = 10, 
-					 DISABLE_ECI = 9, 
-					 ERROR_CORRECTION = 3, 
-					 HEIGHT = 1, 
-					 MARGIN = 5, 
-					 MAX_SIZE = 12, 
-					 MIN_SIZE = 11, 
-					 PDF417_COMPACTION = 7, 
-					 PDF417_DIMENSIONS = 8, 
-					 PURE_BARCODE = 2, 
+                     DATA_MATRIX_DEFAULT_ENCODATION = 14,
+					 DATA_MATRIX_SHAPE = 10,
+					 DISABLE_ECI = 9,
+					 ERROR_CORRECTION = 3,
+					 HEIGHT = 1,
+					 MARGIN = 5,
+					 MAX_SIZE = 12,
+					 MIN_SIZE = 11,
+					 PDF417_COMPACTION = 7,
+					 PDF417_DIMENSIONS = 8,
+					 PURE_BARCODE = 2,
 					 WIDTH = 0);
 
 implementation

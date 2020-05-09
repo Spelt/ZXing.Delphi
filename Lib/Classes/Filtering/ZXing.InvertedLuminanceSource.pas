@@ -57,7 +57,7 @@ begin
   inherited Create(delegate.Width, delegate.Height);
   Self.delegate := delegate;
 end;
-  
+
 /// <summary>
 /// Fetches one row of luminance data from the underlying platform's bitmap. Values range from
 /// 0 (black) to 255 (white). Because Java does not have an unsigned byte type, callers will have
@@ -80,7 +80,7 @@ begin
   width := Self.Width;
   for i := 0 to Pred(width) do
     rowArray[i] := (255 - (row[i] and $FF));
-  
+
   Result := rowArray;
 end;
 

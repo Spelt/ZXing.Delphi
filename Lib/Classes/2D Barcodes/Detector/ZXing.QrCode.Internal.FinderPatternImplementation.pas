@@ -23,16 +23,13 @@ interface
 uses
   ZXing.QrCode.Internal.FinderPattern;
 
-
 function NewFinderPattern(const posX, posY, estimatedModuleSize: Single; const count: Integer):IFinderPattern; overload;
 function NewFinderPattern(const posX, posY, estimatedModuleSize: Single):IFinderPattern; overload;
-
 
 implementation
 uses ZXing.ResultPoint,ZXing.ResultPointImplementation;
 
 { TFinderPattern }
-
 
 type
   /// <summary>
@@ -137,7 +134,6 @@ begin
     combinedCount)
 end;
 
-
 function NewFinderPattern(const posX, posY, estimatedModuleSize: Single; const count: Integer):IFinderPattern;
 begin
    result := TFinderPattern.Create( posX, posY, estimatedModuleSize,count);
@@ -147,6 +143,5 @@ function NewFinderPattern(const posX, posY, estimatedModuleSize: Single):IFinder
 begin
    result := TFinderPattern.Create( posX, posY, estimatedModuleSize);
 end;
-
 
 end.

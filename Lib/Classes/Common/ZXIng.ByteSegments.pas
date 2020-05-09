@@ -16,7 +16,6 @@ type
         function Add(const item:TArray<byte>):integer;
      end;
 
-
 function ByteSegmentsCreate:IByteSegments;
 
 implementation
@@ -37,15 +36,11 @@ type
      destructor Destroy; override;
   end;
 
-
-
-
 function ByteSegmentsCreate:IByteSegments;
 begin
    result := TByteSegments.Create;
 
 end;
-
 
 { TByteSegments }
 

@@ -21,9 +21,9 @@ unit ZXing.QrCode.Internal.DecodedBitStreamParser;
 
 interface
 
-uses 
+uses
   ZXing.BitSource,
-  SysUtils, 
+  SysUtils,
   ZXing.DecodeHintType,
   Generics.Collections,
   ZXing.QrCode.Internal.ErrorCorrectionLevel,

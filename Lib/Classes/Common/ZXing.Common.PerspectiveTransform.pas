@@ -175,7 +175,6 @@ var
   denominator: Single;
 begin
 
-
   a11 := Self.a11;
   a12 := Self.a12;
   a13 := Self.a13;

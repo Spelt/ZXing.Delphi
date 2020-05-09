@@ -19,8 +19,8 @@ unit ZXing.HybridBinarizer;
 
 interface
 
-uses 
-  SysUtils, 
+uses
+  SysUtils,
   ZXing.GlobalHistogramBinarizer,
   ZXing.LuminanceSource,
   ZXing.Common.BitMatrix,

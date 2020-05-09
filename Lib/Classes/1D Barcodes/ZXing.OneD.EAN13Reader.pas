@@ -104,8 +104,6 @@ type
       const startRange: TArray<Integer>; const resultString: TStringBuilder)
       : Integer; override;
 
-
-
     /// <summary>
     /// Get the format of this decoder.
     /// <returns>The 1D format.</returns>

@@ -46,7 +46,6 @@ type
     function combineEstimate(const i, j, newModuleSize: Single): IAlignmentPattern;
   end;
 
-
   /// <summary>
   ///  contains all static methods for using IAlignmentPatterns instances
   /// </summary>

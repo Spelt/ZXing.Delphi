@@ -21,7 +21,7 @@ unit ZXing.QrCode.Internal.FinderPatternInfo;
 
 interface
 
-uses 
+uses
   ZXing.QrCode.Internal.FinderPattern;
 
 type

@@ -37,7 +37,7 @@ History
   Version 1.2
   30.08.2008
     Added Pause and Resume
-    
+
   Version 1.1
   26.07.2008
 
@@ -65,13 +65,9 @@ Please note:
   - DSPack (http://www.progdigy.com/)
   - TVideoCapture by Egor Averchenkov (can be found at http://www.torry.net)
 
-
 ******************************************************************************)
 
-
-
 interface
-
 
 USES Windows, Messages, Controls, Forms, SysUtils, Graphics, Classes,
      AppEvnts, MMSystem, DirectShow9, JPEG, Math,
@@ -179,10 +175,7 @@ TYPE
                     PROCEDURE     Convert24ToGray(BM24: TBitmap; BMGray: TBitmap);
                 end;
 
-
-
 FUNCTION GetVideoPropertyName(VP: TVideoProperty): string;
-
 
 // http://www.fourcc.org/yuv.php#UYVY
 
@@ -197,12 +190,7 @@ CONST
   FourCC_YV12 = $32315659;
   FourCC_IYUV = $56555949;
 
-
-
-
 implementation
-
-
 
 FUNCTION GetVideoPropertyName(VP: TVideoProperty): string;
 BEGIN
@@ -219,8 +207,6 @@ BEGIN
     VP_Gain                 : Result := 'Gain';
   END; {case}
 END;
-
-
 
 (* Finally, callback seems to work. Previously it only ran for a few seconds.
    The reason for that seemed to be a deadlock (see http://msdn.microsoft.com/en-us/library/ms786692(VS.85).aspx)
@@ -241,8 +227,6 @@ begin
         fFPS := 30000 / (T1-f30FrameTick);
       f30FrameTick := T1;
     end;
-
-
 
   // führt auf Windows 7 zu unendlich kleinen Frameraten! -cm
 {
@@ -275,8 +259,6 @@ begin
   sleep(0);
 end;
 
-
-
 // Own windows message handler only to get the "New Video Frame has arrived" message.
 // Used to get the information out of the Camera-Thread into the application's thread.
 // Otherwise we would run into a deadlock.
@@ -302,8 +284,6 @@ begin
     else Result := DefWindowProc(fMessageHWND, Msg, wParam, lParam);
 end;
 
-
-
 constructor TVideoImage.Create;
 VAR
   i : integer;
@@ -319,7 +299,7 @@ begin
   fFourCC         := 0;
   FOR i := 0 TO CBufferCnt-1 DO
     BEGIN
-      fImagePtr[i]     := nil; 
+      fImagePtr[i]     := nil;
       fImagePtrSize[i] := 0;
     END;
   fMsgNewFrame    := wm_user+662;
@@ -344,7 +324,6 @@ begin
   PrepareTables;
 end;
 
-
 // Check, when the last OnIdle message arrived. Save a time stamp.
 // Used to check the CPU load. If necessary, we will skip video frames...
 procedure TVideoImage.AppEventsIdle(Sender: TObject; var Done: Boolean);
@@ -352,7 +331,6 @@ begin
   IdleEventTick := TimeGetTime;
   Done := true;
 end;
-
 
 destructor  TVideoImage.Destroy;
 VAR
@@ -398,8 +376,6 @@ begin
   END; {case}
 end;
 
-
-
 FUNCTION TVideoImage.GetVideoPropertySettings(VP: TVideoProperty; VAR MinVal, MaxVal, StepSize, Default, Actual: integer; VAR AutoMode: boolean): HResult;
 VAR
   VPAP       : TVideoProcAmpProperty;
@@ -433,8 +409,6 @@ BEGIN
     end;
 END;
 
-
-
 FUNCTION TVideoImage.SetVideoPropertySettings(VP: TVideoProperty; Actual: integer; AutoMode: boolean): HResult;
 VAR
   VPAP       : TVideoProcAmpProperty;
@@ -449,13 +423,10 @@ BEGIN
   Result := VideoSample.SetVideoPropAmpEx(VPAP, pCapsFlags, Actual);
 END;
 
-
-
 procedure TVideoImage.GetListOfDevices(DeviceList: TStringList);
 begin
   GetCaptureDeviceList(DeviceList);
 end;
-
 
 procedure TVideoImage.VideoPause;
 begin
@@ -464,16 +435,12 @@ begin
   VideoSample.PauseVideo;
 end;
 
-
-
 procedure TVideoImage.VideoResume;
 begin
   if not assigned(VideoSample) then
     exit;
   VideoSample.ResumeVideo;
 end;
-
-
 
 procedure TVideoImage.VideoStop;
 begin
@@ -488,8 +455,6 @@ begin
   end;
   fVideoRunning := false;
 end;
-
-
 
 function TVideoImage.VideoStart(DeviceName: string): integer;
 VAR
@@ -541,16 +506,12 @@ begin
     end;
 end;
 
-
-
 function TVideoImage.VideoSampleIsPaused: boolean;
 begin
   if assigned(VideoSample)
     then Result := VideoSample.PlayState = PS_PAUSED
     else Result := false;
 end;
-
-
 
 // Create an 8bit grayscale palette image with width W and Height H.
 PROCEDURE TVideoImage.PrepareGrayBMP(VAR BM : TBitmap; W, H: integer);
@@ -578,8 +539,6 @@ BEGIN
   BM.pixelformat := pf8bit;
   BM.Palette := CreatePalette(_Pal);
 END; {PrepareGrayBMP}
-
-
 
 PROCEDURE TVideoImage.Convert24ToGray(BM24: TBitmap; BMGray: TBitmap);
 { - Convert a 24bit RGB bitmap into a 8bit grayscale image }
@@ -614,8 +573,6 @@ BEGIN
   BMGray.Canvas.Draw(0, 0, BM24);
 END;
 
-
-
 PROCEDURE TVideoImage.PrepareTables;
 VAR
   i : integer;
@@ -646,9 +603,6 @@ BEGIN
     ValueClip[i] := 255;
   fYUY2TablesPrepared := true;
 END;
-
-
-
 
 procedure TVideoImage.I420_to_RGB(pData: pointer);
 // http://en.wikipedia.org/wiki/YCbCr
@@ -694,7 +648,6 @@ begin
     END;
 end;
 
-
 procedure TVideoImage.I420_to_Gray8Bit(pData: pointer);
 // http://en.wikipedia.org/wiki/YCbCr
 var
@@ -708,9 +661,6 @@ begin
       Inc(pY, fBitmapGray.Width);
     end;
 end;
-
-
-
 
 procedure TVideoImage.YUY2_to_RGB(pData: pointer);
 // http://msdn.microsoft.com/en-us/library/ms893078.aspx
@@ -750,8 +700,6 @@ begin
     END;
 end;
 
-
-
 procedure TVideoImage.YUY2_to_Gray8Bit(pData: pointer);
 // http://msdn.microsoft.com/en-us/library/ms893078.aspx
 // http://en.wikipedia.org/wiki/YCbCr
@@ -777,8 +725,6 @@ begin
         end;
     END;
 end;
-
-
 
 procedure TVideoImage.RGB_to_Gray8Bit(pData: pointer);
 type
@@ -806,8 +752,6 @@ begin
 
 end;
 
-
-
 procedure TVideoImage.PaintFrame;
 BEGIN
   // Paint FBitmap to fDisplayCanvas, if available
@@ -828,8 +772,6 @@ BEGIN
         end;
     end;
 END;
-
-
 
 procedure TVideoImage.UnpackFrame(Size: integer; pData: pointer);
 var
@@ -925,8 +867,6 @@ begin
   end;
 end;
 
-
-
 procedure TVideoImage.GetBitmap(BMP: TBitmap);
 begin
   IF not fImageUnpacked then
@@ -943,21 +883,15 @@ begin
   *)
 end;
 
-
-
 procedure TVideoImage.SetDisplayCanvas(Canvas: TCanvas);
 begin
   fDisplayCanvas := Canvas;
 end;
 
-
-
 procedure TVideoImage.ShowProperty;
 begin
   VideoSample.ShowPropertyDialog;
 end;
-
-
 
 procedure TVideoImage.ShowProperty_Stream;
 var
@@ -983,33 +917,25 @@ begin
     END;
 end;
 
-
-
 FUNCTION  TVideoImage.ShowVfWCaptureDlg: HResult;
 begin
   Result := VideoSample.ShowVfWCaptureDlg;
 end;
-
-
 
 procedure TVideoImage.GetBrightnessSettings(VAR Actual: integer);
 begin
 //  VideoSample.GetVideoPropAmp(VideoProcAmp_Brightness, Actual)
 end;
 
-
-
 procedure TVideoImage.SetBrightnessSettings(const Actual: integer);
 begin
 //  VideoSample.SetVideoPropAmp(VideoProcAmp_Brightness, Actual);
 end;
 
-
 PROCEDURE TVideoImage.GetListOfSupportedVideoSizes(VidSize: TStringList);
 BEGIN
   VideoSample.GetListOfVideoSizes(VidSize);
 END;
-
 
 PROCEDURE TVideoImage.SetResolutionByIndex(Index: integer);
 VAR
@@ -1030,6 +956,5 @@ BEGIN
       PrepareGrayBMP(FBitmapGray, W, H);
     END;
 END;
-
 
 end.

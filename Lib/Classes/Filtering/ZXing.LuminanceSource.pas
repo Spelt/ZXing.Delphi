@@ -59,11 +59,11 @@ type
     /// <param name="row">An optional preallocated array. If null or too small, it will be ignored.
     /// Always use the returned object, and ignore the .length of the array.
     /// </param>
-    /// <returns> An array containing the luminance data.</returns>    
+    /// <returns> An array containing the luminance data.</returns>
 	function getRow(const y: Integer; row: TArray<byte>): TArray<byte>;
       virtual; abstract;
 
-    /// <summary> 
+    /// <summary>
     /// Returns a new object with cropped image data. Implementations may keep a reference to the
     /// original data rather than a copy. Only callable if CropSupported is true.
     /// </summary>
@@ -94,7 +94,7 @@ type
     /// Returns a new object with rotated image data by 45 degrees counterclockwise.
     /// Only callable if <see cref="RotateSupported"/> is true.
     /// </summary>
-    /// <returns>A rotated version of this object.</returns>    
+    /// <returns>A rotated version of this object.</returns>
 	function rotateCounterClockwise45(): TLuminanceSource; virtual;
 
     /// <returns> The height of the bitmap.</returns>

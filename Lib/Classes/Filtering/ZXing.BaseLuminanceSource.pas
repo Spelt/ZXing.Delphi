@@ -33,7 +33,7 @@ uses
 
 type
   /// <summary>
-  /// The base class for luminance sources which supports 
+  /// The base class for luminance sources which supports
   /// cropping and rotating based upon the luminance values.
   /// </summary>
   TBaseLuminanceSource = class abstract (TLuminanceSource)
@@ -45,13 +45,13 @@ type
       GChannelWeight : Integer = 38550;
       BChannelWeight : Integer = 7424;
       ChannelWeight  : Integer = 16;
-	  
+
     function CreateLuminanceSource(const newLuminances: TArray<Byte>;
       const width, height: Integer): TLuminanceSource; virtual; abstract;
   public
-    
+
     // added the "reintroduce" keyword to shut off the "method hides another method with the same name in the base class"
-    constructor Create(const width, height: Integer);  reintroduce; overload; 
+    constructor Create(const width, height: Integer);  reintroduce; overload;
     constructor Create(const luminanceArray: TArray<Byte>; const width, height: Integer);  reintroduce; overload;
 
     function getRow(const y: Integer; row: TArray<Byte>): TArray<Byte>; override;
@@ -74,7 +74,7 @@ implementation
 constructor TBaseLuminanceSource.Create(const width, height: Integer);
 begin
   inherited Create(width, height);
-  
+
   luminances := TArray<Byte>.Create();
   SetLength(luminances, (width * height));
 end;
@@ -85,7 +85,7 @@ end;
 /// <param name="luminanceArray">The luminance array.</param>
 /// <param name="width">The width.</param>
 /// <param name="height">The height.</param>
-constructor TBaseLuminanceSource.Create(const luminanceArray: TArray<Byte>; 
+constructor TBaseLuminanceSource.Create(const luminanceArray: TArray<Byte>;
   const width, height: Integer);
 begin
   Self.Create(width, height);
@@ -104,7 +104,7 @@ end;
 /// <returns>
 /// An array containing the luminance data.
 /// </returns>
-function TBaseLuminanceSource.getRow(const y: Integer; 
+function TBaseLuminanceSource.getRow(const y: Integer;
   row: TArray<Byte>): TArray<Byte>;
 var
   i, width: Integer;
@@ -120,7 +120,7 @@ begin
   for i := 0 to Pred(width) do
     row[i] := luminances[y * width + i];
 
-  Result := row;  
+  Result := row;
 end;
 
 function TBaseLuminanceSource.Matrix: TArray<Byte>;

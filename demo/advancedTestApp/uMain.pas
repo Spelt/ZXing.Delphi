@@ -18,7 +18,6 @@ unit uMain;
   *
   * Uses examples from https://quality.embarcadero.com/browse/RSP-10592 from Erik van Bilsen
 
-
   READ ME
 
   This project is an example of a professional barcode project.
@@ -37,8 +36,6 @@ unit uMain;
   - Marks your barcode hit in the HUD
 
   - Tested in Delphi Tokyo edition.
-
-
 
   Performance TIPS:
   - Tweak with SCAN_EVERY_N_FRAME_FREQ maybe you can set it higher, depending on your situation.
@@ -178,7 +175,6 @@ begin
   FFrameTake := 0;
   FScanInProgress := False;
 
-
   // Use only the Barcode Types you need to scan. Set it on auto with care!!
   FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
   DisplaySlowWarning(False);
@@ -192,7 +188,6 @@ begin
 {$ENDIF}
   PermissionsService.RequestPermissions([FPermissionCamera], AccessCameraPermissionRequestResult, DisplayRationale);
 end;
-
 
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
@@ -448,6 +443,5 @@ begin
   else
     StopCapture();
 end;
-
 
 end.

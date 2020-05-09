@@ -122,7 +122,6 @@ type
     /// <throws>ReaderException if dimension is not >= 21 and 1 mod 4</throws>
     constructor Create(const BitMatrix: TBitMatrix);
 
-
     /// <summary>
     /// <p>Extracts the data region from a <see cref="BitMatrix" />that contains
     /// alignment patterns.</p>
@@ -174,8 +173,6 @@ begin
   self.readMappingMatrix.Free;
   inherited;
 end;
-
-
 
 function TBitMatrixParser.readVersion(BitMatrix: TBitMatrix): TVersion;
 begin
