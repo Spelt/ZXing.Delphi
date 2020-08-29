@@ -103,6 +103,7 @@ begin
     Exit;
   end;
 
+  newMatrix := nil;
   try
 
     source := self.LuminanceSource;
