@@ -542,14 +542,24 @@ var
   hints: TDictionary<TDecodeHintType, TObject>;
 begin
 
+
+
   hints := TDictionary<TDecodeHintType, TObject>.Create();
   hints.Add(TDecodeHintType.PURE_BARCODE, nil);
 
   try
-
     result := Decode('problem-qr-android 64bit.png', TBarcodeFormat.QR_CODE, hints);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Contains('http://sintest/'), 'QR code result Text Incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
+
+  hints := TDictionary<TDecodeHintType, TObject>.Create();
+  hints.Add(TDecodeHintType.PURE_BARCODE, nil);
+
+  try
     result := Decode('beantest.jpg', TBarcodeFormat.QR_CODE, hints);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Contains('ivaservizi.'), 'QR code result Text Incorrect: ' + result.Text);
@@ -821,6 +831,24 @@ var
   result: TReadResult;
   x0, x1, y0, y1: single;
 begin
+
+
+//  try
+//
+//    var hints := TDictionary<TDecodeHintType, TObject>.Create();
+//  	hints.Add(TDecodeHintType.TRY_HARDER, nil);
+//
+//
+//    result := Decode('128problem.jpg', TBarcodeFormat.CODE_128, hints);
+//    Assert.IsNotNull(result, ' Nil result ');
+//
+//  finally
+//    FreeAndNil(result);
+//  end;
+//
+//    exit;
+
+
   try
 
     result := Decode('Code128.png', TBarcodeFormat.CODE_128);

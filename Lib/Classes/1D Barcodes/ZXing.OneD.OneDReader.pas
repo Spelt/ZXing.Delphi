@@ -246,7 +246,9 @@ var
   ReadResult: TReadResult;
   points: TArray<IResultPoint>;
   obj: TObject;
+  needsCallBack : boolean;
 begin
+  needsCallBack := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK));
   width := image.width;
   height := image.height;
   row := TBitArrayHelpers.CreateBitArray(width);
@@ -254,7 +256,7 @@ begin
 
   middle := TMathUtils.Asr(height, 1);
 
-  rowStep := 5;
+  	rowStep := 5;
   maxLines := height; // Look at the whole image, not just the center
 
   for X := 0 to maxLines - 1 do
@@ -300,15 +302,14 @@ begin
         // don't want to clutter with noise from every single row scan -- just the scans
         // that start on the center line.
 
-        if ((hints <> nil) and
-          (hints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK)))
-        then
+        if needsCallBack then
         begin
           hints.TryGetValue
             (ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK, obj);
           hints.Remove(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK);
           hadResultPointCallBack := true;
         end;
+
       end;
 
       // Look for a barcode

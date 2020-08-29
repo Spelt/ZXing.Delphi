@@ -9,9 +9,6 @@
         <Projects Include="MemLeakTest\Leaktest.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="demo\advancedTestApp\FmxAdvancedTestApp.dproj">
-            <Dependencies/>
-        </Projects>
         <Projects Include="demo\aTestApp\FmxTestApp.dproj">
             <Dependencies/>
         </Projects>
@@ -47,15 +44,6 @@
     <Target Name="Leaktest:Make">
         <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Make"/>
     </Target>
-    <Target Name="FmxAdvancedTestApp">
-        <MSBuild Projects="demo\advancedTestApp\FmxAdvancedTestApp.dproj"/>
-    </Target>
-    <Target Name="FmxAdvancedTestApp:Clean">
-        <MSBuild Projects="demo\advancedTestApp\FmxAdvancedTestApp.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="FmxAdvancedTestApp:Make">
-        <MSBuild Projects="demo\advancedTestApp\FmxAdvancedTestApp.dproj" Targets="Make"/>
-    </Target>
     <Target Name="FmxTestApp">
         <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj"/>
     </Target>
@@ -84,13 +72,13 @@
         <MSBuild Projects="demo\webcam\Webcam.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="dUnitXTest;Leaktest;FmxAdvancedTestApp;FmxTestApp;vclTestApp;Webcam"/>
+        <CallTarget Targets="dUnitXTest;Leaktest;FmxTestApp;vclTestApp;Webcam"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="dUnitXTest:Clean;Leaktest:Clean;FmxAdvancedTestApp:Clean;FmxTestApp:Clean;vclTestApp:Clean;Webcam:Clean"/>
+        <CallTarget Targets="dUnitXTest:Clean;Leaktest:Clean;FmxTestApp:Clean;vclTestApp:Clean;Webcam:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="dUnitXTest:Make;Leaktest:Make;FmxAdvancedTestApp:Make;FmxTestApp:Make;vclTestApp:Make;Webcam:Make"/>
+        <CallTarget Targets="dUnitXTest:Make;Leaktest:Make;FmxTestApp:Make;vclTestApp:Make;Webcam:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
