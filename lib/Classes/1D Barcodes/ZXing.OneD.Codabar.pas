@@ -81,9 +81,9 @@ begin
   PADDING := Round(TOneDReader.PATTERN_MATCH_RESULT_SCALE_FACTOR * 1.5);
   ALPHABET := '0123456789-$:/.+ABCD'.ToCharArray;
   CHARACTER_ENCODINGS := TArray<Integer>.Create(
-        3, 6, 9, $60, $12, $42, $21, $24, $30, $48, 12, $18, $45, $51, $54, $15,
-        $1a, $29, 11, 14);
-  STARTEND_ENCODING := TArray<Char>.Create('A', 'B', 'C', 'D' );
+    3, 6, 9, $60, $12, $42, $21, $24, $30, $48, 12, $18, $45, $51, $54, $15,
+    $1A, $29, 11, 14);
+  STARTEND_ENCODING := TArray<Char>.Create('A', 'B', 'C', 'D');
 end;
 
 destructor TCodaBarReader.Destroy;
@@ -135,6 +135,10 @@ var
   index, charOffset, startOffset, nextStart, trailingWhitespace,
     lastPatternSize, i, runningCount, left, right: Integer;
   startchar, endchar: Char;
+  resultPointCallback: TResultPointCallback;
+  obj: TObject;
+  resultPoints: TArray<IResultPoint>;
+  resultPointLeft, resultPointRight: IResultPoint;
 
 begin
   index := 0;
@@ -198,7 +202,7 @@ begin
   i := 0;
   while ((i < self.decodeRowResult.Length)) do
   begin
-    // self.decodeRowResult.Chars[i] := ALPHABET[self.decodeRowResult[i]];
+    decodeRowResult.Chars[i] := ALPHABET[StrToInt(decodeRowResult[i])];
     inc(i)
   end;
 
@@ -227,10 +231,12 @@ begin
 
   // if (not SupportClass.GetValue<boolean>(hints,
   // DecodeHintType.RETURN_CODABAR_START_END, false)) then
-  // begin
-  // self.decodeRowResult.Remove((self.decodeRowResult.Length - 1), 1);
-  // self.decodeRowResult.Remove(0, 1)
-  // end;
+  if not((hints <> nil) and
+    (hints.ContainsKey(TDecodeHintType.RETURN_CODABAR_START_END))) then
+  begin
+    self.decodeRowResult.Remove((self.decodeRowResult.Length - 1), 1);
+    self.decodeRowResult.Remove(0, 1)
+  end;
 
   runningCount := 0;
   i := 0;
@@ -264,7 +270,33 @@ begin
   // ((ResultPoint.Create(left, (rowNumber as Single)),
   // ResultPoint.Create(right, (rowNumber as Single))))),
   // BarcodeFormat.Codabar);
-  result := nil;
+
+  resultPointCallback := nil;
+
+  resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
+  resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
+  resultPoints := [resultPointLeft, resultPointRight];
+
+  // it is a local variable: it doesn't get NIL as default value, and the following ifs do not assign a value for all possible cases
+
+  if ((hints = nil) or
+    (not hints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
+    resultPointCallback := nil
+  else
+  begin
+    obj := hints[TDecodeHintType.NEED_RESULT_POINT_CALLBACK];
+    if (obj is TResultPointEventObject) then
+      resultPointCallback := TResultPointEventObject(obj).Event;
+  end;
+
+  if Assigned(resultPointCallback) then
+  begin
+    resultPointCallback(resultPointLeft);
+    resultPointCallback(resultPointRight);
+  end;
+
+  result := TReadResult.Create(self.decodeRowResult.ToString, nil, resultPoints,
+    TBarcodeFormat.CODABAR);
 
 end;
 
@@ -273,12 +305,11 @@ var
   i, charOffset, patternSize, j: Integer;
 begin
   i := 1;
-  while ((i < self.counterLength)) do
+  while i < self.counterLength do
   begin
+
     charOffset := self.toNarrowWidePattern(i);
-    if ((charOffset <> -1) and TCodaBarReader.arrayContains
-      (TCodaBarReader.STARTEND_ENCODING, TCodaBarReader.ALPHABET[charOffset]))
-    then
+    if ((charOffset <> -1) and arrayContains(STARTEND_ENCODING, ALPHABET[charOffset])) then
     begin
       patternSize := 0;
       j := i;
@@ -294,6 +325,7 @@ begin
         exit
       end
     end;
+
     inc(i, 2)
   end;
 
@@ -339,7 +371,7 @@ var
     thresholdSpace, bitmask, pattern, i, threshold: Integer;
   theCounters: TArray<Integer>;
 begin
-  last := (position + 7);
+  last := position + 7;
   if (last < self.counterLength) then
   begin
     theCounters := self.counters;
@@ -349,30 +381,37 @@ begin
     while ((j < last)) do
     begin
       currentCounter := theCounters[j];
+
       if (currentCounter < minBar) then
         minBar := currentCounter;
+
       if (currentCounter > maxbar) then
         maxbar := currentCounter;
+
       inc(j, 2)
     end;
+
     thresholdBar := ((minBar + maxbar) div 2);
     maxSpace := 0;
     minSpace := $7FFFFFFF;
     j := (position + 1);
-    while ((j < last)) do
+    while j < last do
     begin
       currentCounter := theCounters[j];
+
       if (currentCounter < minSpace) then
         minSpace := currentCounter;
+
       if (currentCounter > maxSpace) then
         maxSpace := currentCounter;
       inc(j, 2)
     end;
-    thresholdSpace := ((minSpace + maxSpace) div 2);
-    bitmask := $80;
+
+    thresholdSpace := (minSpace + maxSpace) div 2;
+    bitmask := 1 shl 7;
     pattern := 0;
     i := 0;
-    while ((i < 7)) do
+    while i < 7 do
     begin
 
       if (i and 1) = 0 then
@@ -383,13 +422,14 @@ begin
       bitmask := TMathUtils.Asr(bitmask, 1);
       if (theCounters[(position + i)] > threshold) then
         pattern := (pattern or bitmask);
+
       inc(i)
     end;
 
     i := 0;
     while i < Length(TCodaBarReader.CHARACTER_ENCODINGS) do
     begin
-      if (TCodaBarReader.CHARACTER_ENCODINGS[i] = pattern) then
+      if (CHARACTER_ENCODINGS[i] = pattern) then
       begin
         result := i;
         exit
@@ -416,7 +456,7 @@ begin
 
 Label_0021:
 
-  // pattern := CHARACTER_ENCODINGS[self.decodeRowResult[i]];
+  pattern := CHARACTER_ENCODINGS[StrToInt(self.decodeRowResult[i])];
   j := 6;
   while ((j >= 0)) do
   begin
@@ -455,7 +495,7 @@ Label_0021:
   i := 0;
 
 Label_0117:
-  // pattern := CHARACTER_ENCODINGS[self.decodeRowResult.Chars[i]];
+  pattern := CHARACTER_ENCODINGS[StrToInt(self.decodeRowResult.Chars[i])];
   j := 6;
   while ((j >= 0)) do
   begin
