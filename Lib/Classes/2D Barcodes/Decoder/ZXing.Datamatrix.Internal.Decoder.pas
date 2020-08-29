@@ -118,6 +118,7 @@ var
 begin
   // Construct a parser and read version, error-correction level
   parser := TBitMatrixParser.Create(bits);
+  DataBlock := nil;
 
   try
 
