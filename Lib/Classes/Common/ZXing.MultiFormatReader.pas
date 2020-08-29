@@ -44,7 +44,7 @@ uses
   ZXing.OneD.UPCAReader,
   ZXing.OneD.UPCEReader,
   ZXing.OneD.Code39Reader,
-
+  ZXing.OneD.Codabar,
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
   ZXing.Datamatrix.DataMatrixReader;
@@ -220,6 +220,11 @@ begin
       readers.Add(TITFReader.Create())
     end;
 
+    if (formats.Contains(TBarcodeFormat.CODABAR)) then
+    begin
+      readers.Add(TCodaBarReader.Create())
+    end;
+
     // 2D readers
     if (formats.Contains(TBarcodeFormat.QR_CODE)) then
     begin
@@ -268,6 +273,9 @@ begin
     readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());
     readers.Add(TITFReader.Create());
+    readers.Add(TCodaBarReader.Create());
+
+
     useCode39CheckDigit := hints.ContainsKey
       (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT) and hints.ContainsKey
       (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT);

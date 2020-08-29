@@ -77,6 +77,9 @@ type
     procedure AllCodeEAN13;
 
     [Test]
+    procedure AllCodeCodabar;
+
+    [Test]
     procedure AutoTypes();
 
   end;
@@ -957,6 +960,25 @@ begin
     FreeAndNil(result);
   end;
 end;
+
+
+
+procedure TZXingDelphiTest.AllCodeCodaBar();
+var
+  result: TReadResult;
+begin
+  try
+    result := Decode('Codabar-1.png', TBarcodeFormat.CODABAR);
+    Assert.IsNotNull(result, ' nil result ');
+    Assert.IsTrue(result.Text.Equals('1234567890'), 'Codabar-1 result Text Incorrect: ' + result.Text);
+
+  finally
+    FreeAndNil(result);
+  end;
+
+end;
+
+
 
 procedure TZXingDelphiTest.AllCodeITF();
 var
