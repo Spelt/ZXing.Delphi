@@ -92,7 +92,7 @@ implementation
 
 function TBitMatrix.getBit(x, y: Integer): Boolean;
 var
-  offset, v, bits, shift: Integer;
+  offset, v, bits, shift: Int64;
   uBits: Cardinal;
 begin
   offset := y * FrowSize + TMathUtils.Asr(x, 5);
