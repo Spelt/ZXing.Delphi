@@ -58,7 +58,6 @@ object MainForm: TMainForm
       Size.Height = 272.000000000000000000
       Size.PlatformDefault = False
       WrapMode = Stretch
-      OnClick = imgCameraClick
     end
     object Memo1: TMemo
       Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]

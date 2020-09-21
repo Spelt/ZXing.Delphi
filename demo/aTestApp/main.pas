@@ -51,7 +51,7 @@ uses
   FMX.Controls3D,
   ZXing.BarcodeFormat,
   ZXing.ReadResult,
-  ZXing.ScanManager;
+  ZXing.ScanManager, FMX.Memo.Types;
 
 type
   TMainForm = class(TForm)
@@ -70,21 +70,21 @@ type
     procedure btnStartCameraClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnStopCameraClick(Sender: TObject);
-
-    procedure FormDestroy(Sender: TObject);
     procedure CameraComponent1SampleBufferReady(Sender: TObject;
       const ATime: TMediaTime);
-    procedure imgCameraClick(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     { Private declarations }
-    FPermissionCamera : String;
-
-    FScanManager: TScanManager;
-    FScanInProgress: Boolean;
-    FFrameTake: Integer;
-    procedure GetImage();
-    procedure CameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
-    procedure ExplainReason(Sender: TObject; const APermissions: TArray<string>; const APostRationaleProc: TProc);
+    fPermissionCamera: String;
+    fScanInProgress: Boolean;
+    fFrameTake: Integer;
+    fScanBitmap: TBitmap;
+    procedure ParseImage();
+    procedure CameraPermissionRequestResult(Sender: TObject;
+      const APermissions: TArray<string>;
+      const AGrantResults: TArray<TPermissionStatus>);
+    procedure ExplainReason(Sender: TObject; const APermissions: TArray<string>;
+      const APostRationaleProc: TProc);
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
   end;
 
@@ -92,6 +92,7 @@ var
   MainForm: TMainForm;
 
 implementation
+
 uses
 {$IFDEF ANDROID}
   Androidapi.Helpers,
@@ -101,6 +102,7 @@ uses
   FMX.DialogService;
 
 {$R *.fmx}
+
 
 procedure TMainForm.FormCreate(Sender: TObject);
 var
@@ -113,26 +115,29 @@ begin
   end;
 
   lblScanStatus.Text := '';
-  FFrameTake := 0;
-  FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+  fFrameTake := 0;
+  fScanBitmap := nil;
 
-  {$IFDEF ANDROID}
-  FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
-  {$EndIf}
+{$IFDEF ANDROID}
+  fPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
+{$ENDIF}
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
-  FScanManager.Free;
+  if Assigned(fScanBitmap) then
+    FreeAndNil(fScanBitmap);
 end;
 
-procedure TMainForm.CameraPermissionRequestResult(Sender: TObject; const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+procedure TMainForm.CameraPermissionRequestResult(Sender: TObject;
+  const APermissions: TArray<string>;
+  const AGrantResults: TArray<TPermissionStatus>);
 begin
   if (Length(AGrantResults) = 1) and
-     (AGrantResults[0] = TPermissionStatus.Granted) then
+    (AGrantResults[0] = TPermissionStatus.Granted) then
   begin
-    CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.HighQuality;
     CameraComponent1.Active := false;
+    CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
     CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
     CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
     CameraComponent1.Active := True;
@@ -140,22 +145,26 @@ begin
     Memo1.Lines.Clear;
   end
   else
-    TDialogService.ShowMessage('Cannot scan for barcodes because the required permissions is not granted')
+    TDialogService.ShowMessage
+      ('Cannot scan for barcodes because the required permissions is not granted')
 end;
 
-procedure TMainForm.ExplainReason(Sender: TObject; const APermissions: TArray<string>; const APostRationaleProc: TProc);
+procedure TMainForm.ExplainReason(Sender: TObject;
+  const APermissions: TArray<string>; const APostRationaleProc: TProc);
 begin
 
-  TDialogService.ShowMessage('The app needs to access the camera to scan barcodes ...',
-                            procedure(const AResult: TModalResult)
-                            begin
-                              APostRationaleProc;
-                            end)
+  TDialogService.ShowMessage
+    ('The app needs to access the camera to scan barcodes ...',
+    procedure(const AResult: TModalResult)
+    begin
+      APostRationaleProc;
+    end)
 end;
 
 procedure TMainForm.btnStartCameraClick(Sender: TObject);
 begin
-  PermissionsService.RequestPermissions([FPermissionCamera], CameraPermissionRequestResult, ExplainReason);
+  PermissionsService.RequestPermissions([fPermissionCamera],
+    CameraPermissionRequestResult, ExplainReason);
 end;
 
 procedure TMainForm.btnStopCameraClick(Sender: TObject);
@@ -163,51 +172,61 @@ begin
   CameraComponent1.Active := false;
 end;
 
-procedure TMainForm.CameraComponent1SampleBufferReady(Sender: TObject;
-  const ATime: TMediaTime);
+procedure TMainForm.CameraComponent1SampleBufferReady(Sender: TObject; const ATime: TMediaTime);
 begin
-  TThread.Synchronize(TThread.CurrentThread, GetImage);
+
+  TThread.Synchronize(TThread.CurrentThread,
+  procedure
+  begin
+    CameraComponent1.SampleBufferToBitmap(imgCamera.Bitmap, True);
+
+    if (fScanInProgress) then
+    begin
+      exit;
+    end;
+
+    { This code will take every 4 frame. }
+    inc(fFrameTake);
+    if (fFrameTake mod 4 <> 0) then
+    begin
+      exit;
+    end;
+
+    if Assigned(fScanBitmap) then
+      FreeAndNil(fScanBitmap);
+
+    fScanBitmap := TBitmap.Create();
+    fScanBitmap.Assign(imgCamera.Bitmap);
+
+    ParseImage();
+  end);
+
+
 end;
 
-procedure TMainForm.GetImage;
-var
-  scanBitmap: TBitmap;
-  ReadResult: TReadResult;
-
+procedure TMainForm.ParseImage();
 begin
-  CameraComponent1.SampleBufferToBitmap(imgCamera.Bitmap, True);
 
-  if (FScanInProgress) then
-  begin
-    exit;
-  end;
-
-  { This code will take every 4 frame. }
-  inc(FFrameTake);
-  if (FFrameTake mod 4 <> 0) then
-  begin
-    exit;
-  end;
-
-  scanBitmap := TBitmap.Create();
-  scanBitmap.Assign(imgCamera.Bitmap);
-  ReadResult := nil;
-
-// There is bug in Delphi Berlin 10.1 update 2 which causes the TTask and
-// the TThread.Synchronize to cause exceptions.
-// See: https://quality.embarcadero.com/browse/RSP-16377?jql=project%20%3D%20RSP%20AND%20issuetype%20%3D%20Bug%20AND%20affectedVersion%20%3D%20%2210.1%20Berlin%20Update%202%22%20AND%20status%20%3D%20Open%20ORDER%20BY%20priority%20DESC
-
-  TTask.Run(
+  TThread.CreateAnonymousThread(
     procedure
+    var
+      ReadResult: TReadResult;
+      ScanManager: TScanManager;
+
     begin
       try
-        FScanInProgress := True;
+        fScanInProgress := True;
+        ScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+
         try
-          ReadResult := FScanManager.Scan(scanBitmap);
+
+          ReadResult := ScanManager.Scan(fScanBitmap);
+
         except
           on E: Exception do
           begin
-            TThread.Synchronize(nil,
+
+            TThread.Synchronize(TThread.CurrentThread,
               procedure
               begin
                 lblScanStatus.Text := E.Message;
@@ -215,13 +234,14 @@ begin
 
             exit;
           end;
+
         end;
 
-        TThread.Synchronize(nil,
+        TThread.Synchronize(TThread.CurrentThread,
           procedure
           begin
 
-            if (length(lblScanStatus.Text) > 10) then
+            if (Length(lblScanStatus.Text) > 10) then
             begin
               lblScanStatus.Text := '*';
             end;
@@ -235,17 +255,14 @@ begin
           end);
 
       finally
-        ReadResult.Free;
-        scanBitmap.Free;
-        FScanInProgress := false;
+        if ReadResult <> nil then
+          FreeAndNil(ReadResult);
+
+        ScanManager.Free;
+        fScanInProgress := false;
       end;
 
-    end);
-
-end;
-
-procedure TMainForm.imgCameraClick(Sender: TObject);
-begin
+    end).Start();
 
 end;
 
