@@ -168,7 +168,6 @@ begin
   try
     i := 0;
     next := Char(0);
-    c := Char(0);
     while ((i < length)) do
     begin
 

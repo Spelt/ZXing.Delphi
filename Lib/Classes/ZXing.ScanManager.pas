@@ -69,7 +69,6 @@ begin
       o := hint.Value;
       if Assigned(o) then
         o.Free;
-      o := nil;
     end;
 
     FHints.Clear();

@@ -501,7 +501,7 @@ end;
 function TFinderPatternFinder.find(
   const hints: TDictionary<TDecodeHintType, TObject>): TFinderPatternInfo;
 var
-  tryHarder, pureBarcode,
+  tryHarder,
   done, confirmed: Boolean;
   maxI, maxJ, iSkip,
   i, currentState, j, rowSkip: Integer;
@@ -512,7 +512,6 @@ begin
   Result := nil;
 
   tryHarder := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHinttype.TRY_HARDER));
-  pureBarcode := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHinttype.PURE_BARCODE));
   maxI := Self.image.Height;
   maxJ := Self.image.Width;
   // We are looking for black/white/black/white/black modules in

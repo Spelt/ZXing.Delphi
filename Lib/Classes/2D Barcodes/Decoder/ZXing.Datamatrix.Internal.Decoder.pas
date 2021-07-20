@@ -183,7 +183,6 @@ begin
     if Assigned(DataBlock) then
       DataBlock.Free;
 
-    DataBlock := nil;
     resultBytes := nil;
     codewordBytes := nil;
     parser.Free;

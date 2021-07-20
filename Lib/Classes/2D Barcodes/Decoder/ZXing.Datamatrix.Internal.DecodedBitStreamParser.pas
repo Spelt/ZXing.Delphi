@@ -95,7 +95,10 @@ begin
       begin
         if (not TDecodedBitStreamParser.decodeAsciiSegment(bits, res,
           resultTrailer, mode)) then
-             result := nil;  // this line was totally missing. I assume the correct thing is to set result = nil.
+        begin
+          result := nil;  // this line was totally missing. I assume the correct thing is to set result = nil.
+          exit;
+        end;
       end
       else
       begin
