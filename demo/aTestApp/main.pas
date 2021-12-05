@@ -81,13 +81,30 @@ type
     fScanBitmap: TBitmap;
     procedure ParseImage();
     procedure CameraPermissionRequestResult(Sender: TObject;
+{$IF CompilerVersion >= 35.0}
+      const APermissions: TClassicStringDynArray;
+      const AGrantResults: TClassicPermissionStatusDynArray
+{$ELSE}
       const APermissions: TArray<string>;
-      const AGrantResults: TArray<TPermissionStatus>);
-    procedure ExplainReason(Sender: TObject; const APermissions: TArray<string>;
-      const APostRationaleProc: TProc);
+      const AGrantResults: TArray<TPermissionStatus>
+{$IFEND}
+      );
+    procedure ExplainReason(Sender: TObject;
+{$IF CompilerVersion >= 35.0}
+      const APermissions: TClassicStringDynArray;
+      const APostRationaleProc: TProc
+{$ELSE}
+      const APermissions: TArray<string>;
+      const APostRationaleProc: TProc
+{$IFEND}
+      );
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
   end;
 
+
+(*{$IF CompilerVersion >= 35.0}
+      const APermissions: TClassicStringDynArray;
+{$ELSE}*)
 var
   MainForm: TMainForm;
 
@@ -130,8 +147,14 @@ begin
 end;
 
 procedure TMainForm.CameraPermissionRequestResult(Sender: TObject;
-  const APermissions: TArray<string>;
-  const AGrantResults: TArray<TPermissionStatus>);
+{$IF CompilerVersion >= 35.0}
+      const APermissions: TClassicStringDynArray;
+      const AGrantResults: TClassicPermissionStatusDynArray
+{$ELSE}
+      const APermissions: TArray<string>;
+      const AGrantResults: TArray<TPermissionStatus>
+{$IFEND}
+);
 begin
   if (Length(AGrantResults) = 1) and
     (AGrantResults[0] = TPermissionStatus.Granted) then
@@ -150,7 +173,14 @@ begin
 end;
 
 procedure TMainForm.ExplainReason(Sender: TObject;
-  const APermissions: TArray<string>; const APostRationaleProc: TProc);
+{$IF CompilerVersion >= 35.0}
+      const APermissions: TClassicStringDynArray;
+      const APostRationaleProc: TProc
+{$ELSE}
+      const APermissions: TArray<string>;
+      const APostRationaleProc: TProc
+{$IFEND}
+);
 begin
 
   TDialogService.ShowMessage

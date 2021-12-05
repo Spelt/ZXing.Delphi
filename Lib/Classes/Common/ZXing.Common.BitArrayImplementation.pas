@@ -123,7 +123,9 @@ begin
   bitsOffset := TMathUtils.Asr(from, 5);
   currentBits := Fbits[bitsOffset];
   // mask off lesser bits first
+{$OVERFLOWCHECKS OFF}
   currentBits := currentBits and (not((1 shl (from and $1F)) - 1));
+{$OVERFLOWCHECKS ON}
   while (currentBits = 0) do
   begin
     Inc(bitsOffset);
@@ -200,12 +202,14 @@ function TBitArrayImplementation.numberOfTrailingZeros(num: Integer): Integer;
 var
   index: Integer;
 begin
+{$OVERFLOWCHECKS OFF}
   index := (-num and num) mod 37;
   if (index < 0) then
   begin
     index := index * -1;
   end;
   Result := _lookup[index];
+{$OVERFLOWCHECKS ON}
 end;
 
 procedure TBitArrayImplementation.Reverse;
