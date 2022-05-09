@@ -80,11 +80,21 @@ type
     fFrameTake: Integer;
     fScanBitmap: TBitmap;
     procedure ParseImage();
+{$IF CompilerVersion >= 35.0}
+    // after Delphi 11 Alexandria
+    procedure CameraPermissionRequestResult(Sender: TObject;
+      const APermissions: TClassicStringDynArray;
+      const AGrantResults: TClassicPermissionStatusDynArray);
+    procedure ExplainReason(Sender: TObject; const APermissions: TClassicStringDynArray;
+      const APostRationaleProc: TProc);
+{$ELSE}
+    // before Delphi 11 Alexandria
     procedure CameraPermissionRequestResult(Sender: TObject;
       const APermissions: TArray<string>;
       const AGrantResults: TArray<TPermissionStatus>);
     procedure ExplainReason(Sender: TObject; const APermissions: TArray<string>;
       const APostRationaleProc: TProc);
+{$ENDIF}
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
   end;
 
@@ -129,9 +139,17 @@ begin
     FreeAndNil(fScanBitmap);
 end;
 
+{$IF CompilerVersion >= 35.0}
+    // after Delphi 11 Alexandria
+procedure TMainForm.CameraPermissionRequestResult(Sender: TObject;
+  const APermissions: TClassicStringDynArray;
+  const AGrantResults: TClassicPermissionStatusDynArray);
+{$ELSE}
+    // before Delphi 11 Alexandria
 procedure TMainForm.CameraPermissionRequestResult(Sender: TObject;
   const APermissions: TArray<string>;
   const AGrantResults: TArray<TPermissionStatus>);
+{$ENDIF}
 begin
   if (Length(AGrantResults) = 1) and
     (AGrantResults[0] = TPermissionStatus.Granted) then
@@ -149,8 +167,15 @@ begin
       ('Cannot scan for barcodes because the required permissions is not granted')
 end;
 
+{$IF CompilerVersion >= 35.0}
+    // after Delphi 11 Alexandria
+procedure TMainForm.ExplainReason(Sender: TObject;
+  const APermissions: TClassicStringDynArray; const APostRationaleProc: TProc);
+{$ELSE}
+    // before Delphi 11 Alexandria
 procedure TMainForm.ExplainReason(Sender: TObject;
   const APermissions: TArray<string>; const APostRationaleProc: TProc);
+{$ENDIF}
 begin
 
   TDialogService.ShowMessage
