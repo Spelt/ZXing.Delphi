@@ -92,20 +92,20 @@ implementation
 
 function TBitMatrix.getBit(x, y: Integer): Boolean;
 var
-  offset, v, bits, shift: Int64;
-  uBits: Cardinal;
+   offset, v, bits, shift: Int64;
+   uBits: Cardinal;
 begin
-  offset := y * FrowSize + TMathUtils.Asr(x, 5);
-  try
+ offset := y * FrowSize + TMathUtils.Asr(x, 5);
+ if ( offset >= Low( FBits ) ) and ( offset <= High( FBits ) ) then
+ begin
     bits := Fbits[offset];
     uBits := Cardinal(bits);
     shift := (x and $1F);
     v := TMathUtils.Asr(uBits, shift);
     Result := (v and 1) <> 0;
-  except
-    Result := false;
-  end;
-
+ end
+ else
+    Result := False;
 end;
 
 procedure TBitMatrix.setBit(x, y: Integer; const value: Boolean);
