@@ -5,7 +5,7 @@
         <FrameworkType>FMX</FrameworkType>
         <MainSource>FmxTestApp.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Android</Platform>
         <TargetedPlatforms>33809</TargetedPlatforms>
         <AppType>Application</AppType>
@@ -391,6 +391,12 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\Android\FM_LauncherIcon_144x144.png" Configuration="Release" Class="Android_LauncherIcon144">
+                    <Platform Name="Android">
+                        <RemoteName>ic_launcher.png</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="$(BDS)\bin\Artwork\Android\FM_LauncherIcon_192x192.png" Configuration="Release" Class="Android_LauncherIcon192">
                     <Platform Name="Android">
                         <RemoteName>ic_launcher.png</RemoteName>
                         <Overwrite>true</Overwrite>
@@ -1242,6 +1248,12 @@
                 </DeployFile>
                 <DeployFile LocalName="Android\Release\colors.xml" Configuration="Release" Class="Android_Colors">
                     <Platform Name="Android">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Android\Release\FmxTestApp.classes" Configuration="Release" Class="AndroidClasses">
+                    <Platform Name="Android">
+                        <Operation>64</Operation>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -2513,7 +2525,6 @@
                 <Platform value="Android">True</Platform>
                 <Platform value="Android64">True</Platform>
                 <Platform value="iOSDevice64">True</Platform>
-                <Platform value="Linux64">False</Platform>
                 <Platform value="OSX64">False</Platform>
                 <Platform value="OSXARM64">False</Platform>
                 <Platform value="Win32">True</Platform>

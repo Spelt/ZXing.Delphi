@@ -155,7 +155,6 @@ begin
     (AGrantResults[0] = TPermissionStatus.Granted) then
   begin
     CameraComponent1.Active := false;
-    CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.highQuality;
     CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
     CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
     CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
@@ -185,6 +184,7 @@ begin
     begin
       APostRationaleProc;
     end)
+
 end;
 
 procedure TMainForm.btnStartCameraClick(Sender: TObject);
@@ -227,7 +227,6 @@ begin
     ParseImage();
   end);
 
-
 end;
 
 procedure TMainForm.ParseImage();
@@ -240,27 +239,23 @@ begin
       ScanManager: TScanManager;
 
     begin
+      fScanInProgress := True;
+      ScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+
       try
-        fScanInProgress := True;
-        ScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 
         try
-
           ReadResult := ScanManager.Scan(fScanBitmap);
-
         except
           on E: Exception do
           begin
-
             TThread.Synchronize(TThread.CurrentThread,
               procedure
               begin
                 lblScanStatus.Text := E.Message;
               end);
-
             exit;
           end;
-
         end;
 
         TThread.Synchronize(TThread.CurrentThread,
