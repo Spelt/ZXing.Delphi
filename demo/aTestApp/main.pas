@@ -137,6 +137,7 @@ begin
     (AGrantResults[0] = TPermissionStatus.Granted) then
   begin
     CameraComponent1.Active := false;
+    CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.highQuality;
     CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
     CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
     CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
