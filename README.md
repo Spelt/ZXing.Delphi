@@ -1,5 +1,5 @@
 ﻿# ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE to 10.4 Sydney 
+ZXing Barcode Scanning Library for Delphi XE to 11.1 Alexandria 
 
 <img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing-logo.png"/>
 
@@ -10,7 +10,7 @@ ZXing.Delphi is a native Object Pascal library that is based on the well known o
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
 
-Its compatible with in Delphi XE7 - 10 Sydney and tested with IOS 8.x, 9.x, 10.x, 11.x, 12.x, Android, Windows 32/64 and OSX. 
+Its compatible with in Delphi XE7 - 11 Alexandria and tested with IOS 8.x - 15.x, Android 32/64, Windows 32/64 and OSX. 
 The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows (VCL or Firemonkey) applications.  
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
@@ -38,6 +38,10 @@ The standard camera component is, I think too slow for Android and IOS. You need
 	
 
 ### Changes
+- v3.9.3
+	- Demo app is Alexandria/Android compatible (Thanks igorbastosib and Patrick Prémartin)
+	- fix: Some boundary check added (Thanks igorbastosib)
+	- fix: Segmentatition fault	(Thanks Macc2010)
 - v3.9.2
 	- Removal of advanced test app.
 	- fix: Access Violation in Decode https://github.com/Spelt/ZXing.Delphi/issues/100
