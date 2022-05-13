@@ -9,7 +9,8 @@ function NewBitArray(const Size: Integer):IBitArray; overload;
 implementation
 uses
   System.SysUtils,
-  ZXing.Common.Detector.MathUtils;
+  ZXing.Common.Detector.MathUtils,
+  Math;
 
 
 type
@@ -116,32 +117,26 @@ var
   currentBits : Integer;
 begin
   if (from >= Fsize) then
-  begin
-    Result := Fsize;
-    exit;
-  end;
+    Exit(FSize);
+
   bitsOffset := TMathUtils.Asr(from, 5);
   currentBits := Fbits[bitsOffset];
   // mask off lesser bits first
-  currentBits := currentBits and (not((1 shl (from and $1F)) - 1));
+  {$OVERFLOWCHECKS OFF}
+  currentBits := currentBits and -(1 shl (from and $1F));
+  {$OVERFLOWCHECKS ON}
+
   while (currentBits = 0) do
   begin
     Inc(bitsOffset);
     if (bitsOffset = Length(Fbits)) then
-    begin
-      Result := Fsize;
-      exit;
-    end;
+      Exit(FSize);
+
     currentBits := Fbits[bitsOffset];
   end;
 
   Result := (bitsOffset shl 5) + numberOfTrailingZeros(currentBits);
-
-  if (Result > Fsize) then
-  begin
-    Result := Fsize;
-  end;
-
+  Result := Math.Min(Result, FSize);
 end;
 
 /// <summary>
@@ -200,12 +195,18 @@ function TBitArrayImplementation.numberOfTrailingZeros(num: Integer): Integer;
 var
   index: Integer;
 begin
+  Result := 0;
+
+{$OVERFLOWCHECKS OFF}
   index := (-num and num) mod 37;
   if (index < 0) then
   begin
     index := index * -1;
   end;
-  Result := _lookup[index];
+
+  if (index >= Low(_lookup)) and (index <= High(_lookup)) then
+    Result := _lookup[index];
+{$OVERFLOWCHECKS ON}
 end;
 
 procedure TBitArrayImplementation.Reverse;
