@@ -533,6 +533,16 @@ begin
     FreeAndNil(result);
   end;
 
+
+   try
+    result := Decode('QR-bug-overflow.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result');
+    Assert.Contains(result.Text, '1653015096', false);
+
+  finally
+    FreeAndNil(result);
+  end;
+
 end;
 
 // This ones will only work when PURE_BARCODE is existing in the additional hints.
@@ -541,8 +551,6 @@ var
   result: TReadResult;
   hints: TDictionary<TDecodeHintType, TObject>;
 begin
-
-
 
   hints := TDictionary<TDecodeHintType, TObject>.Create();
   hints.Add(TDecodeHintType.PURE_BARCODE, nil);
@@ -1089,11 +1097,18 @@ procedure TZXingDelphiTest.AutoTypes;
 var
   result: TReadResult;
 begin
+
+  try
+    result := Decode('QR-bug-overflow.png', TBarcodeFormat.EAN_13);
+    Assert.IsNull(result, ' Nil result');
+  finally
+    FreeAndNil(result);
+  end;
+
   try
     result := Decode('Code128.png', TBarcodeFormat.Auto);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1234567'), 'Code 128 result Text Incorrect: ' + result.Text);
-
   finally
     FreeAndNil(result);
   end;
@@ -1111,7 +1126,6 @@ begin
     result := Decode('Code128.png', TBarcodeFormat.Auto);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1234567'), 'Code 128 result Text Incorrect: ' + result.Text);
-
   finally
     FreeAndNil(result);
   end;
@@ -1214,6 +1228,7 @@ begin
   finally
     FreeAndNil(result);
   end;
+
 end;
 
 /// /////////////////////////////////////////////////////////////////////////////

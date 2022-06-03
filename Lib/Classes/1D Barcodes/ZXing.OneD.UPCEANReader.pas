@@ -451,7 +451,12 @@ begin
   if startRange = nil then
     exit(nil);
 
-  Result := DoDecodeRow(rowNumber, row, startRange, hints);
+  try
+    Result := DoDecodeRow(rowNumber, row, startRange, hints);
+  except
+    result := nil;
+  end;
+
 end;
 
 function TUPCEANReader.DoDecodeRow(const rowNumber: Integer;
