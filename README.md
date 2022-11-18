@@ -1,5 +1,5 @@
 ﻿# ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE to 11.1 Alexandria 
+ZXing Barcode Scanning Library for Delphi XE to 11.2 Alexandria 
 
 <img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing-logo.png"/>
 
