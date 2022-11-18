@@ -158,7 +158,10 @@ begin
   currentBits := not Fbits[bitsOffset];
 
   // mask off lesser bits first
-  currentBits := currentBits and (not( (1 shl (from and $1F)) - 1));
+  {$OVERFLOWCHECKS OFF}
+  currentBits := currentBits and -(1 shl (from and $1F));
+  {$OVERFLOWCHECKS ON}
+
   while (currentBits = 0) do
   begin
     Inc(bitsOffset);
