@@ -38,6 +38,8 @@ The standard camera component is, I think too slow for Android and IOS. You need
 	
 
 ### Changes
+- v3.9.5
+	- fix: overflow Android. #136
 - v3.9.4
 	- fix: when using TBarcodeFormat.Auto certain QRCodes causes integer overflow in EAN parser. https://github.com/Spelt/ZXing.Delphi/issues/133
 - v3.9.3
