@@ -23,10 +23,10 @@ interface
 
 uses
   SysUtils,
-{$IFDEF USE_VCL_BITMAP}
-  VCL.Graphics,
-{$ELSE}
+{$IFDEF FMX}
   FMX.Graphics,
+{$ELSE}
+  VCL.Graphics,
 {$ENDIF}
   Generics.Collections,
   ZXing.Common.BitArray,

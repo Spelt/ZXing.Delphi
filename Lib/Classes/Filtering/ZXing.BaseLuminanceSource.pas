@@ -23,10 +23,10 @@ interface
 uses
   System.SysUtils,
   System.UITypes,
-{$IFDEF USE_VCL_BITMAP}
-  VCL.Graphics,
-{$ELSE}
+{$IFDEF FMX}
   FMX.Graphics,
+{$ELSE}
+  VCL.Graphics,
 {$ENDIF}
   ZXing.LuminanceSource,
   ZXing.InvertedLuminanceSource;

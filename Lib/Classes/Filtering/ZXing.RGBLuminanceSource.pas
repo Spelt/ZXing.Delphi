@@ -24,11 +24,11 @@ uses
   System.SysUtils,
   System.UITypes,
   System.TypInfo,
-{$IFDEF USE_VCL_BITMAP}
+{$IFDEF FMX}
+  FMX.Graphics,
+{$ELSE}
   Winapi.Windows,
   VCL.Graphics,
-{$ELSE}
-  FMX.Graphics,
 {$ENDIF}
   ZXing.LuminanceSource,
   ZXing.BaseLuminanceSource,
