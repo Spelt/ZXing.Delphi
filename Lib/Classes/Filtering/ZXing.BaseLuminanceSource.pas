@@ -23,10 +23,11 @@ interface
 uses
   System.SysUtils,
   System.UITypes,
-{$IFDEF FMX}
-  FMX.Graphics,
-{$ELSE}
+{$IFDEF FRAMEWORK_VCL}
   VCL.Graphics,
+{$ENDIF}
+{$IFDEF FRAMEWORK_FMX}
+  FMX.Graphics,
 {$ENDIF}
   ZXing.LuminanceSource,
   ZXing.InvertedLuminanceSource;

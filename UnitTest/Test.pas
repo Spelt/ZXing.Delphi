@@ -21,9 +21,18 @@ interface
 
 uses
   DUnitX.TestFramework,
+  {$IFDEF FRAMEWORK_FMX}
   FMX.Types,
   FMX.Graphics,
   FMX.Objects,
+  {$ENDIF}
+  {$IFDEF FRAMEWORK_VCL}
+  Vcl.Graphics,
+  Vcl.ExtCtrls,
+  Vcl.Imaging.jpeg,
+  Vcl.Imaging.pngimage,
+  Vcl.Imaging.GIFImg,
+  {$ENDIF}
   SysUtils,
   System.Generics.Collections,
   ZXing.DecodeHintType,
@@ -1259,9 +1268,19 @@ begin
   img := TImage.Create(nil);
   try
     fs := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + Filename;
+    {$IFDEF FRAMEWORK_FMX}
     img.Bitmap.LoadFromFile(fs);
+    {$ENDIF}
+    {$IFDEF FRAMEWORK_VCL}
+    img.Picture.LoadFromFile(fs);
+    {$ENDIF}
     result := TBitmap.Create;
+    {$IFDEF FRAMEWORK_FMX}
     result.Assign(img.Bitmap);
+    {$ENDIF}
+    {$IFDEF FRAMEWORK_VCL}
+    result.Assign(img.Picture.Graphic);
+    {$ENDIF}
   finally
     img.Free;
   end;

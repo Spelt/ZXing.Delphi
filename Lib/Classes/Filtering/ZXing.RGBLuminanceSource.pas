@@ -24,11 +24,12 @@ uses
   System.SysUtils,
   System.UITypes,
   System.TypInfo,
-{$IFDEF FMX}
-  FMX.Graphics,
-{$ELSE}
+{$IFDEF FRAMEWORK_VCL}
   Winapi.Windows,
   VCL.Graphics,
+{$ENDIF}
+{$IFDEF FRAMEWORK_FMX}
+  FMX.Graphics,
 {$ENDIF}
   ZXing.LuminanceSource,
   ZXing.BaseLuminanceSource,
@@ -158,7 +159,37 @@ begin
   CalculateLuminance(rgbRawBytes, bitmapFormat);
 end;
 
-{$IFDEF FMX}
+{$IFDEF FRAMEWORK_VCL}
+// VCL TBitmap implementation
+constructor TRGBLuminanceSource.CreateFromBitmap(const sourceBitmap: TBitmap; const width, height: Integer);
+type
+  TRGBTripleArray = ARRAY[Word] of TRGBTriple;
+  pRGBTripleArray = ^TRGBTripleArray; // Use a PByteArray for pf8bit color.
+
+var
+  x, y,
+  offset : Integer;
+  r, g, b : Byte;
+  P: pRGBTripleArray;
+
+begin
+  Self.Create(width, height);
+  sourceBitmap.PixelFormat := pf24bit;
+  for y := 0 to sourceBitmap.Height - 1 do
+  begin
+    offset := y * FWidth;
+    P := sourceBitmap.ScanLine[y];
+    for x := 0 to sourceBitmap.Width - 1 do
+    begin
+       r := P[x].rgbtRed;
+       g := P[x].rgbtGreen;
+       b := P[x].rgbtBlue;
+       luminances[offset + x] := TMathUtils.Asr(3482*r + 11721*g + 1181*b, 14);
+    end;
+  end;
+end;
+{$ENDIF}
+{$IFDEF FRAMEWORK_FMX}
 // FMX TBitmap implementation
 constructor TRGBLuminanceSource.CreateFromBitmap(const sourceBitmap: TBitmap;
    const width, height: Integer);
@@ -192,35 +223,6 @@ begin
     finally
       sourceBitmap.Unmap(currentData);
       //sourceBitmap.DisposeOf();
-    end;
-  end;
-end;
-{$ELSE}
-// VCL TBitmap implementation
-constructor TRGBLuminanceSource.CreateFromBitmap(const sourceBitmap: TBitmap; const width, height: Integer);
-type
-  TRGBTripleArray = ARRAY[Word] of TRGBTriple;
-  pRGBTripleArray = ^TRGBTripleArray; // Use a PByteArray for pf8bit color.
-
-var
-  x, y,
-  offset : Integer;
-  r, g, b : Byte;
-  P: pRGBTripleArray;
-
-begin
-  Self.Create(width, height);
-  sourceBitmap.PixelFormat := pf24bit;
-  for y := 0 to sourceBitmap.Height - 1 do
-  begin
-    offset := y * FWidth;
-    P := sourceBitmap.ScanLine[y];
-    for x := 0 to sourceBitmap.Width - 1 do
-    begin
-       r := P[x].rgbtRed;
-       g := P[x].rgbtGreen;
-       b := P[x].rgbtBlue;
-       luminances[offset + x] := TMathUtils.Asr(3482*r + 11721*g + 1181*b, 14);
     end;
   end;
 end;
