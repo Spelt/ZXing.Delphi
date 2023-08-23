@@ -117,7 +117,7 @@ begin
   try
     for y := 0 to Pred(dimensionY) do
     begin
-      max := Length(points);
+      max := Length(points) - 1;
       iValue := (y + 0.5);
       x := 0;
       while ((x < max)) do
@@ -174,7 +174,7 @@ begin
   nudged := true;
   offset := 0;
 
-  while ((offset < Length(points)) and nudged) do
+  while ((offset < (Length(points) - 1)) and nudged) do
   begin
     x := Floor(points[offset]);
     y := Floor(points[(offset + 1)]);
