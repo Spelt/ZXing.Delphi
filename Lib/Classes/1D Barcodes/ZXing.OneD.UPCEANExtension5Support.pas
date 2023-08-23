@@ -157,7 +157,7 @@ begin
     then
        exit;
 
-    resultString.Append('0' + IntToStr(bestMatch mod 10));
+    resultString.Append(IntToStr(bestMatch mod 10));
 
     for counter in counters do
       Inc(rowOffset, counter);
