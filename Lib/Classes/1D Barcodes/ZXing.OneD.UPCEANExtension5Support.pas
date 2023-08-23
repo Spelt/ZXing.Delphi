@@ -201,14 +201,14 @@ begin
   i := (len - 2);
   while ((i >= 0)) do
   begin
-    Inc(sum, StrToIntDef(s[i], 0));
+    Inc(sum, StrToIntDef(s.Chars[i], 0));
     Dec(i, 2);
   end;
   sum := (sum * 3);
   i := (len - 1);
   while ((i >= 0)) do
   begin
-    Inc(sum, StrToIntDef(s[i], 0));
+    Inc(sum, StrToIntDef(s.Chars[i], 0));
     Dec(i, 2);
   end;
   sum := (sum * 3);
