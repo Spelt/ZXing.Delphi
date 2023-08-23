@@ -113,7 +113,6 @@ begin
   Result := nil;
   DetectorResult := nil;
   DecoderResult := nil;
-  Bits:=nil;
   try
 
     if ((hints <> nil) and hints.ContainsKey(TDecodeHintType.PURE_BARCODE)) then
@@ -123,7 +122,7 @@ begin
       begin
         DecoderResult := FDecoder.decode(bits);
         points := NO_POINTS;
-        bits.Free;
+        FreeAndNil(bits);
       end
       else
         exit;
@@ -166,9 +165,6 @@ begin
 
     if Assigned(DecoderResult) then
       FreeAndNil(DecoderResult);
-
-    if Assigned(bits) then
-      FreeAndNil(bits);
 
   end;
 
