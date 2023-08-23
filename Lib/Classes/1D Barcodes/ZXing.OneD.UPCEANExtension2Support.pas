@@ -99,7 +99,7 @@ begin
   then
      exit;
 
-  resultString := Result.ToString;
+  resultString := res.ToString;
   extensionData := TUPCEANExtension2Support.parseExtensionString(resultString);
 
   resultPoints := TArray<IResultPoint>.Create(
