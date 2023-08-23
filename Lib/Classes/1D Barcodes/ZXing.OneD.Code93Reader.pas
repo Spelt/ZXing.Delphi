@@ -379,7 +379,7 @@ begin
   end;
 
   Result := TReadResult.Create(resultString, nil, resultPoints,
-    TBarcodeFormat.CODE_39);
+    TBarcodeFormat.CODE_93);
 end;
 
 function TCode93Reader.findAsteriskPattern(row: IBitArray): TArray<Integer>;
