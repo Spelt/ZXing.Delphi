@@ -122,8 +122,10 @@ begin
   extensionResult := TReadResult.Create(resultString, nil, resultPoints, TBarcodeFormat.UPC_EAN_EXTENSION);
   if (extensionData <> nil)
   then
+  begin
      extensionResult.putAllMetadata(extensionData);
-
+     FreeAndNil(extensionData);
+  end;
   Result := extensionResult;
 end;
 
