@@ -38,6 +38,8 @@ The standard camera component is, I think too slow for Android and IOS. You need
 	
 
 ### Changes
+- v3.9.7
+	updated fix for compatibility: https://github.com/Spelt/ZXing.Delphi/issues/143
 - v3.9.6
 	- Lots of fixes by Robert Jedrzejczyk https://github.com/Spelt/ZXing.Delphi/issues/142, https://github.com/Spelt/ZXing.Delphi/issues/143, https://github.com/Spelt/ZXing.Delphi/issues/144, https://github.com/Spelt/ZXing.Delphi/issues/145, https://github.com/Spelt/ZXing.Delphi/issues/146, https://github.com/Spelt/ZXing.Delphi/issues/147, https://github.com/Spelt/ZXing.Delphi/issues/148, https://github.com/Spelt/ZXing.Delphi/issues/149, https://github.com/Spelt/ZXing.Delphi/issues/150, https://github.com/Spelt/ZXing.Delphi/issues/151, https://github.com/Spelt/ZXing.Delphi/issues/152, https://github.com/Spelt/ZXing.Delphi/issues/153, https://github.com/Spelt/ZXing.Delphi/issues/154, https://github.com/Spelt/ZXing.Delphi/issues/156   
 - v3.9.5
