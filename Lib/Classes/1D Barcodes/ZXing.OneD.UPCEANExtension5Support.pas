@@ -254,7 +254,7 @@ begin
 //     Result := nil;
 
   dictionary1 := TResultMetadata.Create();
-  dictionary1[ZXing.ResultMetadataType.SUGGESTED_PRICE] := TResultMetadata.CreateStringMetadata(value);
+  dictionary1.Add(ZXing.ResultMetadataType.SUGGESTED_PRICE, TResultMetadata.CreateStringMetadata(value));
 
   Result := dictionary1;
 end;
