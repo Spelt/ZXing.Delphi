@@ -183,7 +183,7 @@ begin
      exit;
 
   dictionary1 := TResultMetadata.Create;
-  dictionary1[ZXing.ResultMetadataType.ISSUE_NUMBER] := TResultMetaData.CreateStringMetadata(raw);
+  dictionary1.Add(ZXing.ResultMetadataType.ISSUE_NUMBER, TResultMetaData.CreateStringMetadata(raw));
   Result := dictionary1;
 end;
 
