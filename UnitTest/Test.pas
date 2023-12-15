@@ -110,8 +110,11 @@ begin
 
     result := Decode('q33.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('Never gonna give you up, ' + #$0A + 'Never gonna let you down ' + #$0A + 'Never gonna run around and desert you ' + #$0A + 'Never gonna make you cry, ' + #$0A +
-      'Never gonna say goodbye ' + #$0A + 'Never gonna tell a lie and hurt you'), 'QR code result Text Incorrect: ' + result.Text);
+
+    Assert.IsTrue(result.Text.Equals('Never gonna give you up, ' + #$D + 'Never gonna let you down ' + #$D + 'Never gonna run around and desert you ' + #$D + 'Never gonna make you cry, ' + #$D +
+      'Never gonna say goodbye ' + #$D + 'Never gonna tell a lie and hurt you'), 'QR code result Text Incorrect: ' + result.Text);
+
+
 
   finally
     FreeAndNil(result);
@@ -539,6 +542,15 @@ begin
     Assert.IsNotNull(result, ' Nil result');
     Assert.Contains(result.Text, '1653015096', false);
 
+  finally
+    FreeAndNil(result);
+  end;
+
+
+    try
+    result := Decode('QRContainsHex10.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result');
+    Assert.Contains(result.Text, '140#104#20231123 09:00:00', false);
   finally
     FreeAndNil(result);
   end;
