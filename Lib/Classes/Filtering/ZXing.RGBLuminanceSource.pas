@@ -24,10 +24,11 @@ uses
   System.SysUtils,
   System.UITypes,
   System.TypInfo,
-{$IFDEF USE_VCL_BITMAP}
+{$IFDEF FRAMEWORK_VCL}
   Winapi.Windows,
   VCL.Graphics,
-{$ELSE}
+{$ENDIF}
+{$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
 {$ENDIF}
   ZXing.LuminanceSource,
@@ -158,8 +159,7 @@ begin
   CalculateLuminance(rgbRawBytes, bitmapFormat);
 end;
 
-
-{$IFDEF USE_VCL_BITMAP}
+{$IFDEF FRAMEWORK_VCL}
 // VCL TBitmap implementation
 constructor TRGBLuminanceSource.CreateFromBitmap(const sourceBitmap: TBitmap; const width, height: Integer);
 type
@@ -188,7 +188,8 @@ begin
     end;
   end;
 end;
-{$ELSE}
+{$ENDIF}
+{$IFDEF FRAMEWORK_FMX}
 // FMX TBitmap implementation
 constructor TRGBLuminanceSource.CreateFromBitmap(const sourceBitmap: TBitmap;
    const width, height: Integer);
