@@ -757,6 +757,14 @@ var
   result: TReadResult;
 begin
 
+  try
+    result := Decode('DataMatrix_x.jpg', TBarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('~!@#$%^&*()_+}{POIUYTREWQASDFGHJKL:"?><MNBVCXZ`1234567890-=][poiuytrewqasdfghjkl;''/.,mnbvcxz|\'));
+  finally
+    FreeAndNil(result);
+  end;
+
   // Result := Decode('DatamatrixHiddenInBottom.png', TBarcodeFormat.DATA_MATRIX);
   // Assert.IsNotNull(result, ' Nil result ');
   // Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
@@ -852,6 +860,7 @@ begin
   finally
     FreeAndNil(result);
   end;
+
 
 end;
 
