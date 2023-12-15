@@ -39,7 +39,7 @@ The standard camera component is, I think too slow for Android and IOS. You need
 
 ### Changes
 - v3.9.8
-	Fixes datamatrix https://github.com/Spelt/ZXing.Delphi/issues/162 and QR QRCode read error when contains when has char 10 #163, pull requests with code optimization from EguitarRed and Rene Pastoors.
+	Fixes datamatrix https://github.com/Spelt/ZXing.Delphi/issues/162 and QR QRCode read error when contains when has char 10 https://github.com/Spelt/ZXing.Delphi/issues/163, pull requests with code optimization from EguitarRed and Rene Pastoors.
 - v3.9.7
 	updated fix for compatibility: https://github.com/Spelt/ZXing.Delphi/issues/143
 - v3.9.6
