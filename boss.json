@@ -3,7 +3,7 @@
 	"description": "ZXing barcode scanner",
 	"version": "1.0.0",
 	"homepage": "https://github.com/Spelt/ZXing.Delphi",
-	"mainsrc": "./Lib/Classes",
+	"mainsrc": "Lib/Classes/",
 	"projects": [],
 	"dependencies": {}
 }
