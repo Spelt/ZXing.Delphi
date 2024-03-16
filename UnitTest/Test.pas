@@ -21,12 +21,11 @@ interface
 
 uses
   DUnitX.TestFramework,
-  {$IFDEF FRAMEWORK_FMX}
+  {$IFDEF FMX}
   FMX.Types,
   FMX.Graphics,
   FMX.Objects,
-  {$ENDIF}
-  {$IFDEF FRAMEWORK_VCL}
+  {$ELSE}
   Vcl.Graphics,
   Vcl.ExtCtrls,
   Vcl.Imaging.jpeg,
@@ -393,7 +392,7 @@ begin
   end;
 
   try
-    result := Decode('qr-1.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-1.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -402,7 +401,7 @@ begin
   end;
 
   try
-    result := Decode('qr-a1.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-a1.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('a1'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -411,7 +410,7 @@ begin
   end;
 
   try
-    result := Decode('qr-1a.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-1a.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1a'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -420,7 +419,7 @@ begin
   end;
 
   try
-    result := Decode('qr-12.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-12.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('12'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -1289,17 +1288,15 @@ begin
   img := TImage.Create(nil);
   try
     fs := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + Filename;
-    {$IFDEF FRAMEWORK_FMX}
+    {$IFDEF FMX}
     img.Bitmap.LoadFromFile(fs);
-    {$ENDIF}
-    {$IFDEF FRAMEWORK_VCL}
+    {$ELSE}
     img.Picture.LoadFromFile(fs);
     {$ENDIF}
     result := TBitmap.Create;
-    {$IFDEF FRAMEWORK_FMX}
+    {$IFDEF FMX}
     result.Assign(img.Bitmap);
-    {$ENDIF}
-    {$IFDEF FRAMEWORK_VCL}
+    {$ELSE}
     result.Assign(img.Picture.Graphic);
     {$ENDIF}
   finally

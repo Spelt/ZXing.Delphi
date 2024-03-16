@@ -2,22 +2,25 @@ object mainFrm: TmainFrm
   Left = 0
   Top = 0
   Caption = 'mainFrm'
-  ClientHeight = 436
-  ClientWidth = 644
+  ClientHeight = 872
+  ClientWidth = 1288
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -11
+  Font.Height = -22
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
-  PixelsPerInch = 96
-  TextHeight = 13
+  PixelsPerInch = 192
+  TextHeight = 27
   object image: TImage
     Left = 0
     Top = 0
-    Width = 453
-    Height = 395
+    Width = 906
+    Height = 790
+    Margins.Left = 6
+    Margins.Top = 6
+    Margins.Right = 6
+    Margins.Bottom = 6
     Align = alClient
     AutoSize = True
     Center = True
@@ -25,31 +28,48 @@ object mainFrm: TmainFrm
     Stretch = True
   end
   object Splitter_38A8D14A: TSplitter
-    Left = 453
+    Left = 906
     Top = 0
-    Height = 395
+    Width = 6
+    Height = 790
+    Margins.Left = 6
+    Margins.Top = 6
+    Margins.Right = 6
+    Margins.Bottom = 6
     Align = alRight
   end
   object Log: TMemo
-    Left = 456
+    Left = 912
     Top = 0
-    Width = 188
-    Height = 395
+    Width = 376
+    Height = 790
+    Margins.Left = 6
+    Margins.Top = 6
+    Margins.Right = 6
+    Margins.Bottom = 6
     Align = alRight
     TabOrder = 0
   end
   object bottomPanel: TPanel
     Left = 0
-    Top = 395
-    Width = 644
-    Height = 41
+    Top = 790
+    Width = 1288
+    Height = 82
+    Margins.Left = 6
+    Margins.Top = 6
+    Margins.Right = 6
+    Margins.Bottom = 6
     Align = alBottom
     TabOrder = 1
     object btnLoadFromFile: TButton
-      Left = 8
-      Top = 6
-      Width = 75
-      Height = 25
+      Left = 16
+      Top = 12
+      Width = 150
+      Height = 50
+      Margins.Left = 6
+      Margins.Top = 6
+      Margins.Right = 6
+      Margins.Bottom = 6
       Caption = 'btnLoad'
       TabOrder = 0
       OnClick = btnLoadFromFileClick

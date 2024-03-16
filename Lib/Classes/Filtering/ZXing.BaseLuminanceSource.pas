@@ -23,18 +23,17 @@ interface
 uses
   System.SysUtils,
   System.UITypes,
-{$IFDEF FRAMEWORK_VCL}
-  VCL.Graphics,
-{$ENDIF}
-{$IFDEF FRAMEWORK_FMX}
+{$IFDEF FMX}
   FMX.Graphics,
+{$ELSE}
+  VCL.Graphics,
 {$ENDIF}
   ZXing.LuminanceSource,
   ZXing.InvertedLuminanceSource;
 
 type
   /// <summary>
-  /// The base class for luminance sources which supports 
+  /// The base class for luminance sources which supports
   /// cropping and rotating based upon the luminance values.
   /// </summary>
   TBaseLuminanceSource = class abstract (TLuminanceSource)
