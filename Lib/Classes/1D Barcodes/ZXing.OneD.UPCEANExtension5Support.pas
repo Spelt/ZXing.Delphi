@@ -122,8 +122,10 @@ begin
   extensionResult := TReadResult.Create(resultString, nil, resultPoints, TBarcodeFormat.UPC_EAN_EXTENSION);
   if (extensionData <> nil)
   then
+  begin
      extensionResult.putAllMetadata(extensionData);
-
+     FreeAndNil(extensionData);
+  end;
   Result := extensionResult;
 end;
 
@@ -157,7 +159,7 @@ begin
     then
        exit;
 
-    resultString.Append('0' + IntToStr(bestMatch mod 10));
+    resultString.Append(IntToStr(bestMatch mod 10));
 
     for counter in counters do
       Inc(rowOffset, counter);
@@ -201,14 +203,14 @@ begin
   i := (len - 2);
   while ((i >= 0)) do
   begin
-    Inc(sum, StrToIntDef(s[i], 0));
+    Inc(sum, StrToIntDef(s.Chars[i], 0));
     Dec(i, 2);
   end;
   sum := (sum * 3);
   i := (len - 1);
   while ((i >= 0)) do
   begin
-    Inc(sum, StrToIntDef(s[i], 0));
+    Inc(sum, StrToIntDef(s.Chars[i], 0));
     Dec(i, 2);
   end;
   sum := (sum * 3);
@@ -252,7 +254,7 @@ begin
 //     Result := nil;
 
   dictionary1 := TResultMetadata.Create();
-  dictionary1[ZXing.ResultMetadataType.SUGGESTED_PRICE] := TResultMetadata.CreateStringMetadata(value);
+  dictionary1.Add(ZXing.ResultMetadataType.SUGGESTED_PRICE, TResultMetadata.CreateStringMetadata(value));
 
   Result := dictionary1;
 end;

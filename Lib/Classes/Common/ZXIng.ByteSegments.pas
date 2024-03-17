@@ -14,6 +14,7 @@ type
         procedure SetCapacity(const Value: integer);
         property Capacity:integer read GetCapacity write SetCapacity;
         function Add(const item:TArray<byte>):integer;
+        function Get(index: integer):TArray<byte>;
      end;
 
 
@@ -33,6 +34,7 @@ type
      function GetCapacity: integer;
      procedure SetCapacity(const Value: integer);
      function Add(const item:TArray<byte>):integer;
+     function Get(index: integer):TArray<byte>;
   public
      destructor Destroy; override;
   end;
@@ -84,6 +86,11 @@ end;
 procedure TByteSegments.SetCapacity(const Value: integer);
 begin
   FList.Capacity := value;
+end;
+
+function TByteSegments.Get(index: Integer) : TArray<byte>;
+begin
+  Result := FList[index];
 end;
 
 end.

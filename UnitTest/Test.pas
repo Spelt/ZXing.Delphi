@@ -21,9 +21,17 @@ interface
 
 uses
   DUnitX.TestFramework,
+  {$IFDEF FMX}
   FMX.Types,
   FMX.Graphics,
   FMX.Objects,
+  {$ELSE}
+  Vcl.Graphics,
+  Vcl.ExtCtrls,
+  Vcl.Imaging.jpeg,
+  Vcl.Imaging.pngimage,
+  Vcl.Imaging.GIFImg,
+  {$ENDIF}
   SysUtils,
   System.Generics.Collections,
   ZXing.DecodeHintType,
@@ -110,8 +118,11 @@ begin
 
     result := Decode('q33.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
-    Assert.IsTrue(result.Text.Equals('Never gonna give you up, ' + #$0A + 'Never gonna let you down ' + #$0A + 'Never gonna run around and desert you ' + #$0A + 'Never gonna make you cry, ' + #$0A +
-      'Never gonna say goodbye ' + #$0A + 'Never gonna tell a lie and hurt you'), 'QR code result Text Incorrect: ' + result.Text);
+
+    Assert.IsTrue(result.Text.Equals('Never gonna give you up, ' + #$D + 'Never gonna let you down ' + #$D + 'Never gonna run around and desert you ' + #$D + 'Never gonna make you cry, ' + #$D +
+      'Never gonna say goodbye ' + #$D + 'Never gonna tell a lie and hurt you'), 'QR code result Text Incorrect: ' + result.Text);
+
+
 
   finally
     FreeAndNil(result);
@@ -381,7 +392,7 @@ begin
   end;
 
   try
-    result := Decode('qr-1.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-1.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -390,7 +401,7 @@ begin
   end;
 
   try
-    result := Decode('qr-a1.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-a1.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('a1'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -399,7 +410,7 @@ begin
   end;
 
   try
-    result := Decode('qr-1a.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-1a.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('1a'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -408,7 +419,7 @@ begin
   end;
 
   try
-    result := Decode('qr-12.png', TBarcodeFormat.QR_CODE);
+    result := Decode('qr-12.jpg', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result ');
     Assert.IsTrue(result.Text.Equals('12'), 'QR code result Text Incorrect: ' + result.Text);
 
@@ -539,6 +550,15 @@ begin
     Assert.IsNotNull(result, ' Nil result');
     Assert.Contains(result.Text, '1653015096', false);
 
+  finally
+    FreeAndNil(result);
+  end;
+
+
+    try
+    result := Decode('QRContainsHex10.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result');
+    Assert.Contains(result.Text, '140#104#20231123 09:00:00', false);
   finally
     FreeAndNil(result);
   end;
@@ -736,6 +756,14 @@ var
   result: TReadResult;
 begin
 
+  try
+    result := Decode('DataMatrix_x.jpg', TBarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('~!@#$%^&*()_+}{POIUYTREWQASDFGHJKL:"?><MNBVCXZ`1234567890-=][poiuytrewqasdfghjkl;''/.,mnbvcxz|\'));
+  finally
+    FreeAndNil(result);
+  end;
+
   // Result := Decode('DatamatrixHiddenInBottom.png', TBarcodeFormat.DATA_MATRIX);
   // Assert.IsNotNull(result, ' Nil result ');
   // Assert.IsTrue(result.Text.Equals('http://www.2D-IDent.com'),
@@ -831,6 +859,7 @@ begin
   finally
     FreeAndNil(result);
   end;
+
 
 end;
 
@@ -1259,9 +1288,17 @@ begin
   img := TImage.Create(nil);
   try
     fs := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + Filename;
+    {$IFDEF FMX}
     img.Bitmap.LoadFromFile(fs);
+    {$ELSE}
+    img.Picture.LoadFromFile(fs);
+    {$ENDIF}
     result := TBitmap.Create;
+    {$IFDEF FMX}
     result.Assign(img.Bitmap);
+    {$ELSE}
+    result.Assign(img.Picture.Graphic);
+    {$ENDIF}
   finally
     img.Free;
   end;

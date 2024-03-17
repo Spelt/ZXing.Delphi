@@ -99,7 +99,7 @@ begin
   then
      exit;
 
-  resultString := Result.ToString;
+  resultString := res.ToString;
   extensionData := TUPCEANExtension2Support.parseExtensionString(resultString);
 
   resultPoints := TArray<IResultPoint>.Create(
@@ -109,8 +109,10 @@ begin
   extensionResult := TReadResult.Create(resultString, nil, resultPoints, TBarcodeFormat.UPC_EAN_EXTENSION);
   if (extensionData <> nil)
   then
+  begin
      extensionResult.putAllMetadata(extensionData);
-
+     FreeAndNil(extensionData);
+  end;
   Result := extensionResult;
 end;
 
@@ -141,7 +143,7 @@ begin
     then
        exit;
 
-    resultString.Append('0' + IntToStr(bestMatch mod 10));
+    resultString.Append(IntToStr(bestMatch mod 10));
 
     for counter in counters do
       Inc(rowOffset, counter);
@@ -181,7 +183,7 @@ begin
      exit;
 
   dictionary1 := TResultMetadata.Create;
-  dictionary1[ZXing.ResultMetadataType.ISSUE_NUMBER] := TResultMetaData.CreateStringMetadata(raw);
+  dictionary1.Add(ZXing.ResultMetadataType.ISSUE_NUMBER, TResultMetaData.CreateStringMetadata(raw));
   Result := dictionary1;
 end;
 

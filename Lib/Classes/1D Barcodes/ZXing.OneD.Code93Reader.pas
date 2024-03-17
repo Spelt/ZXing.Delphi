@@ -353,7 +353,7 @@ begin
   end;
 
   Left := (start[1] + start[0]) div 2;
-  Right := (lastStart + lastPatternSize) div 2;
+  Right := (lastStart + lastPatternSize) / 2;
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
@@ -379,7 +379,7 @@ begin
   end;
 
   Result := TReadResult.Create(resultString, nil, resultPoints,
-    TBarcodeFormat.CODE_39);
+    TBarcodeFormat.CODE_93);
 end;
 
 function TCode93Reader.findAsteriskPattern(row: IBitArray): TArray<Integer>;

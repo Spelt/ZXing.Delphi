@@ -83,7 +83,7 @@ begin
   if (size > TMathUtils.Asr(Length(Fbits), 5)) then
   begin
     newBits := makeArray(size);
-    Move(Fbits[0], newBits[0], Length(Fbits));
+    Move(Fbits[0], newBits[0], Length(Fbits) * SizeOf(Fbits[0]));
     Fbits := newBits;
   end;
 end;

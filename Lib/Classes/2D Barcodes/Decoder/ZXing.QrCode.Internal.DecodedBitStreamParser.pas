@@ -253,7 +253,7 @@ begin
       else
          ecstring := ecLevel.toString();
 
-      s:= res.toString.Replace('#13#10', '#10').Replace('#10', #13);
+      s:= res.toString.Replace(#13+#10, #10).Replace(#10, #13);
       Result := TDecoderResult.Create(bytes, s, byteSegments, ecstring, symbolSequence,
         parityData);
     finally

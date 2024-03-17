@@ -1,0 +1,51 @@
+﻿[ClosedView_QzpcRGV2XERlbHBoaVxaWGluZ1xVbml0VGVzdFxUZXN0LnBhcw==]
+Module=C:\Dev\Delphi\ZXing\UnitTest\Test.pas
+CursorX=78
+CursorY=59
+TopLine=46
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\UnitTest\Test.pas
+[ClosedView_QzpcRGV2XERlbHBoaVxaWGluZ1xMaWJcQ2xhc3Nlc1xDb21tb25cWlhpbmcuUmVhZFJlc3VsdC5w
+YXM=]
+Module=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ZXing.ReadResult.pas
+CursorX=54
+CursorY=329
+TopLine=323
+LeftCol=1
+Elisions={{153,0},{241,39},{'IMetaData implementations'}}
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\Lib\Classes\Common\ZXing.ReadResult.pas
+
+[ClosedView_QzpcRGV2XERlbHBoaVxaWGluZ1xkZW1vXHdlYmNhbVxWRnJhbWVzLnBhcw==]
+Module=C:\Dev\Delphi\ZXing\demo\webcam\VFrames.pas
+CursorX=12
+CursorY=100
+TopLine=97
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=
+[ClosedView_QzpcRGV2XERlbHBoaVxaWGluZ1xsaWJcQ2xhc3Nlc1wxRCBCYXJjb2Rlc1xaWGluZy5PbmVELlVQ
+Q0VBTkV4dGVuc2lvbjJTdXBwb3J0LnBhcw==]
+Module=C:\Dev\Delphi\ZXing\lib\Classes\1D Barcodes\ZXing.OneD.UPCEANExtension2Support.pas
+CursorX=49
+CursorY=99
+TopLine=79
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\lib\Classes\1D Barcodes\ZXing.OneD.UPCEANExtension2Support.pas
+
+[ClosedView_QzpcRGV2XERlbHBoaVxaWGluZ1xsaWJcQ2xhc3Nlc1wxRCBCYXJjb2Rlc1xaWGluZy5PbmVELlVQ
+Q0VBTkV4dGVuc2lvbjJTdXBwb3J0LnBhcw==]
+Module=C:\Dev\Delphi\ZXing\lib\Classes\1D Barcodes\ZXing.OneD.UPCEANExtension2Support.pas
+CursorX=49
+CursorY=99
+TopLine=79
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=C:\Dev\Delphi\ZXing\lib\Classes\1D Barcodes\ZXing.OneD.UPCEANExtension2Support.pas
+

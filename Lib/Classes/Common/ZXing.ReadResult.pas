@@ -323,25 +323,8 @@ begin
 end;
 
 procedure TReadResult.addResultPoints(const newPoints: TArray<IResultPoint>);
-var
-  oldPoints, allPoints: TArray<IResultPoint>;
 begin
-  oldPoints := FResultPoints;
-  if (oldPoints = nil) then
-    FResultPoints := newPoints
-  else
-  begin
-    if (newPoints <> nil) and (Length(newPoints) > 0) then
-    begin
-      allPoints := TArray<IResultPoint>.Create();
-      SetLength(allPoints, (Length(oldPoints) + Length(newPoints)));
-
-      Move(oldPoints[0], newPoints[0], Length(oldPoints));
-      Move(newPoints[0], newPoints[Length(oldPoints)], Length(newPoints));
-
-      FResultPoints := allPoints;
-    end;
-  end;
+  FResultPoints := FResultPoints + newPoints;
 end;
 
 /// <summary>

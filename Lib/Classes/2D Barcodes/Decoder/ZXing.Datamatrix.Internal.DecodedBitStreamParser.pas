@@ -393,22 +393,30 @@ begin
                             begin
                               if (oneByte = 240) then
                               begin
-                                // ECI Character
-                                // TODO: I think we need to support ECI
-                                // throw TReaderException.Instance;
-                                // Ignore this symbol for now
+                                mode := TMode.EDIFACT_ENCODE;
+                                result := true;
+                                exit;
                               end
                               else
                               begin
-                                  // Not to be used in ASCII encodation
-                                  // ... but work around encoders that end with 254, latch back to ASCII
-                                  if ((oneByte <> 254) or (bits.available() <> 0)) then
-                                  begin
-                                    result := false;
-                                    exit;
+                                if (oneByte = 241) then
+                                begin
+                                  // ECI Character
+                                  // TODO: I think we need to support ECI
+                                  // throw TReaderException.Instance;
+                                  // Ignore this symbol for now
+                                end
+                                else if (oneByte >= 242) then
+                                begin
+                                    // Not to be used in ASCII encodation
+                                    // ... but work around encoders that end with 254, latch back to ASCII
+                                    if ((oneByte <> 254) or (bits.available() <> 0)) then
+                                    begin
+                                      result := false;
+                                      exit;
+                                    end;
                                   end;
-
-                              end;
+                                end;
                             end;
                           end;
                         end;
