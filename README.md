@@ -38,6 +38,8 @@ The standard camera component is, I think too slow for Android and IOS. You need
 	
 
 ### Changes
+- v3.9.11
+	Usage of FRAMEWORK_FMX and FRAMEWORK_VCL. See 'Usage' below.
 - v3.9.8
 	Fixes datamatrix https://github.com/Spelt/ZXing.Delphi/issues/162 and QR QRCode read error when contains when has char 10 https://github.com/Spelt/ZXing.Delphi/issues/163, pull requests with code optimization from EguitarRed and Rene Pastoors.
 - v3.9.7
@@ -159,6 +161,11 @@ The base classes are already implemented so if you need to have another Barcode 
 
 
 ### Usage
+If you use a Delphi older then 11.1 then you NEED to set a compiler Define in your 'project options->Delphi compiler->Conditional defines'. Set this in your target platforms or All platforms.  See demo applications.
+- FRAMEWORK_VCL - this predefined variable is set to true if the project uses the VCL framework
+- FRAMEWORK_FMX - this predefined variable is set to true if the project uses the FireMonkey (FMX) framework
+
+
 The simplest example of using ZXing.Delphi looks something like this:
 
 Include all the files in your project or use search path like included test application
