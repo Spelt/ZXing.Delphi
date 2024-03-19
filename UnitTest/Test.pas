@@ -21,7 +21,7 @@ interface
 
 uses
   DUnitX.TestFramework,
-  {$IFDEF FMX}
+  {$IFDEF FRAMEWORK_FMX}
   FMX.Types,
   FMX.Graphics,
   FMX.Objects,
@@ -1288,15 +1288,17 @@ begin
   img := TImage.Create(nil);
   try
     fs := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + Filename;
-    {$IFDEF FMX}
+    {$IFDEF FRAMEWORK_FMX}
     img.Bitmap.LoadFromFile(fs);
-    {$ELSE}
+    {$ENDIF}
+    {$IFDEF FRAMEWORK_VCL}
     img.Picture.LoadFromFile(fs);
     {$ENDIF}
     result := TBitmap.Create;
-    {$IFDEF FMX}
+    {$IFDEF FRAMEWORK_FMX}
     result.Assign(img.Bitmap);
-    {$ELSE}
+    {$ENDIF}
+    {$IFDEF FRAMEWORK_VCL}
     result.Assign(img.Picture.Graphic);
     {$ENDIF}
   finally

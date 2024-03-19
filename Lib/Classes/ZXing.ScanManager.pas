@@ -5,9 +5,10 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
-{$IFDEF FMX}
+{$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
-{$ELSE}
+{$ENDIF}
+{$IFDEF FRAMEWORK_VCL}
   VCL.Graphics,
 {$ENDIF}
   ZXing.LuminanceSource,

@@ -23,9 +23,10 @@ interface
 
 uses
   SysUtils,
-{$IFDEF FMX}
+{$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
-{$ELSE}
+{$ENDIF}
+{$IFDEF FRAMEWORK_VCL}
   VCL.Graphics,
 {$ENDIF}
   Generics.Collections,
