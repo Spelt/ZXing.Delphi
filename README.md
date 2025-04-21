@@ -38,9 +38,8 @@ The standard camera component is, I think too slow for Android and IOS. You need
 	
 
 ### Changes
-- v3.10.0 Improvements by René Hoffmann.
+- v3.10.0 Improvements by René Hoffmann. https://github.com/Spelt/ZXing.Delphi/issues/143
 	- Avoid unnecessary usage of 'class'-modifier keyword (refactoring only)
-	https://github.com/Spelt/ZXing.Delphi/issues/143, https://github.com/Spelt/ZXing.Delphi/issues/1
 	- incorrect use of class var disrupts usage of multiple instances (e.g. in different threads) #174
 - v3.9.13
 	QR code: Fixed compute dimensions and more accurate results of sizeOfBlackWhiteBlackRunBothWays if outside of image. Replaced integer division with floating point division (Thanks ImperatorZurg).
