@@ -52,16 +52,16 @@ type
     function calculateModuleSizeOneWay(pattern: IResultpoint;
       otherPattern: IResultpoint): Single;
 
-    class function computeDimension(topLeft: IResultpoint;
+    function computeDimension(topLeft: IResultpoint;
       topRight: IResultpoint; bottomLeft: IResultpoint; moduleSize: Single;
-      var dimension: Integer): boolean; static;
+      var dimension: Integer): boolean;
 
-    class function createTransform(const topLeft, topRight, bottomLeft,
+    function createTransform(const topLeft, topRight, bottomLeft,
       AlignmentPattern: IResultpoint; const dimension: Integer)
-      : TPerspectiveTransform; static;
+      : TPerspectiveTransform;
 
-    class function sampleGrid(image: TBitMatrix;
-      transform: TPerspectiveTransform; dimension: Integer): TBitMatrix; static;
+    function sampleGrid(image: TBitMatrix;
+      transform: TPerspectiveTransform; dimension: Integer): TBitMatrix;
     function sizeOfBlackWhiteBlackRun(fromX: Integer; fromY: Integer;
       toX: Integer; toY: Integer): Single;
     function sizeOfBlackWhiteBlackRunBothWays(fromX: Integer; fromY: Integer;
@@ -160,7 +160,7 @@ begin
   Result := ((moduleSizeEst1 + moduleSizeEst2) / 14);
 end;
 
-class function TDetector.computeDimension(topLeft: IResultPoint;
+function TDetector.computeDimension(topLeft: IResultPoint;
   topRight: IResultPoint; bottomLeft: IResultPoint; moduleSize: Single;
   var dimension: Integer): boolean;
 
@@ -184,7 +184,7 @@ begin
   Result := True;
 end;
 
-class function TDetector.createTransform(const topLeft, topRight, bottomLeft,
+function TDetector.createTransform(const topLeft, topRight, bottomLeft,
   AlignmentPattern: IResultPoint; const dimension: Integer)
   : TPerspectiveTransform;
 var
@@ -272,8 +272,7 @@ begin
   if (moduleSize < 1.0) then
     exit;
 
-  if (not TDetector.computeDimension(topLeft, topRight, bottomLeft, moduleSize,
-    dimension)) then
+  if (not computeDimension(topLeft, topRight, bottomLeft, moduleSize, dimension)) then
     exit;
 
   provisionalVersion := TVersion.getProvisionalVersionForDimension(dimension);
@@ -309,10 +308,10 @@ begin
     // If we didn't find alignment pattern... well try anyway without it
   end;
 
-  transform := TDetector.createTransform(topLeft, topRight, bottomLeft,
+  transform := createTransform(topLeft, topRight, bottomLeft,
     AlignmentPattern, dimension);
   try
-    bits := TDetector.sampleGrid(FImage, transform, dimension);
+    bits := sampleGrid(FImage, transform, dimension);
   finally
     transform.Free;
   end;
@@ -369,11 +368,10 @@ begin
   FreeAndNil(alignmentFinder);
 end;
 
-class function TDetector.sampleGrid(image: TBitMatrix;
+function TDetector.sampleGrid(image: TBitMatrix;
   transform: TPerspectiveTransform; dimension: Integer): TBitMatrix;
 begin
-  Result := TDefaultGridSampler.sampleGrid(image, dimension, dimension,
-    transform)
+  Result := TDefaultGridSampler.sampleGrid(image, dimension, dimension, transform)
 end;
 
 function TDetector.sizeOfBlackWhiteBlackRun(fromX: Integer; fromY: Integer;

@@ -41,12 +41,6 @@ type
       ASCII_ENCODE, C40_ENCODE, TEXT_ENCODE, ANSIX12_ENCODE, EDIFACT_ENCODE,
       BASE256_ENCODE);
   private
-    class var C40_BASIC_SET_CHARS, C40_SHIFT2_SET_CHARS, TEXT_BASIC_SET_CHARS,
-      TEXT_SHIFT2_SET_CHARS, TEXT_SHIFT3_SET_CHARS: TArray<Char>;
-
-    class procedure InitializeClass;
-    class procedure FinalizeClass;
-
     class function decodeC40Segment(bits: TBitSource;
       res: TStringBuilder): boolean;
     class function decodeTextSegment(bits: TBitSource;
@@ -502,6 +496,18 @@ end;
 /// </summary>
 class function TDecodedBitStreamParser.decodeC40Segment(bits: TBitSource;
   res: TStringBuilder): boolean;
+const
+  /// <summary>
+  /// See ISO 16022:2006, Annex C Table C.1
+  /// The C40 Basic Character Set (*'s used for placeholders for the shift values)
+  /// </summary>
+  C40_BASIC_SET_CHARS: TArray<Char> = ['*', '*', '*', ' ', '0', '1', '2',
+    '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+    'X', 'Y', 'Z'];
+  C40_SHIFT2_SET_CHARS: TArray<Char> = ['!', '"', '#', '$', '%', '&',
+    '''', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?',
+    '@', '[', '\', ']', '^', '_'];
 var
   i: Integer;
   c40char: Char;
@@ -682,6 +688,22 @@ end;
 /// </summary>
 class function TDecodedBitStreamParser.decodeTextSegment(bits: TBitSource;
   res: TStringBuilder): boolean;
+const
+  /// <summary>
+  /// See ISO 16022:2006, Annex C Table C.2
+  /// The Text Basic Character Set (*'s used for placeholders for the shift values)
+  /// </summary>
+  TEXT_BASIC_SET_CHARS: TArray<Char> = ['*', '*', '*', ' ', '0', '1', '2',
+    '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+    'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
+    'x', 'y', 'z'];
+  // Shift 2 for Text is the same encoding as C40
+  TEXT_SHIFT2_SET_CHARS: TArray<Char> = ['!', '"', '#', '$', '%', '&',
+    '''', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?',
+    '@', '[', '\', ']', '^', '_'];
+  TEXT_SHIFT3_SET_CHARS: TArray<Char> =['`', 'A', 'B', 'C', 'D', 'E',
+    'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+    'U', 'V', 'W', 'X', 'Y', 'Z', '{', '|', '}', '~', ''];
 var
   textChar: Char;
   cValues: TArray<Integer>;
@@ -850,54 +872,5 @@ begin
   else
     result := (tempVariable + 256);
 end;
-
-class procedure TDecodedBitStreamParser.InitializeClass;
-begin
-  /// <summary>
-  /// See ISO 16022:2006, Annex C Table C.1
-  /// The C40 Basic Character Set (*'s used for placeholders for the shift values)
-  /// </summary>
-  C40_BASIC_SET_CHARS := TArray<Char>.Create('*', '*', '*', ' ', '0', '1', '2',
-    '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-    'X', 'Y', 'Z');
-
-  C40_SHIFT2_SET_CHARS := TArray<Char>.Create('!', '"', '#', '$', '%', '&',
-    '''', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?',
-    '@', '[', '\', ']', '^', '_');
-
-  /// <summary>
-  /// See ISO 16022:2006, Annex C Table C.2
-  /// The Text Basic Character Set (*'s used for placeholders for the shift values)
-  /// </summary>
-  TEXT_BASIC_SET_CHARS := TArray<Char>.Create('*', '*', '*', ' ', '0', '1', '2',
-    '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-    'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
-    'x', 'y', 'z');
-
-  // Shift 2 for Text is the same encoding as C40
-  TEXT_SHIFT2_SET_CHARS := C40_SHIFT2_SET_CHARS;
-
-  TEXT_SHIFT3_SET_CHARS := TArray<Char>.Create('`', 'A', 'B', 'C', 'D', 'E',
-    'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-    'U', 'V', 'W', 'X', 'Y', 'Z', '{', '|', '}', '~', '');
-end;
-
-class procedure TDecodedBitStreamParser.FinalizeClass;
-begin
-  C40_BASIC_SET_CHARS := nil;
-  C40_SHIFT2_SET_CHARS := nil;
-  TEXT_BASIC_SET_CHARS := nil;
-  TEXT_SHIFT2_SET_CHARS := nil;
-  TEXT_SHIFT3_SET_CHARS := nil;
-end;
-
-initialization
-
-TDecodedBitStreamParser.InitializeClass;
-
-finalization
-
-TDecodedBitStreamParser.FinalizeClass;
 
 end.

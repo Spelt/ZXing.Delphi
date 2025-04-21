@@ -42,18 +42,6 @@ type
     FErrorCorrectionLevel: TErrorCorrectionLevel;
     FDataMask: Byte;
 
-  const
-    FORMAT_INFO_MASK_QR: Integer = $5412;
-
-    /// <summary> See ISO 18004:2006, Annex C, Table C.1</summary>
-    class var FORMAT_INFO_DECODE_LOOKUP: TArray<TArray<Integer>>;
-
-    /// <summary> Offset i holds the number of 1 bits in the binary representation of i</summary>
-    class var BITS_SET_IN_HALF_BYTE: TArray<Integer>;
-
-    class procedure InitializeClass; static;
-    class procedure FinalizeClass; static;
-
     class function doDecodeFormatInformation(const maskedFormatInfo1,
       maskedFormatInfo2: Integer): TFormatInformation; static;
   public
@@ -93,8 +81,10 @@ begin
   FDataMask := Byte(formatInfo and 7);
 end;
 
-class function TFormatInformation.decodeFormatInformation
-  (const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
+class function TFormatInformation.decodeFormatInformation(
+  const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
+const
+  FORMAT_INFO_MASK_QR: Integer = $5412;
 var
   formatInfo: TFormatInformation;
 begin
@@ -113,9 +103,17 @@ end;
 
 class function TFormatInformation.doDecodeFormatInformation
   (const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
+const
+  /// <summary> See ISO 18004:2006, Annex C, Table C.1</summary>
+  FORMAT_INFO_DECODE_LOOKUP: TArray<Integer> = [
+    $5412, $5125, $5E7C, $5B4B, $45F9, $40CE, $4F97, $4AA0,
+    $77C4, $72F3, $7DAA, $789D, $662F, $6318, $6C41, $6976,
+    $1689, $13BE, $1CE7, $19D0, $0762, $0255, $0D0C, $083B,
+    $355F, $3068, $3F31, $3A06, $24B4, $2183, $2EDA, $2BED
+  ];
 var
+  i: Integer;
   bestDifference, bestFormatInfo, bitsDifference, targetInfo: Integer;
-  decodeInfo: TArray<Integer>;
 begin
   Result := nil;
 
@@ -123,21 +121,21 @@ begin
   bestDifference := High(Integer);
   bestFormatInfo := 0;
 
-  for decodeInfo in FORMAT_INFO_DECODE_LOOKUP do
+  for i := 0 to Length(FORMAT_INFO_DECODE_LOOKUP) - 1 do
   begin
-    targetInfo := decodeInfo[0];
+    targetInfo := FORMAT_INFO_DECODE_LOOKUP[i];
     if ((targetInfo = maskedFormatInfo1) or (targetInfo = maskedFormatInfo2))
     then
     begin
       // Found an exact match
-      Result := TFormatInformation.Create(decodeInfo[1]);
+      Result := TFormatInformation.Create(i);
       exit;
     end;
 
     bitsDifference := numBitsDiffering(maskedFormatInfo1, targetInfo);
     if (bitsDifference < bestDifference) then
     begin
-      bestFormatInfo := decodeInfo[1];
+      bestFormatInfo := i;
       bestDifference := bitsDifference;
     end;
 
@@ -147,7 +145,7 @@ begin
       bitsDifference := numBitsDiffering(maskedFormatInfo2, targetInfo);
       if (bitsDifference < bestDifference) then
       begin
-        bestFormatInfo := decodeInfo[1];
+        bestFormatInfo := i;
         bestDifference := bitsDifference;
       end;
     end;
@@ -179,78 +177,21 @@ begin
   Result := ((FErrorCorrectionLevel.ordinal shl 3) or FDataMask)
 end;
 
-class procedure TFormatInformation.InitializeClass;
-begin
-  SetLength(FORMAT_INFO_DECODE_LOOKUP, $20);
-
-  FORMAT_INFO_DECODE_LOOKUP[0] := TArray<Integer>.Create($5412, 0);
-  FORMAT_INFO_DECODE_LOOKUP[1] := TArray<Integer>.Create($5125, 1);
-  FORMAT_INFO_DECODE_LOOKUP[2] := TArray<Integer>.Create($5E7C, 2);
-  FORMAT_INFO_DECODE_LOOKUP[3] := TArray<Integer>.Create($5B4B, 3);
-  FORMAT_INFO_DECODE_LOOKUP[4] := TArray<Integer>.Create($45F9, 4);
-  FORMAT_INFO_DECODE_LOOKUP[5] := TArray<Integer>.Create($40CE, 5);
-  FORMAT_INFO_DECODE_LOOKUP[6] := TArray<Integer>.Create($4F97, 6);
-  FORMAT_INFO_DECODE_LOOKUP[7] := TArray<Integer>.Create($4AA0, 7);
-  FORMAT_INFO_DECODE_LOOKUP[8] := TArray<Integer>.Create($77C4, 8);
-  FORMAT_INFO_DECODE_LOOKUP[9] := TArray<Integer>.Create($72F3, 9);
-  FORMAT_INFO_DECODE_LOOKUP[10] := TArray<Integer>.Create($7DAA, 10);
-  FORMAT_INFO_DECODE_LOOKUP[11] := TArray<Integer>.Create($789D, 11);
-  FORMAT_INFO_DECODE_LOOKUP[12] := TArray<Integer>.Create($662F, 12);
-  FORMAT_INFO_DECODE_LOOKUP[13] := TArray<Integer>.Create($6318, 13);
-  FORMAT_INFO_DECODE_LOOKUP[14] := TArray<Integer>.Create($6C41, 14);
-  FORMAT_INFO_DECODE_LOOKUP[15] := TArray<Integer>.Create($6976, 15);
-  FORMAT_INFO_DECODE_LOOKUP[$10] := TArray<Integer>.Create($1689, $10);
-  FORMAT_INFO_DECODE_LOOKUP[$11] := TArray<Integer>.Create($13BE, $11);
-  FORMAT_INFO_DECODE_LOOKUP[$12] := TArray<Integer>.Create($1CE7, $12);
-  FORMAT_INFO_DECODE_LOOKUP[$13] := TArray<Integer>.Create($19D0, $13);
-  FORMAT_INFO_DECODE_LOOKUP[20] := TArray<Integer>.Create($762, 20);
-  FORMAT_INFO_DECODE_LOOKUP[$15] := TArray<Integer>.Create($255, $15);
-  FORMAT_INFO_DECODE_LOOKUP[$16] := TArray<Integer>.Create($D0C, $16);
-  FORMAT_INFO_DECODE_LOOKUP[$17] := TArray<Integer>.Create($83B, $17);
-  FORMAT_INFO_DECODE_LOOKUP[$18] := TArray<Integer>.Create($355F, $18);
-  FORMAT_INFO_DECODE_LOOKUP[$19] := TArray<Integer>.Create($3068, $19);
-  FORMAT_INFO_DECODE_LOOKUP[$1A] := TArray<Integer>.Create($3F31, $1A);
-  FORMAT_INFO_DECODE_LOOKUP[$1B] := TArray<Integer>.Create($3A06, $1B);
-  FORMAT_INFO_DECODE_LOOKUP[$1C] := TArray<Integer>.Create($24B4, $1C);
-  FORMAT_INFO_DECODE_LOOKUP[$1D] := TArray<Integer>.Create($2183, $1D);
-  FORMAT_INFO_DECODE_LOOKUP[30] := TArray<Integer>.Create($2EDA, 30);
-  FORMAT_INFO_DECODE_LOOKUP[$1F] := TArray<Integer>.Create($2BED, $1F);
-
-  BITS_SET_IN_HALF_BYTE := TArray<Integer>.Create(0, 1, 1, 2, 1, 2, 2, 3, 1, 2,
-    2, 3, 2, 3, 3, 4);
-end;
-
-class procedure TFormatInformation.FinalizeClass;
-var
-  i: Integer;
-begin
-  for i := 0 to Pred(Length(FORMAT_INFO_DECODE_LOOKUP)) do
-    FORMAT_INFO_DECODE_LOOKUP[i] := nil;
-
-  FORMAT_INFO_DECODE_LOOKUP := nil;
-  BITS_SET_IN_HALF_BYTE := nil;
-end;
-
 class function TFormatInformation.numBitsDiffering(a, b: Integer): Integer;
+const
+  /// <summary> Offset i holds the number of 1 bits in the binary representation of i</summary>
+  BITS_SET_IN_HALF_BYTE: TArray<Integer> = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4];
 begin
   a := (a xor b); // a now has a 1 bit exactly where its bit differs with b's
   // Count bits set quickly with a series of lookups:
-  Result := BITS_SET_IN_HALF_BYTE[(a and $0F)] + BITS_SET_IN_HALF_BYTE
-    [TMathUtils.Asr(UInt32(a), 4) and $0F] + BITS_SET_IN_HALF_BYTE
-    [TMathUtils.Asr(UInt32(a), 8) and $0F] + BITS_SET_IN_HALF_BYTE
-    [TMathUtils.Asr(UInt32(a), 12) and $0F] + BITS_SET_IN_HALF_BYTE
-    [TMathUtils.Asr(UInt32(a), 16) and $0F] + BITS_SET_IN_HALF_BYTE
-    [TMathUtils.Asr(UInt32(a), 20) and $0F] + BITS_SET_IN_HALF_BYTE
-    [TMathUtils.Asr(UInt32(a), 24) and $0F] + BITS_SET_IN_HALF_BYTE
-    [TMathUtils.Asr(UInt32(a), 28) and $0F];
+  Result := BITS_SET_IN_HALF_BYTE[(a and $0F)] +
+            BITS_SET_IN_HALF_BYTE[TMathUtils.Asr(UInt32(a), 4) and $0F] +
+            BITS_SET_IN_HALF_BYTE[TMathUtils.Asr(UInt32(a), 8) and $0F] +
+            BITS_SET_IN_HALF_BYTE[TMathUtils.Asr(UInt32(a), 12) and $0F] +
+            BITS_SET_IN_HALF_BYTE[TMathUtils.Asr(UInt32(a), 16) and $0F] +
+            BITS_SET_IN_HALF_BYTE[TMathUtils.Asr(UInt32(a), 20) and $0F] +
+            BITS_SET_IN_HALF_BYTE[TMathUtils.Asr(UInt32(a), 24) and $0F] +
+            BITS_SET_IN_HALF_BYTE[TMathUtils.Asr(UInt32(a), 28) and $0F];
 end;
-
-initialization
-
-TFormatInformation.InitializeClass;
-
-finalization
-
-TFormatInformation.FinalizeClass;
 
 end.

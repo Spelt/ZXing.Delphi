@@ -20,8 +20,8 @@ unit ZXing.OneD.UPCEANExtensionSupport;
 
 interface
 
-uses 
-  System.SysUtils, 
+uses
+  System.SysUtils,
   System.Generics.Collections,
   System.Math,
   ZXing.OneD.UPCEANExtension2Support,
@@ -38,15 +38,12 @@ uses
 type
   TUPCEANExtensionSupport = class sealed
   private
-    class var
-      EXTENSION_START_PATTERN : TArray<Integer>;
-
-      twoSupport : TUPCEANExtension2Support;
-      fiveSupport : TUPCEANExtension5Support;
-
-    class procedure InitializeClass; static;
-    class procedure FinalizeClass; static;
+    twoSupport: TUPCEANExtension2Support;
+    fiveSupport: TUPCEANExtension5Support;
   public
+    constructor Create;
+    destructor Destroy; override;
+
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const rowOffset: Integer): TReadResult;
   end;
@@ -54,22 +51,25 @@ type
 implementation
 
 uses
+  ZXing.OneD.OneDReader,
   ZXing.OneD.UPCEANReader;
 
 { TUPCEANExtensionSupport }
 
-class procedure TUPCEANExtensionSupport.InitializeClass();
+constructor TUPCEANExtensionSupport.Create;
 begin
-  EXTENSION_START_PATTERN := TArray<Integer>.Create(1, 1, 2);
+  inherited;
+
   twoSupport := TUPCEANExtension2Support.Create();
   fiveSupport := TUPCEANExtension5Support.Create();
 end;
 
-class procedure TUPCEANExtensionSupport.FinalizeClass();
+destructor TUPCEANExtensionSupport.Destroy;
 begin
-  EXTENSION_START_PATTERN := nil;
   twoSupport.Free;
   fiveSupport.Free;
+
+  inherited;
 end;
 
 function TUPCEANExtensionSupport.decodeRow(const rowNumber: Integer;
@@ -77,6 +77,8 @@ function TUPCEANExtensionSupport.decodeRow(const rowNumber: Integer;
 var
   extensionStartRange: TArray<Integer>;
   res : TReadResult;
+const
+  EXTENSION_START_PATTERN: TOneDPattern = [1, 1, 2];
 begin
   Result := nil;
 
@@ -84,16 +86,12 @@ begin
     false, EXTENSION_START_PATTERN);
   if (extensionStartRange = nil)
   then
-     exit;
+    exit;
   res := fiveSupport.decodeRow(rowNumber, row, extensionStartRange);
   if (res = nil)
   then
-     res := twoSupport.decodeRow(rowNumber, row, extensionStartRange);
+    res := twoSupport.decodeRow(rowNumber, row, extensionStartRange);
   Result := res;
 end;
 
-initialization
-  TUPCEANExtensionSupport.InitializeClass;
-finalization
-  TUPCEANExtensionSupport.FinalizeClass;
 end.

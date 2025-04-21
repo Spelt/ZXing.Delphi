@@ -37,25 +37,28 @@ type
   TCode39Reader = class sealed(TOneDReader)
 
   private
-    class var ALPHABET: TArray<Char>;
-    class function decodeExtended(encoded: string): string; static;
-
-    function findAsteriskPattern(row: IBitArray): TArray<Integer>;
-    class function patternToChar(pattern: Integer; var c: Char)
-      : boolean; static;
-    class function toNarrowWidePattern(counters: TArray<Integer>)
-      : Integer; static;
-
-  const
-    ALPHABET_STRING: string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. *$/+%';
-    class var ASTERISK_ENCODING: Integer;
-
-  class var
-    CHARACTER_ENCODINGS: TArray<Integer>;
     counters: TArray<Integer>;
     decodeRowResult: TStringBuilder;
     usingCheckDigit: boolean;
     extendedMode: boolean;
+
+    function decodeExtended(encoded: string): string;
+
+    function findAsteriskPattern(row: IBitArray): TOneDPattern;
+    function patternToChar(pattern: Integer; var c: Char): boolean;
+    function toNarrowWidePattern(counters: TArray<Integer>): Integer;
+
+  const
+    ALPHABET_STRING: string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. *$/+%';
+    CHARACTER_ENCODINGS: array of Integer = [
+      $034, $121, $061, $160, $031, $130, $070, $025, $124, $064, // 0-9
+      $109, $049, $148, $019, $118, $058, $00D, $10C, $04C, $01C, // A-J
+      $103, $043, $142, $013, $112, $052, $007, $106, $046, $016, // K-T
+      $181, $0C1, $1C0, $091, $190, $0D0, $085, $184, $0C4, $094, // U-*
+      $0A8, $0A2, $08A, $02A // $-%
+    ];
+    ASTERISK_ENCODING = $094;
+
   public
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
@@ -72,17 +75,6 @@ implementation
 
 constructor TCode39Reader.Create(AUsingCheckDigit, AExtendedMode: boolean);
 begin
-  ALPHABET := ALPHABET_STRING.ToCharArray;
-  CHARACTER_ENCODINGS := TArray<Integer>.Create($034, $121, $061, $160, $031,
-    $130, $070, $025, $124, $064, // 0-9
-    $109, $049, $148, $019, $118, $058, $00D, $10C, $04C, $01C, // A-J
-    $103, $043, $142, $013, $112, $052, $007, $106, $046, $016, // K-T
-    $181, $0C1, $1C0, $091, $190, $0D0, $085, $184, $0C4, $094, // U-*
-    $0A8, $0A2, $08A, $02A // $-%
-    );
-
-  ASTERISK_ENCODING := TCode39Reader.CHARACTER_ENCODINGS[$27];
-
   counters := TArray<Integer>.Create();
   SetLength(counters, 9);
   decodeRowResult := TStringBuilder.Create();
@@ -93,14 +85,12 @@ end;
 
 destructor TCode39Reader.Destroy;
 begin
-  ALPHABET := nil;
-  CHARACTER_ENCODINGS := nil;
   counters := nil;
   FreeAndNil(decodeRowResult);
   inherited;
 end;
 
-class function TCode39Reader.decodeExtended(encoded: string): string;
+function TCode39Reader.decodeExtended(encoded: string): string;
 var
   next, c, decodedChar: Char;
   length, i: Integer;
@@ -197,7 +187,7 @@ var
   decodedChar: Char;
   lastStart: Integer;
   index, nextStart, counter, aEnd, pattern, lastPatternSize: Integer;
-  start: TArray<Integer>;
+  start: TOneDPattern;
   resultString: String;
   Left, Right: Single;
   resultPoints: TArray<IResultPoint>;
@@ -221,20 +211,20 @@ begin
   nextStart := row.getNextSet(start[1]);
   aEnd := row.Size;
   repeat
-    if (not TOneDReader.recordPattern(row, nextStart, self.counters)) then
+    if (not recordPattern(row, nextStart, self.counters)) then
     begin
       Result := nil;
       exit
     end;
 
-    pattern := TCode39Reader.toNarrowWidePattern(self.counters);
+    pattern := toNarrowWidePattern(self.counters);
     if (pattern < 0) then
     begin
       Result := nil;
       exit
     end;
 
-    if (not TCode39Reader.patternToChar(pattern, decodedChar)) then
+    if (not patternToChar(pattern, decodedChar)) then
     begin
       Result := nil;
       exit
@@ -294,8 +284,7 @@ begin
   end;
 
   if extendedMode then
-    resultString := TCode39Reader.decodeExtended
-      (self.decodeRowResult.ToString())
+    resultString := decodeExtended(self.decodeRowResult.ToString())
   else
     resultString := decodeRowResult.ToString();
 
@@ -317,7 +306,7 @@ begin
 
 end;
 
-function TCode39Reader.findAsteriskPattern(row: IBitArray): TArray<Integer>;
+function TCode39Reader.findAsteriskPattern(row: IBitArray): TOneDPattern;
 var
   i, l, patternStart, patternLength, width, counterPosition, rowOffset,
     index: Integer;
@@ -350,10 +339,9 @@ begin
       if (counterPosition = (patternLength - 1)) then
       begin
 
-        if (TCode39Reader.toNarrowWidePattern(counters)
-          = TCode39Reader.ASTERISK_ENCODING) then
+        if (toNarrowWidePattern(counters) = ASTERISK_ENCODING) then
         begin
-          Result := TArray<Integer>.Create(patternStart, i);
+          Result := TOneDPattern.Create(patternStart, i);
           exit
         end;
 
@@ -381,17 +369,16 @@ begin
 
 end;
 
-class function TCode39Reader.patternToChar(pattern: Integer;
-  var c: Char): boolean;
+function TCode39Reader.patternToChar(pattern: Integer; var c: Char): boolean;
 var
   i: Integer;
 begin
   i := 0;
-  while (i < length(TCode39Reader.CHARACTER_ENCODINGS)) do
+  while (i < length(CHARACTER_ENCODINGS)) do
   begin
-    if (TCode39Reader.CHARACTER_ENCODINGS[i] = pattern) then
+    if (CHARACTER_ENCODINGS[i] = pattern) then
     begin
-      c := TCode39Reader.ALPHABET[i];
+      c := ALPHABET_STRING[i + 1];
       begin
         Result := true;
         exit
@@ -403,8 +390,7 @@ begin
   Result := False;
 end;
 
-class function TCode39Reader.toNarrowWidePattern
-  (counters: TArray<Integer>): Integer;
+function TCode39Reader.toNarrowWidePattern(counters: TArray<Integer>): Integer;
 var
   numCounters: Integer;
   maxNarrowCounter: Integer;

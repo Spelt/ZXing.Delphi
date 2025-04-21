@@ -21,7 +21,7 @@ unit ZXing.QrCode.Internal.FinderPatternFinder;
 
 interface
 
-uses 
+uses
   System.SysUtils,
   System.Math,
   System.Generics.Defaults,
@@ -51,7 +51,7 @@ type
       FCrossCheckStateCount: TArray<Integer>;
       FresultPointCallback: TResultPointCallback;
 
-    class function centerFromEnd(stateCount: TArray<Integer>; pEnd: Integer): Single; static;
+    function centerFromEnd(stateCount: TArray<Integer>; pEnd: Integer): Single;
 
     function crossCheckDiagonal(startI: Integer; centerJ: Integer; maxCount: Integer; originalStateCountTotal: Integer): boolean;
     function crossCheckHorizontal(startJ: Integer; centerI: Integer; maxCount: Integer; originalStateCountTotal: Integer): Single;
@@ -71,7 +71,7 @@ type
       /// support up to version 10 for mobile clients
       /// </summary>
       MAX_MODULES: Integer = 97;
-    class function foundPatternCross(const stateCount: TArray<Integer>): Boolean; static;
+    function foundPatternCross(const stateCount: TArray<Integer>): Boolean;
     function handlePossibleCenter(stateCount: TArray<Integer>; i: Integer;
       j: Integer): boolean;
     property image: TBitMatrix read FImage;
@@ -146,7 +146,7 @@ begin
   inherited;
 end;
 
-class function TFinderPatternFinder.centerFromEnd(stateCount: TArray<Integer>;
+function TFinderPatternFinder.centerFromEnd(stateCount: TArray<Integer>;
   pEnd: Integer): Single;
 var
   aResult: Single;
@@ -250,7 +250,7 @@ begin
       stateCount[4]);
 
     Result := (Abs(stateCountTotal - originalStateCountTotal) <
-      (2 * originalStateCountTotal)) and TFinderPatternFinder.foundPatternCross
+      (2 * originalStateCountTotal)) and foundPatternCross
       (stateCount);
 
   finally
@@ -360,9 +360,9 @@ begin
       exit
     end;
 
-    if TFinderPatternFinder.foundPatternCross(stateCount) then
+    if foundPatternCross(stateCount) then
     begin
-      result := TFinderPatternFinder.centerFromEnd(stateCount, j);
+      result := centerFromEnd(stateCount, j);
       exit;
     end;
 
@@ -484,9 +484,9 @@ begin
       exit
     end;
 
-    if TFinderPatternFinder.foundPatternCross(stateCount) then
+    if foundPatternCross(stateCount) then
     begin
-      result := TFinderPatternFinder.centerFromEnd(stateCount, i);
+      result := centerFromEnd(stateCount, i);
       exit;
     end;
 
@@ -558,7 +558,7 @@ begin
             if (currentState = 4) then
             begin
               // A winner?
-              if TFinderPatternFinder.foundPatternCross(stateCount) then
+              if foundPatternCross(stateCount) then
               begin
                 // Yes
                 confirmed := handlePossibleCenter(stateCount, i, j);
@@ -688,7 +688,7 @@ end;
 /// <returns> true iff the proportions of the counts is close enough to the 1/1/3/1/1 ratios
 /// used by finder patterns to be considered a match
 /// </returns>
-class function TFinderPatternFinder.foundPatternCross(
+function TFinderPatternFinder.foundPatternCross(
   const stateCount: TArray<Integer>): Boolean;
 var
   i, totalModuleSize,
@@ -736,7 +736,7 @@ begin
   stateCountTotal := ((((stateCount[0] + stateCount[1]) + stateCount[2]) +
     stateCount[3]) + stateCount[4]);
 
-  centerJ := TFinderPatternFinder.centerFromEnd(stateCount, j);
+  centerJ := centerFromEnd(stateCount, j);
 
   if (centerJ = -1)
   then

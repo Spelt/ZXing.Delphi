@@ -22,7 +22,7 @@ unit ZXing.QrCode.Internal.AlignmentPatternFinder;
 
 interface
 
-uses 
+uses
   System.SysUtils,
   System.Math,
   System.Generics.Collections,
@@ -57,8 +57,8 @@ type
     /// <summary> Given a count of black/white/black pixels just seen and an end position,
     /// figures the location of the center of this black/white/black run.
     /// </summary>
-    class function centerFromEnd(const stateCount: TArray<Integer>;
-      const pEnd: Integer): Single; static;
+    function centerFromEnd(const stateCount: TArray<Integer>;
+      const pEnd: Integer): Single;
 
     /// <param name="stateCount">count of black/white/black pixels just read
     /// </param>
@@ -259,7 +259,7 @@ begin
      Result := nil;
 end;
 
-class function TAlignmentPatternFinder.centerFromEnd(
+function TAlignmentPatternFinder.centerFromEnd(
   const stateCount: TArray<Integer>; const pEnd: Integer): Single;
 begin
   Result := (pEnd - stateCount[2]) - (stateCount[1] / 2.0);
@@ -360,7 +360,7 @@ begin
 
   if Self.foundPatternCross(stateCount)
   then
-     Result := TAlignmentPatternFinder.centerFromEnd(stateCount, i)
+     Result := centerFromEnd(stateCount, i)
   else
      Result := -1;
 end;
@@ -374,7 +374,7 @@ var
   centerJ, centerI: Single;
 begin
   stateCountTotal := (stateCount[0] + stateCount[1] + stateCount[2]);
-  centerJ := TAlignmentPatternFinder.centerFromEnd(stateCount, j);
+  centerJ := centerFromEnd(stateCount, j);
   if (centerJ = -1) then
   begin
     Result := nil;

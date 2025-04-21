@@ -20,9 +20,9 @@ unit ZXing.OneD.UPCEANExtension2Support;
 
 interface
 
-uses 
-  System.SysUtils, 
-  System.Generics.Collections, 
+uses
+  System.SysUtils,
+  System.Generics.Collections,
   System.Math,
   ZXing.Reader,
   ZXing.BarcodeFormat,
@@ -39,15 +39,7 @@ type
   /// </summary>
   TUPCEANExtension2Support = class sealed
   private
-    class var
-      decodeMiddleCounters : TArray<Integer>;
-      decodeRowStringBuffer : TStringBuilder;
-
-    class procedure InitializeClass; static;
-    class procedure FinalizeClass; static;
-
-    class function decodeMiddle(const row: IBitArray;
-      const startRange: TArray<Integer>;
+    function decodeMiddle(const row: IBitArray; const startRange: TArray<Integer>;
       const resultString: TStringBuilder): Integer;
 
     /// <summary>
@@ -55,9 +47,9 @@ type
     /// </summary>
     /// <param name="raw">raw content of extension</param>
     /// <returns>formatted interpretation of raw content as a {@link TMap} mapping
-    class function parseExtensionString(const raw: String): TResultMetadata; static;
+    function parseExtensionString(const raw: String): TResultMetadata;
   public
-    class function decodeRow(const rowNumber: Integer; const row: IBitArray;
+    function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const extensionStartRange: TArray<Integer>): TReadResult;
   end;
 
@@ -68,19 +60,7 @@ uses
 
 { TUPCEANExtension2Support }
 
-class procedure TUPCEANExtension2Support.InitializeClass;
-begin
-  decodeMiddleCounters := TArray<Integer>.Create(0, 0, 0, 0);
-  decodeRowStringBuffer := TStringBuilder.Create;
-end;
-
-class procedure TUPCEANExtension2Support.FinalizeClass;
-begin
-  decodeMiddleCounters := nil;
-  decodeRowStringBuffer.Free;
-end;
-
-class function TUPCEANExtension2Support.decodeRow(const rowNumber: Integer;
+function TUPCEANExtension2Support.decodeRow(const rowNumber: Integer;
   const row: IBitArray; const extensionStartRange: TArray<Integer>): TReadResult;
 var
   res : TStringBuilder;
@@ -92,31 +72,34 @@ var
 begin
   Result := nil;
 
-  res := decodeRowStringBuffer;
-  res.Length := 0;
-  ending := decodeMiddle(row, extensionStartRange, res);
-  if (ending < 0)
-  then
-     exit;
+  res := TStringBuilder.Create;
+  try
+    res.Length := 0;
+    ending := decodeMiddle(row, extensionStartRange, res);
+    if (ending < 0) then
+      exit;
 
-  resultString := res.ToString;
-  extensionData := TUPCEANExtension2Support.parseExtensionString(resultString);
+    resultString := res.ToString;
+    extensionData := parseExtensionString(resultString);
 
-  resultPoints := TArray<IResultPoint>.Create(
-    TResultPointHelpers.CreateResultPoint((extensionStartRange[0] + extensionStartRange[1]) div 2, rowNumber),
-    TResultPointHelpers.CreateResultPoint(ending, rowNumber));
+    resultPoints := TArray<IResultPoint>.Create(
+      TResultPointHelpers.CreateResultPoint((extensionStartRange[0] + extensionStartRange[1]) div 2, rowNumber),
+      TResultPointHelpers.CreateResultPoint(ending, rowNumber));
 
-  extensionResult := TReadResult.Create(resultString, nil, resultPoints, TBarcodeFormat.UPC_EAN_EXTENSION);
-  if (extensionData <> nil)
-  then
-  begin
-     extensionResult.putAllMetadata(extensionData);
-     FreeAndNil(extensionData);
+    extensionResult := TReadResult.Create(resultString, nil, resultPoints, TBarcodeFormat.UPC_EAN_EXTENSION);
+    if (extensionData <> nil) then
+    begin
+      extensionResult.putAllMetadata(extensionData);
+      FreeAndNil(extensionData);
+    end;
+    Result := extensionResult;
+
+  finally
+    res.Free;
   end;
-  Result := extensionResult;
 end;
 
-class function TUPCEANExtension2Support.decodeMiddle(const row: IBitArray;
+function TUPCEANExtension2Support.decodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>; const resultString: TStringBuilder): Integer;
 var
   bestMatch: Integer;
@@ -128,29 +111,23 @@ var
 begin
   Result := -1;
 
-  counters := decodeMiddleCounters;
-  counters[0] := 0;
-  counters[1] := 0;
-  counters[2] := 0;
-  counters[3] := 0;
+  counters := [0, 0, 0, 0];
   ending := row.Size;
   rowOffset := startRange[1];
   checkParity := 0;
   x := 0;
   while ((x < 2) and (rowOffset < ending)) do
   begin
-    if (not TUPCEANReader.decodeDigit(row, counters, rowOffset, TUPCEANReader.L_AND_G_PATTERNS, bestMatch))
-    then
-       exit;
+    if (not TUPCEANReader.decodeDigit(row, counters, rowOffset, TUPCEANReader.L_PATTERNS + TUPCEANReader.G_PATTERNS, bestMatch)) then
+      exit;
 
     resultString.Append(IntToStr(bestMatch mod 10));
 
     for counter in counters do
       Inc(rowOffset, counter);
 
-    if (bestMatch >= 10)
-    then
-       checkParity := checkParity or (1 shl (1 - x));
+    if (bestMatch >= 10) then
+      checkParity := checkParity or (1 shl (1 - x));
 
     if (x <> 1) then
     begin
@@ -161,34 +138,27 @@ begin
     Inc(x);
   end;
 
-  if (resultString.Length <> 2)
-  then
-     exit;
+  if (resultString.Length <> 2) then
+    exit;
 
-  if ((Integer.Parse(resultString.ToString) mod 4) <> checkParity)
-  then
-     exit;
+  if ((Integer.Parse(resultString.ToString) mod 4) <> checkParity) then
+    exit;
 
   Result := rowOffset;
 end;
 
-class function TUPCEANExtension2Support.parseExtensionString(const raw: String): TResultMetadata;
+function TUPCEANExtension2Support.parseExtensionString(const raw: String): TResultMetadata;
 var
   dictionary1: TResultMetadata;
 begin
   Result := nil;
 
-  if (Length(raw) <> 2)
-  then
-     exit;
+  if (Length(raw) <> 2) then
+    exit;
 
   dictionary1 := TResultMetadata.Create;
   dictionary1.Add(ZXing.ResultMetadataType.ISSUE_NUMBER, TResultMetaData.CreateStringMetadata(raw));
   Result := dictionary1;
 end;
 
-initialization
-  TUPCEANExtension2Support.InitializeClass;
-finalization
-  TUPCEANExtension2Support.FinalizeClass;
 end.

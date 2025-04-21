@@ -23,6 +23,7 @@ interface
 
 uses
   System.SysUtils,
+  System.Types,
   System.Generics.Collections,
   Math,
   ZXing.OneD.OneDReader,
@@ -40,27 +41,27 @@ type
   /// </summary>
   TCode93Reader = class sealed(TOneDReader)
   private
-    class var ALPHABET: TArray<Char>;
-    class function checkChecksums(pResult: TStringBuilder): boolean; static;
-    class function checkOneChecksum(pResult: TStringBuilder;
-      checkPosition, weightMax: Integer): boolean;
-    class function decodeExtended(encoded: TStringBuilder): string; static;
-
-    function findAsteriskPattern(row: IBitArray): TArray<Integer>;
-    class function patternToChar(pattern: Integer; var c: Char)
-      : boolean; static;
-    class function toPattern(counters: TArray<Integer>): Integer; static;
-
-  const
-    ALPHABET_STRING
-      : string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%abcd*';
-    class var ASTERISK_ENCODING: Integer;
-
-  class var
-    CHARACTER_ENCODINGS: TArray<Integer>;
     counters: TArray<Integer>;
     decodeRowResult: TStringBuilder;
 
+    function checkChecksums(pResult: TStringBuilder): boolean;
+    function checkOneChecksum(pResult: TStringBuilder;
+      checkPosition, weightMax: Integer): boolean;
+    function decodeExtended(encoded: TStringBuilder): string;
+
+    function findAsteriskPattern(row: IBitArray): TArray<Integer>;
+    function patternToChar(pattern: Integer; var c: Char): boolean;
+    function toPattern(counters: TArray<Integer>): Integer;
+
+  const
+    ALPHABET_STRING = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%abcd*';
+    CHARACTER_ENCODINGS: TIntegerDynArray = [
+      $114, $148, $144, $142, $128, $124, $122, $150, $112, $10A, // 0-9
+      $1A8, $1A4, $1A2, $194, $192, $18A, $168, $164, $162, $134, // A-J
+      $11A, $158, $14C, $146, $12C, $116, $1B4, $1B2, $1AC, $1A6, // K-T
+      $196, $19A, $16C, $166, $136, $13A, $12E, $1D4, $1D2, $1CA, // U-$
+      $16E, $176, $1AE, $126, $1DA, $1D6, $132, $15E];            // /-*
+    ASTERISK_ENCODING = $15E;
   public
     constructor Create;
     destructor Destroy; override;
@@ -76,15 +77,6 @@ implementation
 
 constructor TCode93Reader.Create;
 begin
-  ALPHABET := '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%abcd*'.ToCharArray;
-  CHARACTER_ENCODINGS := TArray<Integer>.Create($114, $148, $144, $142, $128,
-    $124, 290, $150, $112, $10A, $1A8, 420, $1A2, $194, $192, $18A, 360, $164,
-    $162, $134, $11A, $158, $14C, $146, 300, $116, $1B4, $1B2, $1AC, $1A6, $196,
-    410, $16C, $166, 310, $13A, $12E, $1D4, $1D2, $1CA, $16E, $176, 430, $126,
-    $1DA, 470, $132, 350);
-
-  ASTERISK_ENCODING := TCode93Reader.CHARACTER_ENCODINGS[$2F];
-
   counters := TArray<Integer>.Create();
   SetLength(counters, 6);
   decodeRowResult := TStringBuilder.Create();
@@ -92,24 +84,22 @@ end;
 
 destructor TCode93Reader.Destroy;
 begin
-  ALPHABET := nil;
-  CHARACTER_ENCODINGS := nil;
   counters := nil;
   FreeAndNil(decodeRowResult);
   inherited;
 end;
 
-class function TCode93Reader.checkChecksums(pResult: TStringBuilder): boolean;
+function TCode93Reader.checkChecksums(pResult: TStringBuilder): boolean;
 var
   length: Integer;
 begin
   length := pResult.length;
-  if (not TCode93Reader.checkOneChecksum(pResult, (length - 2), 20)) then
+  if (not checkOneChecksum(pResult, (length - 2), 20)) then
   begin
     Result := false;
     exit
   end;
-  if (not TCode93Reader.checkOneChecksum(pResult, (length - 1), 15)) then
+  if (not checkOneChecksum(pResult, (length - 1), 15)) then
   begin
     Result := false;
     exit
@@ -120,7 +110,7 @@ begin
   end
 end;
 
-class function TCode93Reader.checkOneChecksum(pResult: TStringBuilder;
+function TCode93Reader.checkOneChecksum(pResult: TStringBuilder;
   checkPosition, weightMax: Integer): boolean;
 var
   weight, total, i: Integer;
@@ -141,7 +131,7 @@ begin
     dec(i)
   end;
 
-  if (pResult.Chars[checkPosition] <> TCode93Reader.ALPHABET[(total mod $2F)])
+  if (pResult.Chars[checkPosition] <> ALPHABET_STRING[(total mod $2F) + 1])
   then
   begin
     Result := false;
@@ -153,7 +143,7 @@ begin
   end
 end;
 
-class function TCode93Reader.decodeExtended(encoded: TStringBuilder): string;
+function TCode93Reader.decodeExtended(encoded: TStringBuilder): string;
 var
   next, c: Char;
   decodedChar: Char;
@@ -288,18 +278,18 @@ begin
   nextStart := row.getNextSet(start[1]);
   aEnd := row.Size;
   repeat
-    if (not TOneDReader.recordPattern(row, nextStart, self.counters)) then
+    if (not recordPattern(row, nextStart, self.counters)) then
     begin
       Result := nil;
       exit
     end;
-    pattern := TCode93Reader.toPattern(self.counters);
+    pattern := toPattern(self.counters);
     if (pattern < 0) then
     begin
       Result := nil;
       exit
     end;
-    if (not TCode93Reader.patternToChar(pattern, decodedChar)) then
+    if (not patternToChar(pattern, decodedChar)) then
     begin
       Result := nil;
       exit
@@ -337,7 +327,7 @@ begin
     exit
   end;
 
-  if (not TCode93Reader.checkChecksums(self.decodeRowResult)) then
+  if (not checkChecksums(self.decodeRowResult)) then
   begin
     Result := nil;
     exit
@@ -345,7 +335,7 @@ begin
 
   self.decodeRowResult.length := self.decodeRowResult.length - 2;
 
-  resultString := TCode93Reader.decodeExtended(self.decodeRowResult);
+  resultString := decodeExtended(self.decodeRowResult);
   if (resultString = '') then
   begin
     Result := nil;
@@ -415,7 +405,7 @@ begin
       if (counterPosition = (patternLength - 1)) then
       begin
 
-        if (TCode93Reader.toPattern(counters) = TCode93Reader.ASTERISK_ENCODING)
+        if (toPattern(counters) = ASTERISK_ENCODING)
         then
         begin
           Result := TArray<Integer>.Create(patternStart, i);
@@ -446,17 +436,16 @@ begin
 
 end;
 
-class function TCode93Reader.patternToChar(pattern: Integer;
-  var c: Char): boolean;
+function TCode93Reader.patternToChar(pattern: Integer; var c: Char): boolean;
 var
   i: Integer;
 begin
   i := 0;
-  while (i < length(TCode93Reader.CHARACTER_ENCODINGS)) do
+  while (i < length(CHARACTER_ENCODINGS)) do
   begin
-    if (TCode93Reader.CHARACTER_ENCODINGS[i] = pattern) then
+    if (CHARACTER_ENCODINGS[i] = pattern) then
     begin
-      c := TCode93Reader.ALPHABET[i];
+      c := ALPHABET_STRING[i + 1];
       begin
         Result := true;
         exit
@@ -468,7 +457,7 @@ begin
   Result := false;
 end;
 
-class function TCode93Reader.toPattern(counters: TArray<Integer>): Integer;
+function TCode93Reader.toPattern(counters: TArray<Integer>): Integer;
 var
   counter, max, sum, pattern, i, j, scaledShifted, scaledUnshifted: Integer;
 begin

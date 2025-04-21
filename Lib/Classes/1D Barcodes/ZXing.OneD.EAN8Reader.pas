@@ -40,16 +40,9 @@ type
   /// <p>Implements decoding of the EAN-8 format.</p>
   /// </summary>
   TEAN8Reader = class(TUPCEANReader)
-
-  private
-    class var DecodeMiddleCounters: TArray<Integer>;
-
-    class procedure DoInitialize();
-    class procedure DoFinalize();
   public
-    class function DecodeMiddle(const row: IBitArray;
-      const startRange: TArray<Integer>; const resultString: TStringBuilder)
-      : Integer; override;
+    function DecodeMiddle(const row: IBitArray; const startRange: TArray<Integer>;
+      const resultString: TStringBuilder): Integer; override;
 
     function BarcodeFormat: TBarcodeFormat; override;
   end;
@@ -61,17 +54,7 @@ begin
   result := TBarcodeFormat.EAN_8;
 end;
 
-class procedure TEAN8Reader.DoFinalize;
-begin
-  DecodeMiddleCounters := nil;
-end;
-
-class procedure TEAN8Reader.DoInitialize;
-begin
-  SetLength(DecodeMiddleCounters, 4);
-end;
-
-class function TEAN8Reader.DecodeMiddle(const row: IBitArray;
+function TEAN8Reader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
   const resultString: TStringBuilder): Integer;
 var
@@ -79,18 +62,13 @@ var
   counter: Integer;
   counters, middleRange: TArray<Integer>;
 begin
-  counters := self.DecodeMiddleCounters;
-  counters[0] := 0;
-  counters[1] := 0;
-  counters[2] := 0;
-  counters[3] := 0;
+  counters := [0, 0, 0, 0];
   ending := row.Size;
   rowOffset := startRange[1];
   x := 0;
   while (((x < 4) and (rowOffset < ending))) do
   begin
-    if (not TUPCEANReader.decodeDigit(row, counters, rowOffset,
-      TUPCEANReader.L_PATTERNS, bestMatch)) then
+    if (not TUPCEANReader.decodeDigit(row, counters, rowOffset, L_PATTERNS, bestMatch)) then
     begin
       result := -1;
       exit
@@ -105,8 +83,7 @@ begin
     inc(x)
   end;
 
-  middleRange := TUPCEANReader.findGuardPattern(row, rowOffset, true,
-    TUPCEANReader.MIDDLE_PATTERN);
+  middleRange := TUPCEANReader.findGuardPattern(row, rowOffset, true, MIDDLE_PATTERN);
   if (middleRange = nil) then
   begin
     result := -1;
@@ -118,7 +95,7 @@ begin
   while (((x < 4) and (rowOffset < ending))) do
   begin
     if (not TUPCEANReader.decodeDigit(row, counters, rowOffset,
-      TUPCEANReader.L_PATTERNS, bestMatch)) then
+      L_PATTERNS, bestMatch)) then
     begin
       result := -1;
       exit
@@ -136,13 +113,5 @@ begin
   result := rowOffset;
 
 end;
-
-initialization
-
-TEAN8Reader.DoInitialize;
-
-finalization
-
-TEAN8Reader.DoFinalize;
 
 end.

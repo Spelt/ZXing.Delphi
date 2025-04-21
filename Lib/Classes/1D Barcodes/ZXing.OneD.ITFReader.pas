@@ -22,14 +22,14 @@ unit ZXing.OneD.ITFReader;
 interface
 
 uses
-  System.SysUtils, 
-  System.Generics.Collections, 
-  Math, 
+  System.SysUtils,
+  System.Generics.Collections,
+  Math,
   ZXing.OneD.OneDReader,
-  ZXing.Common.BitArray, 
+  ZXing.Common.BitArray,
   ZXing.ReadResult,
   ZXing.DecodeHintType,
-  ZXing.ResultPoint, 
+  ZXing.ResultPoint,
   ZXing.BarcodeFormat,
   ZXing.Helpers;
 
@@ -49,34 +49,44 @@ type
   /// is a great reference for Interleaved 2 of 5 information.</p>
   /// </summary>
   TITFReader = class(TOneDReader)
-  const
-    LARGEST_DEFAULT_ALLOWED_LENGTH: Integer = 14;
-    N: Integer = 1;
-    W: Integer = 3;
+  private const
+    LARGEST_DEFAULT_ALLOWED_LENGTH = 14;
+    N = 1;
+    W = 3;
+
+    PATTERNS: TOneDPatterns =
+      [[N, N, W, W, N], // 0
+      [W, N, N, N, W],  // 1
+      [N, W, N, N, W],  // 2
+      [W, W, N, N, N],  // 3
+      [N, N, W, N, W],  // 4
+      [W, N, W, N, N],  // 5
+      [N, W, W, N, N],  // 6
+      [N, N, N, W, W],  // 7
+      [W, N, N, W, N],  // 8
+      [N, W, N, W, N]]; // 9
+
+    DEFAULT_ALLOWED_LENGTHS: TOneDPattern = [6, 8, 10, 12, 14];
+
+    START_PATTERN: TOneDPattern = [N, N, N, N];
+    END_PATTERN_REVERSED: TOneDPattern = [N, N, W];
+
+    MAX_AVG_VARIANCE: Integer = 107; // = Floor((1 shl INTEGER_MATH_SHIFT) * 0.42);
+    MAX_INDIVIDUAL_VARIANCE: Integer = 199; // = Floor((1 shl INTEGER_MATH_SHIFT) * 0.78);
+
   private
-
-    class var PATTERNS: TArray<TArray<Integer>>;
-    class var END_PATTERN_REVERSED: TArray<Integer>;
-    class var MAX_AVG_VARIANCE: Integer;
-    class var MAX_INDIVIDUAL_VARIANCE: Integer;
-    class var DEFAULT_ALLOWED_LENGTHS: TArray<Integer>;
-
-  class var
-    START_PATTERN: TArray<Integer>;
     narrowLineWidth: Integer;
 
-    class function decodeDigit(counters: TArray<Integer>;
-      out bestMatch: Integer): boolean; static;
+    function decodeDigit(counters: TArray<Integer>;
+      out bestMatch: Integer): boolean;
     function decodeEnd(row: IBitArray): TArray<Integer>;
-    class function skipWhiteSpace(row: IBitArray): Integer; static;
-    class function findGuardPattern(row: IBitArray; rowOffset: Integer;
-      pattern: TArray<Integer>): TArray<Integer>; static;
+    function skipWhiteSpace(row: IBitArray): Integer;
+    function findGuardPattern(row: IBitArray; rowOffset: Integer;
+      pattern: TOneDPattern): TArray<Integer>;
     function validateQuietZone(row: IBitArray; startPattern: Integer): boolean;
     function decodeStart(row: IBitArray): TArray<Integer>;
-    class function decodeMiddle(row: IBitArray;
-      payloadStart, payloadEnd: Integer; SBResult: TStringBuilder)
-      : boolean; static;
-    class procedure ClassInit();
+    function decodeMiddle(row: IBitArray;
+      payloadStart, payloadEnd: Integer; SBResult: TStringBuilder): boolean;
   public
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
@@ -89,28 +99,6 @@ uses
 
 { TITFReader }
 
-class procedure TITFReader.ClassInit();
-begin
-  MAX_AVG_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.42);
-  MAX_INDIVIDUAL_VARIANCE := Floor(PATTERN_MATCH_RESULT_SCALE_FACTOR * 0.78);
-
-  DEFAULT_ALLOWED_LENGTHS := [6, 8, 10, 12, 14];
-
-  START_PATTERN := [N, N, N, N];
-  END_PATTERN_REVERSED := [N, N, W];
-
-  PATTERNS := [[N, N, W, W, N], // 0
-  [W, N, N, N, W], // 1
-  [N, W, N, N, W], // 2
-  [W, W, N, N, N], // 3
-  [N, N, W, N, W], // 4
-  [W, N, W, N, N], // 5
-  [N, W, W, N, N], // 6
-  [N, N, N, W, W], // 7
-  [W, N, N, W, N], // 8
-  [N, W, N, W, N]]; // 9
-end;
-
 function TITFReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
@@ -118,7 +106,7 @@ var
   startRange: TArray<Integer>;
   endRange: TArray<Integer>;
   stringResult: string;
-  allowedLengths: TArray<Integer>;
+  allowedLengths: TOneDPattern;
   maxAllowedLength: Integer;
   len: Integer;
   lengthOK: boolean;
@@ -154,7 +142,7 @@ begin
   maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
   if ((hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.ALLOWED_LENGTHS)) then
   begin
-    allowedLengths := TArray<Integer>(hints[ZXing.DecodeHintType.ALLOWED_LENGTHS]);
+    allowedLengths := TOneDPattern(hints[ZXing.DecodeHintType.ALLOWED_LENGTHS]);
     maxAllowedLength := 0
   end;
 
@@ -228,13 +216,13 @@ begin
     TBarcodeFormat.ITF);
 end;
 
-class function TITFReader.decodeDigit(counters: TArray<Integer>;
+function TITFReader.decodeDigit(counters: TArray<Integer>;
   out bestMatch: Integer): boolean;
 var
   bestVariance: Integer;
   max: Integer;
   i: Integer;
-  pattern: TArray<Integer>;
+  pattern: TOneDPattern;
   variance: Integer;
 begin
   bestVariance := MAX_AVG_VARIANCE;
@@ -286,7 +274,7 @@ begin
   Result := startPattern;
 end;
 
-class function TITFReader.decodeMiddle(row: IBitArray;
+function TITFReader.decodeMiddle(row: IBitArray;
   payloadStart, payloadEnd: Integer; SBResult: TStringBuilder): boolean;
 var
   bestMatch: Integer;
@@ -375,8 +363,8 @@ begin
   Result := endPattern;
 end;
 
-class function TITFReader.findGuardPattern(row: IBitArray; rowOffset: Integer;
-  pattern: TArray<Integer>): TArray<Integer>;
+function TITFReader.findGuardPattern(row: IBitArray; rowOffset: Integer;
+  pattern: TOneDPattern): TArray<Integer>;
 var
   patternLength: Integer;
   counters: TArray<Integer>;
@@ -441,7 +429,7 @@ begin
 
 end;
 
-class function TITFReader.skipWhiteSpace(row: IBitArray): Integer;
+function TITFReader.skipWhiteSpace(row: IBitArray): Integer;
 var
   width: Integer;
   endStart: Integer;
@@ -489,9 +477,5 @@ begin
   Result := true;
 
 end;
-
-initialization
-
-TITFReader.ClassInit();
 
 end.

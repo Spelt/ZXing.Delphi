@@ -41,28 +41,21 @@ type
 
   TUPCEReader = class(TUPCEANReader)
   private
-    class var decodeMiddleCounters: TArray<Integer>;
-    class var MIDDLE_END_PATTERN: TArray<Integer>;
-    class var NUMSYS_AND_CHECK_DIGIT_PATTERNS: T2DIntArray;
-
-    class procedure DoInitialize();
-    class procedure DoFinalize();
-    class function determineNumSysAndCheckDigit(resultString: TStringBuilder;
-      lgPatternFound: Integer): boolean; static;
+    function determineNumSysAndCheckDigit(resultString: TStringBuilder;
+      lgPatternFound: Integer): boolean;
 
   protected
 
-    class function checkChecksum(const s: string): boolean; override;
-    class function decodeEnd(const row: IBitArray; const endStart: Integer)
+    function checkChecksum(const s: string): boolean; override;
+    function decodeEnd(const row: IBitArray; const endStart: Integer)
       : TArray<Integer>; override;
 
   public
-    class function DecodeMiddle(const row: IBitArray;
-      const startRange: TArray<Integer>; const res: TStringBuilder)
-      : Integer; override;
+    function DecodeMiddle(const row: IBitArray; const startRange: TArray<Integer>;
+      const res: TStringBuilder): Integer; override;
 
   public
-    class function convertUPCEtoUPCA(upce: string): string; static;
+    function convertUPCEtoUPCA(upce: string): string;
 
     function BarcodeFormat: TBarcodeFormat; override;
   end;
@@ -71,8 +64,13 @@ implementation
 
 { TUPCEReader }
 
-class function TUPCEReader.determineNumSysAndCheckDigit
-  (resultString: TStringBuilder; lgPatternFound: Integer): boolean;
+function TUPCEReader.determineNumSysAndCheckDigit(
+  resultString: TStringBuilder; lgPatternFound: Integer): boolean;
+const
+  NUMSYS_AND_CHECK_DIGIT_PATTERNS: T2DIntArray = [
+    [$38, $34, $32, $31, $2C, $26, $23, $2A, $29, $25],
+    [$07, $0B, $0D, $0E, $13, $19, $1C, $15, $16, $1A]
+  ];
 var
   numSys, d: Integer;
 begin
@@ -82,8 +80,7 @@ begin
     d := 0;
     while ((d < 10)) do
     begin
-      if (lgPatternFound = TUPCEReader.NUMSYS_AND_CHECK_DIGIT_PATTERNS
-        [numSys][d]) then
+      if (lgPatternFound = NUMSYS_AND_CHECK_DIGIT_PATTERNS[numSys][d]) then
       begin
         resultString.Insert(0, Char($30 + numSys) );
         resultString.Append(char($30 + d));
@@ -100,12 +97,12 @@ begin
   Result := false;
 end;
 
-class function TUPCEReader.checkChecksum(const s: string): boolean;
+function TUPCEReader.checkChecksum(const s: string): boolean;
 begin
-  Result := inherited checkChecksum(TUPCEReader.convertUPCEtoUPCA(s))
+  Result := inherited checkChecksum(convertUPCEtoUPCA(s))
 end;
 
-class function TUPCEReader.convertUPCEtoUPCA(upce: string): string;
+function TUPCEReader.convertUPCEtoUPCA(upce: string): string;
 var
   upceChars: string;
   res: TStringBuilder;
@@ -148,14 +145,15 @@ begin
   res.Free;
 end;
 
-class function TUPCEReader.decodeEnd(const row: IBitArray;
+function TUPCEReader.decodeEnd(const row: IBitArray;
   const endStart: Integer): TArray<Integer>;
+const
+  MIDDLE_END_PATTERN: TOneDPattern = [1, 1, 1, 1, 1, 1];
 begin
-  Result := TUPCEANReader.findGuardPattern(row, endStart, true,
-    TUPCEReader.MIDDLE_END_PATTERN);
+  Result := TUPCEANReader.findGuardPattern(row, endStart, true, MIDDLE_END_PATTERN);
 end;
 
-class function TUPCEReader.DecodeMiddle(const row: IBitArray;
+function TUPCEReader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>; const res: TStringBuilder): Integer;
 var
   bestMatch: Integer;
@@ -163,11 +161,7 @@ var
   counters: TArray<Integer>;
 begin
 
-  counters := self.decodeMiddleCounters;
-  counters[0] := 0;
-  counters[1] := 0;
-  counters[2] := 0;
-  counters[3] := 0;
+  counters := [0, 0, 0, 0];
   ending := row.Size;
   rowOffset := startRange[1];
   lgPatternFound := 0;
@@ -176,7 +170,7 @@ begin
   while ((x < 6) and (rowOffset < ending)) do
   begin
     if (not TUPCEANReader.decodeDigit(row, counters, rowOffset,
-      TUPCEANReader.L_AND_G_PATTERNS, bestMatch)) then
+      L_PATTERNS + G_PATTERNS, bestMatch)) then
     begin
       exit(-1);
     end;
@@ -194,7 +188,7 @@ begin
     inc(x)
   end;
 
-  if (not TUPCEReader.determineNumSysAndCheckDigit(res, lgPatternFound)) then
+  if (not determineNumSysAndCheckDigit(res, lgPatternFound)) then
   begin
     exit(-1);
   end;
@@ -206,30 +200,5 @@ function TUPCEReader.BarcodeFormat: TBarcodeFormat;
 begin
   Result := TBarcodeFormat.UPC_E;
 end;
-
-class procedure TUPCEReader.DoInitialize;
-begin
-  MIDDLE_END_PATTERN := TArray<Integer>.Create(1, 1, 1, 1, 1, 1);
-  NUMSYS_AND_CHECK_DIGIT_PATTERNS :=
-    T2DIntArray.Create(TArray<Integer>.Create($38, $34, 50, $31, $2C, $26, $23,
-    $2A, $29, $25), TArray<Integer>.Create(7, 11, 13, 14, $13, $19, $1C, $15,
-    $16, $1A));
-  decodeMiddleCounters := TArray<Integer>.Create(0,0,0,0);
-end;
-
-class procedure TUPCEReader.DoFinalize;
-begin
-  MIDDLE_END_PATTERN := nil;
-  NUMSYS_AND_CHECK_DIGIT_PATTERNS := nil;
-  decodeMiddleCounters := nil;
-end;
-
-initialization
-
-TUPCEReader.DoInitialize;
-
-finalization
-
-TUPCEReader.DoFinalize;
 
 end.

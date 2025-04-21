@@ -39,16 +39,14 @@ type
 
   TUPCAReader = class(TUPCEANReader)
   private
-    class var EAN13Reader: TUPCEANReader;
-    class function maybeReturnResult(pResult: TReadResult): TReadResult; static;
-    class procedure DoInitialize();
-    class procedure DoFinalize();
-  protected
-
+    EAN13Reader: TUPCEANReader;
+    function maybeReturnResult(pResult: TReadResult): TReadResult;
   public
-    class function DecodeMiddle(const row: IBitArray;
-      const startRange: TArray<Integer>; const resultString: TStringBuilder)
-      : Integer; override;
+    constructor Create; override;
+    destructor Destroy; override;
+
+    function DecodeMiddle(const row: IBitArray; const startRange: TArray<Integer>;
+      const resultString: TStringBuilder): Integer; override;
 
     function decode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
@@ -69,33 +67,37 @@ implementation
 
 { TUPCAReader }
 
-class procedure TUPCAReader.DoFinalize;
+constructor TUPCAReader.Create;
 begin
-  EAN13Reader.Free;
+  inherited;
+
+  EAN13Reader := TEAN13Reader.Create;
 end;
 
-class procedure TUPCAReader.DoInitialize;
+destructor TUPCAReader.Destroy;
 begin
-  EAN13Reader := TEAN13Reader.Create();
+  EAN13Reader.Free;
+
+  inherited;
 end;
 
 function TUPCAReader.decode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 begin
-  result := TUPCAReader.maybeReturnResult(self.EAN13Reader.decode(image, hints))
+  result := maybeReturnResult(self.EAN13Reader.decode(image, hints))
 end;
 
-class function TUPCAReader.DecodeMiddle(const row: IBitArray;
+function TUPCAReader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
   const resultString: TStringBuilder): Integer;
 begin
-  result := self.EAN13Reader.DecodeMiddle(row, startRange, resultString)
+  result := EAN13Reader.DecodeMiddle(row, startRange, resultString)
 end;
 
 function TUPCAReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 begin
-  result := TUPCAReader.maybeReturnResult(self.EAN13Reader.decodeRow(rowNumber,
+  result := maybeReturnResult(self.EAN13Reader.decodeRow(rowNumber,
     row, hints))
 end;
 
@@ -103,7 +105,7 @@ function TUPCAReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const startGuardRange: TArray<Integer>;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 begin
-  result := TUPCAReader.maybeReturnResult
+  result := maybeReturnResult
     (self.EAN13Reader.doDecodeRow(rowNumber, row, startGuardRange, hints))
 end;
 
@@ -112,7 +114,7 @@ begin
   result := TBarcodeFormat.UPC_A;
 end;
 
-class function TUPCAReader.maybeReturnResult(pResult: TReadResult): TReadResult;
+function TUPCAReader.maybeReturnResult(pResult: TReadResult): TReadResult;
 begin
   if not Assigned(pResult) then
     Exit(nil);
@@ -125,16 +127,6 @@ begin
   end;
 {$ZEROBASEDSTRINGS OFF}
   result := pResult;
-
 end;
-
-initialization
-
-TUPCAReader.DoInitialize;
-
-finalization
-
-TUPCAReader.DoFinalize;
-
 
 end.

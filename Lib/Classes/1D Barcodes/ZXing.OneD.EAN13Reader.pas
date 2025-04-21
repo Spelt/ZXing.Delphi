@@ -69,9 +69,8 @@ type
     // in binary:
     // 0    1    1   0   0    1   == 0x19
     //
-  class var
-    FIRST_DIGIT_ENCODINGS: TArray<Integer>;
-    decodeMiddleCounters: TArray<Integer>;
+    const FIRST_DIGIT_ENCODINGS: array of Byte = [
+      $00, $0B, $0D, $0E, $13, $19, $1C, $15, $16, $1A];
 
     /// <summary>
     /// Based on pattern of odd-even ('L' and 'G') patterns used to encoded the explicitly-encoded
@@ -82,13 +81,9 @@ type
     /// <param name="lgPatternFound">int whose bits indicates the pattern of odd/even L/G patterns used to</param>
     /// encode digits
     /// <return>-1 if first digit cannot be determined</return>
-    class function determineFirstDigit(const resultString: TStringBuilder;
-      const lgPatternFound: Integer): Boolean; static;
-
-    class procedure InitializeClass; static;
-    class procedure FinalizeClass; static;
-  protected
-    public
+    function determineFirstDigit(const resultString: TStringBuilder;
+      const lgPatternFound: Integer): Boolean;
+  public
 
       /// <summary>
     /// Subclasses override this to decode the portion of a barcode between the start
@@ -100,11 +95,8 @@ type
     /// <returns>
     /// horizontal offset of first pixel after the "middle" that was decoded or -1 if decoding could not complete successfully
     /// </returns>
-    class function DecodeMiddle(const row: IBitArray;
-      const startRange: TArray<Integer>; const resultString: TStringBuilder)
-      : Integer; override;
-
-
+    function DecodeMiddle(const row: IBitArray; const startRange: TArray<Integer>;
+      const resultString: TStringBuilder): Integer; override;
 
     /// <summary>
     /// Get the format of this decoder.
@@ -117,7 +109,7 @@ implementation
 
 { TEAN13Reader }
 
-class function TEAN13Reader.DecodeMiddle(const row: IBitArray;
+function TEAN13Reader.DecodeMiddle(const row: IBitArray;
   const startRange: TArray<Integer>;
   const resultString: TStringBuilder): Integer;
 var
@@ -128,11 +120,7 @@ var
   rowOffset, x, lgPatternFound: Integer;
 begin
   Result := -1;
-  counters := decodeMiddleCounters;
-  counters[0] := 0;
-  counters[1] := 0;
-  counters[2] := 0;
-  counters[3] := 0;
+  counters := [0, 0, 0, 0];
   ending := row.Size;
   rowOffset := startRange[1];
   lgPatternFound := 0;
@@ -140,7 +128,7 @@ begin
   x := 0;
   while ((x < 6) and (rowOffset < ending)) do
   begin
-    if (not decodeDigit(row, counters, rowOffset, L_AND_G_PATTERNS, bestMatch))
+    if (not decodeDigit(row, counters, rowOffset, L_PATTERNS + G_PATTERNS, bestMatch))
     then
       exit;
     resultString.Append( IntToStr ( bestMatch mod 10) );
@@ -178,8 +166,8 @@ begin
   Result := TBarcodeFormat.EAN_13;
 end;
 
-class function TEAN13Reader.determineFirstDigit(const resultString
-  : TStringBuilder; const lgPatternFound: Integer): Boolean;
+function TEAN13Reader.determineFirstDigit(const resultString: TStringBuilder;
+  const lgPatternFound: Integer): Boolean;
 var
   d: Integer;
 begin
@@ -188,32 +176,11 @@ begin
   begin
     if (lgPatternFound = FIRST_DIGIT_ENCODINGS[d]) then
     begin
-      resultString.Insert(0,  IntToStr(d));
+      resultString.Insert(0, IntToStr(d));
       Result := true;
       break;
     end;
   end;
 end;
-
-class procedure TEAN13Reader.InitializeClass;
-begin
-  FIRST_DIGIT_ENCODINGS := TArray<Integer>.Create($00, $0B, $0D, $0E, $13, $19,
-    $1C, $15, $16, $1A);
-  SetLength(decodeMiddleCounters, 4);
-end;
-
-class procedure TEAN13Reader.FinalizeClass;
-begin
-  FIRST_DIGIT_ENCODINGS := nil;
-  decodeMiddleCounters := nil;
-end;
-
-initialization
-
-TEAN13Reader.InitializeClass;
-
-finalization
-
-TEAN13Reader.FinalizeClass;
 
 end.

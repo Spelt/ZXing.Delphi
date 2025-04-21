@@ -21,9 +21,9 @@ unit ZXing.QrCode.Internal.DecodedBitStreamParser;
 
 interface
 
-uses 
+uses
   ZXing.BitSource,
-  SysUtils, 
+  SysUtils,
   ZXing.DecodeHintType,
   Generics.Collections,
   ZXing.QrCode.Internal.ErrorCorrectionLevel,
@@ -43,17 +43,6 @@ type
   /// </summary>
   TDecodedBitStreamParser = class abstract
   private
-    /// <summary>
-    /// See ISO 18004:2006, 6.4.4 Table 5
-    /// </summary>
-    class var ALPHANUMERIC_CHARS: TArray<Char>;
-
-    const
-      GB2312_SUBSET: Integer = 1;
-
-    class procedure InitializeClass;
-    class procedure FinalizeClass;
-
     class function decodeAlphanumericSegment(const bits: TBitSource;
       const res: TStringBuilder; count: Integer;
       const fc1InEffect: Boolean): Boolean; static;
@@ -92,22 +81,11 @@ implementation
 
 { TDecodedBitStreamParser }
 
-class procedure TDecodedBitStreamParser.InitializeClass;
-begin
-  ALPHANUMERIC_CHARS := TArray<Char>.Create('0', '1', '2', '3', '4', '5', '6',
-    '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ',
-    '$', '%', '*', '+', '-', '.', '/', ':');
-end;
-
-class procedure TDecodedBitStreamParser.FinalizeClass;
-begin
-  ALPHANUMERIC_CHARS := nil;
-end;
-
 class function TDecodedBitStreamParser.decode(const bytes: TArray<Byte>;
   const version: TVersion; const ecLevel: TErrorCorrectionLevel;
   const hints: TDictionary<TDecodeHintType, TObject>): TDecoderResult;
+const
+  GB2312_SUBSET: Integer = 1;
 var
   Mode: TMode;
   bits: TBitSource;
@@ -135,10 +113,9 @@ begin
       fc1InEffect := false;
       repeat
         // While still another segment to read...
-        if (bits.available < 4)
-        then
-           // OK, assume we're done. Really, a TERMINATOR mode should have been recorded here
-           Mode := TMode.TERMINATOR
+        if (bits.available < 4) then
+          // OK, assume we're done. Really, a TERMINATOR mode should have been recorded here
+          Mode := TMode.TERMINATOR
         else
         begin
           try
@@ -156,116 +133,80 @@ begin
           begin
             // We do little with FNC1 except alter the parsed result a bit according to the spec
             fc1InEffect := true;
+          end
+          else if (Mode = TMode.STRUCTURED_APPEND) then
+          begin
+            if (bits.available() < 16) then exit;
+            // not really supported; but sequence number and parity is added later to the result metadata
+            // Read next 8 bits (symbol sequence #) and 8 bits (parity data), then continue
+            symbolSequence := bits.readBits(8);
+            parityData := bits.readBits(8);
+          end
+          else if (Mode = TMode.ECI) then
+          begin
+            // Count doesn't apply to ECI
+            value := parseECIValue(bits);
+            currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue(value);
+            if (currentCharacterSetECI = nil) then exit;
+          end
+          else if (Mode = TMode.HANZI) then // First handle Hanzi mode which does not start with character count
+          begin
+            // chinese mode contains a sub set indicator right after mode indicator
+            subSet := bits.readBits(4);
+            countHanzi := bits.readBits(Mode.getCharacterCountBits(version));
+            if (subSet = GB2312_SUBSET) and
+               (not TDecodedBitStreamParser.decodeHanziSegment(bits, res, countHanzi)) then exit;
           end else
           begin
-            if (Mode = TMode.STRUCTURED_APPEND) then
+            // "Normal" QR code modes:
+            // How many characters will follow, encoded in this mode?
+            count := bits.readBits(Mode.getCharacterCountBits(version));
+            if (Mode = TMode.NUMERIC) then
             begin
-              if (bits.available() < 16)
-              then
-                 exit;
-              // not really supported; but sequence number and parity is added later to the result metadata
-              // Read next 8 bits (symbol sequence #) and 8 bits (parity data), then continue
-              symbolSequence := bits.readBits(8);
-              parityData := bits.readBits(8);
-            end else
+              if (not TDecodedBitStreamParser.decodeNumericSegment(bits, res, count)) then exit;
+            end
+            else if (Mode = TMode.ALPHANUMERIC) then
             begin
-              if (Mode = TMode.ECI) then
-              begin
-                // Count doesn't apply to ECI
-                value := parseECIValue(bits);
-                currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue(value);
-                if (currentCharacterSetECI = nil)
-                then
-                   exit;
-              end else
-              begin
-                // First handle Hanzi mode which does not start with character count
-                if (Mode = TMode.HANZI) then
-                begin
-                  // chinese mode contains a sub set indicator right after mode indicator
-                  subSet := bits.readBits(4);
-                  countHanzi := bits.readBits(Mode.getCharacterCountBits(version));
-                  if (subSet = GB2312_SUBSET) then
-                  begin
-                    if (not TDecodedBitStreamParser.decodeHanziSegment(bits,
-                      res, countHanzi))
-                    then
-                       exit;
-                  end;
-                end else
-                begin
-                  // "Normal" QR code modes:
-                  // How many characters will follow, encoded in this mode?
-                  count := bits.readBits(Mode.getCharacterCountBits(version));
-                  if (Mode = TMode.NUMERIC) then
-                  begin
-                    if (not TDecodedBitStreamParser.decodeNumericSegment(bits,
-                      res, count))
-                    then
-                       exit;
-                  end else
-                  begin
-                    if (Mode = TMode.ALPHANUMERIC) then
-                    begin
-                      if (not TDecodedBitStreamParser.
-                        decodeAlphanumericSegment(bits, res, count, fc1InEffect))
-                      then
-                         exit;
-                    end else
-                    begin
-                      if (Mode = TMode.BYTE) then
-                      begin
-                        if (not TDecodedBitStreamParser.
-                          decodeByteSegment(bits, res, count,
-                          currentCharacterSetECI, byteSegments, hints))
-                        then
-                           exit;
-                      end else
-                      begin
-                        if (Mode <> TMode.KANJI) then
-                        begin
-                          if (not TDecodedBitStreamParser.
-                            decodeKanjiSegment(bits, res, count))
-                          then
-                             exit;
-                        end else exit;
-                      end;
-                    end;
-                  end;
-                end;
-              end;
+              if (not TDecodedBitStreamParser.decodeAlphanumericSegment(bits, res, count, fc1InEffect)) then exit;
+            end
+            else if (Mode = TMode.BYTE) then
+            begin
+              if (not TDecodedBitStreamParser.decodeByteSegment(bits, res, count, currentCharacterSetECI, byteSegments, hints)) then exit;
+            end
+            else if (Mode <> TMode.KANJI) then
+            begin
+              if (not TDecodedBitStreamParser.decodeKanjiSegment(bits, res, count)) then exit;
+            end
+            else
+            begin
+              exit;
             end;
           end;
         end;
-        until (Mode = TMode.TERMINATOR)
-      except
-        on E: EArgumentException do
-          exit;
-      end;
-
-      if (byteSegments.count = 0)
-      then
-         byteSegments := nil;
-
-      if (ecLevel = nil)
-      then
-         ecstring := ''
-      else
-         ecstring := ecLevel.toString();
-
-      s:= res.toString.Replace(#13+#10, #10).Replace(#10, #13);
-      Result := TDecoderResult.Create(bytes, s, byteSegments, ecstring, symbolSequence,
-        parityData);
-    finally
-     // FreeAndNil(byteSegments);
-
-      res.Clear();
-
-      FreeAndNil(res);
-      FreeAndNil(bits);
+      until (Mode = TMode.TERMINATOR)
+    except
+      on E: EArgumentException do
+        exit;
     end;
 
+    if (byteSegments.count = 0) then
+      byteSegments := nil;
+
+    if (ecLevel = nil) then
+      ecstring := ''
+    else
+      ecstring := ecLevel.toString();
+
+    s:= res.toString.Replace(#13+#10, #10).Replace(#10, #13);
+    Result := TDecoderResult.Create(bytes, s, byteSegments, ecstring, symbolSequence, parityData);
+  finally
+    res.Clear();
+
+    FreeAndNil(res);
+    FreeAndNil(bits);
   end;
+
+end;
 
 class function TDecodedBitStreamParser.decodeAlphanumericSegment(
   const bits: TBitSource; const res: TStringBuilder; count: Integer;
@@ -277,26 +218,20 @@ begin
   Result := false;
   // Read two characters at a time
   start := res.Length;
-  while ((count > 1)) do
+  while (count > 1) do
   begin
-    if (bits.available < 11)
-    then
-       exit;
+    if (bits.available < 11) then exit;
 
     nextTwoCharsBits := bits.readBits(11);
-    res.Append(TDecodedBitStreamParser.toAlphaNumericChar
-      ((nextTwoCharsBits div 45)));
-    res.Append(TDecodedBitStreamParser.toAlphaNumericChar
-      ((nextTwoCharsBits mod 45)));
+    res.Append(TDecodedBitStreamParser.toAlphaNumericChar((nextTwoCharsBits div 45)));
+    res.Append(TDecodedBitStreamParser.toAlphaNumericChar((nextTwoCharsBits mod 45)));
     Dec(count, 2);
   end;
 
   if (count = 1) then
   begin
     // special case: one character left
-    if (bits.available < 6)
-    then
-       exit;
+    if (bits.available < 6) then exit;
     res.Append(TDecodedBitStreamParser.toAlphaNumericChar(bits.readBits(6)))
   end;
 
@@ -339,24 +274,22 @@ var
 begin
   Result := false;
   // Don't crash trying to read more bits than we have available.
-  if ((count shl 3) > bits.available)
-  then
-     exit;
+  if ((count shl 3) > bits.available) then exit;
 
   readBytes := TArray<Byte>.Create();
   SetLength(readBytes, count);
   for i := 0 to Pred(count) do
     readBytes[i] := Byte(bits.readBits(8));
 
-  if (currentCharacterSetECI = nil)
-  then
+  if (currentCharacterSetECI = nil) then
+  begin
      // The spec isn't clear on this mode; see
      // section 6.4.5: t does not say which encoding to assuming
      // upon decoding. I have seen ISO-8859-1 used as well as
      // Shift_JIS -- without anything like an ECI designator to
      // give a hint.
-     encodingS := TStringUtils.guessEncoding(readBytes, hints)
-  else
+     encodingS := TStringUtils.guessEncoding(readBytes, hints);
+  end else
      encodingS := currentCharacterSetECI.EncodingName;
 
   try
@@ -385,9 +318,7 @@ var
 begin
   Result := false;
   // Don't crash trying to read more bits than we have available.
-  if ((count * 13) > bits.available)
-  then
-     exit;
+  if ((count * 13) > bits.available) then exit;
 
   // Each character will require 2 bytes. Read the characters as 2-byte pairs
   // and decode as GB2312 afterwards
@@ -395,18 +326,15 @@ begin
   SetLength(buffer, 2 * count);
   offset := 0;
 
-  while ((count > 0)) do
+  while (count > 0) do
   begin
     // Each 13 bits encodes a 2-byte character
     twoBytes := bits.readBits(13);
     assembledTwoBytes := (((twoBytes div $60) shl 8) or (twoBytes mod $60));
-    if (assembledTwoBytes < $00A00)
-    then
-       // In the 0xA1A1 to 0xAAFE range
-       Inc(assembledTwoBytes, $0A1A1)
-    else
-       // In the 0xB0A1 to 0xFAFE range
-       Inc(assembledTwoBytes, $0A6A1);
+    if (assembledTwoBytes < $00A00) then // In the 0xA1A1 to 0xAAFE range
+      Inc(assembledTwoBytes, $0A1A1)
+    else // In the 0xB0A1 to 0xFAFE range
+      Inc(assembledTwoBytes, $0A6A1);
 
     buffer[offset] := Byte(TMathUtils.Asr(assembledTwoBytes, 8) and $FF);
     buffer[(offset + 1)] := Byte(assembledTwoBytes and $FF);
@@ -415,13 +343,11 @@ begin
   end;
 
   try
-    res.Append(Tencoding.GetEncoding(TStringUtils.GB2312).GetString(buffer, 0,
-      Length(buffer)))
+    res.Append(Tencoding.GetEncoding(TStringUtils.GB2312).GetString(buffer, 0, Length(buffer)))
   except
-    on E: Exception do
-      exit;
- end;
- Result := true;
+    on E: Exception do exit;
+  end;
+  Result := true;
 end;
 
 class function TDecodedBitStreamParser.decodeKanjiSegment(
@@ -488,44 +414,31 @@ begin
     if (threeDigitsBits >= 1000)
     then
        exit;
-    res.Append(TDecodedBitStreamParser.toAlphaNumericChar
-      ((threeDigitsBits div 100)));
-    res.Append(TDecodedBitStreamParser.toAlphaNumericChar
-      (((threeDigitsBits div 10) mod 10)));
-    res.Append(TDecodedBitStreamParser.toAlphaNumericChar
-      ((threeDigitsBits mod 10)));
+    res.Append(TDecodedBitStreamParser.toAlphaNumericChar((threeDigitsBits div 100)));
+    res.Append(TDecodedBitStreamParser.toAlphaNumericChar(((threeDigitsBits div 10) mod 10)));
+    res.Append(TDecodedBitStreamParser.toAlphaNumericChar((threeDigitsBits mod 10)));
     Dec(count, 3)
   end;
 
   if (count = 2) then
   begin
     // Two digits left over to read, encoded in 7 bits
-    if (bits.available < 7)
-    then
-       exit;
+    if (bits.available < 7) then exit;
 
     twoDigitsBits := bits.readBits(7);
-    if (twoDigitsBits >= 100)
-    then
-       exit;
+    if (twoDigitsBits >= 100) then exit;
 
-    res.Append(TDecodedBitStreamParser.toAlphaNumericChar
-      ((twoDigitsBits div 10)));
-    res.Append(TDecodedBitStreamParser.toAlphaNumericChar
-      ((twoDigitsBits mod 10)));
+    res.Append(TDecodedBitStreamParser.toAlphaNumericChar((twoDigitsBits div 10)));
+    res.Append(TDecodedBitStreamParser.toAlphaNumericChar((twoDigitsBits mod 10)));
   end else
   begin
     if (count = 1) then
     begin
       // One digit left over to read
-      if (bits.available < 4)
-      then
-         exit;
+      if (bits.available < 4) then exit;
 
       digitBits := bits.readBits(4);
-      if (digitBits >= 10)
-      then
-         exit;
+      if (digitBits >= 10) then exit;
 
       res.Append(TDecodedBitStreamParser.toAlphaNumericChar(digitBits))
     end;
@@ -534,8 +447,7 @@ begin
   Result := true;
 end;
 
-class function TDecodedBitStreamParser.parseECIValue(
-  const bits: TBitSource): Integer;
+class function TDecodedBitStreamParser.parseECIValue(const bits: TBitSource): Integer;
 var
   firstByte,
   secondByte,
@@ -566,22 +478,26 @@ begin
     exit;
   end;
 
-  raise EArgumentException.Create('Bad ECI bits starting with byte ' +
-     firstByte.toString());
+  raise EArgumentException.Create('Bad ECI bits starting with byte ' + firstByte.toString());
 end;
 
 class function TDecodedBitStreamParser.toAlphaNumericChar(
   const value: Integer): Char;
+const
+  /// <summary>
+  /// See ISO 18004:2006, 6.4.4 Table 5
+  /// </summary>
+  ALPHANUMERIC_CHARS: TArray<Char> = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+    'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '$', '%', '*',
+    '+', '-', '.', '/', ':'];
 begin
-  if (value >= Length(ALPHANUMERIC_CHARS))
-  then
-     raise Exception.Create('Format exception');
+  if (value >= Length(ALPHANUMERIC_CHARS)) then
+    raise Exception.Create('Format exception');
 
   Result := ALPHANUMERIC_CHARS[value];
 end;
 
-initialization
-  TDecodedBitStreamParser.InitializeClass;
-finalization
-  TDecodedBitStreamParser.FinalizeClass;
 end.

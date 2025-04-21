@@ -32,7 +32,7 @@ type
     //class constructor Create;
   protected
     constructor Create;
-    class function checkAndNudgePoints(image: TBitMatrix; points: TArray<Single>): boolean; static;
+    function checkAndNudgePoints(image: TBitMatrix; points: TArray<Single>): boolean;
   public
     function sampleGrid(image: TBitMatrix; dimensionX: Integer;
       dimensionY: Integer; transform: TPerspectiveTransform): TBitMatrix; overload; virtual;
@@ -55,8 +55,7 @@ begin
   inherited Create;
 end;
 
-class function TGridSampler.checkAndNudgePoints(image: TBitMatrix;
-  points: TArray<Single>): boolean;
+function TGridSampler.checkAndNudgePoints(image: TBitMatrix; points: TArray<Single>): boolean;
 var
   width,
   height : Integer;

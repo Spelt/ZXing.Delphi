@@ -57,10 +57,10 @@ type
     ///
     /// <seealso cref="ZXing.QrCode.QRCodeReader.extractPureBits(TBitMatrix)" />
     /// </summary>
-    class function extractPureBits(const image: TBitMatrix): TBitMatrix; static;
+    function extractPureBits(const image: TBitMatrix): TBitMatrix;
 
-    class function moduleSize(const leftTopBlack: TArray<Integer>;
-      const image: TBitMatrix; var moduleSize: Integer): Boolean; static;
+    function moduleSize(const leftTopBlack: TArray<Integer>;
+      const image: TBitMatrix; var AModuleSize: Integer): Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -117,7 +117,7 @@ begin
 
     if ((hints <> nil) and hints.ContainsKey(TDecodeHintType.PURE_BARCODE)) then
     begin
-      bits := TDataMatrixReader.extractPureBits(image.BlackMatrix);
+      bits := extractPureBits(image.BlackMatrix);
       if Assigned(bits) then
       begin
         DecoderResult := FDecoder.decode(bits);
@@ -170,10 +170,9 @@ begin
 
 end;
 
-class function TDataMatrixReader.extractPureBits(const image: TBitMatrix)
-  : TBitMatrix;
+function TDataMatrixReader.extractPureBits(const image: TBitMatrix): TBitMatrix;
 var
-  moduleSize: Integer;
+  LModuleSize: Integer;
   leftTopBlack, rightBottomBlack: TArray<Integer>;
   top, bottom, left, right: Integer;
   matrixWidth, matrixHeight: Integer;
@@ -188,7 +187,7 @@ begin
   if ((leftTopBlack = nil) or (rightBottomBlack = nil)) then
     exit;
 
-  if (not TDataMatrixReader.moduleSize(leftTopBlack, image, moduleSize)) then
+  if (not moduleSize(leftTopBlack, image, LModuleSize)) then
     exit;
 
   top := leftTopBlack[1];
@@ -196,15 +195,15 @@ begin
   left := leftTopBlack[0];
   right := rightBottomBlack[0];
 
-  matrixWidth := ((right - left + 1) div moduleSize);
-  matrixHeight := ((bottom - top + 1) div moduleSize);
+  matrixWidth := ((right - left + 1) div LModuleSize);
+  matrixHeight := ((bottom - top + 1) div LModuleSize);
   if ((matrixWidth <= 0) or (matrixHeight <= 0)) then
     exit;
 
   // Push in the "border" by half the module width so that we start
   // sampling in the middle of the module. Just in case the image is a
   // little off, this will help recover.
-  nudge :=  TMathUtils.Asr(moduleSize,1);
+  nudge :=  TMathUtils.Asr(LModuleSize, 1);
   Inc(top, nudge);
   Inc(left, nudge);
 
@@ -212,10 +211,10 @@ begin
   bits := TBitMatrix.Create(matrixWidth, matrixHeight);
   for y := 0 to Pred(matrixHeight) do
   begin
-    iOffset := (top + (y * moduleSize));
+    iOffset := (top + (y * LModuleSize));
     for x := 0 to Pred(matrixWidth) do
     begin
-      if (image[(left + (x * moduleSize)), iOffset]) then
+      if (image[(left + (x * LModuleSize)), iOffset]) then
         bits[x, y] := true;
     end;
   end;
@@ -223,8 +222,8 @@ begin
   Result := bits;
 end;
 
-class function TDataMatrixReader.moduleSize(const leftTopBlack: TArray<Integer>;
-  const image: TBitMatrix; var moduleSize: Integer): Boolean;
+function TDataMatrixReader.moduleSize(const leftTopBlack: TArray<Integer>;
+  const image: TBitMatrix; var AModuleSize: Integer): Boolean;
 var
   width, x, y: Integer;
 begin
@@ -239,12 +238,12 @@ begin
 
   if (x = width) then
   begin
-    moduleSize := 0;
+    AModuleSize := 0;
     exit;
   end;
 
-  moduleSize := (x - leftTopBlack[0]);
-  if (moduleSize = 0) then
+  AModuleSize := (x - leftTopBlack[0]);
+  if (AModuleSize = 0) then
     exit;
 
   Result := true;

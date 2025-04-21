@@ -28,18 +28,19 @@ uses
 
 type
   TGlobalHistogramBinarizer = class(TBinarizer)
+  private const
+    LUMINANCE_BITS = 5;
+    LUMINANCE_SHIFT = 8 - LUMINANCE_BITS;
+    LUMINANCE_BUCKETS = 1 shl LUMINANCE_BITS;
+  private type
+    TBuckets = array[0..LUMINANCE_BUCKETS-1] of Integer;
   private
-
-    class var LUMINANCE_BITS, LUMINANCE_SHIFT, LUMINANCE_BUCKETS: Integer;
-    EMPTY: TArray<Byte>;
-
+    buckets: TBuckets;
     luminances: TArray<Byte>;
-    buckets: TArray<Integer>;
-    procedure InitArrays(luminanceSize: Integer);
-    function estimateBlackPoint(buckets: TArray<Integer>;
-      var blackPoint: Integer): Boolean;
-    class procedure ClassInit; static;
 
+    procedure InitArrays(luminanceSize: Integer);
+    function estimateBlackPoint(buckets: TBuckets;
+      var blackPoint: Integer): Boolean;
   public
     constructor Create(source: TLuminanceSource);
 
@@ -51,52 +52,24 @@ implementation
 
 { TGlobalHistogramBinarizer }
 
-class procedure TGlobalHistogramBinarizer.ClassInit();
-begin
-  LUMINANCE_BITS := 5;
-  LUMINANCE_SHIFT := 8 - LUMINANCE_BITS;
-  LUMINANCE_BUCKETS := 1 shl LUMINANCE_BITS;
-  EMPTY := TArray<Byte>.Create();
-  SetLength(EMPTY, 0);
-end;
-
 constructor TGlobalHistogramBinarizer.Create(source: TLuminanceSource);
 begin
   inherited Create(source);
-  luminances := EMPTY;
-  buckets := TArray<Integer>.Create();
-  SetLength(self.buckets, LUMINANCE_BUCKETS);
+  luminances := [];
 end;
-
-{
-  constructor TGlobalHistogramBinarizer.GlobalHistogramBinarizer
-  (source: TLuminanceSource);
-  begin
-  Inherited Create(source);
-
-
-
-  SetLength(luminances, 0);
-  SetLength(buckets, LUMINANCE_BUCKETS);
-  end;
-}
 
 function TGlobalHistogramBinarizer.GetBlackRow(y: Integer; row: IBitArray)
   : IBitArray;
 var
   localLuminances: TArray<Byte>;
-  localBuckets: TArray<Integer>;
+  localBuckets: TBuckets;
   i, w, blackPoint, x, pixel, left, right, center, luminance: Integer;
 begin
   w := width;
   if ((row = nil) or (row.Size < w)) then
-  begin
-    row := TBitArrayHelpers.CreateBitArray(w);
-  end
+    row := TBitArrayHelpers.CreateBitArray(w)
   else
-  begin
     row.Clear();
-  end;
 
   InitArrays(w);
   localLuminances := LuminanceSource.getRow(y, luminances);
@@ -152,24 +125,21 @@ begin
 
 end;
 
-function TGlobalHistogramBinarizer.estimateBlackPoint(buckets: TArray<Integer>;
+function TGlobalHistogramBinarizer.estimateBlackPoint(buckets: TBuckets;
   var blackPoint: Integer): Boolean;
-
 var
-  x, numBuckets, maxBucketCount, firstPeak, firstPeakSize, secondPeak,
-    secondPeakScore, distanceToBiggest, score, temp, bestValley,
-    bestValleyScore, fromFirst: Integer;
-
+  x, maxBucketCount, firstPeak, firstPeakSize, secondPeak,
+  secondPeakScore, distanceToBiggest, score, temp, bestValley,
+  bestValleyScore, fromFirst: Integer;
 begin
   blackPoint := 0;
 
   // Find the tallest peak in the histogram.
-  numBuckets := Length(buckets);
   maxBucketCount := 0;
   firstPeak := 0;
   firstPeakSize := 0;
 
-  for x := 0 to numBuckets - 1 do
+  for x := Low(buckets) to High(buckets) do
   begin
 
     if (buckets[x] > firstPeakSize) then
@@ -188,7 +158,7 @@ begin
   // Find the second-tallest peak which is somewhat far from the tallest peak.
   secondPeak := 0;
   secondPeakScore := 0;
-  for x := 0 to numBuckets - 1 do
+  for x := Low(buckets) to High(buckets) do
   begin
     distanceToBiggest := x - firstPeak;
     // Encourage more distant second peaks by multiplying by square of distance.
@@ -212,7 +182,7 @@ begin
   // than waste time trying to decode the image, and risk false positives.
   // TODO: It might be worth comparing the brightest and darkest pixels seen, rather than the
   // two peaks, to determine the contrast.
-  if ((secondPeak - firstPeak) <= (TMathUtils.Asr(numBuckets, 4))) then
+  if ((secondPeak - firstPeak) <= (TMathUtils.Asr(LUMINANCE_BUCKETS, 4))) then
   begin
     result := false;
     exit;
@@ -241,9 +211,5 @@ begin
   blackPoint := bestValley shl LUMINANCE_SHIFT;
   result := true;
 end;
-
-Initialization
-
-TGlobalHistogramBinarizer.ClassInit();
 
 end.

@@ -35,6 +35,9 @@ uses
   ZXing.Common.Detector.MathUtils;
 
 type
+  TOneDPattern  = array of Integer;
+  TOneDPatterns = array of TOneDPattern;
+
   /// <summary>
   /// Encapsulates functionality and implementation that is common to all families
   /// of one-dimensional barcodes.
@@ -55,10 +58,8 @@ type
     /// <returns>The contents of the decoded barcode</returns>
     function doDecode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
-    class procedure InitializeClass; static;
   protected
-    class var INTEGER_MATH_SHIFT: Integer;
-    class var PATTERN_MATCH_RESULT_SCALE_FACTOR: Integer;
+    const INTEGER_MATH_SHIFT = 8;
 
     /// <summary>
     /// Determines how closely a set of observed counts of runs of black/white values matches a given
@@ -72,8 +73,8 @@ type
     /// where the ratio has been multiplied by 256. So, 0 means no variance (perfect match); 256 means
     /// the total variance between counters and patterns equals the pattern length, higher values mean
     /// even more variance</returns>
-    class function patternMatchVariance(counters, pattern: TArray<Integer>;
-      maxIndividualVariance: Integer): Integer; static;
+    class function patternMatchVariance(counters: TArray<Integer>; pattern: TOneDPattern;
+      maxIndividualVariance: Integer): Integer;
 
     /// <summary>
     /// Records the pattern in reverse.
@@ -82,22 +83,8 @@ type
     /// <param name="start">The start.</param>
     /// <param name="counters">The counters.</param>
     /// <returns></returns>
-    class function RecordPatternInReverse(row: IBitArray; start: Integer;
-      counters: TArray<Integer>): Boolean; Static;
-
-    /// <summary>
-    /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
-    /// The values are recorded in the given array, and the number of runs recorded is equal to the size
-    /// of the array. If the row starts on a white pixel at the given start point, then the first count
-    /// recorded is the run of white pixels starting from that point; likewise it is the count of a run
-    /// of black pixels if the row begin on a black pixels at that point.
-    /// </summary>
-    /// <param name="row">row to count from</param>
-    /// <param name="start">offset into row to start at</param>
-    /// <param name="counters">array into which to record counts</param>
-    class function recordPattern(row: IBitArray; start: Integer;
-      counters: TArray<Integer>; numCounters: Integer): Boolean;
-      overload; static;
+    function RecordPatternInReverse(row: IBitArray; start: Integer;
+      counters: TArray<Integer>): Boolean;
   public
     /// <summary>
     /// Resets any internal state the implementation has after a decode, to prepare it
@@ -140,7 +127,7 @@ type
     /// <param name="start">offset into row to start at</param>
     /// <param name="counters">array into which to record counts</param>
     class function recordPattern(row: IBitArray; start: Integer;
-      counters: TArray<Integer>): Boolean; overload; static;
+      counters: TArray<Integer>): Boolean;
 
     /// <summary>
     /// Attempts to decode a one-dimensional barcode format given a single row of
@@ -164,12 +151,6 @@ implementation
 function TOneDReader.decode(const image: TBinaryBitmap): TReadResult;
 begin
   Result := decode(image, nil);
-end;
-
-class procedure TOneDReader.InitializeClass();
-begin
-  INTEGER_MATH_SHIFT := 8;
-  PATTERN_MATCH_RESULT_SCALE_FACTOR := (1 shl INTEGER_MATH_SHIFT);
 end;
 
 function TOneDReader.decode(const image: TBinaryBitmap;
@@ -350,8 +331,8 @@ begin
   Result := nil;
 end;
 
-class function TOneDReader.patternMatchVariance(counters,
-  pattern: TArray<Integer>; maxIndividualVariance: Integer): Integer;
+class function TOneDReader.patternMatchVariance(counters: TArray<Integer>;
+  pattern: TOneDPattern; maxIndividualVariance: Integer): Integer;
 var
   scaledPattern, variance, counter, totalVariance, X, unitBarWidth, i,
     patternLength, numCounters, total: Integer;
@@ -401,18 +382,11 @@ end;
 
 class function TOneDReader.recordPattern(row: IBitArray; start: Integer;
   counters: TArray<Integer>): Boolean;
-begin
-  Result := recordPattern(row, start, counters, Length(counters));
-end;
-
-class function TOneDReader.recordPattern(row: IBitArray; start: Integer;
-  counters: TArray<Integer>; numCounters: Integer): Boolean;
-
 var
-  i, counterPosition, idx, ending: Integer;
+  i, counterPosition, idx, ending, numCounters: Integer;
   isWhite: Boolean;
-
 begin
+  numCounters := Length(counters);
   for idx := 0 to numCounters - 1 do
   begin
     counters[idx] := 0;
@@ -455,16 +429,13 @@ begin
   // the last counter but ran off the side of the image, OK. Otherwise, a problem.
   Result := ((counterPosition = numCounters) or
     ((counterPosition = (numCounters - 1)) and (i = ending)));
-
 end;
 
-class function TOneDReader.RecordPatternInReverse(row: IBitArray;
+function TOneDReader.RecordPatternInReverse(row: IBitArray;
   start: Integer; counters: TArray<Integer>): Boolean;
-
 var
   numTransitionsLeft: Integer;
   last: Boolean;
-
 begin
   // This could be more efficient I guess
   numTransitionsLeft := Length(counters);
@@ -491,9 +462,5 @@ procedure TOneDReader.reset;
 begin
   // do nothing
 end;
-
-initialization
-
-TOneDReader.InitializeClass();
 
 end.

@@ -58,9 +58,9 @@ type
     ///
     /// <seealso cref="ZXing.Datamatrix.DataMatrixReader.extractPureBits(TBitMatrix)" />
     /// </summary>
-    class function extractPureBits(const image: TBitMatrix): TBitMatrix; static;
-    class function moduleSize(const leftTopBlack: TArray<Integer>;
-      const image: TBitMatrix; var msize: Single): Boolean; static;
+    function extractPureBits(const image: TBitMatrix): TBitMatrix;
+    function moduleSize(const leftTopBlack: TArray<Integer>;
+      const image: TBitMatrix; var msize: Single): Boolean;
   protected
     /// <summary>
     /// Gets the decoder.
@@ -144,7 +144,7 @@ begin
 
     if ((hints <> nil) and hints.ContainsKey(TDecodeHintType.PURE_BARCODE)) then
     begin
-      bits := TQRCodeReader.extractPureBits(image.BlackMatrix);
+      bits := extractPureBits(image.BlackMatrix);
       if Assigned(bits) then
       begin
         DecoderResult := Decoder.decode(bits, hints);
@@ -213,10 +213,9 @@ begin
   // do nothing
 end;
 
-class function TQRCodeReader.extractPureBits(const image: TBitMatrix)
-  : TBitMatrix;
+function TQRCodeReader.extractPureBits(const image: TBitMatrix): TBitMatrix;
 var
-  moduleSize: Single;
+  LModuleSize: Single;
   leftTopBlack, rightBottomBlack: TArray<Integer>;
   top, bottom, left, right, matrixWidth, matrixHeight, nudge, x, y, iOffset,
     nudgedTooFarRight, nudgedTooFarDown: Integer;
@@ -229,7 +228,7 @@ begin
   if ((leftTopBlack = nil) or (rightBottomBlack = nil)) then
     exit;
 
-  if (not TQRCodeReader.moduleSize(leftTopBlack, image, moduleSize)) then
+  if (not moduleSize(leftTopBlack, image, LModuleSize)) then
     exit;
 
   top := leftTopBlack[1];
@@ -246,8 +245,8 @@ begin
     // Assume it's a square, so use height as the width
     right := (left + (bottom - top));
 
-  matrixWidth := Round(((right - left) + 1) / moduleSize);
-  matrixHeight := Round(((bottom - top) + 1) / moduleSize);
+  matrixWidth := Round(((right - left) + 1) / LModuleSize);
+  matrixHeight := Round(((bottom - top) + 1) / LModuleSize);
   if ((matrixWidth <= 0) or (matrixHeight <= 0)) then
     exit;
 
@@ -258,14 +257,14 @@ begin
   // Push in the "border" by half the module width so that we start
   // sampling in the middle of the module. Just in case the image is a
   // little off, this will help recover.
-  nudge := Trunc(moduleSize / 2.0);
+  nudge := Trunc(LModuleSize / 2.0);
   Inc(top, nudge);
   Inc(left, nudge);
 
   // But careful that this does not sample off the edge
   // "right" is the farthest-right valid pixel location -- right+1 is not necessarily
   // This is positive by how much the inner x loop below would be too large
-  nudgedTooFarRight := left + Trunc((matrixWidth - 1) * moduleSize) - right;
+  nudgedTooFarRight := left + Trunc((matrixWidth - 1) * LModuleSize) - right;
   if (nudgedTooFarRight > 0) then
   begin
     if (nudgedTooFarRight > nudge) then
@@ -274,7 +273,7 @@ begin
     Dec(left, nudgedTooFarRight);
   end;
   // See logic above
-  nudgedTooFarDown := top + Trunc((matrixHeight - 1) * moduleSize) - bottom;
+  nudgedTooFarDown := top + Trunc((matrixHeight - 1) * LModuleSize) - bottom;
   if (nudgedTooFarDown > 0) then
   begin
     if (nudgedTooFarDown > nudge) then
@@ -287,10 +286,10 @@ begin
   bits := TBitMatrix.Create(matrixWidth, matrixHeight);
   for y := 0 to Pred(matrixHeight) do
   begin
-    iOffset := top + Trunc(y * moduleSize);
+    iOffset := top + Trunc(y * LModuleSize);
     for x := 0 to Pred(matrixWidth) do
     begin
-      if (image[left + Trunc((x * moduleSize)), iOffset]) then
+      if (image[left + Trunc((x * LModuleSize)), iOffset]) then
         bits[x, y] := true;
     end;
   end;
@@ -298,7 +297,7 @@ begin
   Result := bits;
 end;
 
-class function TQRCodeReader.moduleSize(const leftTopBlack: TArray<Integer>;
+function TQRCodeReader.moduleSize(const leftTopBlack: TArray<Integer>;
   const image: TBitMatrix; var msize: Single): Boolean;
 var
   height, width, x, y: Integer;
