@@ -16,7 +16,7 @@ The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
 ## Camera 
-The standard camera component is, I think too slow for Android and IOS. You need to find a third party product or cook your own for a smooth experience. From Delphi 11 the standard camera component seems much improved.
+From Delphi 11 the standard camera component seems much improved.
 
 ## Supported Formats
 
