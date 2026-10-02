@@ -182,7 +182,15 @@ var
   useCode39CheckDigit, useCode39ExtendedMode: Boolean;
   formats: TList<TBarcodeFormat>;
 begin
+  // the readers of earlier hints
+  FreeReaders;
   FHints := Value;
+
+  // also without hints (Value = nil)
+  useCode39CheckDigit := (Value <> nil) and
+    Value.ContainsKey(TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT);
+  useCode39ExtendedMode := (Value <> nil) and
+    Value.ContainsKey(TDecodeHintType.USE_CODE_39_EXTENDED_MODE);
 
   // tryHarder := (Value <> nil) and
   // (Value.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
@@ -242,19 +250,8 @@ begin
       readers.Add(TUPCEReader.Create());
 
     if (formats.Contains(TBarcodeFormat.CODE_39)) then
-    begin
-      useCode39CheckDigit := hints.ContainsKey
-        (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT) and
-        hints.ContainsKey(TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT);
-
-      useCode39ExtendedMode := hints.ContainsKey
-        (TDecodeHintType.USE_CODE_39_EXTENDED_MODE) and
-        hints.ContainsKey(TDecodeHintType.USE_CODE_39_EXTENDED_MODE);
-
       readers.Add(TCode39Reader.Create(useCode39CheckDigit,
         useCode39ExtendedMode));
-
-    end;
   end;
 
   if (readers.Count = 0) then // must be auto, add them all
@@ -268,14 +265,6 @@ begin
     readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());
     readers.Add(TITFReader.Create());
-    useCode39CheckDigit := hints.ContainsKey
-      (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT) and hints.ContainsKey
-      (TDecodeHintType.ASSUME_CODE_39_CHECK_DIGIT);
-
-    useCode39ExtendedMode := hints.ContainsKey
-      (TDecodeHintType.USE_CODE_39_EXTENDED_MODE) and hints.ContainsKey
-      (TDecodeHintType.USE_CODE_39_EXTENDED_MODE);
-
     readers.Add(TCode39Reader.Create(useCode39CheckDigit,
       useCode39ExtendedMode));
 

@@ -40,7 +40,16 @@ type
     TMode = (PAD_ENCODE, // Not really a mode
       ASCII_ENCODE, C40_ENCODE, TEXT_ENCODE, ANSIX12_ENCODE, EDIFACT_ENCODE,
       BASE256_ENCODE);
+    /// <summary>An ECI codeword: from Position in the text on, the
+    /// characters are bytes in the character set of ECI Value.</summary>
+    TECIPosition = record
+      Position: Integer;
+      Value: Integer;
+    end;
   private
+    class function parseECIValue(bits: TBitSource; var value: Integer): boolean;
+    class function applyECIs(const text: string;
+      ecis: TList<TECIPosition>): string;
     class function decodeC40Segment(bits: TBitSource;
       res: TStringBuilder): boolean;
     class function decodeTextSegment(bits: TBitSource;
@@ -53,7 +62,7 @@ type
       byteSegments:IByteSegments ): boolean;
     class function decodeAsciiSegment(bits: TBitSource; res: TStringBuilder;
       resultTrailer: TStringBuilder; var mode: TMode;
-      assumeGS1: boolean): boolean;
+      assumeGS1: boolean; ecis: TList<TECIPosition>): boolean;
     class procedure parseTwoBytes(firstByte: Integer; secondByte: Integer;
       result: TArray<Integer>);
     class function unrandomize255State(randomizedBase256Codeword: Integer;
@@ -68,7 +77,104 @@ type
 
 implementation
 
+uses
+  ZXing.CharacterSetECI;
+
 { TDecodedBitStreamParser }
+
+/// <summary>
+/// See ISO 16022:2006, 5.4.1, Table 6
+/// </summary>
+class function TDecodedBitStreamParser.parseECIValue(bits: TBitSource;
+  var value: Integer): boolean;
+var
+  firstByte, secondByte, thirdByte: Integer;
+begin
+  result := false;
+  if (bits.available < 8) then
+    exit;
+  firstByte := bits.readBits(8);
+  if (firstByte <= 127) then
+  begin
+    value := firstByte - 1;
+    exit(true);
+  end;
+
+  if (bits.available < 8) then
+    exit;
+  secondByte := bits.readBits(8);
+  if (firstByte <= 191) then
+  begin
+    value := (firstByte - 128) * 254 + 127 + secondByte - 1;
+    exit(true);
+  end;
+
+  if (bits.available < 8) then
+    exit;
+  thirdByte := bits.readBits(8);
+  value := (firstByte - 192) * 64516 + 16383 + (secondByte - 1) * 254 +
+    thirdByte - 1;
+  result := true;
+end;
+
+/// <summary>
+/// The decoded characters are bytes (0..255). After an ECI codeword they are
+/// bytes in the character set of that ECI: convert those parts to text.
+/// Parts in an unknown or unsupported character set stay as they are.
+/// </summary>
+class function TDecodedBitStreamParser.applyECIs(const text: string;
+  ecis: TList<TECIPosition>): string;
+var
+  i, j, partEnd: Integer;
+  part: string;
+  bytes: TBytes;
+  characterSet: TCharacterSetECI;
+  encoding: TEncoding;
+  isBytes: boolean;
+begin
+  if (ecis.Count = 0) then
+    exit(text);
+
+  result := Copy(text, 1, ecis[0].Position);
+  for i := 0 to ecis.Count - 1 do
+  begin
+    if (i < ecis.Count - 1) then
+      partEnd := ecis[i + 1].Position
+    else
+      partEnd := Length(text);
+    part := Copy(text, ecis[i].Position + 1, partEnd - ecis[i].Position);
+
+    isBytes := true;
+    SetLength(bytes, Length(part));
+    for j := 1 to Length(part) do
+    begin
+      if (Ord(part[j]) > 255) then
+        isBytes := false;
+      bytes[j - 1] := Byte(Ord(part[j]));
+    end;
+
+    try
+      characterSet := TCharacterSetECI.getCharacterSetECIByValue(ecis[i].Value);
+    except
+      characterSet := nil; // ECI value not in the table
+    end;
+
+    if isBytes and (characterSet <> nil) and (Length(bytes) > 0) then
+    begin
+      try
+        encoding := TEncoding.GetEncoding(characterSet.encodingName);
+        try
+          part := encoding.GetString(bytes);
+        finally
+          encoding.Free;
+        end;
+      except
+        // character set not available on this platform: keep the part
+      end;
+    end;
+    result := result + part;
+  end;
+end;
 
 class function TDecodedBitStreamParser.decode(bytes: TArray<Byte>;
   assumeGS1: boolean): TDecoderResult;
@@ -77,12 +183,15 @@ var
   res, resultTrailer: TStringBuilder;
   byteSegments: IByteSegments;
   mode: TMode;
+  ecis: TList<TECIPosition>;
+  text: string;
 
 begin
   bits := TBitSource.Create(bytes);
   res := TStringBuilder.Create(100);
   resultTrailer := TStringBuilder.Create(0);
   byteSegments :=  ByteSegmentsCreate;
+  ecis := TList<TECIPosition>.Create;
 
   try
 
@@ -93,7 +202,7 @@ begin
       if (mode = TMode.ASCII_ENCODE) then
       begin
         if (not TDecodedBitStreamParser.decodeAsciiSegment(bits, res,
-          resultTrailer, mode, assumeGS1)) then
+          resultTrailer, mode, assumeGS1, ecis)) then
         begin
           result := nil;  // this line was totally missing. I assume the correct thing is to set result = nil.
           exit;
@@ -156,18 +265,19 @@ begin
       end;
     end;
 
-    if (resultTrailer.Length > 0) then
-      res.Append(resultTrailer.ToString);
+    // without ECI codewords the text stays exactly as decoded
+    text := applyECIs(res.ToString, ecis) + resultTrailer.ToString;
 
     if (byteSegments.Count = 0) then
-      result := TDecoderResult.Create(bytes, res.ToString, nil, '')
+      result := TDecoderResult.Create(bytes, text, nil, '')
     else
-      result := TDecoderResult.Create(bytes, res.ToString, byteSegments, '');
+      result := TDecoderResult.Create(bytes, text, byteSegments, '');
 
   finally
     bits.Free;
     res.Free;
     resultTrailer.Free;
+    ecis.Free;
 //
 //    for i := 0 to byteSegments.Count - 1 do
 //    begin
@@ -262,11 +372,12 @@ end;
 /// </summary>
 class function TDecodedBitStreamParser.decodeAsciiSegment(bits: TBitSource;
   res: TStringBuilder; resultTrailer: TStringBuilder; var mode: TMode;
-  assumeGS1: boolean): boolean;
+  assumeGS1: boolean; ecis: TList<TECIPosition>): boolean;
 var
   oneByte: Integer;
   upperShift: boolean;
   value: Byte;
+  eci: TECIPosition;
 begin
   upperShift := false;
   mode := TMode.ASCII_ENCODE;
@@ -364,17 +475,17 @@ begin
                     begin
                       if (oneByte = 236) then
                       begin
-                        // 05 Macro
-                        res.Append('[)>' + #$001E05 + #$001D);
-                        res.Insert(0, #$001E + #$0004);
+                        // 05 Macro: header [)> RS 05 GS, trailer RS EOT
+                        res.Append('[)>' + #$1E + '05' + #$1D);
+                        resultTrailer.Insert(0, #$1E + #$04);
                       end
                       else
                       begin
                         if (oneByte = 237) then
                         begin
-                          // 06 Macro
-                          res.Append('[)>' + #$001E06 + #$001D);
-                          res.Insert(0, #$001E + #$0004);
+                          // 06 Macro: header [)> RS 06 GS, trailer RS EOT
+                          res.Append('[)>' + #$1E + '06' + #$1D);
+                          resultTrailer.Insert(0, #$1E + #$04);
                         end
                         else
                         begin
@@ -406,10 +517,16 @@ begin
                               begin
                                 if (oneByte = 241) then
                                 begin
-                                  // ECI Character
-                                  // TODO: I think we need to support ECI
-                                  // throw TReaderException.Instance;
-                                  // Ignore this symbol for now
+                                  // ECI Character: 1 to 3 codewords with the
+                                  // ECI value follow; the text after it uses
+                                  // that character set (see applyECIs)
+                                  if not parseECIValue(bits, eci.Value) then
+                                  begin
+                                    result := false;
+                                    exit;
+                                  end;
+                                  eci.Position := res.Length;
+                                  ecis.Add(eci);
                                 end
                                 else if (oneByte >= 242) then
                                 begin

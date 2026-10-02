@@ -145,101 +145,76 @@ end;
 
 function TCode93Reader.decodeExtended(encoded: TStringBuilder): string;
 var
-  next, c: Char;
-  decodedChar: Char;
+  next, c, decodedChar: Char;
   length, i: Integer;
   decoded: TStringBuilder;
-
-label Label_0179, Label_0169, Label_014A;
-
 begin
+  // The shift characters a, b, c and d (written as ($), (%), (/) and (+)
+  // on the label) combine with the next character into one Full ASCII
+  // character, see the Code 93 Full ASCII table.
+  Result := '';
   length := encoded.length;
   decoded := TStringBuilder.Create(length);
   try
     i := 0;
-    next := Char(0);
-    while ((i < length)) do
+    while (i < length) do
     begin
-
       c := encoded.Chars[i];
-
-      if ((c < 'a') or (c > 'd')) then
-        goto Label_0179;
-
-      if (i < (length - 1)) then
+      if ((c >= 'a') and (c <= 'd')) then
       begin
-
-        next := encoded.Chars[(i + 1)];
-        decodedChar := #0;
-
+        if (i >= length - 1) then
+          exit;
+        next := encoded.Chars[i + 1];
         case c of
-          'a':
-            begin
-              if ((next < 'A') or (next > 'Z')) then
-              begin
-                Result := '';
-                exit
-              end;
-              decodedChar := Char(ord(next) - ord('@'));
-              goto Label_0169
-            end;
-          'b':
-            begin
-              if ((next < 'A') or (next > 'E')) then
-                break;;
-              decodedChar := Char(ord(next) - ord('&'));
-              goto Label_0169
-            end;
-          'c':
-            begin
-              if ((next < 'A') or (next > 'O')) then
-                goto Label_014A;
-              decodedChar := Char(ord(next) - ord(' '));
-              goto Label_0169
-            end;
           'd':
-            begin
-              if ((next < 'A') or (next > 'Z')) then
-              begin
-                Result := '';
-                exit
-              end;
-              decodedChar := Char(ord(next) + ord(' '));
-              goto Label_0169
-            end;
-        else
-          begin
-            goto Label_0169
-          end;
+            // +A to +Z map to a to z
+            if ((next >= 'A') and (next <= 'Z')) then
+              decodedChar := Char(ord(next) + 32)
+            else
+              exit;
+          'a':
+            // $A to $Z map to control codes SOH to SUB
+            if ((next >= 'A') and (next <= 'Z')) then
+              decodedChar := Char(ord(next) - 64)
+            else
+              exit;
+          'b':
+            if ((next >= 'A') and (next <= 'E')) then
+              decodedChar := Char(ord(next) - 38) // ESC FS GS RS US
+            else if ((next >= 'F') and (next <= 'J')) then
+              decodedChar := Char(ord(next) - 11) // ; < = > ?
+            else if ((next >= 'K') and (next <= 'O')) then
+              decodedChar := Char(ord(next) + 16) // [ \ ] ^ _
+            else if ((next >= 'P') and (next <= 'T')) then
+              decodedChar := Char(ord(next) + 43) // { | } ~ DEL
+            else if (next = 'U') then
+              decodedChar := #0
+            else if (next = 'V') then
+              decodedChar := '@'
+            else if (next = 'W') then
+              decodedChar := '`'
+            else if ((next >= 'X') and (next <= 'Z')) then
+              decodedChar := #127 // DEL
+            else
+              exit;
+        else // 'c'
+          // /A to /O map to ! to , and /Z maps to :
+          if ((next >= 'A') and (next <= 'O')) then
+            decodedChar := Char(ord(next) - 32)
+          else if (next = 'Z') then
+            decodedChar := ':'
+          else
+            exit;
         end;
-        if ((next >= 'F') and (next <= 'W')) then
-        begin
-          decodedChar := Char(ord(next) - ord(''));
-          goto Label_0169
-        end
-      end;
-      begin
-        Result := '';
-        exit
-      end;
-
-    Label_014A:
-      if (next = 'Z') then
-        decodedChar := ':'
+        decoded.Append(decodedChar);
+        // two characters were read
+        Inc(i, 2);
+      end
       else
       begin
-        Result := '';
-        exit
+        decoded.Append(c);
+        Inc(i);
       end;
-
-    Label_0169:
-      decoded.Append(decodedChar);
-      inc(i);
-      continue;
-
-    Label_0179:
-      decoded.Append(c);
-      inc(i)
     end;
 
     Result := decoded.ToString;

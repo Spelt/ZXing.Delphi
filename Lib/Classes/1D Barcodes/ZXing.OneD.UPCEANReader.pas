@@ -494,6 +494,7 @@ begin
       TResultPointHelpers.CreateResultPoint(right, rowNumber));
 
     decodeResult := TReadResult.Create(resultString, nil, resultPoints, format);
+    extensionLength := 0;
     extensionResult := extensionReader.decodeRow(rowNumber, row, endRange[1]);
     if (extensionResult <> nil) then
     begin
@@ -503,29 +504,34 @@ begin
       decodeResult.addResultPoints(extensionResult.resultPoints);
       extensionLength := Length(extensionResult.Text);
       extensionResult.Free;
+    end;
 
-      if (hints <> nil) and
-        (hints.ContainsKey(TDecodeHintType.ALLOWED_EAN_EXTENSIONS)) then
-        allowedExtensions := TArray<Integer>
-          (hints[TDecodeHintType.ALLOWED_EAN_EXTENSIONS])
-      else
-        allowedExtensions := nil;
+    // With ALLOWED_EAN_EXTENSIONS an extension of one of those lengths is
+    // required: without it (length 0) there is no result either.
+    if (hints <> nil) and
+      (hints.ContainsKey(TDecodeHintType.ALLOWED_EAN_EXTENSIONS)) then
+      allowedExtensions := TArray<Integer>
+        (hints[TDecodeHintType.ALLOWED_EAN_EXTENSIONS])
+    else
+      allowedExtensions := nil;
 
-      if (allowedExtensions <> nil) then
+    if (allowedExtensions <> nil) then
+    begin
+      valid := false;
+
+      for len in allowedExtensions do
       begin
-        valid := false;
-
-        for len in allowedExtensions do
+        if (extensionLength = len) then
         begin
-          if (extensionLength = len) then
-          begin
-            valid := true;
-            break;
-          end;
+          valid := true;
+          break;
         end;
-        if (not valid) then
-          exit;
-      end
+      end;
+      if (not valid) then
+      begin
+        decodeResult.Free;
+        exit;
+      end;
     end;
 
     case format of

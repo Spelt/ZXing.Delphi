@@ -50,6 +50,7 @@ type
 
   const
     ALPHABET_STRING: string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. *$/+%';
+    CHECK_DIGIT_STRING: string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%';
     CHARACTER_ENCODINGS: array of Integer = [
       $034, $121, $061, $160, $031, $130, $070, $025, $124, $064, // 0-9
       $109, $049, $148, $019, $118, $058, $00D, $10C, $04C, $01C, // A-J
@@ -139,10 +140,23 @@ begin
             end;
           '%':
             begin
+              // Code 39 Full ASCII table
               if ((next >= 'A') and (next <= 'E')) then
-                decodedChar := Char(ord(next) - 38)
-              else if ((next >= 'F') and (next <= 'W')) then
-                decodedChar := Char(ord(next) - 11)
+                decodedChar := Char(ord(next) - 38) // ESC FS GS RS US
+              else if ((next >= 'F') and (next <= 'J')) then
+                decodedChar := Char(ord(next) - 11) // ; < = > ?
+              else if ((next >= 'K') and (next <= 'O')) then
+                decodedChar := Char(ord(next) + 16) // [ \ ] ^ _
+              else if ((next >= 'P') and (next <= 'T')) then
+                decodedChar := Char(ord(next) + 43) // { | } ~ DEL
+              else if (next = 'U') then
+                decodedChar := #0
+              else if (next = 'V') then
+                decodedChar := '@'
+              else if (next = 'W') then
+                decodedChar := '`'
+              else if ((next >= 'X') and (next <= 'Z')) then
+                decodedChar := #127 // DEL
               else
               begin
                 exit('');
@@ -261,20 +275,23 @@ begin
 
   if (usingCheckDigit) then
   begin
+    // The check digit is the sum of the character values modulo 43, with the
+    // values of CHECK_DIGIT_STRING (ALPHABET_STRING also holds the '*').
     max := self.decodeRowResult.length - 1;
     total := 0;
     for i := 0 to max - 1 do
     begin
-      Inc(total, ALPHABET_STRING.indexOf(decodeRowResult.Chars[i]));
+      Inc(total, CHECK_DIGIT_STRING.indexOf(decodeRowResult.Chars[i]));
     end;
 
-    if (self.decodeRowResult.Chars[max] <> ALPHABET_STRING[total mod 43]) then
+    if (self.decodeRowResult.Chars[max] <> CHECK_DIGIT_STRING.Chars[total mod 43]) then
     begin
       Result := nil;
       exit
     end;
 
-    self.decodeRowResult.Remove(max, self.decodeRowResult.length);
+    // drop the check digit (the last character)
+    self.decodeRowResult.Length := max;
   end;
 
   if (self.decodeRowResult.length = 0) then
