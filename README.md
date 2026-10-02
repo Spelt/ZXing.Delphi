@@ -1,5 +1,5 @@
 ﻿﻿# ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi XE 7 to 12 Athens. 
+ZXing Barcode Scanning Library for Delphi XE 7 to 13 Florence. 
 
 <img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing-logo.png"/>
 
@@ -10,7 +10,7 @@ ZXing.Delphi is a native Object Pascal library that is based on the well known o
 
 With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
 
-Its compatible with in Delphi XE7 - 11 Alexandria and tested with IOS 8.x - 15.x, Android 32/64, Windows 32/64 and OSX. 
+Its compatible with in Delphi XE7 - 13 Florence and tested with IOS 8.x - 15.x, Android 32/64, Windows 32/64 and OSX. 
 The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows (VCL or Firemonkey) applications.  
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
@@ -23,7 +23,7 @@ From Delphi 11 the standard camera component seems much improved.
 | 1D product | 1D industrial | 2D
 | ---------- | ------------- | --------------
 | UPC-A      | Code 39       | QR Code
-| UPC-E      | Code 93       | Data Matrix (Center images only)
+| UPC-E      | Code 93       | Data Matrix
 | EAN-8      | Code 128      | 
 | EAN-13     | ITF           | 
 
@@ -38,6 +38,12 @@ From Delphi 11 the standard camera component seems much improved.
 	
 
 ### Changes
+- v3.11.0
+	- Data Matrix: codes that are not centered in the image are now found. The detector tries the center first and then a grid of start points. Small codes away from the center need the TRY_HARDER hint.
+	- Data Matrix: fixed skewed corner detection for codes left of the image center.
+- v3.10.1
+	- Data Matrix: fixed decoding of codes with an EDIFACT segment followed by more data. https://github.com/Spelt/ZXing.Delphi/issues/180
+	- Data Matrix: fixed upper shift (extended ASCII) characters in C40 and Text mode.
 - v3.10.0 Improvements by René Hoffmann. https://github.com/Spelt/ZXing.Delphi/issues/143
 	- Avoid unnecessary usage of 'class'-modifier keyword (refactoring only)
 	- incorrect use of class var disrupts usage of multiple instances (e.g. in different threads) #174
