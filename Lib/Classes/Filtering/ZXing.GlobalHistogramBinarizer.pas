@@ -19,11 +19,12 @@ unit ZXing.GlobalHistogramBinarizer;
 
 interface
 
-uses 
-  SysUtils, 
+uses
+  SysUtils,
   ZXing.Binarizer,
   ZXing.LuminanceSource,
-  ZXing.Common.BitArray, 
+  ZXing.Common.BitArray,
+  ZXing.Common.BitMatrix,
   ZXing.Common.Detector.MathUtils;
 
 type
@@ -46,6 +47,13 @@ type
 
     // constructor GlobalHistogramBinarizer(source: TLuminanceSource);
     function GetBlackRow(y: Integer; row: IBitArray): IBitArray; override;
+    /// <summary>
+    /// Does not sharpen the data, as this call is intended to only be used by
+    /// 2D Readers. Returns nil when the image has too little contrast; the
+    /// caller frees the result.
+    /// </summary>
+    function BlackMatrix: TBitMatrix; override;
+    function createBinarizer(source: TLuminanceSource): TBinarizer; override;
   end;
 
 implementation
@@ -88,24 +96,90 @@ begin
     exit;
   end;
 
-  left := localLuminances[0] and $FF;
-  center := localLuminances[1] and $FF;
-
-  for x := 1 to w - 2 do
+  if (w < 3) then
   begin
+    // Special case for very small images
+    for x := 0 to w - 1 do
+      if ((localLuminances[x] and $FF) < blackPoint) then
+        row[x] := true;
+  end
+  else
+  begin
+    left := localLuminances[0] and $FF;
+    center := localLuminances[1] and $FF;
 
-    right := localLuminances[x + 1] and $FF;
-    // A simple -1 4 -1 box filter with a weight of 2.
+    for x := 1 to w - 2 do
+    begin
 
-    luminance := (center shl 2) - left - right;
-    luminance := TMathUtils.Asr(luminance, 1);
-    row[x] := (luminance < blackPoint);
-    left := center;
-    center := right;
+      right := localLuminances[x + 1] and $FF;
+      // A simple -1 4 -1 box filter with a weight of 2.
+
+      luminance := (center shl 2) - left - right;
+      luminance := TMathUtils.Asr(luminance, 1);
+      row[x] := (luminance < blackPoint);
+      left := center;
+      center := right;
+    end;
   end;
 
   result := row;
 
+end;
+
+function TGlobalHistogramBinarizer.BlackMatrix: TBitMatrix;
+var
+  localLuminances: TArray<Byte>;
+  localBuckets: TBuckets;
+  w, h, x, y, rowNumber, right, pixel, offset, blackPoint: Integer;
+begin
+  w := width;
+  h := height;
+
+  // Quickly calculates the histogram by sampling four rows from the image.
+  // This proved to be more robust on the blackbox tests than sampling a
+  // diagonal as we used to do.
+  InitArrays(w);
+  localBuckets := buckets;
+  for y := 1 to 4 do
+  begin
+    rowNumber := (h * y) div 5;
+    localLuminances := LuminanceSource.getRow(rowNumber, luminances);
+    right := (w * 4) div 5;
+    for x := (w div 5) to right - 1 do
+    begin
+      pixel := localLuminances[x] and $FF;
+      Inc(localBuckets[TMathUtils.Asr(pixel, LUMINANCE_SHIFT)]);
+    end;
+  end;
+
+  if (not estimateBlackPoint(localBuckets, blackPoint)) then
+  begin
+    result := nil;
+    exit;
+  end;
+
+  // We delay reading the entire image luminance until the black point
+  // estimation succeeds. Although we end up reading four rows twice, it is
+  // consistent with our motto of "fail quickly" which is necessary for
+  // continuous scanning.
+  result := TBitMatrix.Create(w, h);
+  localLuminances := LuminanceSource.Matrix;
+  for y := 0 to h - 1 do
+  begin
+    offset := y * w;
+    for x := 0 to w - 1 do
+    begin
+      pixel := localLuminances[offset + x] and $FF;
+      if (pixel < blackPoint) then
+        result[x, y] := true;
+    end;
+  end;
+end;
+
+function TGlobalHistogramBinarizer.createBinarizer(source: TLuminanceSource)
+  : TBinarizer;
+begin
+  result := TGlobalHistogramBinarizer.Create(source);
 end;
 
 procedure TGlobalHistogramBinarizer.InitArrays(luminanceSize: Integer);

@@ -148,6 +148,11 @@ begin
   Result := nil;
   DecoderResult := nil;
   assumeGS1 := (hints <> nil) and hints.ContainsKey(TDecodeHintType.ASSUME_GS1);
+
+  // no black matrix, e.g. a tiny image without contrast
+  if (image = nil) or (image.BlackMatrix = nil) then
+    exit;
+
   try
 
     if ((hints <> nil) and hints.ContainsKey(TDecodeHintType.PURE_BARCODE)) then

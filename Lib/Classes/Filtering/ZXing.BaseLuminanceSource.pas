@@ -22,6 +22,7 @@ unit ZXing.BaseLuminanceSource;
 interface
 uses
   System.SysUtils,
+  System.Math,
   System.UITypes,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -90,7 +91,9 @@ constructor TBaseLuminanceSource.Create(const luminanceArray: TArray<Byte>;
   const width, height: Integer);
 begin
   Self.Create(width, height);
-  Copy(luminanceArray, 0, Length(luminances));
+  if (Length(luminanceArray) > 0) then
+    Move(luminanceArray[0], luminances[0], Min(Length(luminanceArray),
+      Length(luminances)));
 end;
 
 /// <summary>

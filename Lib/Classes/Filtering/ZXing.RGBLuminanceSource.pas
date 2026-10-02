@@ -240,8 +240,9 @@ function TRGBLuminanceSource.CreateLuminanceSource(
   const newLuminances: TArray<Byte>;
   const width, height: Integer): TLuminanceSource;
 begin
-  Result := TRGBLuminanceSource.Create(width, height);
-  luminances := newLuminances;
+  // the new luminances belong to the new source, not to this one
+  Result := TRGBLuminanceSource.Create(newLuminances, width, height,
+    TBitmapFormat.Gray8);
 end;
 
 function TRGBLuminanceSource.DetermineBitmapFormat(
@@ -282,7 +283,8 @@ begin
         else
            len := Length(luminances);
 
-        Copy(rgbRawBytes, 0, len);
+        if (len > 0) then
+          Move(rgbRawBytes[0], luminances[0], len);
       end;
     TBitmapFormat.RGB24 :
       begin

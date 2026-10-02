@@ -98,10 +98,7 @@ var
   newMatrix: TBitMatrix;
 begin
   if (self.matrix <> nil) then
-  begin
-    inherited BlackMatrix;
     Exit;
-  end;
 
   try
 
@@ -130,7 +127,11 @@ begin
         blackPoints, newMatrix);
 
       self.matrix := newMatrix;
-    end;
+    end
+    else
+      // If the image is too small, fall back to the global histogram
+      // approach. That can still give nil when there is too little contrast.
+      self.matrix := inherited BlackMatrix;
 
   finally
     SetLength(blackPoints,0);

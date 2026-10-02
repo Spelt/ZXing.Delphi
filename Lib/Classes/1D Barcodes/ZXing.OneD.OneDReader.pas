@@ -164,11 +164,12 @@ var
 
 begin
   Result := doDecode(image, hints);
-  if (Result = nil) then
+  if (Result <> nil) then
   begin
     Exit;
   end;
 
+  // Not found: with TRY_HARDER also try the image rotated by 90 degrees.
   tryHarder := (hints <> nil) and
     (hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
 
@@ -179,39 +180,42 @@ begin
   then
   begin
     rotatedImage := image.rotateCounterClockwise();
-    Result := doDecode(rotatedImage, hints);
-    if (Result = nil) then
-    begin
-      Exit;
-    end;
-
-    // Record that we found it rotated 90 degrees CCW / 270 degrees CW
-    metadata := Result.ResultMetadata;
-    orientation := 270;
-    if ((metadata <> nil) and metadata.ContainsKey
-      (ZXing.ResultMetadataType.orientation)) then
-    begin
-      // But if we found it reversed in doDecode(), add in that result here:
-      orientation :=
-        (orientation + (metadata[ZXing.ResultMetadataType.orientation]
-        as IIntegerMetadata).Value) mod 360;
-    end;
-
-    Result.putMetadata(ZXing.ResultMetadataType.orientation,
-      TResultMetadata.CreateIntegerMetadata(orientation));
-    // Update result points
-    points := Result.ResultPoints;
-    if (points <> nil) then
-    begin
-      height := rotatedImage.height;
-      l := Length(points) - 1;
-      for i := 0 to l do
+    try
+      Result := doDecode(rotatedImage, hints);
+      if (Result = nil) then
       begin
-        points[i] := TResultPointHelpers.CreateResultPoint
-          (height - points[i].Y - 1, points[i].X);
+        Exit;
       end;
-    end;
 
+      // Record that we found it rotated 90 degrees CCW / 270 degrees CW
+      metadata := Result.ResultMetadata;
+      orientation := 270;
+      if ((metadata <> nil) and metadata.ContainsKey
+        (ZXing.ResultMetadataType.orientation)) then
+      begin
+        // But if we found it reversed in doDecode(), add in that result here:
+        orientation :=
+          (orientation + (metadata[ZXing.ResultMetadataType.orientation]
+          as IIntegerMetadata).Value) mod 360;
+      end;
+
+      Result.putMetadata(ZXing.ResultMetadataType.orientation,
+        TResultMetadata.CreateIntegerMetadata(orientation));
+      // Update result points
+      points := Result.ResultPoints;
+      if (points <> nil) then
+      begin
+        height := rotatedImage.height;
+        l := Length(points) - 1;
+        for i := 0 to l do
+        begin
+          points[i] := TResultPointHelpers.CreateResultPoint
+            (height - points[i].Y - 1, points[i].X);
+        end;
+      end;
+    finally
+      rotatedImage.Free;
+    end;
   end;
 
 end;

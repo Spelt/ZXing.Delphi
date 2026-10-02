@@ -29,9 +29,14 @@ type
   TInvertedLuminanceSource = class sealed(TLuminanceSource)
   private
     delegate: TLuminanceSource;
+    ownDelegate: Boolean;
     invertedMatrix: TArray<Byte>;
   public
-    constructor Create(delegate: TLuminanceSource); reintroduce;
+    /// <param name="ownDelegate">free the delegate when this source is freed;
+    /// used for the new sources made by crop and rotate.</param>
+    constructor Create(delegate: TLuminanceSource;
+      ownDelegate: Boolean = false); reintroduce;
+    destructor Destroy; override;
 
     function crop(const left, top, width, height: Integer): TLuminanceSource; override;
     function getRow(const y: Integer; row: TArray<Byte>): TArray<Byte>; override;
@@ -52,10 +57,19 @@ implementation
 /// Initializes a new instance of the <see cref="InvertedLuminanceSource"/> class.
 /// </summary>
 /// <param name="delegate">The @delegate.</param>
-constructor TInvertedLuminanceSource.Create(delegate: TLuminanceSource);
+constructor TInvertedLuminanceSource.Create(delegate: TLuminanceSource;
+  ownDelegate: Boolean);
 begin
   inherited Create(delegate.Width, delegate.Height);
   Self.delegate := delegate;
+  Self.ownDelegate := ownDelegate;
+end;
+
+destructor TInvertedLuminanceSource.Destroy;
+begin
+  if ownDelegate then
+    FreeAndNil(delegate);
+  inherited;
 end;
   
 /// <summary>
@@ -79,7 +93,7 @@ begin
   rowArray := delegate.getRow(y, row);
   width := Self.Width;
   for i := 0 to Pred(width) do
-    rowArray[i] := (255 - (row[i] and $FF));
+    rowArray[i] := (255 - (rowArray[i] and $FF));
   
   Result := rowArray;
 end;
@@ -105,9 +119,9 @@ begin
     SetLength(invertedMatrix, len);
     for i := 0 to Pred(len) do
       invertedMatrix[i] := (255 - (matrixArray[i] and $FF));
-
-    Result := invertedMatrix;
   end;
+  // also when it was already calculated
+  Result := invertedMatrix;
 end;
 
 /// <summary>
@@ -133,22 +147,26 @@ function TInvertedLuminanceSource.crop(const left, top,
   width, height: Integer): TLuminanceSource;
 begin
   Result := TInvertedLuminanceSource.Create(Self.delegate.crop(left, top,
-    width, height));
+    width, height), true);
 end;
 
 function TInvertedLuminanceSource.invert: TLuminanceSource;
 begin
-  Result := self.delegate;
+  // A new object, like every invert/crop/rotate: the caller frees it.
+  // Returning the delegate would let the caller free the delegate.
+  Result := TInvertedLuminanceSource.Create(Self);
 end;
 
 function TInvertedLuminanceSource.rotateCounterClockwise(): TLuminanceSource;
 begin
-  Result := TInvertedLuminanceSource.Create(Self.delegate.rotateCounterClockwise);
+  Result := TInvertedLuminanceSource.Create
+    (Self.delegate.rotateCounterClockwise, true);
 end;
 
 function TInvertedLuminanceSource.rotateCounterClockwise45(): TLuminanceSource;
 begin
-  Result := TInvertedLuminanceSource.Create(Self.delegate.rotateCounterClockwise45);
+  Result := TInvertedLuminanceSource.Create
+    (Self.delegate.rotateCounterClockwise45, true);
 end;
 
 function TInvertedLuminanceSource.RotateSupported: Boolean;

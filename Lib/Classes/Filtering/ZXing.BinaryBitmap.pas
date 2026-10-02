@@ -32,6 +32,10 @@ type
   private
     Binarizer: TBinarizer;
     Matrix: TBitMatrix;
+    /// <summary>True for a bitmap made by rotateCounterClockwise: it then
+    /// frees its binarizer and luminance source. Otherwise the caller that
+    /// created them frees them.</summary>
+    FOwnsBinarizer: Boolean;
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetBlackMatrix: TBitMatrix;
@@ -78,7 +82,11 @@ begin
   if Assigned(Matrix) then
     FreeAndNil(Matrix);
 
-  //FreeAndNil(Binarizer);
+  if FOwnsBinarizer then
+  begin
+    Binarizer.LuminanceSource.Free;
+    FreeAndNil(Binarizer);
+  end;
   inherited;
 end;
 
@@ -114,6 +122,7 @@ var
 begin
   newSource := Binarizer.LuminanceSource.rotateCounterClockwise();
   result := TBinaryBitmap.Create(Binarizer.createBinarizer(newSource));
+  result.FOwnsBinarizer := true;
 end;
 
 function TBinaryBitmap.RotateSupported: Boolean;
