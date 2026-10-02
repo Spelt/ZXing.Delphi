@@ -38,6 +38,10 @@ From Delphi 11 the standard camera component seems much improved.
 	
 
 ### Changes
+- v3.12.0
+	- Data Matrix: rotated codes are read much more reliably. The number of modules is now counted through the centers of the outer modules instead of along the edge.
+	- Data Matrix: better reading of dot-peen codes (codes made of separate dots). With TRY_HARDER the dots are merged as a last attempt; this is slower on images without a code.
+	- Data Matrix: with the ASSUME_GS1 hint, a GS1 code starts with the symbology identifier ']d2' instead of ASCII 29 (GS). Without the hint nothing changes.
 - v3.11.0
 	- Data Matrix: codes that are not centered in the image are now found. The detector tries the center first and then a grid of start points. Small codes away from the center need the TRY_HARDER hint.
 	- Data Matrix: fixed skewed corner detection for codes left of the image center.
