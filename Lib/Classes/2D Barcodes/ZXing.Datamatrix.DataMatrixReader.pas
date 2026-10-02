@@ -45,9 +45,24 @@ type
   /// This implementation can detect and decode Data Matrix codes in an image.
   /// </summary>
   TDataMatrixReader = class(TInterfacedObject, IReader)
+  private const
+    /// <summary>
+    /// Finest grid of detector start points: 4 means start points every 1/4
+    /// of the image width and height. With TRY_HARDER a grid twice as fine is
+    /// used as well, which finds smaller codes but costs more time on images
+    /// without a code.
+    /// </summary>
+    MAX_GRID_DIVISIONS = 4;
   private
     FDecoder: TDataMatrixDecoder;
     NO_POINTS: TArray<IResultPoint>;
+
+    /// <summary>
+    /// Detects a code around start point (x, y) and decodes it.
+    /// Returns nil when nothing could be detected or decoded.
+    /// </summary>
+    function detectAndDecode(const image: TBitMatrix; x, y: Integer;
+      var points: TArray<IResultPoint>): TDecoderResult;
 
     /// <summary>
     /// This method detects a code in a "pure" image -- that is, pure monochrome image
@@ -103,15 +118,13 @@ end;
 function TDataMatrixReader.decode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
-  matrixDetector: TDataMatrixDetector;
   DecoderResult: TDecoderResult;
   points: TArray<IResultPoint>;
   bits: TBitMatrix;
-  DetectorResult: TDetectorResult;
   ByteSegments: IByteSegments;
+  divisions, maxDivisions, gridX, gridY: Integer;
 begin
   Result := nil;
-  DetectorResult := nil;
   DecoderResult := nil;
   try
 
@@ -129,18 +142,38 @@ begin
     end
     else
     begin
-      matrixDetector := TDataMatrixDetector.Create(image.BlackMatrix);
-      try
-        DetectorResult := matrixDetector.detect();
-      finally
-        matrixDetector.Free;
+      // The detector searches outward from a start point, so it only finds a
+      // code that covers that point. Try the center first, then a grid of
+      // start points so codes that are not centered are found as well.
+      DecoderResult := detectAndDecode(image.BlackMatrix,
+        image.BlackMatrix.width div 2, image.BlackMatrix.height div 2, points);
+
+      maxDivisions := MAX_GRID_DIVISIONS;
+      if ((hints <> nil) and hints.ContainsKey(TDecodeHintType.TRY_HARDER)) then
+        maxDivisions := MAX_GRID_DIVISIONS * 2;
+
+      divisions := 4;
+      while (DecoderResult = nil) and (divisions <= maxDivisions) do
+      begin
+        for gridY := 1 to Pred(divisions) do
+        begin
+          for gridX := 1 to Pred(divisions) do
+          begin
+            // points with both coordinates even were tried on the coarser grid
+            if (not Odd(gridX)) and (not Odd(gridY)) then
+              continue;
+
+            DecoderResult := detectAndDecode(image.BlackMatrix,
+              (image.BlackMatrix.width * gridX) div divisions,
+              (image.BlackMatrix.height * gridY) div divisions, points);
+            if (DecoderResult <> nil) then
+              break;
+          end;
+          if (DecoderResult <> nil) then
+            break;
+        end;
+        divisions := divisions * 2;
       end;
-
-      if (DetectorResult = nil) then
-        exit;
-
-      DecoderResult := FDecoder.decode(DetectorResult.bits);
-      points := DetectorResult.points;
     end;
 
     if (DecoderResult = nil) then
@@ -160,14 +193,39 @@ begin
   finally
 
     byteSegments:=nil;
-    if Assigned(DetectorResult) then
-      FreeAndNil(DetectorResult);
 
     if Assigned(DecoderResult) then
       FreeAndNil(DecoderResult);
 
   end;
 
+end;
+
+function TDataMatrixReader.detectAndDecode(const image: TBitMatrix;
+  x, y: Integer; var points: TArray<IResultPoint>): TDecoderResult;
+var
+  matrixDetector: TDataMatrixDetector;
+  DetectorResult: TDetectorResult;
+begin
+  Result := nil;
+
+  matrixDetector := TDataMatrixDetector.Create(image, x, y);
+  try
+    DetectorResult := matrixDetector.detect();
+  finally
+    matrixDetector.Free;
+  end;
+
+  if (DetectorResult = nil) then
+    exit;
+
+  try
+    Result := FDecoder.decode(DetectorResult.bits);
+    if (Result <> nil) then
+      points := DetectorResult.points;
+  finally
+    DetectorResult.Free;
+  end;
 end;
 
 function TDataMatrixReader.extractPureBits(const image: TBitMatrix): TBitMatrix;

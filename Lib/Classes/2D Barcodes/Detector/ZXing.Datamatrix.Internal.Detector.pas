@@ -74,7 +74,12 @@ type
   var
     FtransCompare: TResultPointsAndTransitionsComparator;
   public
-    constructor Create(const image: TBitMatrix);
+    constructor Create(const image: TBitMatrix); overload;
+    /// <summary>
+    /// Starts the search for the white rectangle around the code at (x, y)
+    /// instead of at the center of the image.
+    /// </summary>
+    constructor Create(const image: TBitMatrix; x, y: Integer); overload;
     destructor Destroy; override;
     function detect: TDetectorResult;
     function transitionsBetween(Afrom, Ato: IResultPoint)
@@ -104,6 +109,13 @@ constructor TDataMatrixDetector.Create(const image: TBitMatrix);
 begin
   Self.Fimage := image;
   Self.FrectangleDetector := TWhiteRectangleDetector.New(image);
+  Self.FtransCompare := TResultPointsAndTransitionsComparator.Create;
+end;
+
+constructor TDataMatrixDetector.Create(const image: TBitMatrix; x, y: Integer);
+begin
+  Self.Fimage := image;
+  Self.FrectangleDetector := TWhiteRectangleDetector.New(image, 10, x, y);
   Self.FtransCompare := TResultPointsAndTransitionsComparator.Create;
 end;
 

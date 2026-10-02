@@ -45,7 +45,7 @@ type
     constructor Create(image: TBitMatrix; initSize: Integer; x: Integer;
       y: Integer); overload;
     function centerEdges(y: IResultPoint; z: IResultPoint; x: IResultPoint;
-      t: IResultPoint): TArray<IResultPoint>;
+      t: IResultPoint; centerX: Single): TArray<IResultPoint>;
     function containsBlackPoint(a: Integer; b: Integer; fixed: Integer;
       horizontal: boolean): boolean;
     function getBlackPointOnSegment(aX: Single; aY: Single; bX: Single;
@@ -82,7 +82,7 @@ begin
 end;
 
 function TWhiteRectangleDetector.centerEdges(y: IResultPoint; z: IResultPoint;
-  x: IResultPoint; t: IResultPoint): TArray<IResultPoint>;
+  x: IResultPoint; t: IResultPoint; centerX: Single): TArray<IResultPoint>;
 var
   yi, yj, zi, zj, xi, xj, ti, tj: Single;
 begin
@@ -95,7 +95,9 @@ begin
   ti := t.x;
   tj := t.y;
 
-  if (yi < (Self.width div 2)) then
+  // The original compares against the center of the image, which only works
+  // when the code is centered. Use the center of the found rectangle.
+  if (yi < centerX) then
   begin
     Result := TArray<IResultPoint>.Create(TResultPointHelpers.CreateResultPoint((ti - 1), (tj + 1)
       ), TResultPointHelpers.CreateResultPoint((zi + 1), (zj + 1)), TResultPointHelpers.CreateResultPoint((xi - 1),
@@ -368,7 +370,7 @@ begin
     exit;
   end;
 
-  Result := Self.centerEdges(y, z, x, t);
+  Result := Self.centerEdges(y, z, x, t, (left + right) / 2);
 end;
 
 function TWhiteRectangleDetector.getBlackPointOnSegment(aX: Single; aY: Single;

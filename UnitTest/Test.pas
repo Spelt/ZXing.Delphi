@@ -879,6 +879,15 @@ begin
     FreeAndNil(result);
   end;
 
+  // code in the top left corner, not covering the center of the image
+  try
+    result := Decode('dm-TPN-offcenter.png', TBarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('{"Program":"TPN","Drug Name":"Nutrition","Bag Volume":"3000.0","Flat Rate":"200.0"}'), 'DataMatrix code result Text Incorrect: ' + result.Text);
+  finally
+    FreeAndNil(result);
+  end;
+
 end;
 
 procedure TZXingDelphiTest.AllCode128();
