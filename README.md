@@ -40,6 +40,15 @@ From Delphi 11 the standard camera component seems much improved.
 ### Changes
 - v3.13.0
 	- Fixes thanks to Robert Jędrzejczyk. https://github.com/Spelt/ZXing.Delphi/issues/170, https://github.com/Spelt/ZXing.Delphi/issues/171, https://github.com/Spelt/ZXing.Delphi/issues/172 
+	- 1D with TRY_HARDER: results were lost and memory leaked (#170). Codes are now also searched rotated by 90 degrees, as intended.
+	- Images smaller than 40 pixels: 2D codes are now decoded (global histogram fallback) and Data Matrix no longer raises an access violation.
+	- Memory leaks fixed in the Data Matrix decoder (blocks after a failed error correction) and in QR Kanji/Hanzi and Data Matrix Base256 decoding.
+	- Code 39: the check digit (ASSUME_CODE_39_CHECK_DIGIT) works, and the Full ASCII characters %K to %Z are correct.
+	- Code 93: Full ASCII characters (lower case, punctuation) are correct; they were returned twice or cut off the text.
+	- Data Matrix: ECI is supported (the character set of the text after it), and the 05/06 macro header and trailer are correct.
+	- TMultiFormatReader.decode without hints no longer raises an access violation.
+	- EAN/UPC: with ALLOWED_EAN_EXTENSIONS a code without extension is rejected, as documented.
+	- New regression tests on the black box test images of zxing-cpp (unitTest\Images\zxing-cpp) and a benchmark that compares with zxing-cpp (benchmark\).
 - v3.12.0
 	- Data Matrix: rotated codes are read much more reliably. The number of modules is now counted through the centers of the outer modules instead of along the edge.
 	- Data Matrix: better reading of dot-peen codes (codes made of separate dots). With TRY_HARDER the dots are merged as a last attempt; this is slower on images without a code.
