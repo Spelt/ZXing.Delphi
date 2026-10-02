@@ -140,14 +140,16 @@ type
   end;
 
   /// <summary>Masks the floating point exceptions while it lives (NaN and
-  /// infinity are valid intermediate values in the geometry code). Use as
-  /// local variable: Init at the start, Restore in a finally block.</summary>
+  /// infinity are valid intermediate values in the geometry code). Declare it
+  /// as local variable: a managed record, so the mask is set on entering the
+  /// routine and restored on leaving it, also after an exception. Do not copy
+  /// it.</summary>
   TFloatExceptionsMasked = record
   private
     FOldMask: TArithmeticExceptionMask;
   public
-    procedure Init;
-    procedure Restore;
+    class operator Initialize(out Dest: TFloatExceptionsMasked);
+    class operator Finalize(var Dest: TFloatExceptionsMasked);
   end;
 
 implementation
@@ -616,16 +618,18 @@ end;
 
 { TFloatExceptionsMasked }
 
-procedure TFloatExceptionsMasked.Init;
+class operator TFloatExceptionsMasked.Initialize
+  (out Dest: TFloatExceptionsMasked);
 begin
-  FOldMask := GetExceptionMask;
+  Dest.FOldMask := GetExceptionMask;
   SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide, exOverflow,
     exUnderflow, exPrecision]);
 end;
 
-procedure TFloatExceptionsMasked.Restore;
+class operator TFloatExceptionsMasked.Finalize
+  (var Dest: TFloatExceptionsMasked);
 begin
-  SetExceptionMask(FOldMask);
+  SetExceptionMask(Dest.FOldMask);
 end;
 
 end.

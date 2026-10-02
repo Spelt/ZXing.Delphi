@@ -1063,7 +1063,7 @@ var
   k, i, cx, cy, offset: Integer;
   dir, startPos: TPointD;
   tracer: TEdgeTracer;
-  floatMask: TFloatExceptionsMasked;
+  floatMask: TFloatExceptionsMasked; // masked until this function returns
   pureBits: TBitMatrix;
   purePoints: TArray<IResultPoint>;
 begin
@@ -1082,7 +1082,6 @@ begin
       pureBits.Free;
     end;
 
-  floatMask.Init;
   history := nil;
   for k := 0 to 3 do
     lines[k] := nil;
@@ -1137,7 +1136,6 @@ begin
     for k := 0 to 3 do
       lines[k].Free;
     history.Free;
-    floatMask.Restore;
   end;
 end;
 
