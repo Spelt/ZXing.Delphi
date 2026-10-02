@@ -78,8 +78,8 @@ type
     fPermissionCamera: String;
     fScanInProgress: Boolean;
     fFrameTake: Integer;
-    fScanBitmap: TBitmap;
-    procedure ParseImage();
+    fScanManager: TScanManager;
+    procedure ParseImage(const scanBitmap: TBitmap);
 {$IF CompilerVersion >= 35.0}
     // after Delphi 11 Alexandria
     procedure CameraPermissionRequestResult(Sender: TObject;
@@ -126,7 +126,12 @@ begin
 
   lblScanStatus.Text := '';
   fFrameTake := 0;
-  fScanBitmap := nil;
+  fScanInProgress := false;
+
+  // One scan manager for all frames, like a real app would do. Only one scan
+  // may use it at a time. Pass hints (e.g. ENABLE_INVERSION, TRY_HARDER) as
+  // second parameter; the scan manager frees them.
+  fScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 
 {$IFDEF ANDROID}
   fPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
@@ -135,8 +140,13 @@ end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
-  if Assigned(fScanBitmap) then
-    FreeAndNil(fScanBitmap);
+  CameraComponent1.Active := false;
+
+  // Wait for a running scan; it calls Synchronize, so keep processing those.
+  while fScanInProgress do
+    CheckSynchronize(10);
+
+  FreeAndNil(fScanManager);
 end;
 
 {$IF CompilerVersion >= 35.0}
@@ -203,10 +213,12 @@ begin
 
   TThread.Synchronize(TThread.CurrentThread,
   procedure
+  var
+    scanBitmap: TBitmap;
   begin
     CameraComponent1.SampleBufferToBitmap(imgCamera.Bitmap, True);
 
-    if (fScanInProgress) then
+    if (fScanInProgress) or (fScanManager = nil) then
     begin
       exit;
     end;
@@ -218,34 +230,34 @@ begin
       exit;
     end;
 
-    if Assigned(fScanBitmap) then
-      FreeAndNil(fScanBitmap);
+    // Set the flag here in the main thread, before the scan thread starts,
+    // so the next frame can never start a second scan.
+    fScanInProgress := True;
 
-    fScanBitmap := TBitmap.Create();
-    fScanBitmap.Assign(imgCamera.Bitmap);
+    // The scan thread gets its own copy of the frame and frees it.
+    scanBitmap := TBitmap.Create();
+    scanBitmap.Assign(imgCamera.Bitmap);
 
-    ParseImage();
+    ParseImage(scanBitmap);
   end);
 
 end;
 
-procedure TMainForm.ParseImage();
+procedure TMainForm.ParseImage(const scanBitmap: TBitmap);
 begin
 
   TThread.CreateAnonymousThread(
     procedure
     var
       ReadResult: TReadResult;
-      ScanManager: TScanManager;
 
     begin
-      fScanInProgress := True;
-      ScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+      ReadResult := nil;
 
       try
 
         try
-          ReadResult := ScanManager.Scan(fScanBitmap);
+          ReadResult := fScanManager.Scan(scanBitmap);
         except
           on E: Exception do
           begin
@@ -279,7 +291,7 @@ begin
         if ReadResult <> nil then
           FreeAndNil(ReadResult);
 
-        ScanManager.Free;
+        scanBitmap.Free;
         fScanInProgress := false;
       end;
 
@@ -296,6 +308,8 @@ begin
       TApplicationEvent.WillTerminate:
       CameraComponent1.Active := false;
   end;
+
+  Result := true;
 end;
 
 end.
