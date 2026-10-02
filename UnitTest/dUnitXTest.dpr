@@ -15,7 +15,14 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
-  Test in 'Test.pas';
+  Test in 'Test.pas',
+  ZXingCppSamplesTest in 'ZXingCppSamplesTest.pas',
+  OneDFullAsciiTest in 'OneDFullAsciiTest.pas',
+  DataMatrixBitStreamTest in 'DataMatrixBitStreamTest.pas',
+  MultiFormatReaderTest in 'MultiFormatReaderTest.pas',
+  Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
+  Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
+  Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';
 
 var
   runner : ITestRunner;
