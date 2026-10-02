@@ -76,6 +76,10 @@ type
     procedure setRegion(left: Integer; top: Integer; width: Integer;
       height: Integer);
     procedure setRow(y: Integer; row: IBitArray);
+    /// <summary>Sets the 8 bits x to x + 7 of row y to the lowest 8 bits of
+    /// bits (bit 0 for x), much faster than 8 times Matrix[x, y]. Ignored
+    /// when they do not lie completely inside the matrix.</summary>
+    procedure setBits8(x, y: Integer; bits: Cardinal);
     function ToBitmap: TBitmap; overload;
     function ToBitmap(format: TBarcodeFormat; content: string)
       : TBitmap; overload;
@@ -92,20 +96,17 @@ implementation
 { TBitMatrix }
 
 function TBitMatrix.getBit(x, y: Integer): Boolean;
-var
-   offset, v, bits, shift: Int64;
-   uBits: Cardinal;
 begin
- offset := y * FrowSize + TMathUtils.Asr(x, 5);
- if ( offset >= Low( FBits ) ) and ( offset <= High( FBits ) ) then
- begin
-    bits := Fbits[offset];
-    uBits := Cardinal(bits);
-    shift := (x and $1F);
-    v := TMathUtils.Asr(uBits, shift);
-    Result := (v and 1) <> 0;
- end
- else
+  // the word of x: an arithmetic shift, also for negative x (as before)
+  var col: Integer;
+  if (x >= 0) then
+    col := x shr 5
+  else
+    col := -((-(x + 1)) shr 5) - 1;
+  var offset: NativeInt := NativeInt(y) * FrowSize + col;
+  if (offset >= 0) and (offset < Length(Fbits)) then
+    Result := ((Cardinal(Fbits[offset]) shr (x and $1F)) and 1) <> 0
+  else
     Result := False;
 end;
 
@@ -123,6 +124,28 @@ begin
     Fbits[offset] := Fbits[offset] or (1 shl (x and $1F))
   else
     Fbits[offset] := Fbits[offset] and (not(1 shl (x and $1F)));
+end;
+
+procedure TBitMatrix.setBits8(x, y: Integer; bits: Cardinal);
+begin
+  if (x < 0) or (x + 8 > Fwidth) or (y < 0) or (y >= Fheight) then
+    exit;
+
+  bits := bits and $FF;
+  var offset := y * FrowSize + (x shr 5);
+  var shift := x and $1F;
+  // the bits in the first word
+  var mask: Cardinal := Cardinal($FF) shl shift;
+  Fbits[offset] := Integer((Cardinal(Fbits[offset]) and not mask) or
+    (bits shl shift));
+  // the rest in the next word
+  if (shift > 24) then
+  begin
+    var written := 32 - shift;
+    mask := Cardinal($FF) shr written;
+    Fbits[offset + 1] := Integer((Cardinal(Fbits[offset + 1]) and not mask) or
+      (bits shr written));
+  end;
 end;
 
 procedure TBitMatrix.clear;

@@ -56,12 +56,12 @@ type
   private
     matrix: TBitMatrix;
     procedure BinarizeEntireImage;
-    procedure calculateThresholdForBlock(luminances: TArray<Byte>;
+    procedure calculateThresholdForBlock(const luminances: TArray<Byte>;
       subWidth: Integer; subHeight: Integer; width: Integer; height: Integer;
       blackPoints: TArrayIntOfInt; matrix: TBitMatrix);
-    function calculateBlackPoints(luminances: TArray<Byte>; subWidth: Integer;
+    function calculateBlackPoints(const luminances: TArray<Byte>; subWidth: Integer;
       subHeight: Integer; width: Integer; height: Integer): TArrayIntOfInt;
-    procedure thresholdBlock(luminances: TArray<Byte>; xoffset: Integer;
+    procedure thresholdBlock(const luminances: TArray<Byte>; xoffset: Integer;
       yoffset: Integer; threshold: Integer; stride: Integer;
       matrix: TBitMatrix);
     function cap(value: Integer; min: Integer; max: Integer): Integer;
@@ -140,7 +140,7 @@ begin
   end;
 end;
 
-function THybridBinarizer.calculateBlackPoints(luminances: TArray<Byte>;
+function THybridBinarizer.calculateBlackPoints(const luminances: TArray<Byte>;
   subWidth: Integer; subHeight: Integer; width: Integer; height: Integer)
   : TArrayIntOfInt;
 var
@@ -241,7 +241,7 @@ begin
   result := blackPoints;
 end;
 
-procedure THybridBinarizer.calculateThresholdForBlock(luminances: TArray<Byte>;
+procedure THybridBinarizer.calculateThresholdForBlock(const luminances: TArray<Byte>;
   subWidth: Integer; subHeight: Integer; width: Integer; height: Integer;
   blackPoints: TArrayIntOfInt; matrix: TBitMatrix);
 var
@@ -290,26 +290,21 @@ begin
   inherited Create(source);
 end;
 
-procedure THybridBinarizer.thresholdBlock(luminances: TArray<Byte>;
+procedure THybridBinarizer.thresholdBlock(const luminances: TArray<Byte>;
   xoffset: Integer; yoffset: Integer; threshold: Integer; stride: Integer;
   matrix: TBitMatrix);
-var
-  offset, x, y, pixel: Integer;
 begin
-  offset := ((yoffset * stride) + xoffset);
-  y := 0;
-  while ((y < 8)) do
+  var offset := (yoffset * stride) + xoffset;
+  for var y := 0 to 7 do
   begin
-    x := 0;
-    while ((x < 8)) do
-    begin
-      pixel := (luminances[(offset + x)] and $FF);
-      matrix[(xoffset + x), (yoffset + y)] := (pixel <= threshold);
-      inc(x)
-    end;
-    inc(y);
-    inc(offset, stride)
-  end
+    // the 8 pixels of the block row at once
+    var bits: Cardinal := 0;
+    for var x := 0 to 7 do
+      if (luminances[offset + x] <= threshold) then
+        bits := bits or (Cardinal(1) shl x);
+    matrix.setBits8(xoffset, yoffset + y, bits);
+    inc(offset, stride);
+  end;
 end;
 
 function THybridBinarizer.cap(value: Integer; min: Integer;

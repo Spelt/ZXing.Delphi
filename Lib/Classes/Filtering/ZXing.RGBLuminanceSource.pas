@@ -25,6 +25,7 @@ uses
   System.UITypes,
   System.TypInfo,
 {$IFDEF FRAMEWORK_FMX}
+  FMX.Types,
   FMX.Graphics,
 {$ENDIF}
 {$IFDEF FRAMEWORK_VCL}
@@ -178,16 +179,47 @@ begin
   if (sourceBitmap.Map(TMapAccess.Read, currentData)) then
   begin
     try
-      for y := 0 to FHeight - 1 do
-      begin
-        offset := y * FWidth;
-        for x := 0 to FWidth - 1 do
+      case currentData.PixelFormat of
+        // the common 32 bit formats: read the scan lines directly, which is
+        // much faster than GetPixel per pixel (same luminance values)
+        TPixelFormat.BGRA, TPixelFormat.BGR:
+          for y := 0 to FHeight - 1 do
+          begin
+            offset := y * FWidth;
+            var p: PByte := currentData.GetScanline(y);
+            for x := 0 to FWidth - 1 do
+            begin
+              // memory order blue, green, red, alpha
+              luminances[offset + x] := (3482 * p[2] + 11721 * p[1] + 1181 *
+                p[0]) shr 14;
+              Inc(p, 4);
+            end;
+          end;
+        TPixelFormat.RGBA, TPixelFormat.RGB:
+          for y := 0 to FHeight - 1 do
+          begin
+            offset := y * FWidth;
+            var p: PByte := currentData.GetScanline(y);
+            for x := 0 to FWidth - 1 do
+            begin
+              // memory order red, green, blue, alpha
+              luminances[offset + x] := (3482 * p[0] + 11721 * p[1] + 1181 *
+                p[2]) shr 14;
+              Inc(p, 4);
+            end;
+          end;
+      else
+        for y := 0 to FHeight - 1 do
         begin
-          color := currentData.GetPixel(x, y);
-          r := TAlphaColorRec(color).R;
-          g := TAlphaColorRec(color).G;
-          b := TAlphaColorRec(color).B;
-          luminances[offset + x] := TMathUtils.Asr(3482*r + 11721*g + 1181*b, 14);
+          offset := y * FWidth;
+          for x := 0 to FWidth - 1 do
+          begin
+            color := currentData.GetPixel(x, y);
+            r := TAlphaColorRec(color).R;
+            g := TAlphaColorRec(color).G;
+            b := TAlphaColorRec(color).B;
+            luminances[offset + x] := TMathUtils.Asr(3482*r + 11721*g + 1181*b, 14);
+          end;
         end;
       end;
     finally
