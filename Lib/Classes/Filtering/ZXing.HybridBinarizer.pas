@@ -55,15 +55,25 @@ type
   THybridBinarizer = class(TGlobalHistogramBinarizer)
   private
     matrix: TBitMatrix;
+    // the statistics of every 8x8 block (sum of all pixels, min and max of
+    // the rows that were needed to see the contrast), kept so an inverted
+    // binarizer can use them
+    FBlockSum, FBlockMin, FBlockMax: TArray<Integer>;
+    // for CreateInverted: the luminances of the original (not inverted)
+    // image and its block statistics; nil otherwise
+    FOriginalLuminances: TArray<Byte>;
+    FOriginalSum, FOriginalMin, FOriginalMax: TArray<Integer>;
     procedure BinarizeEntireImage;
     procedure calculateThresholdForBlock(const luminances: TArray<Byte>;
       subWidth: Integer; subHeight: Integer; width: Integer; height: Integer;
-      blackPoints: TArrayIntOfInt; matrix: TBitMatrix);
-    function calculateBlackPoints(const luminances: TArray<Byte>; subWidth: Integer;
-      subHeight: Integer; width: Integer; height: Integer): TArrayIntOfInt;
+      blackPoints: TArrayIntOfInt; matrix: TBitMatrix; inverted: Boolean);
+    procedure calculateBlockStatistics(const luminances: TArray<Byte>;
+      subWidth: Integer; subHeight: Integer; width: Integer; height: Integer);
+    function calculateBlackPoints(const sums, mins, maxs: TArray<Integer>;
+      subWidth: Integer; subHeight: Integer): TArrayIntOfInt;
     procedure thresholdBlock(const luminances: TArray<Byte>; xoffset: Integer;
       yoffset: Integer; threshold: Integer; stride: Integer;
-      matrix: TBitMatrix);
+      matrix: TBitMatrix; inverted: Boolean);
     function cap(value: Integer; min: Integer; max: Integer): Integer;
   protected
     //
@@ -71,6 +81,16 @@ type
     function createBinarizer(source: TLuminanceSource): TBinarizer; override;
 
     constructor Create(source: TLuminanceSource);
+    /// <summary>
+    /// A binarizer for invertedSource, the inverted luminances of the source
+    /// of original. When original already binarized its whole image, the
+    /// black matrix is calculated from the luminances and block statistics
+    /// of original, which is much faster than binarizing the inverted
+    /// luminances, with exactly the same result. original may be freed after
+    /// this call.
+    /// </summary>
+    constructor CreateInverted(invertedSource: TLuminanceSource;
+      original: THybridBinarizer);
     function BlackMatrix: TBitMatrix; override;
   end;
 
@@ -119,12 +139,37 @@ begin
       if ((height and 7) <> 0) then
         inc(subHeight);
 
-      blackPoints := calculateBlackPoints(luminances, subWidth, subHeight,
-        width, height);
-
       newMatrix := TBitMatrix.Create(width, height);
-      calculateThresholdForBlock(luminances, subWidth, subHeight, width, height,
-        blackPoints, newMatrix);
+      if (FOriginalLuminances <> nil) and
+        (System.Length(FOriginalSum) = subWidth * subHeight) then
+      begin
+        // the inverted image from the statistics of the original one: the
+        // sum of a block of 64 pixels is 64 * 255 minus the original sum,
+        // min and max are swapped and mirrored
+        var count := subWidth * subHeight;
+        SetLength(FBlockSum, count);
+        SetLength(FBlockMin, count);
+        SetLength(FBlockMax, count);
+        for var i := 0 to count - 1 do
+        begin
+          FBlockSum[i] := 64 * 255 - FOriginalSum[i];
+          FBlockMin[i] := 255 - FOriginalMax[i];
+          FBlockMax[i] := 255 - FOriginalMin[i];
+        end;
+        blackPoints := calculateBlackPoints(FBlockSum, FBlockMin, FBlockMax,
+          subWidth, subHeight);
+        calculateThresholdForBlock(FOriginalLuminances, subWidth, subHeight,
+          width, height, blackPoints, newMatrix, true);
+      end
+      else
+      begin
+        luminances := source.matrix;
+        calculateBlockStatistics(luminances, subWidth, subHeight, width, height);
+        blackPoints := calculateBlackPoints(FBlockSum, FBlockMin, FBlockMax,
+          subWidth, subHeight);
+        calculateThresholdForBlock(luminances, subWidth, subHeight, width,
+          height, blackPoints, newMatrix, false);
+      end;
 
       self.matrix := newMatrix;
     end
@@ -140,25 +185,16 @@ begin
   end;
 end;
 
-function THybridBinarizer.calculateBlackPoints(const luminances: TArray<Byte>;
-  subWidth: Integer; subHeight: Integer; width: Integer; height: Integer)
-  : TArrayIntOfInt;
+procedure THybridBinarizer.calculateBlockStatistics(const luminances
+  : TArray<Byte>; subWidth: Integer; subHeight: Integer; width: Integer;
+  height: Integer);
 var
-  blackPoints: TArrayIntOfInt;
-  i, x, y, yoffset, maxYOffset, xoffset, maxXOffset, sum, min, max, yy, offset,
-    xx, pixel, average, averageNeighborBlackPoint: Integer;
-
+  x, y, yoffset, maxYOffset, xoffset, maxXOffset, sum, min, max, yy, offset,
+    xx, pixel: Integer;
 begin
-  blackPoints := TArrayIntOfInt.Create();
-  SetLength(blackPoints, subHeight);
-  i := 0;
-
-  while ((i < subHeight)) do
-  begin
-    blackPoints[i] := TArray<Integer>.Create();
-    SetLength(blackPoints[i], subWidth);
-    inc(i)
-  end;
+  SetLength(FBlockSum, subWidth * subHeight);
+  SetLength(FBlockMin, subWidth * subHeight);
+  SetLength(FBlockMax, subWidth * subHeight);
 
   y := 0;
 
@@ -189,7 +225,7 @@ begin
         xx := 0;
         while ((xx < 8)) do
         begin
-          pixel := (luminances[(offset + xx)] and $FF);
+          pixel := luminances[(offset + xx)];
           inc(sum, pixel);
           if (pixel < min) then
             min := pixel;
@@ -198,6 +234,7 @@ begin
           inc(xx)
         end;
 
+        // short-circuit min/max tests once dynamic range is met
         if ((max - min) > $18) then
         begin
           inc(yy);
@@ -207,7 +244,7 @@ begin
             xx := 0;
             while ((xx < 8)) do
             begin
-              inc(sum, (luminances[(offset + xx)] and $FF));
+              inc(sum, luminances[(offset + xx)]);
               inc(xx)
             end;
             inc(yy);
@@ -217,6 +254,46 @@ begin
         inc(yy);
         inc(offset, width)
       end;
+
+      FBlockSum[y * subWidth + x] := sum;
+      FBlockMin[y * subWidth + x] := min;
+      FBlockMax[y * subWidth + x] := max;
+      inc(x)
+    end;
+    inc(y)
+  end;
+end;
+
+function THybridBinarizer.calculateBlackPoints(const sums, mins,
+  maxs: TArray<Integer>; subWidth: Integer; subHeight: Integer)
+  : TArrayIntOfInt;
+var
+  blackPoints: TArrayIntOfInt;
+  i, x, y, sum, min, max, average, averageNeighborBlackPoint: Integer;
+
+begin
+  blackPoints := TArrayIntOfInt.Create();
+  SetLength(blackPoints, subHeight);
+  i := 0;
+
+  while ((i < subHeight)) do
+  begin
+    blackPoints[i] := TArray<Integer>.Create();
+    SetLength(blackPoints[i], subWidth);
+    inc(i)
+  end;
+
+  y := 0;
+
+  while ((y < subHeight)) do
+  begin
+    x := 0;
+
+    while ((x < subWidth)) do
+    begin
+      sum := sums[y * subWidth + x];
+      min := mins[y * subWidth + x];
+      max := maxs[y * subWidth + x];
 
       average := TMathUtils.Asr(sum, 6);
       if ((max - min) <= $18) then
@@ -243,7 +320,7 @@ end;
 
 procedure THybridBinarizer.calculateThresholdForBlock(const luminances: TArray<Byte>;
   subWidth: Integer; subHeight: Integer; width: Integer; height: Integer;
-  blackPoints: TArrayIntOfInt; matrix: TBitMatrix);
+  blackPoints: TArrayIntOfInt; matrix: TBitMatrix; inverted: Boolean);
 var
   y, yoffset, maxYOffset, x, xoffset, maxXOffset, left, top, sum, z,
     average: Integer;
@@ -278,7 +355,8 @@ begin
         inc(z)
       end;
       average := (sum div $19);
-      thresholdBlock(luminances, xoffset, yoffset, average, width, matrix);
+      thresholdBlock(luminances, xoffset, yoffset, average, width, matrix,
+        inverted);
       inc(x)
     end;
     inc(y)
@@ -290,18 +368,46 @@ begin
   inherited Create(source);
 end;
 
+constructor THybridBinarizer.CreateInverted(invertedSource: TLuminanceSource;
+  original: THybridBinarizer);
+begin
+  inherited Create(invertedSource);
+  // only when the original binarized its whole image with the local
+  // thresholds (and has the same size)
+  if (original <> nil) and (original.matrix <> nil) and
+    (original.FBlockSum <> nil) and
+    (original.LuminanceSource.Width = invertedSource.Width) and
+    (original.LuminanceSource.Height = invertedSource.Height) then
+  begin
+    FOriginalLuminances := original.LuminanceSource.Matrix;
+    FOriginalSum := original.FBlockSum;
+    FOriginalMin := original.FBlockMin;
+    FOriginalMax := original.FBlockMax;
+  end;
+end;
+
 procedure THybridBinarizer.thresholdBlock(const luminances: TArray<Byte>;
   xoffset: Integer; yoffset: Integer; threshold: Integer; stride: Integer;
-  matrix: TBitMatrix);
+  matrix: TBitMatrix; inverted: Boolean);
 begin
   var offset := (yoffset * stride) + xoffset;
+  // inverted: the pixel of the inverted image is 255 - pixel, black when
+  // 255 - pixel <= threshold
+  var invertedThreshold := 255 - threshold;
   for var y := 0 to 7 do
   begin
     // the 8 pixels of the block row at once
     var bits: Cardinal := 0;
-    for var x := 0 to 7 do
-      if (luminances[offset + x] <= threshold) then
-        bits := bits or (Cardinal(1) shl x);
+    if inverted then
+    begin
+      for var x := 0 to 7 do
+        if (luminances[offset + x] >= invertedThreshold) then
+          bits := bits or (Cardinal(1) shl x);
+    end
+    else
+      for var x := 0 to 7 do
+        if (luminances[offset + x] <= threshold) then
+          bits := bits or (Cardinal(1) shl x);
     matrix.setBits8(xoffset, yoffset + y, bits);
     inc(offset, stride);
   end;

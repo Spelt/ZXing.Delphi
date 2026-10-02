@@ -164,11 +164,13 @@ begin
         if (BinaryBitmap <> nil) then
           FreeAndNil(BinaryBitmap);
 
-        if (HybridBinarizer <> nil) then
-          FreeAndNil(HybridBinarizer);
-
+        // the inverted binarizer reuses the block statistics of the first
+        // one, which is faster with the same result
         InvLuminanceSource := LuminanceSource.invert();
-        HybridBinarizer := THybridBinarizer.Create(InvLuminanceSource);
+        var invertedBinarizer := THybridBinarizer.CreateInverted
+          (InvLuminanceSource, HybridBinarizer);
+        FreeAndNil(HybridBinarizer);
+        HybridBinarizer := invertedBinarizer;
         BinaryBitmap := TBinaryBitmap.Create(HybridBinarizer);
         Result := FMultiFormatReader.Decode(BinaryBitmap, true);
 
