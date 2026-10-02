@@ -68,8 +68,10 @@ function DetectDataMatrixPure(image: TBitMatrix;
 implementation
 
 uses
+  System.Types,
   System.Math,
   System.Generics.Collections,
+  ZXing.Common.LocalGrid,
   ZXing.Datamatrix.Internal.Version;
 
 type
@@ -714,6 +716,250 @@ begin
     Trunc(q.Y + 0.5));
 end;
 
+type
+  /// <summary>The actual center positions of the modules along an edge, in
+  /// module coordinates; empty when no correction is needed.</summary>
+  TModuleCenterLUT = TArray<Double>;
+
+function ModuleCenter(const lut: TModuleCenterLUT; i: Integer): Double;
+begin
+  if (lut = nil) then
+    Result := i + 0.5
+  else
+    Result := lut[i];
+end;
+
+/// <summary>std::round: halfway cases away from zero.</summary>
+function RoundAway(d: Double): Integer;
+begin
+  if (d >= 0) then
+    Result := Trunc(d + 0.5)
+  else
+    Result := -Trunc(-d + 0.5);
+end;
+
+/// <summary>Builds a module center LUT from uniform module coordinates to the
+/// actual (non-uniform) ones by analyzing the gaps in the traced points of a
+/// timing pattern, for symbols on curved surfaces (zxing-cpp's
+/// BuildModuleCenterLUT, see its issues #794, #1063, #1072). pix2Mod maps a
+/// point on the edge to its module coordinate: x for the top edge (alongY
+/// false), y for the right edge (alongY true).</summary>
+function BuildModuleCenterLUT(line: TRegressionLine; const start, fin: TPointD;
+  numModules: Integer; const pix2Mod: TPerspectiveTransformF; alongY: Boolean)
+  : TModuleCenterLUT;
+type
+  TKnot = record
+    mc, corrMc: Double;
+  end;
+
+  function edgeFracToModule(t: Double): Double;
+  begin
+    var q := pix2Mod.Map((1 - t) * start + t * fin);
+    if alongY then
+      Result := q.Y
+    else
+      Result := q.X;
+  end;
+
+begin
+  Result := nil;
+  if (line.Count < 5) then
+    exit;
+
+  var edgeDir := fin - start;
+  var edgeLen: Double := PointLength(edgeDir);
+  var unitDir := Normalized(edgeDir);
+  var modSize: Double := edgeLen / numModules;
+
+  // project the traced points onto the edge direction
+  var proj: TArray<Double>;
+  SetLength(proj, line.Count);
+  for var i := 0 to line.Count - 1 do
+    proj[i] := Dot(line.Point(i) - start, unitDir);
+
+  var startsWithGap := false;
+  if (proj[0] > proj[High(proj)]) then
+  begin
+    for var i := 0 to System.Length(proj) div 2 - 1 do
+    begin
+      var t: Double := proj[i];
+      proj[i] := proj[High(proj) - i];
+      proj[High(proj) - i] := t;
+    end;
+    startsWithGap := true;
+  end;
+
+  // detect gaps (white modules), with a lower threshold than Modules (1.9x)
+  // to catch compressed gaps near the edges caused by barrel distortion on
+  // curved surfaces
+  var unitPixelDist: Double := PointLength(BresenhamDirection(edgeDir));
+  var gapThreshold: Double := 1.4 * unitPixelDist;
+
+  var gapMids := TList<Double>.Create;
+  try
+    for var i := 1 to High(proj) do
+      if (proj[i] - proj[i - 1] > gapThreshold) then
+      begin
+        var gapMid: Double := (proj[i] + proj[i - 1]) / 2;
+        if (gapMids.Count = 0) or (gapMid - gapMids.Last > 0.75 * 2 * modSize)
+        then
+          gapMids.Add(gapMid);
+      end;
+
+    if (gapMids.Count = 0) then
+      exit;
+
+    // assign each gap a module index, accounting for missing gaps via the
+    // spacing ratio
+    var modIdx: TArray<Integer>;
+    SetLength(modIdx, gapMids.Count);
+    modIdx[0] := RoundAway((gapMids[0] / modSize - (1.5 + Ord(startsWithGap)))
+      / 2) * 2 + 1 + Ord(startsWithGap);
+    for var i := 1 to gapMids.Count - 1 do
+      modIdx[i] := modIdx[i - 1] + Max(1, RoundAway((gapMids[i] - gapMids[i - 1])
+        / (2 * modSize))) * 2;
+
+    var knots: TArray<TKnot>;
+    SetLength(knots, gapMids.Count + 2);
+    knots[0].mc := 0;
+    knots[0].corrMc := 0;
+    for var k := 0 to gapMids.Count - 1 do
+    begin
+      knots[k + 1].mc := modIdx[k] + 0.5;
+      knots[k + 1].corrMc := edgeFracToModule(gapMids[k] / edgeLen);
+    end;
+    knots[High(knots)].mc := numModules;
+    knots[High(knots)].corrMc := numModules;
+
+    // less than 1/2 module deviation: correction not worthwhile
+    var maxDeviation: Double := 0;
+    for var knot in knots do
+      maxDeviation := Max(maxDeviation, Abs(knot.mc - knot.corrMc));
+    if (maxDeviation < 0.5) then
+      exit;
+
+    // fill the lookup table at the module centers by piecewise-linear
+    // interpolation
+    SetLength(Result, numModules);
+    var ki := 0;
+    for var i := 0 to numModules - 1 do
+    begin
+      var mc: Double := i + 0.5;
+      while (ki + 1 < High(knots)) and (knots[ki + 1].mc < mc) do
+        Inc(ki);
+      var t: Double := (mc - knots[ki].mc) / (knots[ki + 1].mc - knots[ki].mc);
+      Result[i] := knots[ki].corrMc + t * (knots[ki + 1].corrMc -
+        knots[ki].corrMc);
+    end;
+  finally
+    gapMids.Free;
+  end;
+end;
+
+/// <summary>Samples the module centers given by the LUTs; nil when a point
+/// lies outside the image.</summary>
+function SampleGridCorrected(image: TBitMatrix; width, height: Integer;
+  const mod2Pix: TPerspectiveTransformF;
+  const topCenterLUT, rightCenterLUT: TModuleCenterLUT): TBitMatrix;
+begin
+  Result := TBitMatrix.Create(width, height);
+  for var y := 0 to height - 1 do
+  begin
+    var my: Double := ModuleCenter(rightCenterLUT, y);
+    for var x := 0 to width - 1 do
+    begin
+      var q := mod2Pix.Map(PointD(ModuleCenter(topCenterLUT, x), my));
+      if not IsInImage(image, q) then
+      begin
+        FreeAndNil(Result);
+        exit;
+      end;
+      if BlackAtPoint(image, q) then
+        Result[x, y] := true;
+    end;
+  end;
+end;
+
+/// <summary>Samples the grid piecewise between the alignment patterns of the
+/// data regions, located in the image around their expected position (the
+/// LocalGrid part of zxing-cpp's Scan). Corrects symbols that are not flat.
+/// </summary>
+function SampleGridLocal(image: TBitMatrix; dimT, dimR: Integer;
+  const mod2Pix: TPerspectiveTransformF; version: TVersion): TBitMatrix;
+begin
+  // the module positions of the alignment patterns: the borders of the data
+  // regions, including the outer ones
+  var blocksX := version.symbolSizeColumns div version.dataRegionSizeColumns;
+  var blocksY := version.symbolSizeRows div version.dataRegionSizeRows;
+  var apX: TArray<Integer>;
+  var apY: TArray<Integer>;
+  SetLength(apX, blocksX + 1);
+  SetLength(apY, blocksY + 1);
+  for var i := 0 to blocksX do
+    apX[i] := i * (version.dataRegionSizeColumns + 2);
+  for var i := 0 to blocksY do
+    apY[i] := i * (version.dataRegionSizeRows + 2);
+  apX[blocksX] := dimT - 1;
+  apY[blocksY] := dimR - 1;
+
+  var nx := System.Length(apX);
+  var ny := System.Length(apY);
+  var apP: TArray<TPointD>;
+  var found: TArray<Boolean>;
+  SetLength(apP, nx * ny);
+  SetLength(found, nx * ny);
+
+  var grid := TLocalGrid.Create(image, mod2Pix, Point(dimT, dimR));
+  try
+    var lastX := nx - 1;
+    var lastY := ny - 1;
+    for var y := 0 to lastY do
+      for var x := 0 to lastX do
+      begin
+        var api := Point(apX[x], apY[y]);
+        var ap: TPointD;
+        var isFound: Boolean;
+        if (x = 0) and (y = 0) then // top left
+          isFound := grid.At(api, Point(2, 0)).FindPattern(4, Point(1, 0), 'r',
+            Point(0, 0), 'd', Point(-1, -1), 'dr', ap)
+        else if (x = lastX) and (y = 0) then // top right
+          isFound := grid.At(api, Point(-1, 1)).FindPattern(4, Point(0, 0), 'ld',
+            Point(0, 0), '', Point(1, -1), 'dl', ap)
+        else if (x = lastX) and (y = lastY) then // bottom right
+          isFound := grid.At(api, Point(0, -2)).FindPattern(4, Point(0, -1), 'u',
+            Point(0, 0), 'l', Point(1, 1), 'ul', ap)
+        else if (x = 0) and (y = lastY) then // bottom left
+          isFound := grid.At(api, Point(1, -1)).FindPattern(4, Point(0, 0), '',
+            Point(0, 0), 'ur', Point(-1, 1), 'ur', ap)
+        else if (x = 0) then // left
+          isFound := grid.At(api, Point(2, 0)).FindPattern(3, Point(1, 0), 'r',
+            Point(0, -1), 'udr', Point(0, 0), '', ap)
+        else if (x = lastX) then // right
+          isFound := grid.At(api, Point(-1, 0)).FindPattern(3, Point(0, 0), 'lud',
+            Point(0, -1), 'l', Point(0, 0), '', ap)
+        else if (y = 0) then // top
+          isFound := grid.At(api, Point(-1, 0)).FindPattern(3, Point(-1, 0), 'lrd',
+            Point(0, 0), 'd', Point(0, 0), '', ap)
+        else if (y = lastY) then // bottom
+          isFound := grid.At(api, Point(-1, -1)).FindPattern(3, Point(-1, -1), 'u',
+            Point(0, 0), 'lru', Point(0, 0), '', ap)
+        else // center
+          isFound := grid.At(api, Point(-1, 0)).FindPattern(3, Point(-1, 0),
+            'lrud', Point(0, -1), 'lrud', Point(0, 0), '', ap);
+
+        if isFound then
+        begin
+          apP[y * nx + x] := ap;
+          found[y * nx + x] := true;
+        end;
+      end;
+  finally
+    grid.Free;
+  end;
+
+  Result := SampleGridAligned(image, dimT, dimR, mod2Pix, apP, found, apX, apY);
+end;
+
 /// <summary>Follows the start tracer to every next black to white edge and
 /// tries to trace a Data Matrix symbol from there. Returns true when
 /// onCandidate stopped the detection.</summary>
@@ -865,18 +1111,44 @@ begin
     var mod2Pix := TPerspectiveTransformF.Create(RectangleF(dimT, dimR, 0),
       sourcePoints);
 
-    var bits := SampleGrid(startTracer.img, dimT, dimR, mod2Pix);
-    if (bits = nil) then
+    var points := TArray<IResultPoint>.Create(CornerPoint(mod2Pix, 0, 0),
+      CornerPoint(mod2Pix, 0, dimR), CornerPoint(mod2Pix, dimT, dimR),
+      CornerPoint(mod2Pix, dimT, 0));
+
+    var bits := SampleGridLocal(startTracer.img, dimT, dimR, mod2Pix, version);
+    if (bits <> nil) then
+      try
+        if onCandidate(bits, points) then
+          exit(true);
+      finally
+        bits.Free;
+      end;
+
+    // symbols this large are unlikely to be fixable by a 'global' timing
+    // pattern correction
+    if (dimT > 42) and (dimR > 42) then
       continue;
-    try
-      var points := TArray<IResultPoint>.Create(CornerPoint(mod2Pix, 0, 0),
-        CornerPoint(mod2Pix, 0, dimR), CornerPoint(mod2Pix, dimT, dimR),
-        CornerPoint(mod2Pix, dimT, 0));
-      if onCandidate(bits, points) then
-        exit(true);
-    finally
-      bits.Free;
-    end;
+
+    // try a timing pattern corrected grid for deformed symbols, e.g. on a
+    // curved surface, when at least one dimension is significantly deformed
+    var pix2Mod := TPerspectiveTransformF.Create(sourcePoints,
+      RectangleF(dimT, dimR, 0));
+    var tLUT := BuildModuleCenterLUT(lineT, sourcePoints[0], sourcePoints[1],
+      dimT, pix2Mod, false);
+    var rLUT := BuildModuleCenterLUT(lineR, sourcePoints[1], sourcePoints[2],
+      dimR, pix2Mod, true);
+    if (tLUT = nil) and (rLUT = nil) then
+      continue;
+
+    bits := SampleGridCorrected(startTracer.img, dimT, dimR, mod2Pix, tLUT,
+      rLUT);
+    if (bits <> nil) then
+      try
+        if onCandidate(bits, points) then
+          exit(true);
+      finally
+        bits.Free;
+      end;
   end;
 end;
 
