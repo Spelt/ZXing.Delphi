@@ -108,20 +108,16 @@ end;
 /// <summary>The matrix mirrored along the diagonal from the top left to the
 /// bottom right: the bits of a mirrored symbol in the normal order.</summary>
 function FlippedL(bits: TBitMatrix): TBitMatrix;
-var
-  x, y: Integer;
 begin
   Result := TBitMatrix.Create(bits.Height, bits.Width);
-  for y := 0 to Result.Height - 1 do
-    for x := 0 to Result.Width - 1 do
+  for var y := 0 to Result.Height - 1 do
+    for var x := 0 to Result.Width - 1 do
       if bits[bits.Width - 1 - y, bits.Height - 1 - x] then
         Result[x, y] := true;
 end;
 
 function TDataMatrixDecoder.decode(bits: TBitMatrix; assumeGS1: boolean)
   : TDecoderResult;
-var
-  mirrored: TBitMatrix;
 begin
   Result := doDecode(bits, assumeGS1);
   if (Result <> nil) then
@@ -129,7 +125,7 @@ begin
 
   // also try the symbol mirrored (printed on the back of a transparent label
   // or seen through a mirror); error correction prevents false results
-  mirrored := FlippedL(bits);
+  var mirrored := FlippedL(bits);
   try
     Result := doDecode(mirrored, assumeGS1);
   finally

@@ -297,17 +297,14 @@ begin
 end;
 
 function IsConvex(const q: TQuadrilateralF): Boolean;
-var
-  i: Integer;
-  sign: Boolean;
-  cp, m, mx: Double;
 begin
-  sign := false;
-  m := Infinity;
-  mx := 0;
-  for i := 0 to 3 do
+  var sign := false;
+  var m: Double := Infinity;
+  var mx: Double := 0;
+  for var i := 0 to 3 do
   begin
-    cp := Cross(q[(i + 2) mod 4] - q[(i + 1) mod 4], q[i] - q[(i + 1) mod 4]);
+    var cp: Double := Cross(q[(i + 2) mod 4] - q[(i + 1) mod 4],
+      q[i] - q[(i + 1) mod 4]);
     m := Min(m, Abs(cp));
     mx := Max(mx, Abs(cp));
     if (i = 0) then
@@ -330,17 +327,12 @@ begin
 end;
 
 constructor TRegressionLine.Create(const p1, p2: TPointD);
-var
-  points: TArray<TPointD>;
 begin
   inherited Create;
   a := NaN;
   b := NaN;
   c := NaN;
-  SetLength(points, 2);
-  points[0] := p1;
-  points[1] := p2;
-  EvaluatePoints(points, 2);
+  EvaluatePoints([p1, p2], 2);
 end;
 
 procedure TRegressionLine.Reset;
@@ -375,34 +367,30 @@ end;
 
 function TRegressionLine.EvaluatePoints(const points: TArray<TPointD>;
   count: Integer): Boolean;
-var
-  i: Integer;
-  mean, d: TPointD;
-  sumXX, sumYY, sumXY, l: Double;
 begin
-  mean := PointD(0, 0);
-  for i := 0 to count - 1 do
+  var mean := PointD(0, 0);
+  for var i := 0 to count - 1 do
     mean := mean + points[i];
   mean := mean / count;
-  sumXX := 0;
-  sumYY := 0;
-  sumXY := 0;
-  for i := 0 to count - 1 do
+  var sumXX: Double := 0;
+  var sumYY: Double := 0;
+  var sumXY: Double := 0;
+  for var i := 0 to count - 1 do
   begin
-    d := points[i] - mean;
+    var d := points[i] - mean;
     sumXX := sumXX + d.X * d.X;
     sumYY := sumYY + d.Y * d.Y;
     sumXY := sumXY + d.X * d.Y;
   end;
   if (sumYY >= sumXX) then
   begin
-    l := Sqrt(sumYY * sumYY + sumXY * sumXY);
+    var l: Double := Sqrt(sumYY * sumYY + sumXY * sumXY);
     a := +sumYY / l;
     b := -sumXY / l;
   end
   else
   begin
-    l := Sqrt(sumXX * sumXX + sumXY * sumXY);
+    var l: Double := Sqrt(sumXX * sumXX + sumXY * sumXY);
     a := +sumXY / l;
     b := -sumXX / l;
   end;
@@ -418,25 +406,21 @@ end;
 
 function TRegressionLine.Evaluate(maxSignedDist: Double;
   updatePoints: Boolean): Boolean;
-var
-  points: TArray<TPointD>;
-  count, oldCount, i, j: Integer;
-  sd: Double;
 begin
   Result := EvaluatePoints(FPoints, FCount);
   if (maxSignedDist > 0) then
   begin
-    points := Copy(FPoints, 0, FCount);
-    count := FCount;
+    var points: TArray<TPointD> := Copy(FPoints, 0, FCount);
+    var count := FCount;
     while true do
     begin
-      oldCount := count;
+      var oldCount := count;
       // remove points that are further 'inside' than maxSignedDist or further
       // 'outside' than 2 x maxSignedDist
-      j := 0;
-      for i := 0 to count - 1 do
+      var j := 0;
+      for var i := 0 to count - 1 do
       begin
-        sd := SignedDistance(points[i]);
+        var sd: Double := SignedDistance(points[i]);
         if not ((sd > maxSignedDist) or (sd < -2 * maxSignedDist)) then
         begin
           points[j] := points[i];
@@ -489,11 +473,9 @@ begin
 end;
 
 function TRegressionLine.Centroid: TPointD;
-var
-  i: Integer;
 begin
   Result := PointD(0, 0);
-  for i := 0 to FCount - 1 do
+  for var i := 0 to FCount - 1 do
     Result := Result + FPoints[i];
   Result := Result / FCount;
 end;
@@ -522,10 +504,8 @@ begin
 end;
 
 function Intersect(l1, l2: TRegressionLine): TPointD;
-var
-  d: Double;
 begin
-  d := l1.a * l2.b - l1.b * l2.a;
+  var d: Double := l1.a * l2.b - l1.b * l2.a;
   Result.X := (l1.c * l2.b - l1.b * l2.c) / d;
   Result.Y := (l1.a * l2.c - l1.c * l2.a) / d;
 end;
@@ -571,22 +551,19 @@ end;
 
 class function TPerspectiveTransformF.UnitSquareTo(const q: TQuadrilateralF)
   : TPerspectiveTransformF;
-var
-  d1, d2, d3: TPointD;
-  denominator, a13, a23: Double;
 begin
-  d3 := q[0] - q[1] + q[2] - q[3];
+  var d3 := q[0] - q[1] + q[2] - q[3];
   if (d3 = PointD(0, 0)) then
     // Affine
     Result := Make(q[1].X - q[0].X, q[2].X - q[1].X, q[0].X, q[1].Y - q[0].Y,
       q[2].Y - q[1].Y, q[0].Y, 0, 0, 1)
   else
   begin
-    d1 := q[1] - q[2];
-    d2 := q[3] - q[2];
-    denominator := Cross(d1, d2);
-    a13 := Cross(d3, d2) / denominator;
-    a23 := Cross(d1, d3) / denominator;
+    var d1 := q[1] - q[2];
+    var d2 := q[3] - q[2];
+    var denominator: Double := Cross(d1, d2);
+    var a13: Double := Cross(d3, d2) / denominator;
+    var a23: Double := Cross(d1, d3) / denominator;
     Result := Make(q[1].X - q[0].X + a13 * q[1].X, q[3].X - q[0].X + a23 *
       q[3].X, q[0].X, q[1].Y - q[0].Y + a13 * q[1].Y, q[3].Y - q[0].Y + a23 *
       q[3].Y, q[0].Y, a13, a23, 1);
@@ -603,10 +580,8 @@ begin
 end;
 
 function TPerspectiveTransformF.Map(const p: TPointD): TPointD;
-var
-  denominator: Double;
 begin
-  denominator := a13 * p.X + a23 * p.Y + a33;
+  var denominator: Double := a13 * p.X + a23 * p.Y + a33;
   Result.X := (a11 * p.X + a21 * p.Y + a31) / denominator;
   Result.Y := (a12 * p.X + a22 * p.Y + a32) / denominator;
 end;

@@ -165,26 +165,20 @@ end;
 { TDMRegressionLine }
 
 procedure TDMRegressionLine.Reverse;
-var
-  i: Integer;
-  t: TPointD;
 begin
-  for i := 0 to FCount div 2 - 1 do
+  for var i := 0 to FCount div 2 - 1 do
   begin
-    t := FPoints[i];
+    var t := FPoints[i];
     FPoints[i] := FPoints[FCount - 1 - i];
     FPoints[FCount - 1 - i] := t;
   end;
 end;
 
 function AverageOfPositive(const values: TArray<Double>): Double;
-var
-  v, sum: Double;
-  num: Integer;
 begin
-  sum := 0;
-  num := 0;
-  for v in values do
+  var sum: Double := 0;
+  var num := 0;
+  for var v in values do
     if (v > 0) then
     begin
       sum := sum + v;
@@ -195,10 +189,9 @@ end;
 
 function TDMRegressionLine.Modules(const beg, fin: TPointD): Double;
 var
-  gapSizes, modSizes: TArray<Double>;
-  i, n, numMod: Integer;
-  unitPixelDist, sumFront, sumBack, dist, lineLength, meanModSize, minV,
-    maxV: Double;
+  // used by addModSize
+  modSizes: TArray<Double>;
+  numMod: Integer;
 
   procedure addModSize(value: Double);
   begin
@@ -214,19 +207,19 @@ begin
   Evaluate(1.2, true);
 
   // the distance between the points projected onto the regression line
-  n := FCount;
-  SetLength(gapSizes, Max(n - 1, 0));
-  for i := 1 to n - 1 do
+  var gapSizes: TArray<Double>;
+  SetLength(gapSizes, Max(FCount - 1, 0));
+  for var i := 1 to FCount - 1 do
     gapSizes[i - 1] := PointDistance(Project(FPoints[i]), Project(FPoints[i - 1]));
 
   // the (expected average) distance of two adjacent pixels
-  unitPixelDist := PointLength(BresenhamDirection(Back - Front));
+  var unitPixelDist: Double := PointLength(BresenhamDirection(Back - Front));
 
   // the width of 2 modules (first black pixel to first black pixel)
-  sumFront := PointDistance(beg, Project(Front)) - unitPixelDist;
-  sumBack := 0; // (last black pixel to last black pixel)
+  var sumFront: Double := PointDistance(beg, Project(Front)) - unitPixelDist;
+  var sumBack: Double := 0; // (last black pixel to last black pixel)
   numMod := 0;
-  for dist in gapSizes do
+  for var dist in gapSizes do
   begin
     if (dist > 1.9 * unitPixelDist) then
     begin
@@ -246,20 +239,20 @@ begin
   addModSize(sumFront + PointDistance(fin, Project(Back)));
   SetLength(modSizes, numMod);
   modSizes[0] := 0; // the first element is an invalid sumBack value
-  lineLength := PointDistance(beg, fin) - unitPixelDist;
+  var lineLength: Double := PointDistance(beg, fin) - unitPixelDist;
 
-  minV := modSizes[1];
-  maxV := modSizes[1];
-  for i := 2 to numMod - 1 do
+  var minV: Double := modSizes[1];
+  var maxV: Double := modSizes[1];
+  for var i := 2 to numMod - 1 do
   begin
     minV := Min(minV, modSizes[i]);
     maxV := Max(maxV, modSizes[i]);
   end;
-  meanModSize := AverageOfPositive(modSizes);
+  var meanModSize: Double := AverageOfPositive(modSizes);
 
   if (maxV > 2 * minV) then
   begin
-    for i := 1 to numMod - 3 do
+    for var i := 1 to numMod - 3 do
     begin
       if (modSizes[i] > 0) and (modSizes[i] + modSizes[i + 2] < meanModSize * 1.4)
       then
@@ -277,24 +270,20 @@ begin
 end;
 
 function TDMRegressionLine.TruncateIfLShape: Boolean;
-var
-  lineAB: TRegressionLine;
-  i, maxIndex: Integer;
-  maxD, dist, lenL, lenB: Double;
 begin
   Result := false;
   if (FCount < 16) then
     exit;
-  lineAB := TRegressionLine.Create(Front, Back);
+  var maxIndex := 0;
+  var maxD: Double := 0.0;
+  var lineAB := TRegressionLine.Create(Front, Back);
   try
     if (lineAB.Distance(FPoints[FCount div 2]) < 5) then
       exit;
 
-    maxIndex := 0;
-    maxD := 0.0;
-    for i := 0 to FCount - 1 do
+    for var i := 0 to FCount - 1 do
     begin
-      dist := lineAB.Distance(FPoints[i]);
+      var dist: Double := lineAB.Distance(FPoints[i]);
       if (dist > maxD) then
       begin
         maxIndex := i;
@@ -305,8 +294,8 @@ begin
     lineAB.Free;
   end;
 
-  lenL := PointDistance(Front, FPoints[maxIndex]) - 1;
-  lenB := PointDistance(FPoints[maxIndex], Back) - 1;
+  var lenL: Double := PointDistance(Front, FPoints[maxIndex]) - 1;
+  var lenB: Double := PointDistance(FPoints[maxIndex], Back) - 1;
   if (maxD < Min(lenL, lenB) / 2) then
     exit;
 
@@ -390,11 +379,9 @@ end;
 
 function TEdgeTracer.TraceStep(dEdge: TPointD; maxStepSize: Integer;
   goodDirection: Boolean): TStepResult;
-var
-  breadth, maxBreadth, stepNr, i, j, offset: Integer;
-  pEdge: TPointD;
 begin
   dEdge := MainDirection(dEdge);
+  var maxBreadth: Integer;
   if (maxStepSize = 1) then
     maxBreadth := 2
   else if goodDirection then
@@ -402,21 +389,22 @@ begin
   else
     maxBreadth := 3;
 
-  for breadth := 1 to maxBreadth do
-    for stepNr := 1 to maxStepSize do
-      for i := 0 to 2 * (stepNr div 4 + 1) * breadth do
+  for var breadth := 1 to maxBreadth do
+    for var stepNr := 1 to maxStepSize do
+      for var i := 0 to 2 * (stepNr div 4 + 1) * breadth do
       begin
+        var offset: Integer;
         if Odd(i) then
           offset := (i + 1) div 2
         else
           offset := -(i div 2);
-        pEdge := p + stepNr * d + offset * dEdge;
+        var pEdge := p + stepNr * d + offset * dEdge;
 
         if not BlackAt(pEdge + dEdge) then
           continue;
 
         // found black pixel -> go 'outward' until we hit the b/w border
-        j := 0;
+        var j := 0;
         while (j < Max(maxStepSize, 3)) and IsInAt(pEdge) do
         begin
           if WhiteAt(pEdge) then
@@ -444,10 +432,8 @@ begin
 end;
 
 function TEdgeTracer.UpdateDirectionFromOrigin(const origin: TPointD): Boolean;
-var
-  oldD: TPointD;
 begin
-  oldD := d;
+  var oldD := d;
   SetDirection(p - origin);
   // if the new direction is pointing "backward", i.e. angle(new, old) > 90
   // deg -> break
@@ -476,8 +462,6 @@ end;
 
 function TEdgeTracer.TraceLine(const dEdge: TPointD;
   line: TRegressionLine): Boolean;
-var
-  stepResult: TStepResult;
 begin
   line.SetDirectionInward(dEdge);
   repeat
@@ -485,7 +469,7 @@ begin
     if (line.Count mod 50 = 10) and not UpdateDirectionFromLineCentroid(line)
     then
       exit(false);
-    stepResult := TraceStep(dEdge, 1, line.IsValid);
+    var stepResult := TraceStep(dEdge, 1, line.IsValid);
     if (stepResult <> srFound) then
       exit((stepResult = srOpenEnd) and (line.Count > 1) and
         UpdateDirectionFromLineCentroid(line));
@@ -494,22 +478,16 @@ end;
 
 function TEdgeTracer.TraceGaps(const dEdge: TPointD; line: TRegressionLine;
   maxStepSize: Integer; finishLine: TRegressionLine; minDist: Double): Boolean;
-var
-  gaps, steps, maxStepsPerGap: Integer;
-  lastP, np, curStep: TPointD;
-  stepLengthInMainDir: Double;
-  stepResult: TStepResult;
-  finishValid, samePosition: Boolean;
 begin
   line.SetDirectionInward(dEdge);
-  gaps := 0;
-  steps := 0;
-  maxStepsPerGap := maxStepSize;
-  lastP := PointD(0, 0);
-  finishValid := (finishLine <> nil) and finishLine.IsValid;
+  var gaps := 0;
+  var steps := 0;
+  var maxStepsPerGap := maxStepSize;
+  var lastP := PointD(0, 0);
+  var finishValid := (finishLine <> nil) and finishLine.IsValid;
   repeat
     // detect an endless loop (lack of progress)
-    samePosition := (p = lastP);
+    var samePosition := (p = lastP);
     lastP := p;
     if samePosition then
       exit(false);
@@ -541,7 +519,7 @@ begin
       if not line.Evaluate(1.5) then
         exit(false);
 
-      np := line.Project(p);
+      var np := line.Project(p);
       // make sure we are making progress even when back-projecting
       while (PointDistance(np, line.Project(line.Back)) < 1) do
         np := np + d;
@@ -549,6 +527,8 @@ begin
     end
     else
     begin
+      var curStep: TPointD;
+      var stepLengthInMainDir: Double;
       if (line.Count = 0) then
       begin
         curStep := PointD(0, 0);
@@ -587,7 +567,7 @@ begin
     if finishValid then
       maxStepSize := Min(maxStepSize, Trunc(finishLine.SignedDistance(p)));
 
-    stepResult := TraceStep(dEdge, maxStepSize, line.IsValid);
+    var stepResult := TraceStep(dEdge, maxStepSize, line.IsValid);
 
     if (stepResult <> srFound) then
       // we are successful iff we found an open end across a valid finishLine
@@ -597,12 +577,10 @@ begin
 end;
 
 function TEdgeTracer.TraceCorner(dir: TPointD; out corner: TPointD): Boolean;
-var
-  t: TPointD;
 begin
   Step;
   corner := p;
-  t := d;
+  var t := d;
   d := dir;
   dir := t;
   TraceStep(-1 * dir, 2, false);
@@ -611,19 +589,17 @@ end;
 
 function TEdgeTracer.MoveToNextWhiteAfterBlack: Boolean;
 var
-  px, py, dx, dy, stepsToBorder, maxStepsX, maxStepsY, steps: Integer;
+  // used by stepToNextEdge
+  px, py, dx, dy, stepsToBorder: Integer;
 
   // FastEdgeToEdgeCounter of zxing-cpp: steps to the next pixel with another
   // value, or just outside the image when there is none
   function stepToNextEdge: Integer;
-  var
-    n: Integer;
-    v: Boolean;
   begin
     if (stepsToBorder < 0) then
       exit(0);
-    v := img[px, py];
-    n := 0;
+    var v := img[px, py];
+    var n := 0;
     repeat
       Inc(n);
       if (n > stepsToBorder) then
@@ -640,6 +616,7 @@ begin
   py := PixelY(p);
   dx := Round(d.X);
   dy := Round(d.Y);
+  var maxStepsX, maxStepsY: Integer;
   if (dx = 0) then
     maxStepsX := MaxInt
   else if (dx > 0) then
@@ -654,7 +631,7 @@ begin
     maxStepsY := py;
   stepsToBorder := Min(maxStepsX, maxStepsY);
 
-  steps := stepToNextEdge;
+  var steps := stepToNextEdge;
   if (steps = 0) then
     exit(false);
   Step(steps);
@@ -703,9 +680,6 @@ function SampleGrid(image: TBitMatrix; width, height: Integer;
     Result := IsInImage(image, mod2Pix.Map(PointD(x + 0.5, y + 0.5)));
   end;
 
-var
-  x, y: Integer;
-  q: TPointD;
 begin
   Result := nil;
   if (width <= 0) or (height <= 0) or not mod2Pix.IsValid then
@@ -716,10 +690,10 @@ begin
     exit;
 
   Result := TBitMatrix.Create(width, height);
-  for y := 0 to height - 1 do
-    for x := 0 to width - 1 do
+  for var y := 0 to height - 1 do
+    for var x := 0 to width - 1 do
     begin
-      q := mod2Pix.Map(PointD(x + 0.5, y + 0.5));
+      var q := mod2Pix.Map(PointD(x + 0.5, y + 0.5));
       // even when all corners are inside, an inner point can be outside due
       // to numerical instability (see zxing-cpp #563)
       if not IsInImage(image, q) then
@@ -734,10 +708,8 @@ end;
 
 function CornerPoint(const mod2Pix: TPerspectiveTransformF; x, y: Integer)
   : IResultPoint;
-var
-  q: TPointD;
 begin
-  q := mod2Pix.Map(PointD(x, y));
+  var q := mod2Pix.Map(PointD(x, y));
   Result := TResultPointHelpers.CreateResultPoint(Trunc(q.X + 0.5),
     Trunc(q.Y + 0.5));
 end;
@@ -747,31 +719,20 @@ end;
 /// onCandidate stopped the detection.</summary>
 function Scan(var startTracer: TEdgeTracer; const lines: TLines;
   const onCandidate: TDataMatrixCandidate): Boolean;
-var
-  t, tlTracer: TEdgeTracer;
-  lineL, lineB, lineR, lineT: TDMRegressionLine;
-  l: TDMRegressionLine;
-  tl, bl, br, tr, up, right: TPointD;
-  lenL, lenB, lenT, lenR, fracT, fracR: Double;
-  maxStepSize, dimT, dimR: Integer;
-  version, versionT, versionR: TVersion;
-  sourcePoints: TQuadrilateralF;
-  mod2Pix: TPerspectiveTransformF;
-  bits: TBitMatrix;
-  points: TArray<IResultPoint>;
 begin
   Result := false;
-  lineL := lines[0];
-  lineB := lines[1];
-  lineR := lines[2];
-  lineT := lines[3];
+  var lineL := lines[0];
+  var lineB := lines[1];
+  var lineR := lines[2];
+  var lineT := lines[3];
 
   while startTracer.MoveToNextWhiteAfterBlack do
   begin
-    for l in lines do
+    for var l in lines do
       l.Reset;
 
-    t := startTracer;
+    var t := startTracer;
+    var tl, bl, br, tr: TPointD;
 
     // follow left leg upwards
     t.TurnRight;
@@ -781,7 +742,7 @@ begin
     if not t.TraceCorner(t.Right, tl) then
       continue;
     lineL.Reverse;
-    tlTracer := t;
+    var tlTracer := t;
 
     // follow left leg downwards
     t := startTracer;
@@ -795,7 +756,7 @@ begin
     if lineL.TruncateIfLShape then
       t.p := lineL.Back;
     t.UpdateDirectionFromOrigin(tl);
-    up := t.Back;
+    var up := t.Back;
     if not t.TraceCorner(t.Left, bl) then
       continue;
 
@@ -804,18 +765,18 @@ begin
     if not t.TraceLine(t.Left, lineB) then
       continue;
     t.UpdateDirectionFromOrigin(bl);
-    right := t.Front;
+    var right := t.Front;
     if not t.TraceCorner(t.Left, br) then
       continue;
 
-    lenL := PointDistance(tl, bl) - 1;
-    lenB := PointDistance(bl, br) - 1;
+    var lenL: Double := PointDistance(tl, bl) - 1;
+    var lenB: Double := PointDistance(bl, br) - 1;
     if not ((lenL >= 8) and (lenB >= 10) and (lenB >= lenL / 4) and
       (lenB <= lenL * 18)) then
       continue;
 
     // datamatrix bottom dim is at least 10
-    maxStepSize := Trunc(lenB / 5 + 1);
+    var maxStepSize: Integer := Trunc(lenB / 5 + 1);
 
     // at this point we found a plausible L-shape and are now looking for the
     // b/w pattern at the top and right: follow top row right 'half way' (at
@@ -835,8 +796,8 @@ begin
     if not t.TraceCorner(t.Left, tr) then
       continue;
 
-    lenT := PointDistance(tl, tr) - 1;
-    lenR := PointDistance(tr, br) - 1;
+    var lenT: Double := PointDistance(tl, tr) - 1;
+    var lenR: Double := PointDistance(tr, br) - 1;
 
     if not ((Abs(lenT - lenB) / lenB < 0.5) and (Abs(lenR - lenL) / lenL < 0.5)
       and (lineT.Count >= 5) and (lineR.Count >= 5)) then
@@ -846,7 +807,7 @@ begin
     if not tlTracer.TraceGaps(tlTracer.Right, lineT, maxStepSize, lineR, 0) then
       continue;
 
-    for l in lines do
+    for var l in lines do
       l.Evaluate(1.0);
 
     // find the bounding box corners of the code with sub-pixel precision by
@@ -856,6 +817,8 @@ begin
     tr := Intersect(lineT, lineR);
     br := Intersect(lineB, lineR);
 
+    var dimT, dimR: Integer;
+    var fracT, fracR: Double;
     SplitDouble(lineT.Modules(tl, tr), dimT, fracT);
     SplitDouble(lineR.Modules(br, tr), dimR, fracR);
 
@@ -863,7 +826,7 @@ begin
     dimT := dimT * 2;
     dimR := dimR * 2;
 
-    version := TVersion.getVersionForDimensions(dimR, dimT);
+    var version := TVersion.getVersionForDimensions(dimR, dimT);
 
     // if we have an invalid dimension but it is almost square (all valid
     // rectangular symbols differ in their dimension by at least 10), we try
@@ -871,8 +834,8 @@ begin
     // we use that, otherwise the dimension that is closer to an integral value.
     if (version = nil) and (Abs(dimT - dimR) < 10) then
     begin
-      versionT := TVersion.getVersionForDimensions(dimT, dimT);
-      versionR := TVersion.getVersionForDimensions(dimR, dimR);
+      var versionT := TVersion.getVersionForDimensions(dimT, dimT);
+      var versionR := TVersion.getVersionForDimensions(dimR, dimR);
       if ((versionT <> nil) xor (versionR <> nil)) then
       begin
         if (versionT <> nil) then
@@ -891,6 +854,7 @@ begin
 
     // shrink shape by half a pixel to go from center of white pixel outside
     // of code to the edge between white and black
+    var sourcePoints: TQuadrilateralF;
     sourcePoints[0] := MovedTowardsBy(tl, tr, bl, 0.5);
     // move the tr point a little less because the jagged top and right line
     // tend to be statistically slightly inclined toward the center anyway.
@@ -898,14 +862,14 @@ begin
     sourcePoints[2] := MovedTowardsBy(br, bl, tr, 0.5);
     sourcePoints[3] := MovedTowardsBy(bl, tl, br, 0.5);
 
-    mod2Pix := TPerspectiveTransformF.Create(RectangleF(dimT, dimR, 0),
+    var mod2Pix := TPerspectiveTransformF.Create(RectangleF(dimT, dimR, 0),
       sourcePoints);
 
-    bits := SampleGrid(startTracer.img, dimT, dimR, mod2Pix);
+    var bits := SampleGrid(startTracer.img, dimT, dimR, mod2Pix);
     if (bits = nil) then
       continue;
     try
-      points := TArray<IResultPoint>.Create(CornerPoint(mod2Pix, 0, 0),
+      var points := TArray<IResultPoint>.Create(CornerPoint(mod2Pix, 0, 0),
         CornerPoint(mod2Pix, 0, dimR), CornerPoint(mod2Pix, dimT, dimR),
         CornerPoint(mod2Pix, dimT, 0));
       if onCandidate(bits, points) then
@@ -920,31 +884,28 @@ end;
 /// zxing-cpp's BitMatrix::findBoundingBox.</summary>
 function FindBoundingBox(image: TBitMatrix; out left, top, width,
   height: Integer; minSize: Integer): Boolean;
-var
-  topLeft, bottomRight: TArray<Integer>;
-  x, y, right, bottom: Integer;
 begin
   Result := false;
-  topLeft := image.getTopLeftOnBit;
-  bottomRight := image.getBottomRightOnBit;
+  var topLeft := image.getTopLeftOnBit;
+  var bottomRight := image.getBottomRightOnBit;
   if (topLeft = nil) or (bottomRight = nil) then
     exit;
   left := topLeft[0];
   top := topLeft[1];
-  right := bottomRight[0];
-  bottom := bottomRight[1];
+  var right := bottomRight[0];
+  var bottom := bottomRight[1];
   if (bottom - top + 1 < minSize) then
     exit;
 
-  for y := top to bottom do
+  for var y := top to bottom do
   begin
-    for x := 0 to left - 1 do
+    for var x := 0 to left - 1 do
       if image[x, y] then
       begin
         left := x;
         break;
       end;
-    for x := image.Width - 1 downto right + 1 do
+    for var x := image.Width - 1 downto right + 1 do
       if image[x, y] then
       begin
         right := x;
@@ -971,21 +932,18 @@ function CountEdges(image: TBitMatrix; var x, y: Integer; dx, dy,
       Result := Ord(image[px, py]);
   end;
 
-var
-  steps, lv, v: Integer;
-  found: Boolean;
 begin
   Result := 0;
   while (range > 0) do
   begin
     // step to the next edge, within range
-    steps := 0;
-    found := false;
-    lv := valueAt(x, y);
+    var steps := 0;
+    var found := false;
+    var lv := valueAt(x, y);
     while (not found) and (steps < range) and (lv <> -1) do
     begin
       Inc(steps);
-      v := valueAt(x + steps * dx, y + steps * dy);
+      var v := valueAt(x + steps * dx, y + steps * dy);
       if (v <> lv) then
       begin
         lv := v;
@@ -1003,41 +961,39 @@ end;
 
 function DetectDataMatrixPure(image: TBitMatrix; out points: TArray<IResultPoint>)
   : TBitMatrix;
-var
-  left, top, width, height, x, y, dimR, dimT: Integer;
-  modSizeX, modSizeY, modSize, px, py: Double;
 begin
   Result := nil;
+  var left, top, width, height: Integer;
   if not FindBoundingBox(image, left, top, width, height, 8) then
     exit;
 
   // walk around the code counter-clockwise from the top left: the left and
   // bottom side are solid, the right and top side have the timing pattern
-  x := left;
-  y := top;
+  var x := left;
+  var y := top;
   if (CountEdges(image, x, y, 0, 1, height - 1) <> 0) then
     exit;
   if (CountEdges(image, x, y, 1, 0, width - 1) <> 0) then
     exit;
-  dimR := CountEdges(image, x, y, 0, -1, height - 1) + 1;
-  dimT := CountEdges(image, x, y, -1, 0, width - 1) + 1;
+  var dimR := CountEdges(image, x, y, 0, -1, height - 1) + 1;
+  var dimT := CountEdges(image, x, y, -1, 0, width - 1) + 1;
 
-  modSizeX := width / dimT;
-  modSizeY := height / dimR;
-  modSize := (modSizeX + modSizeY) / 2;
+  var modSizeX: Double := width / dimT;
+  var modSizeY: Double := height / dimR;
+  var modSize: Double := (modSizeX + modSizeY) / 2;
 
-  px := left + modSizeX / 2 + (dimT - 1) * modSize;
-  py := top + modSizeY / 2 + (dimR - 1) * modSize;
+  var lastCenter := PointD(left + modSizeX / 2 + (dimT - 1) * modSize,
+    top + modSizeY / 2 + (dimR - 1) * modSize);
   if Odd(dimT) or Odd(dimR) or (dimT < 10) or (dimT > 144) or (dimR < 8) or
     (dimR > 144) or (Abs(modSizeX - modSizeY) > 1) or
-    not IsInImage(image, PointD(px, py)) then
+    not IsInImage(image, lastCenter) then
     exit;
 
   // now just read off the bits (this is a crop + subsample)
   Result := TBitMatrix.Create(dimT, dimR);
   for y := 0 to dimR - 1 do
   begin
-    py := top + modSizeY / 2 + y * modSize;
+    var py: Double := top + modSizeY / 2 + y * modSize;
     for x := 0 to dimT - 1 do
       if image[Trunc(left + modSizeX / 2 + x * modSize), Trunc(py)] then
         Result[x, y] := true;
@@ -1058,14 +1014,7 @@ const
   DIRECTIONS: array [0 .. 3, 0 .. 1] of Integer = ((-1, 0), (1, 0), (0, -1),
     (0, 1));
 var
-  history: THistory;
-  lines: TLines;
-  k, i, cx, cy, offset: Integer;
-  dir, startPos: TPointD;
-  tracer: TEdgeTracer;
   floatMask: TFloatExceptionsMasked; // masked until this function returns
-  pureBits: TBitMatrix;
-  purePoints: TArray<IResultPoint>;
 begin
   Result := false;
   if (image = nil) then
@@ -1073,7 +1022,8 @@ begin
 
   // first the very fast pure path, also because the edge tracing generally
   // fails on pure symbols with a module size of 1 pixel
-  pureBits := DetectDataMatrixPure(image, purePoints);
+  var purePoints: TArray<IResultPoint>;
+  var pureBits := DetectDataMatrixPure(image, purePoints);
   if (pureBits <> nil) then
     try
       if onCandidate(pureBits, purePoints) then
@@ -1082,36 +1032,37 @@ begin
       pureBits.Free;
     end;
 
-  history := nil;
-  for k := 0 to 3 do
+  var history: THistory := nil;
+  var lines: TLines;
+  for var k := 0 to 3 do
     lines[k] := nil;
   try
     // a history to remember where the tracing already passed by, to prevent
     // a later trace from doing the same work twice
     if tryHarder then
       history := THistory.Create(image.Width, image.Height);
-    for k := 0 to 3 do
+    for var k := 0 to 3 do
       lines[k] := TDMRegressionLine.Create;
 
-    for k := 0 to 3 do
+    var cx := image.Width div 2;
+    var cy := image.Height div 2;
+    for var k := 0 to 3 do
     begin
-      dir := PointD(DIRECTIONS[k, 0], DIRECTIONS[k, 1]);
-      cx := image.Width div 2;
-      cy := image.Height div 2;
+      var dir := PointD(DIRECTIONS[k, 0], DIRECTIONS[k, 1]);
       // start at the image border opposite to dir, a bit inside
-      startPos := Centered(PointD(cx - cx * DIRECTIONS[k, 0] + (MIN_SYMBOL_SIZE div
-        2) * DIRECTIONS[k, 0], cy - cy * DIRECTIONS[k, 1] + (MIN_SYMBOL_SIZE div
-        2) * DIRECTIONS[k, 1]));
+      var startPos := Centered(PointD(cx - cx * DIRECTIONS[k, 0] +
+        (MIN_SYMBOL_SIZE div 2) * DIRECTIONS[k, 0], cy - cy * DIRECTIONS[k, 1] +
+        (MIN_SYMBOL_SIZE div 2) * DIRECTIONS[k, 1]));
 
       if (history <> nil) then
         history.Clear;
 
-      i := 1;
+      var i := 1;
       while true do
       begin
-        tracer := TEdgeTracer.Create(image, startPos, dir);
+        var tracer := TEdgeTracer.Create(image, startPos, dir);
         // alternate lines left and right of the center line
-        offset := (i div 2) * MIN_SYMBOL_SIZE;
+        var offset := (i div 2) * MIN_SYMBOL_SIZE;
         if Odd(i) then
           offset := -offset;
         tracer.p := tracer.p + offset * tracer.Right;
@@ -1133,7 +1084,7 @@ begin
         break; // only test left direction
     end;
   finally
-    for k := 0 to 3 do
+    for var k := 0 to 3 do
       lines[k].Free;
     history.Free;
   end;
