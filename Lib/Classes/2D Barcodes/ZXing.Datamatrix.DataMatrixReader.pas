@@ -38,7 +38,8 @@ uses
   ZXing.Common.BitMatrix,
   ZXing.BinaryBitmap,
   ZXing.Datamatrix.Internal.Decoder,
-  ZXing.Datamatrix.Internal.Detector;
+  ZXing.Datamatrix.Internal.Detector,
+  ZXing.Datamatrix.Internal.EdgeDetector;
 
 type
   /// <summary>
@@ -60,6 +61,13 @@ type
   private
     FDecoder: TDataMatrixDecoder;
     NO_POINTS: TArray<IResultPoint>;
+
+    /// <summary>
+    /// Detects with the edge tracing detector (ZXing.Datamatrix.Internal.
+    /// EdgeDetector) and decodes the first candidate that decodes.
+    /// </summary>
+    function edgeDetectAndDecode(const image: TBitMatrix; tryHarder,
+      assumeGS1: Boolean; var points: TArray<IResultPoint>): TDecoderResult;
 
     /// <summary>
     /// Tries the center of the image first, then a grid of start points up to
@@ -163,21 +171,39 @@ begin
         DecoderResult := FDecoder.decode(bits, assumeGS1);
         points := NO_POINTS;
         FreeAndNil(bits);
-      end
-      else
-        exit;
+      end;
+
+      // then the pure detector of zxing-cpp, which reads the dimension from
+      // the timing pattern instead of the module size of the top left corner
+      if (DecoderResult = nil) then
+      begin
+        bits := DetectDataMatrixPure(image.BlackMatrix, points);
+        if Assigned(bits) then
+        begin
+          DecoderResult := FDecoder.decode(bits, assumeGS1);
+          FreeAndNil(bits);
+        end;
+      end;
     end
     else
     begin
       tryHarder := (hints <> nil) and
         hints.ContainsKey(TDecodeHintType.TRY_HARDER);
 
+      // the edge tracing detector of zxing-cpp first
+      DecoderResult := edgeDetectAndDecode(image.BlackMatrix, tryHarder,
+        assumeGS1, points);
+
+      // then the old WhiteRectangle detector from start points on a grid,
+      // which still reads a few codes the edge tracer misses, like dot-peen
+      // codes, also outside the center of the image
       maxDivisions := MAX_GRID_DIVISIONS;
       if tryHarder then
         maxDivisions := MAX_GRID_DIVISIONS * 2;
 
-      DecoderResult := searchAndDecode(image.BlackMatrix, maxDivisions,
-        assumeGS1, points);
+      if (DecoderResult = nil) then
+        DecoderResult := searchAndDecode(image.BlackMatrix, maxDivisions,
+          assumeGS1, points);
 
       // Dot-peen codes consist of separate dots, which the detector does not
       // see as solid lines. Merging the dots (closing) helps, but costs
@@ -222,6 +248,33 @@ begin
 
   end;
 
+end;
+
+function TDataMatrixReader.edgeDetectAndDecode(const image: TBitMatrix;
+  tryHarder, assumeGS1: Boolean; var points: TArray<IResultPoint>)
+  : TDecoderResult;
+var
+  decoded: TDecoderResult;
+  foundPoints: TArray<IResultPoint>;
+  decoder: TDataMatrixDecoder;
+begin
+  decoded := nil;
+  decoder := FDecoder;
+  // tryHarder: scan lines over the whole image in 4 directions, otherwise
+  // only the center lines in one direction (like zxing-cpp's tryRotate)
+  DetectDataMatrixByEdges(image, tryHarder, tryHarder,
+    function(bits: TBitMatrix; const candidatePoints: TArray<IResultPoint>)
+      : Boolean
+    begin
+      decoded := decoder.decode(bits, assumeGS1);
+      Result := (decoded <> nil);
+      if Result then
+        foundPoints := candidatePoints;
+    end);
+
+  Result := decoded;
+  if (Result <> nil) then
+    points := foundPoints;
 end;
 
 function TDataMatrixReader.searchAndDecode(const image: TBitMatrix;

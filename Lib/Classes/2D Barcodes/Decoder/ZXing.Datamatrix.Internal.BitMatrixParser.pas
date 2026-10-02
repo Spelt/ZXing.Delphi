@@ -186,6 +186,18 @@ function TBitMatrixParser.readCodewords: TArray<Byte>;
 var
   resultOffset, row, column, numRows, numColumns: Integer;
   corner1Read, corner2Read, corner3Read, corner4Read: Boolean;
+  overflow: Boolean;
+
+  // more codewords than the version has would write past the end
+  procedure addCodeword(value: Byte);
+  begin
+    if (resultOffset < Length(Result)) then
+      Result[resultOffset] := value
+    else
+      overflow := true;
+    Inc(resultOffset);
+  end;
+
 begin
   Result := TArray<Byte>.Create();
   SetLength(Result, Version.TotalCodewords);
@@ -201,6 +213,7 @@ begin
   corner2Read := false;
   corner3Read := false;
   corner4Read := false;
+  overflow := false;
 
   // Read all of the codewords
   while ((row < numRows) or (column < numColumns)) do
@@ -208,8 +221,7 @@ begin
     // Check the four corner cases
     if ((row = numRows) and (column = 0) and (not corner1Read)) then
     begin
-      Result[resultOffset] := Byte(readCorner1(numRows, numColumns));
-      Inc(resultOffset);
+      addCodeword(Byte(readCorner1(numRows, numColumns)));
       Dec(row, 2);
       Inc(column, 2);
       corner1Read := true;
@@ -219,8 +231,7 @@ begin
       if ((row = (numRows - 2)) and (column = 0) and ((numColumns and $03) <> 0)
         and (not corner2Read)) then
       begin
-        Result[resultOffset] := Byte(readCorner2(numRows, numColumns));
-        Inc(resultOffset);
+        addCodeword(Byte(readCorner2(numRows, numColumns)));
         Dec(row, 2);
         Inc(column, 2);
         corner2Read := true;
@@ -230,8 +241,7 @@ begin
         if ((row = (numRows + 4)) and (column = 2) and
           ((numColumns and $07) = 0) and (not corner3Read)) then
         begin
-          Result[resultOffset] := Byte(readCorner3(numRows, numColumns));
-          Inc(resultOffset);
+          addCodeword(Byte(readCorner3(numRows, numColumns)));
           Dec(row, 2);
           Inc(column, 2);
           corner3Read := true;
@@ -241,8 +251,7 @@ begin
           if ((row = (numRows - 2)) and (column = 0) and
             ((numColumns and $07) = 4) and (not corner4Read)) then
           begin
-            Result[resultOffset] := Byte(readCorner4(numRows, numColumns));
-            Inc(resultOffset);
+            addCodeword(Byte(readCorner4(numRows, numColumns)));
             Dec(row, 2);
             Inc(column, 2);
             corner4Read := true;
@@ -255,9 +264,7 @@ begin
               if ((row < numRows) and (column >= 0) and
                 (not readMappingMatrix[column, row])) then
               begin
-                Result[resultOffset] :=
-                  Byte(readUtah(row, column, numRows, numColumns));
-                Inc(resultOffset);
+                addCodeword(Byte(readUtah(row, column, numRows, numColumns)));
               end;
               Dec(row, 2);
               Inc(column, 2)
@@ -271,9 +278,7 @@ begin
               if ((row >= 0) and (column < numColumns) and
                 (not readMappingMatrix[column, row])) then
               begin
-                Result[resultOffset] :=
-                  Byte(readUtah(row, column, numRows, numColumns));
-                Inc(resultOffset);
+                addCodeword(Byte(readUtah(row, column, numRows, numColumns)));
               end;
               Inc(row, 2);
               Dec(column, 2)
@@ -286,7 +291,7 @@ begin
     end;
   end;
 
-  if (resultOffset <> Version.TotalCodewords) then
+  if overflow or (resultOffset <> Version.TotalCodewords) then
     Result := nil;
 end;
 
@@ -304,6 +309,9 @@ begin
     Inc(column, numColumns);
     Inc(row, (4 - ((numColumns + 4) and $07)))
   end;
+  // needed for the low DMRE symbols (ISO 21471), as in Java and zxing-cpp
+  if (row >= numRows) then
+    Dec(row, numRows);
   readMappingMatrix[column, row] := true;
 
   Result := mappingBitMatrix[column, row];

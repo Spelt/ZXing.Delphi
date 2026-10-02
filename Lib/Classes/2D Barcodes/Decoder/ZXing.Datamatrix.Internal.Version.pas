@@ -242,7 +242,27 @@ begin
     TECBlocks.Create($12, TECB.Create(1, $16))), TVersion.Create($1D, $10, $24,
     14, $10, TECBlocks.Create($18, TECB.Create(1, $20))),
     TVersion.Create(30, $10, $30, 14, $16, TECBlocks.Create($1C,
-    TECB.Create(1, $31))));
+    TECB.Create(1, $31))),
+
+    // DMRE, rectangular extensions (ISO 21471:2020 5.5.1 Table 7)
+    TVersion.Create(31, 8, 48, 6, 22, TECBlocks.Create(15, TECB.Create(1, 18))),
+    TVersion.Create(32, 8, 64, 6, 14, TECBlocks.Create(18, TECB.Create(1, 24))),
+    TVersion.Create(33, 8, 80, 6, 18, TECBlocks.Create(22, TECB.Create(1, 32))),
+    TVersion.Create(34, 8, 96, 6, 22, TECBlocks.Create(28, TECB.Create(1, 38))),
+    TVersion.Create(35, 8, 120, 6, 18, TECBlocks.Create(32, TECB.Create(1, 49))),
+    TVersion.Create(36, 8, 144, 6, 22, TECBlocks.Create(36, TECB.Create(1, 63))),
+    TVersion.Create(37, 12, 64, 10, 14, TECBlocks.Create(27, TECB.Create(1, 43))),
+    TVersion.Create(38, 12, 88, 10, 20, TECBlocks.Create(36, TECB.Create(1, 64))),
+    TVersion.Create(39, 16, 64, 14, 14, TECBlocks.Create(36, TECB.Create(1, 62))),
+    TVersion.Create(40, 20, 36, 18, 16, TECBlocks.Create(28, TECB.Create(1, 44))),
+    TVersion.Create(41, 20, 44, 18, 20, TECBlocks.Create(34, TECB.Create(1, 56))),
+    TVersion.Create(42, 20, 64, 18, 14, TECBlocks.Create(42, TECB.Create(1, 84))),
+    TVersion.Create(43, 22, 48, 20, 22, TECBlocks.Create(38, TECB.Create(1, 72))),
+    TVersion.Create(44, 24, 48, 22, 22, TECBlocks.Create(41, TECB.Create(1, 80))),
+    TVersion.Create(45, 24, 64, 22, 14, TECBlocks.Create(46, TECB.Create(1, 108))),
+    TVersion.Create(46, 26, 40, 24, 18, TECBlocks.Create(38, TECB.Create(1, 70))),
+    TVersion.Create(47, 26, 48, 24, 22, TECBlocks.Create(42, TECB.Create(1, 90))),
+    TVersion.Create(48, 26, 64, 24, 14, TECBlocks.Create(50, TECB.Create(1, 118))));
 end;
 
 /// <summary>

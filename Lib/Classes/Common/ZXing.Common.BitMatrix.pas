@@ -113,16 +113,16 @@ procedure TBitMatrix.setBit(x, y: Integer; const value: Boolean);
 var
   offset: NativeInt;
 begin
+  // like getBit: ignore positions outside the matrix instead of writing
+  // into other memory
+  if (x < 0) or (x >= Fwidth) or (y < 0) or (y >= Fheight) then
+    exit;
+
+  offset := y * FrowSize + TMathUtils.Asr(x, 5);
   if (value) then
-  begin
-    offset := y * FrowSize + TMathUtils.Asr(x, 5);
-    Fbits[offset] := Fbits[offset] or (1 shl (x and $1F));
-  end
+    Fbits[offset] := Fbits[offset] or (1 shl (x and $1F))
   else
-  begin
-    offset := Trunc(y * FrowSize + (x / 32));
     Fbits[offset] := Fbits[offset] and (not(1 shl (x and $1F)));
-  end;
 end;
 
 procedure TBitMatrix.clear;
