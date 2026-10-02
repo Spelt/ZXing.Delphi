@@ -85,8 +85,8 @@ begin
 
   for x := 0 to w - 1 do
   begin
-    pixel := localLuminances[x] and $FF;
-    i := TMathUtils.Asr(pixel, LUMINANCE_SHIFT);
+    pixel := localLuminances[x];
+    i := pixel shr LUMINANCE_SHIFT;
     localBuckets[i] := localBuckets[i] + 1;
   end;
 
@@ -105,21 +105,31 @@ begin
   end
   else
   begin
-    left := localLuminances[0] and $FF;
-    center := localLuminances[1] and $FF;
+    left := localLuminances[0];
+    center := localLuminances[1];
 
+    // collect the bits per 32 and write them at once (the row is cleared)
+    var word: Integer := 0;
     for x := 1 to w - 2 do
     begin
 
-      right := localLuminances[x + 1] and $FF;
-      // A simple -1 4 -1 box filter with a weight of 2.
-
+      right := localLuminances[x + 1];
+      // A simple -1 4 -1 box filter with a weight of 2. A negative value is
+      // always below the black point (which is not negative), otherwise
+      // shr 1 is the same as the arithmetic shift of before.
       luminance := (center shl 2) - left - right;
-      luminance := TMathUtils.Asr(luminance, 1);
-      row[x] := (luminance < blackPoint);
+      if (luminance < 0) or ((luminance shr 1) < blackPoint) then
+        word := word or (1 shl (x and $1F));
+      if ((x and $1F) = $1F) then
+      begin
+        row.setBulk(x, word);
+        word := 0;
+      end;
       left := center;
       center := right;
     end;
+    if (word <> 0) then
+      row.setBulk(w - 2, word);
   end;
 
   result := row;

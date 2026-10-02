@@ -97,7 +97,11 @@ end;
 
 function TBitArrayImplementation.GetBit(i: Integer): Boolean;
 begin
-  Result := ((Fbits[TMathUtils.Asr(i, 5)]) and (1 shl (i and $1F))) <> 0;
+  // i shr 5 is the arithmetic shift of before for i >= 0
+  if (i >= 0) then
+    Result := (Fbits[i shr 5] and (1 shl (i and $1F))) <> 0
+  else
+    Result := ((Fbits[TMathUtils.Asr(i, 5)]) and (1 shl (i and $1F))) <> 0;
 end;
 
 function TBitArrayImplementation.GetBits: TArray<Integer>;
@@ -263,7 +267,10 @@ var
 begin
   if (Value) then
   begin
-    index := TMathUtils.Asr(i, 5);
+    if (i >= 0) then
+      index := i shr 5
+    else
+      index := TMathUtils.Asr(i, 5);
     Fbits[index] := Fbits[index] or 1 shl (i and $1F);
   end;
 end;

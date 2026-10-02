@@ -36,6 +36,10 @@ type
     /// frees its binarizer and luminance source. Otherwise the caller that
     /// created them frees them.</summary>
     FOwnsBinarizer: Boolean;
+    // the black rows already calculated, shared by all (1D) readers: the
+    // words of the row, or nil with FRowState 1 when the binarizer gave nil
+    FRowCache: TArray<TArray<Integer>>;
+    FRowState: TArray<Byte>; // 0 not calculated, 1 nil, 2 cached
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetBlackMatrix: TBitMatrix;
@@ -103,7 +107,42 @@ end;
 
 function TBinaryBitmap.getBlackRow(y: Integer; row: IBitArray): IBitArray;
 begin
-  result := Binarizer.getBlackRow(y, row);
+  if (y < 0) or (y >= Height) then
+    exit(Binarizer.getBlackRow(y, row));
+
+  if (FRowState = nil) then
+  begin
+    SetLength(FRowState, Height);
+    SetLength(FRowCache, Height);
+  end;
+
+  if (FRowState[y] = 0) then
+  begin
+    // calculate the row once and keep a copy of its words
+    result := Binarizer.getBlackRow(y, row);
+    if (result = nil) then
+      FRowState[y] := 1
+    else
+    begin
+      FRowCache[y] := Copy(result.Bits, 0, (Width + 31) shr 5);
+      FRowState[y] := 2;
+    end;
+    exit;
+  end;
+
+  // from the cache, in the row the caller passed, like the binarizer does
+  var w := Width;
+  if (row = nil) or (row.Size < w) then
+    row := TBitArrayHelpers.CreateBitArray(w)
+  else
+    row.clear();
+  if (FRowState[y] = 1) then
+    exit(nil);
+  var words := FRowCache[y];
+  for var i := 0 to High(words) do
+    if (words[i] <> 0) then
+      row.setBulk(i shl 5, words[i]);
+  result := row;
 end;
 
 function TBinaryBitmap.GetHeight: Integer;
