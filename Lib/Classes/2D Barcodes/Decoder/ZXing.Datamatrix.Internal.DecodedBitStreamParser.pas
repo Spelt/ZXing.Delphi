@@ -558,7 +558,7 @@ begin
                 c40char := C40_BASIC_SET_CHARS[cValue];
                 if (upperShift) then
                 begin
-                  res.Append(Char(c40char) + Char(128));
+                  res.Append(Char(Ord(c40char) + 128));
                   upperShift := false;
                 end
                 else
@@ -575,7 +575,7 @@ begin
           begin
             if (upperShift) then
             begin
-              res.Append(Char(cValue) + Char(128));
+              res.Append(Char(cValue + 128));
               upperShift := false;
             end
             else
@@ -589,7 +589,7 @@ begin
               c40char := C40_SHIFT2_SET_CHARS[cValue];
               if (upperShift) then
               begin
-                res.Append(Char(c40char) + Char(128));
+                res.Append(Char(Ord(c40char) + 128));
                 upperShift := false;
               end
               else
@@ -615,7 +615,7 @@ begin
           begin
             if (upperShift) then
             begin
-              res.Append(Char(cValue + 254));
+              res.Append(Char(cValue + 224));
               upperShift := false;
             end
             else
@@ -663,7 +663,7 @@ begin
         // 011111
         // Read rest of byte, which should be 0, and stop
         bitsLeft := (8 - bits.BitOffset);
-        if (not bitsLeft = 8) then
+        if (bitsLeft <> 8) then
           bits.readBits(bitsLeft);
 
         result := true;
@@ -755,7 +755,7 @@ begin
                 textChar := TEXT_BASIC_SET_CHARS[cValue];
                 if (upperShift) then
                 begin
-                  res.Append(Char(textChar) + Char(128));
+                  res.Append(Char(Ord(textChar) + 128));
                   upperShift := false;
                 end
                 else
@@ -787,7 +787,7 @@ begin
               textChar := TEXT_SHIFT2_SET_CHARS[cValue];
               if (upperShift) then
               begin
-                res.Append(Char(textChar) + Char(128));
+                res.Append(Char(Ord(textChar) + 128));
                 upperShift := false;
               end
               else
@@ -816,7 +816,7 @@ begin
               textChar := TEXT_SHIFT3_SET_CHARS[cValue];
               if (upperShift) then
               begin
-                res.Append(Char(textChar) + Char(128));
+                res.Append(Char(Ord(textChar) + 128));
                 upperShift := false;
               end
               else

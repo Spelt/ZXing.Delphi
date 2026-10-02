@@ -545,7 +545,7 @@ begin
   end;
 
 
-   try
+  try
     result := Decode('QR-bug-overflow.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result');
     Assert.Contains(result.Text, '1653015096', false);
@@ -555,13 +555,24 @@ begin
   end;
 
 
-    try
+  try
     result := Decode('QRContainsHex10.png', TBarcodeFormat.QR_CODE);
     Assert.IsNotNull(result, ' Nil result');
     Assert.Contains(result.Text, '140#104#20231123 09:00:00', false);
   finally
     FreeAndNil(result);
   end;
+
+  try
+    result := Decode('QR-error-10-2026.png', TBarcodeFormat.QR_CODE);
+    Assert.IsNotNull(result, ' Nil result');
+    Assert.IsTrue(result.Text = 'http://sintest/-M-_woyxGyqxLTD6BtTg', 'sin test failed');
+  finally
+    FreeAndNil(result);
+  end;
+
+
+
 
 end;
 
@@ -860,6 +871,13 @@ begin
     FreeAndNil(result);
   end;
 
+  try
+    result := Decode('dm-TPN.jpg', TBarcodeFormat.DATA_MATRIX);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.IsTrue(result.Text.Equals('{"Program":"TPN","Drug Name":"Nutrition","Bag Volume":"3000.0","Flat Rate":"200.0"}'), 'DataMatrix code result Text Incorrect: ' + result.Text);
+  finally
+    FreeAndNil(result);
+  end;
 
 end;
 
