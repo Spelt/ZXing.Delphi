@@ -291,8 +291,14 @@ begin
         if ReadResult <> nil then
           FreeAndNil(ReadResult);
 
-        scanBitmap.Free;
-        fScanInProgress := false;
+        // An FMX bitmap must be freed in the main thread (on Android it holds
+        // a graphics handle), so free the frame copy there.
+        TThread.Synchronize(TThread.CurrentThread,
+          procedure
+          begin
+            scanBitmap.Free;
+            fScanInProgress := false;
+          end);
       end;
 
     end).Start();
