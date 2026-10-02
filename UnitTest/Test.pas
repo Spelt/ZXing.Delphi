@@ -765,6 +765,7 @@ end;
 procedure TZXingDelphiTest.AllDataMatrixCode();
 var
   result: TReadResult;
+  hints: TDictionary<TDecodeHintType, TObject>;
 begin
 
   try
@@ -887,6 +888,28 @@ begin
   finally
     FreeAndNil(result);
   end;
+
+  try
+    hints := TDictionary<TDecodeHintType, TObject>.Create();
+    hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);
+    result := Decode('dm-inverted.jpg', TBarcodeFormat.DATA_MATRIX, hints);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.AreEqual(#29'0105909990329717211039520876635'#29'1727043010NE76571', result.Text);
+  finally
+    FreeAndNil(result);
+  end;
+
+  try
+    hints := TDictionary<TDecodeHintType, TObject>.Create();
+    hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);
+    hints.Add(TDecodeHintType.ASSUME_GS1, nil);
+    result := Decode('dm-inverted.jpg', TBarcodeFormat.DATA_MATRIX, hints);
+    Assert.IsNotNull(result, ' Nil result ');
+    Assert.AreEqual(']d20105909990329717211039520876635'#29'1727043010NE76571', result.Text);
+  finally
+    FreeAndNil(result);
+  end;
+
 
 end;
 

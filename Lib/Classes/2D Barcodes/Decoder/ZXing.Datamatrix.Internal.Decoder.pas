@@ -46,7 +46,8 @@ type
     destructor Destroy; override;
 
     function correctErrors(codewordBytes: TArray<Byte>; numDataCodewords: Integer): boolean;
-    function decode(bits: TBitMatrix): TDecoderResult; overload;
+    function decode(bits: TBitMatrix; assumeGS1: boolean = false)
+      : TDecoderResult; overload;
     function decode(image: TArray < TArray < boolean >> ): TDecoderResult; overload;
   end;
 
@@ -103,7 +104,8 @@ end;
 /// </summary>
 /// <param name="bits">booleans representing white/black Data Matrix Code modules</param>
 /// <returns>text and bytes encoded within the Data Matrix Code</returns>
-function TDataMatrixDecoder.decode(bits: TBitMatrix): TDecoderResult;
+function TDataMatrixDecoder.decode(bits: TBitMatrix; assumeGS1: boolean)
+  : TDecoderResult;
 var
   i, j: Integer;
   db: TDataBlock;
@@ -176,7 +178,7 @@ begin
     end;
 
     // Decode the contents of that stream of bytes
-    Result := TDecodedBitStreamParser.decode(resultBytes);
+    Result := TDecodedBitStreamParser.decode(resultBytes, assumeGS1);
 
   finally
 

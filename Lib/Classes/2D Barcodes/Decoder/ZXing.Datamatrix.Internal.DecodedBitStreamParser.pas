@@ -52,21 +52,26 @@ type
     class function decodeBase256Segment(bits: TBitSource; res: TStringBuilder;
       byteSegments:IByteSegments ): boolean;
     class function decodeAsciiSegment(bits: TBitSource; res: TStringBuilder;
-      resultTrailer: TStringBuilder; var mode: TMode): boolean;
+      resultTrailer: TStringBuilder; var mode: TMode;
+      assumeGS1: boolean): boolean;
     class procedure parseTwoBytes(firstByte: Integer; secondByte: Integer;
       result: TArray<Integer>);
     class function unrandomize255State(randomizedBase256Codeword: Integer;
       base256CodewordPosition: Integer): Integer;
   public
-    class function decode(bytes: TArray<Byte>): TDecoderResult;
+    /// <param name="assumeGS1">when true, an FNC1 as first codeword (which
+    /// marks the code as GS1) is returned as the symbology identifier ']d2'
+    /// instead of ASCII 29</param>
+    class function decode(bytes: TArray<Byte>;
+      assumeGS1: boolean = false): TDecoderResult;
   end;
 
 implementation
 
 { TDecodedBitStreamParser }
 
-class function TDecodedBitStreamParser.decode(bytes: TArray<Byte>)
-  : TDecoderResult;
+class function TDecodedBitStreamParser.decode(bytes: TArray<Byte>;
+  assumeGS1: boolean): TDecoderResult;
 var
   bits: TBitSource;
   res, resultTrailer: TStringBuilder;
@@ -88,7 +93,7 @@ begin
       if (mode = TMode.ASCII_ENCODE) then
       begin
         if (not TDecodedBitStreamParser.decodeAsciiSegment(bits, res,
-          resultTrailer, mode)) then
+          resultTrailer, mode, assumeGS1)) then
         begin
           result := nil;  // this line was totally missing. I assume the correct thing is to set result = nil.
           exit;
@@ -256,7 +261,8 @@ end;
 /// See ISO 16022:2006, 5.2.3 and Annex C, Table C.2
 /// </summary>
 class function TDecodedBitStreamParser.decodeAsciiSegment(bits: TBitSource;
-  res: TStringBuilder; resultTrailer: TStringBuilder; var mode: TMode): boolean;
+  res: TStringBuilder; resultTrailer: TStringBuilder; var mode: TMode;
+  assumeGS1: boolean): boolean;
 var
   oneByte: Integer;
   upperShift: boolean;
@@ -332,7 +338,12 @@ begin
                 if (oneByte = 232) then
                 begin
                   // FNC1
-                  res.Append(Char(29)); // translate as ASCII 29
+                  if assumeGS1 and (bits.ByteOffset = 1) then
+                    // FNC1 as first codeword marks a GS1 code.
+                    // Return the symbology identifier, like Code128 does with ']C1'
+                    res.Append(']d2')
+                  else
+                    res.Append(Char(29)); // translate as ASCII 29
                 end
                 else
                 begin

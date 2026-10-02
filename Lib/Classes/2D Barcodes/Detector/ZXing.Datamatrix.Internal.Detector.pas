@@ -81,20 +81,38 @@ type
     /// </summary>
     constructor Create(const image: TBitMatrix; x, y: Integer); overload;
     destructor Destroy; override;
-    function detect: TDetectorResult;
+    function detect: TDetectorResult; overload;
+    /// <param name="countThroughCenters">count the modules through the
+    /// centers of the outer modules instead of along the edge. This works
+    /// better for rotated codes, but worse for codes with very small modules
+    /// (around 4 pixels or less), so callers try both.</param>
+    function detect(countThroughCenters: Boolean): TDetectorResult; overload;
     function transitionsBetween(Afrom, Ato: IResultPoint)
       : TResultPointsAndTransitions;
     function distance(a: IResultPoint; b: IResultPoint): Integer;
     procedure increment(table: TDictionary<IResultPoint, Integer>;
       key: IResultPoint);
     function sampleGrid(image: TBitMatrix; topLeft, bottomLeft, bottomRight,
-      topRight: IResultPoint; dimensionX, dimensionY: Integer): TBitMatrix;
+      topRight: IResultPoint; dimensionX, dimensionY: Integer): TBitMatrix; overload;
+    /// <param name="edge">distance in modules between the corner points and
+    /// the outer edge of the code</param>
+    function sampleGrid(image: TBitMatrix; topLeft, bottomLeft, bottomRight,
+      topRight: IResultPoint; dimensionX, dimensionY: Integer; edge: Single)
+      : TBitMatrix; overload;
     function isValid(p: IResultPoint): Boolean;
     function correctTopRight(bottomLeft, bottomRight, topLeft,
       topRight: IResultPoint; dimension: Integer): IResultPoint;
     function correctTopRightRectangular(bottomLeft, bottomRight, topLeft,
       topRight: IResultPoint; dimensionTop, dimensionRight: Integer)
       : IResultPoint;
+    /// <summary>
+    /// Refines the dimensions by counting transitions through the centers of
+    /// the modules of the top row and right column, using the given
+    /// dimensions as estimate of the module size. The results are not
+    /// rounded to even numbers.
+    /// </summary>
+    procedure countModulesThroughCenters(topLeft, bottomLeft, bottomRight,
+      topRight: IResultPoint; var dimensionTop, dimensionRight: Integer);
   end;
 
 implementation
@@ -133,6 +151,12 @@ end;
 /// </summary>
 /// <returns><see cref="DetectorResult" />encapsulating results of detecting a Data Matrix Code or null</returns>
 function TDataMatrixDetector.detect(): TDetectorResult;
+begin
+  Result := detect(false);
+end;
+
+function TDataMatrixDetector.detect(countThroughCenters: Boolean)
+  : TDetectorResult;
 var
   topRight, correctedTopRight, pointA, pointB, pointC, pointD, maybeTopLeft,
     bottomLeft, bottomRight, topLeft, maybeBottomRight, point: IResultPoint;
@@ -287,6 +311,16 @@ begin
         // it can't be odd, so, round... up?
         Inc(dimensionRight);
 
+      if countThroughCenters then
+      begin
+        countModulesThroughCenters(topLeft, bottomLeft, bottomRight,
+          correctedTopRight, dimensionTop, dimensionRight);
+        if Odd(dimensionTop) then
+          Inc(dimensionTop);
+        if Odd(dimensionRight) then
+          Inc(dimensionRight);
+      end;
+
       bits := sampleGrid(Fimage, topLeft, bottomLeft, bottomRight,
         correctedTopRight, dimensionTop, dimensionRight)
     end
@@ -311,6 +345,17 @@ begin
 
       if ((dimensionCorrected and $01) = 1) then
         Inc(dimensionCorrected);
+
+      if countThroughCenters then
+      begin
+        dimensionTop := dimensionCorrected;
+        dimensionRight := dimensionCorrected;
+        countModulesThroughCenters(topLeft, bottomLeft, bottomRight,
+          correctedTopRight, dimensionTop, dimensionRight);
+        // A side can be one off (e.g. 35 and 37 for 36), so use the even
+        // number closest to the average of both sides (ties round up).
+        dimensionCorrected := 2 * ((dimensionTop + dimensionRight + 2) div 4);
+      end;
 
       bits := sampleGrid(Fimage, topLeft, bottomLeft, bottomRight,
         correctedTopRight, dimensionCorrected, dimensionCorrected);
@@ -492,6 +537,48 @@ begin
 
 end;
 
+procedure TDataMatrixDetector.countModulesThroughCenters(topLeft, bottomLeft,
+  bottomRight, topRight: IResultPoint; var dimensionTop, dimensionRight: Integer);
+
+  function shifted(p, towardA, towardB: IResultPoint;
+    fractionA, fractionB: Single): IResultPoint;
+  begin
+    Result := TResultPointHelpers.CreateResultPoint(
+      p.X + (towardA.X - p.X) * fractionA + (towardB.X - p.X) * fractionB,
+      p.Y + (towardA.Y - p.Y) * fractionA + (towardB.Y - p.Y) * fractionB);
+  end;
+
+var
+  halfModuleTop, halfModuleRight: Single;
+  centerTopLeft, centerTopRight, centerBottomRight: IResultPoint;
+  trans: TResultPointsAndTransitions;
+begin
+  // Counting along the edge is unstable for rotated codes: the line runs over
+  // the border of the modules and picks up extra transitions. Count through
+  // the centers of the outer modules instead.
+  if (dimensionTop <= 0) or (dimensionRight <= 0) then
+    exit;
+
+  halfModuleTop := 0.5 / dimensionTop;
+  halfModuleRight := 0.5 / dimensionRight;
+  centerTopLeft := shifted(topLeft, topRight, bottomLeft, halfModuleTop,
+    halfModuleRight);
+  centerTopRight := shifted(topRight, topLeft, bottomRight, halfModuleTop,
+    halfModuleRight);
+  centerBottomRight := shifted(bottomRight, bottomLeft, topRight, halfModuleTop,
+    halfModuleRight);
+
+  // The top row and right column alternate black/white over their full
+  // length, so there is one transition less than there are modules.
+  trans := transitionsBetween(centerTopLeft, centerTopRight);
+  dimensionTop := trans.Transitions + 1;
+  trans.Free;
+
+  trans := transitionsBetween(centerBottomRight, centerTopRight);
+  dimensionRight := trans.Transitions + 1;
+  trans.Free;
+end;
+
 function TDataMatrixDetector.isValid(p: IResultPoint): Boolean;
 begin
   Result := ((((p.X >= 0) and (p.X < Fimage.Width)) and (p.Y > 0)) and
@@ -526,10 +613,22 @@ function TDataMatrixDetector.sampleGrid(image: TBitMatrix;
   topLeft, bottomLeft, bottomRight, topRight: IResultPoint;
   dimensionX, dimensionY: Integer): TBitMatrix;
 begin
+  // The corner points lie near the outer edge of the code, not in the center
+  // of the corner modules. Mapping them to 0.5 put the sample points up to half
+  // a module off near the edges, which misses the dots of dot-peen codes.
+  // All test images decode with values between 0.15 and 0.30.
+  Result := sampleGrid(image, topLeft, bottomLeft, bottomRight, topRight,
+    dimensionX, dimensionY, 0.25);
+end;
+
+function TDataMatrixDetector.sampleGrid(image: TBitMatrix;
+  topLeft, bottomLeft, bottomRight, topRight: IResultPoint;
+  dimensionX, dimensionY: Integer; edge: Single): TBitMatrix;
+begin
   // TGridSampler.instance
-  Result := TDefaultGridSampler.sampleGrid(image, dimensionX, dimensionY, 0.5,
-    0.5, (dimensionX - 0.5), 0.5, (dimensionX - 0.5), (dimensionY - 0.5), 0.5,
-    (dimensionY - 0.5), topLeft.X, topLeft.Y, topRight.X, topRight.Y,
+  Result := TDefaultGridSampler.sampleGrid(image, dimensionX, dimensionY, edge,
+    edge, (dimensionX - edge), edge, (dimensionX - edge), (dimensionY - edge),
+    edge, (dimensionY - edge), topLeft.X, topLeft.Y, topRight.X, topRight.Y,
     bottomRight.X, bottomRight.Y, bottomLeft.X, bottomLeft.Y);
 end;
 
