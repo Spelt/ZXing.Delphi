@@ -146,3 +146,5 @@ _ReSharper*/
 *.sbr
 obj/
 [Bb]in
+/research_notes/*
+/reports/*
