@@ -120,7 +120,8 @@ var
 begin
   // Construct a parser and read version, error-correction level
   parser := TBitMatrixParser.Create(bits);
-  DataBlock := nil;
+  dataBlocks := nil;
+  Result := nil;
 
   try
 
@@ -158,35 +159,21 @@ begin
       codewordBytes := DataBlock.codewords;
       numDataCodewords := DataBlock.numDataCodewords;
       if (not correctErrors(codewordBytes, numDataCodewords)) then
-      begin
-        if Assigned(DataBlock) then
-          DataBlock.Free;
-        DataBlock := nil;
-        resultBytes := nil;
-        codewordBytes := nil;
-        Result := nil;
         exit;
-      end;
       for i := 0 to Pred(numDataCodewords) do
       begin
         // De-interlace data blocks.
         resultBytes[(i * dataBlocksCount) + j] := codewordBytes[i];
       end;
-
-      DataBlock.Free;
-      DataBlock := nil;
     end;
 
     // Decode the contents of that stream of bytes
     Result := TDecodedBitStreamParser.decode(resultBytes, assumeGS1);
 
   finally
-
-    if Assigned(DataBlock) then
+    // all blocks, also the ones after a block that could not be corrected
+    for DataBlock in dataBlocks do
       DataBlock.Free;
-
-    resultBytes := nil;
-    codewordBytes := nil;
     parser.Free;
   end;
 
