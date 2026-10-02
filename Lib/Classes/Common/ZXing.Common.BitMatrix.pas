@@ -88,6 +88,11 @@ type
     /// lie close together, like those of dot-peen codes. radius 1 to 31.
     /// </summary>
     function closed(radius: Integer): TBitMatrix;
+    /// <summary>The smallest rectangle containing all black pixels (as in
+    /// zxing-cpp); false when there are none or it is smaller than minSize
+    /// in width or height.</summary>
+    function findBoundingBox(out left, top, width, height: Integer;
+      minSize: Integer = 1): Boolean;
     function ToBitmap: TBitmap; overload;
     function ToBitmap(format: TBarcodeFormat; content: string)
       : TBitmap; overload;
@@ -268,6 +273,42 @@ begin
 
   for var i := 0 to High(src) do
     Result.Fbits[i] := Integer(src[i]);
+end;
+
+function TBitMatrix.findBoundingBox(out left, top, width, height: Integer;
+  minSize: Integer): Boolean;
+begin
+  Result := false;
+  var topLeft := getTopLeftOnBit;
+  var bottomRight := getBottomRightOnBit;
+  if (topLeft = nil) or (bottomRight = nil) then
+    exit;
+  left := topLeft[0];
+  top := topLeft[1];
+  var right := bottomRight[0];
+  var bottom := bottomRight[1];
+  if (bottom - top + 1 < minSize) then
+    exit;
+
+  for var y := top to bottom do
+  begin
+    for var x := 0 to left - 1 do
+      if getBit(x, y) then
+      begin
+        left := x;
+        break;
+      end;
+    for var x := Fwidth - 1 downto right + 1 do
+      if getBit(x, y) then
+      begin
+        right := x;
+        break;
+      end;
+  end;
+
+  width := right - left + 1;
+  height := bottom - top + 1;
+  Result := (width >= minSize) and (height >= minSize);
 end;
 
 procedure TBitMatrix.clear;

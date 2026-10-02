@@ -59,6 +59,11 @@ type
     /// <seealso cref="ZXing.Datamatrix.DataMatrixReader.extractPureBits(TBitMatrix)" />
     /// </summary>
     function extractPureBits(const image: TBitMatrix): TBitMatrix;
+    /// <summary>Detects and decodes with the finder pattern detector of
+    /// zxing-cpp; nil when it finds nothing that decodes.</summary>
+    function finderPatternDetectAndDecode(const image: TBitMatrix;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      var points: TArray<IResultPoint>): TDecoderResult;
     function moduleSize(const leftTopBlack: TArray<Integer>;
       const image: TBitMatrix; var msize: Single): Boolean;
   protected
@@ -100,7 +105,9 @@ type
   end;
 
 implementation
-uses ZXing.ByteSegments;
+uses
+  ZXing.ByteSegments,
+  ZXing.QrCode.Internal.ConcentricDetector;
 
 { TQRCodeReader }
 
@@ -150,25 +157,42 @@ begin
         DecoderResult := Decoder.decode(bits, hints);
         points := NO_POINTS;
         bits.Free;
-      end
-      else
-        exit;
+      end;
+
+      // then the pure detector of zxing-cpp
+      if (DecoderResult = nil) then
+      begin
+        bits := DetectPureQRCode(image.BlackMatrix, points);
+        if Assigned(bits) then
+        begin
+          DecoderResult := Decoder.decode(bits, hints);
+          bits.Free;
+        end;
+      end;
     end
     else
     begin
-      Detector := TDetector.Create(image.BlackMatrix);
-      try
-        DetectorResult := Detector.detect(hints);
-        if Assigned(DetectorResult) then
-        begin
-          DecoderResult := Decoder.decode(DetectorResult.bits, hints);
-          points := DetectorResult.points;
-          DetectorResult.Free;
-        end
-        else
-          exit;
-      finally
-        Detector.Free;
+      // the finder pattern detector of zxing-cpp first
+      DecoderResult := finderPatternDetectAndDecode(image.BlackMatrix, hints,
+        points);
+
+      // then the old detector
+      if (DecoderResult = nil) then
+      begin
+        Detector := TDetector.Create(image.BlackMatrix);
+        try
+          DetectorResult := Detector.detect(hints);
+          if Assigned(DetectorResult) then
+          begin
+            DecoderResult := Decoder.decode(DetectorResult.bits, hints);
+            points := DetectorResult.points;
+            DetectorResult.Free;
+          end
+          else
+            exit;
+        finally
+          Detector.Free;
+        end;
       end;
     end;
 
@@ -211,6 +235,33 @@ end;
 procedure TQRCodeReader.reset;
 begin
   // do nothing
+end;
+
+function TQRCodeReader.finderPatternDetectAndDecode(const image: TBitMatrix;
+  hints: TDictionary<TDecodeHintType, TObject>;
+  var points: TArray<IResultPoint>): TDecoderResult;
+var
+  decoded: TDecoderResult;
+  foundPoints: TArray<IResultPoint>;
+  qrDecoder: TQRDecoder;
+  tryHarder: Boolean;
+begin
+  decoded := nil;
+  qrDecoder := FDecoder;
+  tryHarder := (hints <> nil) and hints.ContainsKey(TDecodeHintType.TRY_HARDER);
+  DetectQRCodesByFinderPatterns(image, tryHarder,
+    function(bits: TBitMatrix; const candidatePoints: TArray<IResultPoint>)
+      : Boolean
+    begin
+      decoded := qrDecoder.decode(bits, hints);
+      Result := (decoded <> nil);
+      if Result then
+        foundPoints := candidatePoints;
+    end);
+
+  Result := decoded;
+  if (Result <> nil) then
+    points := foundPoints;
 end;
 
 function TQRCodeReader.extractPureBits(const image: TBitMatrix): TBitMatrix;

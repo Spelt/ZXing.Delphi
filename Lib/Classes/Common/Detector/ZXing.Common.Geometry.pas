@@ -108,6 +108,10 @@ type
     function Distance(const p: TPointD): Double; inline;
     function Project(const p: TPointD): TPointD; inline;
     function Centroid: TPointD;
+    /// <summary>False when the points are too close together or the line is
+    /// too close to horizontal or vertical for a good extrapolation (due to
+    /// aliasing).</summary>
+    function IsHighRes: Boolean;
     /// <summary>Distance between first and last point, truncated.</summary>
     function Length: Integer;
     function Point(i: Integer): TPointD; inline;
@@ -470,6 +474,23 @@ end;
 function TRegressionLine.Project(const p: TPointD): TPointD;
 begin
   Result := p - SignedDistance(p) * Normal;
+end;
+
+function TRegressionLine.IsHighRes: Boolean;
+begin
+  if (FCount = 0) then
+    exit(false);
+  var minP := FPoints[0];
+  var maxP := FPoints[0];
+  for var i := 1 to FCount - 1 do
+  begin
+    minP := PointD(Min(minP.X, FPoints[i].X), Min(minP.Y, FPoints[i].Y));
+    maxP := PointD(Max(maxP.X, FPoints[i].X), Max(maxP.Y, FPoints[i].Y));
+  end;
+  var diff := maxP - minP;
+  var len: Double := MaxAbsComponent(diff);
+  var steps: Double := Min(Abs(diff.X), Abs(diff.Y));
+  Result := (steps > 2) or (len > 50);
 end;
 
 function TRegressionLine.Centroid: TPointD;

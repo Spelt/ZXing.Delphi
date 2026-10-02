@@ -84,7 +84,13 @@ type
     destructor Destroy; override;
 
     class function decodeVersionInformation(versionBits: Integer)
-      : TVersion; static;
+      : TVersion; overload; static;
+    /// <summary>The version that best matches either of the two readings of
+    /// the version information (zxing-cpp: top right and bottom left, or
+    /// normal and mirrored), with at most 3 bits difference; nil otherwise.
+    /// </summary>
+    class function decodeVersionInformation(versionBitsA, versionBitsB
+      : Integer): TVersion; overload; static;
     function buildFunctionPattern: TBitMatrix;
     function getECBlocksForLevel(ecLevel: TErrorCorrectionLevel): TECBlocks;
     class function getProvisionalVersionForDimension(
@@ -604,6 +610,38 @@ begin
   end;
 
   result := nil;
+end;
+
+class function TVersion.decodeVersionInformation(versionBitsA,
+  versionBitsB: Integer): TVersion;
+begin
+  var bestDifference := MaxInt;
+  var bestVersion := 0;
+  for var i := 0 to High(TVersion.VERSION_DECODE_INFO) do
+  begin
+    var targetVersion := TVersion.VERSION_DECODE_INFO[i];
+    for var k := 0 to 1 do
+    begin
+      var bits := versionBitsA;
+      if (k = 1) then
+        bits := versionBitsB;
+      var bitsDifference := TFormatInformation.numBitsDiffering(bits,
+        targetVersion);
+      if (bitsDifference < bestDifference) then
+      begin
+        bestVersion := i + 7;
+        bestDifference := bitsDifference;
+      end;
+    end;
+    if (bestDifference = 0) then
+      break;
+  end;
+  // We can tolerate up to 3 bits of error since no two version info
+  // codewords will differ in less than 8 bits.
+  if (bestDifference <= 3) then
+    Result := TVersion.getVersionForNumber(bestVersion)
+  else
+    Result := nil;
 end;
 
 function TVersion.getECBlocksForLevel(ecLevel: TErrorCorrectionLevel)

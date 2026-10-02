@@ -1152,44 +1152,6 @@ begin
   end;
 end;
 
-/// <summary>The smallest rectangle containing all black pixels, as in
-/// zxing-cpp's BitMatrix::findBoundingBox.</summary>
-function FindBoundingBox(image: TBitMatrix; out left, top, width,
-  height: Integer; minSize: Integer): Boolean;
-begin
-  Result := false;
-  var topLeft := image.getTopLeftOnBit;
-  var bottomRight := image.getBottomRightOnBit;
-  if (topLeft = nil) or (bottomRight = nil) then
-    exit;
-  left := topLeft[0];
-  top := topLeft[1];
-  var right := bottomRight[0];
-  var bottom := bottomRight[1];
-  if (bottom - top + 1 < minSize) then
-    exit;
-
-  for var y := top to bottom do
-  begin
-    for var x := 0 to left - 1 do
-      if image[x, y] then
-      begin
-        left := x;
-        break;
-      end;
-    for var x := image.Width - 1 downto right + 1 do
-      if image[x, y] then
-      begin
-        right := x;
-        break;
-      end;
-  end;
-
-  width := right - left + 1;
-  height := bottom - top + 1;
-  Result := (width >= minSize) and (height >= minSize);
-end;
-
 /// <summary>Counts the color changes when stepping at most range pixels from
 /// (x, y) in direction (dx, dy), and moves (x, y) along (BitMatrixCursor's
 /// countEdges).</summary>
@@ -1236,7 +1198,7 @@ function DetectDataMatrixPure(image: TBitMatrix; out points: TArray<IResultPoint
 begin
   Result := nil;
   var left, top, width, height: Integer;
-  if not FindBoundingBox(image, left, top, width, height, 8) then
+  if not image.findBoundingBox(left, top, width, height, 8) then
     exit;
 
   // walk around the code counter-clockwise from the top left: the left and
