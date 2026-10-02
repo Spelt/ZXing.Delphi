@@ -59,7 +59,7 @@ const
     (Folder: 'none-1'; Limits: ((MinRead: 0; MaxWrong: 4; MaxErrors: 0), (MinRead: 0; MaxWrong: 2; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'none-2'; Limits: ((MinRead: 0; MaxWrong: 4; MaxErrors: 0), (MinRead: 0; MaxWrong: 2; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'qrcode-1'; Limits: ((MinRead: 85; MaxWrong: 0; MaxErrors: 0), (MinRead: 85; MaxWrong: 0; MaxErrors: 0), (MinRead: 18; MaxWrong: 0; MaxErrors: 0))),
-    (Folder: 'qrcode-2'; Limits: ((MinRead: 70; MaxWrong: 0; MaxErrors: 0), (MinRead: 30; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'qrcode-2'; Limits: ((MinRead: 71; MaxWrong: 0; MaxErrors: 0), (MinRead: 31; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'qrcode-3'; Limits: ((MinRead: 165; MaxWrong: 0; MaxErrors: 0), (MinRead: 82; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'qrcode-4'; Limits: ((MinRead: 47; MaxWrong: 0; MaxErrors: 0), (MinRead: 25; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'upca-1'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),

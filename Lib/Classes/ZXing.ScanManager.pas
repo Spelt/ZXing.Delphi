@@ -26,6 +26,7 @@ type
   TScanManager = class
   private
     FEnableInversion: Boolean;
+    FTryDownscale: Boolean;
     FHints: TDictionary<TDecodeHintType, TObject>;
     FResultPointEvent: TResultPointCallback;
     FMultiFormatReader: TMultiFormatReader;
@@ -35,6 +36,9 @@ type
       : TMultiFormatReader;
 
     procedure SetResultPointEvent(const AValue: TResultPointCallback);
+    /// <summary>Decodes one image (layer), also inverted with
+    /// ENABLE_INVERSION. Does not free source.</summary>
+    function DecodeLayer(source: TLuminanceSource): TReadResult;
   public
     destructor Destroy; override;
 
@@ -44,15 +48,30 @@ type
 
     property OnResultPoint: TResultPointCallback read FResultPointEvent
       write SetResultPointEvent;
+
+    /// <summary>
+    /// When nothing is found in the full image, also scan downscaled copies
+    /// of it (a third of the size per step, as long as the image is larger
+    /// than 500 pixels), like zxing-cpp. Helps for large, blurry and dot-peen
+    /// codes. The result points are in the coordinates of the full image
+    /// (the points reported to OnResultPoint during the detection in a
+    /// downscaled layer are not). On by default; costs about 10% more time
+    /// on images without a code.
+    /// </summary>
+    property TryDownscale: Boolean read FTryDownscale write FTryDownscale;
   end;
 
 implementation
+
+uses
+  System.Math;
 
 constructor TScanManager.Create(const format: TBarcodeFormat;
   Hints: TDictionary<TDecodeHintType, TObject>);
 begin
   inherited Create;
   FEnableInversion := False;
+  FTryDownscale := true;
   FHints := Hints;
   FMultiFormatReader := GetMultiFormatReader(format);
 end;
@@ -139,20 +158,93 @@ begin
   Result.Hints := FHints;
 end;
 
+const
+  // the image pyramid of zxing-cpp: downscale by this factor while the
+  // largest side is larger than the threshold
+  DOWNSCALE_FACTOR = 3;
+  DOWNSCALE_THRESHOLD = 500;
+
+/// <summary>The luminances downscaled by factor (the rounded average of
+/// every factor x factor pixels).</summary>
+function Downscaled(const luminances: TArray<Byte>; width, height,
+  factor: Integer): TArray<Byte>;
+begin
+  var newWidth := width div factor;
+  var newHeight := height div factor;
+  var area := factor * factor;
+  SetLength(Result, newWidth * newHeight);
+  for var dy := 0 to newHeight - 1 do
+    for var dx := 0 to newWidth - 1 do
+    begin
+      var sum := area div 2;
+      for var ty := 0 to factor - 1 do
+      begin
+        var offset := (dy * factor + ty) * width + dx * factor;
+        for var tx := 0 to factor - 1 do
+          Inc(sum, luminances[offset + tx]);
+      end;
+      Result[dy * newWidth + dx] := sum div area;
+    end;
+end;
+
 function TScanManager.Scan(const pBitmapForScan: TBitmap): TReadResult;
+begin
+  var LuminanceSource := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
+    pBitmapForScan.Width, pBitmapForScan.Height);
+  try
+    Result := DecodeLayer(LuminanceSource);
+    if (Result <> nil) or not FTryDownscale then
+      exit;
+
+    // nothing found: try the downscaled layers of the image pyramid
+    var fullWidth := LuminanceSource.Width;
+    var luminances := LuminanceSource.Matrix;
+    var width := LuminanceSource.Width;
+    var height := LuminanceSource.Height;
+    while (Max(width, height) > DOWNSCALE_THRESHOLD) and
+      (Min(width, height) >= DOWNSCALE_FACTOR) do
+    begin
+      luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
+      width := width div DOWNSCALE_FACTOR;
+      height := height div DOWNSCALE_FACTOR;
+      var layer := TRGBLuminanceSource.Create(luminances, width, height,
+        TBitmapFormat.Gray8);
+      try
+        Result := DecodeLayer(layer);
+      finally
+        layer.Free;
+      end;
+
+      if (Result <> nil) then
+      begin
+        // back to the coordinates of the full image
+        var scale: Single := fullWidth / width;
+        var points := Result.resultPoints;
+        for var i := 0 to High(points) do
+          if (points[i] <> nil) then
+            points[i] := TResultPointHelpers.CreateResultPoint(points[i].x *
+              scale, points[i].y * scale);
+        Result.resultPoints := points;
+        exit;
+      end;
+    end;
+  finally
+    LuminanceSource.Free;
+  end;
+end;
+
+function TScanManager.DecodeLayer(source: TLuminanceSource): TReadResult;
 var
   LuminanceSource, InvLuminanceSource: TLuminanceSource;
   HybridBinarizer: THybridBinarizer;
   BinaryBitmap: TBinaryBitmap;
 begin
   InvLuminanceSource := nil;
-  LuminanceSource := nil;
+  LuminanceSource := source;
   HybridBinarizer := nil;
   BinaryBitmap := nil;
   try
 
-    LuminanceSource := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
-      pBitmapForScan.Width, pBitmapForScan.Height);
     HybridBinarizer := THybridBinarizer.Create(LuminanceSource);
     BinaryBitmap := TBinaryBitmap.Create(HybridBinarizer);
     Result := FMultiFormatReader.Decode(BinaryBitmap, true);
@@ -180,7 +272,6 @@ begin
     BinaryBitmap.Free;
     HybridBinarizer.Free;
     InvLuminanceSource.Free;
-    LuminanceSource.Free;
   end;
 end;
 
