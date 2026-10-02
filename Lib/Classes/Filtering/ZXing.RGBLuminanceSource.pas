@@ -244,6 +244,26 @@ var
 
 begin
   Self.Create(width, height);
+  if (sourceBitmap.PixelFormat = pf32bit) then
+  begin
+    // read 32 bit bitmaps directly, without converting (and changing) the
+    // bitmap of the caller; the same luminances as after the conversion to
+    // 24 bit, which only drops the alpha channel
+    for y := 0 to sourceBitmap.Height - 1 do
+    begin
+      offset := y * FWidth;
+      var pixel: PByte := sourceBitmap.ScanLine[y];
+      for x := 0 to sourceBitmap.Width - 1 do
+      begin
+        // memory order blue, green, red, alpha
+        luminances[offset + x] := (3482 * pixel[2] + 11721 * pixel[1] + 1181 *
+          pixel[0]) shr 14;
+        Inc(pixel, 4);
+      end;
+    end;
+    exit;
+  end;
+
   sourceBitmap.PixelFormat := pf24bit;
   for y := 0 to sourceBitmap.Height - 1 do
   begin
@@ -254,7 +274,7 @@ begin
        r := P[x].rgbtRed;
        g := P[x].rgbtGreen;
        b := P[x].rgbtBlue;
-       luminances[offset + x] := TMathUtils.Asr(3482*r + 11721*g + 1181*b, 14);
+       luminances[offset + x] := (3482*r + 11721*g + 1181*b) shr 14;
     end;
   end;
 end;
