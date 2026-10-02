@@ -80,6 +80,14 @@ type
     /// bits (bit 0 for x), much faster than 8 times Matrix[x, y]. Ignored
     /// when they do not lie completely inside the matrix.</summary>
     procedure setBits8(x, y: Integer; bits: Cardinal);
+    /// <summary>A new matrix with the morphological closing of this one with
+    /// a square of (2 * radius + 1) pixels, clipped at the borders: first
+    /// grow the black areas (a pixel becomes black when any pixel of its
+    /// square is black), then shrink them (a pixel stays black only when all
+    /// pixels of its square inside the matrix are black). Merges dots that
+    /// lie close together, like those of dot-peen codes. radius 1 to 31.
+    /// </summary>
+    function closed(radius: Integer): TBitMatrix;
     function ToBitmap: TBitmap; overload;
     function ToBitmap(format: TBarcodeFormat; content: string)
       : TBitmap; overload;
@@ -92,6 +100,9 @@ type
   end;
 
 implementation
+
+uses
+  System.Math;
 
 { TBitMatrix }
 
@@ -146,6 +157,117 @@ begin
     Fbits[offset + 1] := Integer((Cardinal(Fbits[offset + 1]) and not mask) or
       (bits shr written));
   end;
+end;
+
+function TBitMatrix.closed(radius: Integer): TBitMatrix;
+var
+  n: Integer;
+  padMask: Cardinal; // the bits of the last word of a row beyond the width
+  src, line, shifted: TArray<Cardinal>;
+
+  // shifted[i] := line shifted by k bits towards higher x (up) or lower x,
+  // with fill for the bits coming from outside the row
+  procedure shiftLine(k: Integer; up: Boolean; fill: Cardinal);
+  begin
+    for var i := 0 to n - 1 do
+      if up then
+      begin
+        var lower := fill;
+        if (i > 0) then
+          lower := line[i - 1];
+        shifted[i] := (line[i] shl k) or (lower shr (32 - k));
+      end
+      else
+      begin
+        var higher := fill;
+        if (i < n - 1) then
+          higher := line[i + 1];
+        shifted[i] := (line[i] shr k) or (higher shl (32 - k));
+      end;
+  end;
+
+  // one row (words at offset) grown (dilate) or shrunk horizontally
+  procedure horizontal(offset: Integer; dilate: Boolean);
+  begin
+    for var i := 0 to n - 1 do
+      line[i] := src[offset + i];
+    var fill: Cardinal := 0;
+    if dilate then
+      // for growing, pixels outside the row count as white
+      line[n - 1] := line[n - 1] and not padMask
+    else
+    begin
+      // for shrinking, pixels outside the row count as black
+      fill := $FFFFFFFF;
+      line[n - 1] := line[n - 1] or padMask;
+    end;
+    var res := Copy(line);
+    for var k := 1 to radius do
+      for var up := false to true do
+      begin
+        shiftLine(k, up, fill);
+        for var i := 0 to n - 1 do
+          if dilate then
+            res[i] := res[i] or shifted[i]
+          else
+            res[i] := res[i] and shifted[i];
+      end;
+    res[n - 1] := res[n - 1] and not padMask;
+    for var i := 0 to n - 1 do
+      src[offset + i] := res[i];
+  end;
+
+  // all rows grown (dilate) or shrunk vertically, clipped at the borders
+  procedure vertical(dilate: Boolean);
+  begin
+    var res: TArray<Cardinal>;
+    SetLength(res, System.Length(src));
+    for var y := 0 to Fheight - 1 do
+      for var i := 0 to n - 1 do
+      begin
+        var w := src[y * n + i];
+        for var yy := Max(y - radius, 0) to Min(y + radius, Fheight - 1) do
+          if dilate then
+            w := w or src[yy * n + i]
+          else
+            w := w and src[yy * n + i];
+        res[y * n + i] := w;
+      end;
+    src := res;
+  end;
+
+begin
+  n := FrowSize;
+  Result := TBitMatrix.Create(Fwidth, Fheight);
+  if (n = 0) or (Fheight = 0) or (radius < 1) or (radius > 31) then
+  begin
+    for var i := 0 to High(Fbits) do
+      Result.Fbits[i] := Fbits[i];
+    exit;
+  end;
+
+  if ((Fwidth and $1F) = 0) then
+    padMask := 0
+  else
+    padMask := not ((Cardinal(1) shl (Fwidth and $1F)) - 1);
+
+  SetLength(src, System.Length(Fbits));
+  for var i := 0 to High(Fbits) do
+    src[i] := Cardinal(Fbits[i]);
+  SetLength(line, n);
+  SetLength(shifted, n);
+
+  // grow: horizontally then vertically (a square is separable)
+  for var y := 0 to Fheight - 1 do
+    horizontal(y * n, true);
+  vertical(true);
+  // shrink
+  for var y := 0 to Fheight - 1 do
+    horizontal(y * n, false);
+  vertical(false);
+
+  for var i := 0 to High(src) do
+    Result.Fbits[i] := Integer(src[i]);
 end;
 
 procedure TBitMatrix.clear;

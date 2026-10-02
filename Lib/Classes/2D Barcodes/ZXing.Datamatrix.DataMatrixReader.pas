@@ -78,13 +78,6 @@ type
       assumeGS1: Boolean; var points: TArray<IResultPoint>): TDecoderResult;
 
     /// <summary>
-    /// Morphological closing: grows the black areas by radius pixels and
-    /// shrinks them again, which merges dots that lie close together.
-    /// </summary>
-    class function closeMatrix(const image: TBitMatrix; radius: Integer)
-      : TBitMatrix; static;
-
-    /// <summary>
     /// Detects a code around start point (x, y) and decodes it.
     /// Returns nil when nothing could be detected or decoded.
     /// </summary>
@@ -212,7 +205,7 @@ begin
       begin
         for radius := 1 to MAX_CLOSING_RADIUS do
         begin
-          closedMatrix := closeMatrix(image.BlackMatrix, radius);
+          closedMatrix := image.BlackMatrix.closed(radius);
           try
             DecoderResult := searchAndDecode(closedMatrix, MAX_GRID_DIVISIONS,
               assumeGS1, points);
@@ -305,68 +298,6 @@ begin
     end;
     divisions := divisions * 2;
   end;
-end;
-
-class function TDataMatrixReader.closeMatrix(const image: TBitMatrix;
-  radius: Integer): TBitMatrix;
-var
-  width, height, x, y: Integer;
-  pixels: TArray<Byte>;
-
-  // Sliding window over one row or column of length count, starting at
-  // offset first with distance step between pixels. Grow: a pixel becomes
-  // black when any pixel in the window is black. Shrink: a pixel stays black
-  // only when all pixels of the window inside the image are black.
-  procedure pass(first, step, count: Integer; grow: Boolean);
-  var
-    i, blackCount, inside: Integer;
-    line: TArray<Byte>;
-  begin
-    SetLength(line, count);
-    for i := 0 to Pred(count) do
-      line[i] := pixels[first + i * step];
-
-    blackCount := 0;
-    for i := 0 to Pred(Min(radius, count)) do
-      Inc(blackCount, line[i]);
-
-    for i := 0 to Pred(count) do
-    begin
-      if (i + radius < count) then
-        Inc(blackCount, line[i + radius]);
-      if (i - radius - 1 >= 0) then
-        Dec(blackCount, line[i - radius - 1]);
-
-      inside := Min(i + radius, Pred(count)) - Max(i - radius, 0) + 1;
-      if grow then
-        pixels[first + i * step] := Ord(blackCount > 0)
-      else
-        pixels[first + i * step] := Ord(blackCount = inside);
-    end;
-  end;
-
-begin
-  width := image.width;
-  height := image.height;
-  SetLength(pixels, width * height);
-  for y := 0 to Pred(height) do
-    for x := 0 to Pred(width) do
-      pixels[y * width + x] := Ord(image[x, y]);
-
-  for y := 0 to Pred(height) do
-    pass(y * width, 1, width, true);
-  for x := 0 to Pred(width) do
-    pass(x, width, height, true);
-  for y := 0 to Pred(height) do
-    pass(y * width, 1, width, false);
-  for x := 0 to Pred(width) do
-    pass(x, width, height, false);
-
-  Result := TBitMatrix.Create(width, height);
-  for y := 0 to Pred(height) do
-    for x := 0 to Pred(width) do
-      if (pixels[y * width + x] <> 0) then
-        Result[x, y] := true;
 end;
 
 function TDataMatrixReader.detectAndDecode(const image: TBitMatrix;
