@@ -27,6 +27,7 @@ uses
   System.Math,
   ZXing.Helpers,
   ZXing.OneD.OneDReader,
+  ZXing.Common.Pattern,
   ZXing.Common.BitArray,
   ZXing.ReadResult,
   ZXing.DecodeHintType,
@@ -104,6 +105,23 @@ type
     function DecodeCode(row: IBitArray; counters: TArray<Integer>;
       rowOffset: Integer; var code: Integer): Boolean;
 
+    /// <summary>The code of the 6 bars and spaces of view: the reference
+    /// algorithm of the specification (edge to edge widths), else (not for
+    /// the start code) the variance of before; -1 when none.</summary>
+    class function DecodeCodeOf(const view: TPatternView;
+      start: Boolean): Integer; static;
+    /// <summary>The text of the codes between the start code and the
+    /// checksum, as decodeRow makes it.</summary>
+    class function CodesToText(const codes: TArray<Integer>;
+      convertFNC1: Boolean; out fnc1First: Boolean): string; static;
+  protected
+    /// <summary>The decoder of zxing-cpp: the start pattern from its 2-1-1
+    /// prefix with a quiet zone of 5 modules, the codes with the reference
+    /// algorithm, the stop pattern with its termination bar.</summary>
+    function decodePattern(rowNumber: Integer; var next: TPatternView;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      override;
+    function HasPatternDecoder: Boolean; override;
   public
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
@@ -111,6 +129,288 @@ type
   end;
 
 implementation
+
+const
+  CHAR_LEN = 6;
+
+var
+  // the codes with 6 elements (the stop code without its termination bar)
+  // and their edge to edge widths
+  CodePatterns6: TOneDPatterns;
+  CodeE2E: TArray<TArray<Integer>>;
+
+procedure InitPatterns(const patterns: TOneDPatterns);
+begin
+  SetLength(CodePatterns6, Length(patterns));
+  SetLength(CodeE2E, Length(patterns));
+  for var k := 0 to High(patterns) do
+  begin
+    CodePatterns6[k] := Copy(patterns[k], 0, CHAR_LEN);
+    SetLength(CodeE2E[k], CHAR_LEN - 2);
+    for var i := 0 to CHAR_LEN - 3 do
+      CodeE2E[k][i] := patterns[k][i] + patterns[k][i + 1];
+  end;
+end;
+
+class function TCode128Reader.DecodeCodeOf(const view: TPatternView;
+  start: Boolean): Integer;
+const
+  CHAR_MODS = 11;
+  MAX_AVG_VARIANCE_F = 0.25;
+  MAX_INDIVIDUAL_VARIANCE_F = 0.7;
+begin
+  if (CodeE2E = nil) then
+    InitPatterns(CODE_PATTERNS);
+
+  // the edge to edge widths in modules
+  var moduleSize: Double := view.Sum(CHAR_LEN) / CHAR_MODS;
+  Result := -1;
+  if (moduleSize > 0) then
+  begin
+    var e2e: array [0 .. CHAR_LEN - 3] of Integer;
+    for var i := 0 to CHAR_LEN - 3 do
+      e2e[i] := Trunc((view[i] + view[i + 1]) / moduleSize + 0.5);
+    for var k := 0 to High(CodeE2E) do
+      if (CodeE2E[k][0] = e2e[0]) and (CodeE2E[k][1] = e2e[1]) and
+        (CodeE2E[k][2] = e2e[2]) and (CodeE2E[k][3] = e2e[3]) then
+        exit(k);
+  end;
+  // the reference algorithm fails: the one of before (needed for a few
+  // samples)
+  if not start then
+    Result := DecodeDigitF(view, CodePatterns6, MAX_AVG_VARIANCE_F,
+      MAX_INDIVIDUAL_VARIANCE_F);
+end;
+
+class function TCode128Reader.CodesToText(const codes: TArray<Integer>;
+  convertFNC1: Boolean; out fnc1First: Boolean): string;
+var
+  codeSet: Integer;
+  upperMode, shiftUpperMode, isNextShifted, unshift: Boolean;
+
+  procedure fnc1;
+  begin
+    // FNC1 as first character: GS1-128 (symbology ]C1)
+    if (Length(Result) = 0) then
+      fnc1First := true;
+    if convertFNC1 then
+      if (Length(Result) = 0) then
+        // GS1 specification 5.4.3.7. and 5.4.6.4. If the first char after
+        // the start code is FNC1 then this is GS1-128. We add the symbology
+        // identifier.
+        Result := Result + ']C1'
+      else
+        // GS1 specification 5.4.7.5. Every subsequent FNC1 is returned as
+        // ASCII 29 (GS)
+        Result := Result + Char(29);
+  end;
+
+  procedure fnc4;
+  begin
+    if not upperMode and shiftUpperMode then
+    begin
+      upperMode := true;
+      shiftUpperMode := false;
+    end
+    else if upperMode and shiftUpperMode then
+    begin
+      upperMode := false;
+      shiftUpperMode := false;
+    end
+    else
+      shiftUpperMode := true;
+  end;
+
+begin
+  // the same as decodeRow
+  Result := '';
+  fnc1First := false;
+  case codes[0] of
+    CODE_START_A:
+      codeSet := CODE_CODE_A;
+    CODE_START_B:
+      codeSet := CODE_CODE_B;
+  else
+    codeSet := CODE_CODE_C;
+  end;
+  upperMode := false;
+  shiftUpperMode := false;
+  isNextShifted := false;
+
+  for var n := 1 to High(codes) do
+  begin
+    var code := codes[n];
+    unshift := isNextShifted;
+    isNextShifted := false;
+    case codeSet of
+      CODE_CODE_A:
+        if (code < 64) then
+        begin
+          if (shiftUpperMode = upperMode) then
+            Result := Result + Char(32 + code)
+          else
+            Result := Result + Char(32 + 128); // (as decodeRow)
+          shiftUpperMode := false;
+        end
+        else if (code < 96) then
+        begin
+          if (shiftUpperMode = upperMode) then
+            Result := Result + Char(code - 64)
+          else
+            Result := Result + Char(code + 64);
+          shiftUpperMode := false;
+        end
+        else
+          case code of
+            CODE_FNC_1:
+              fnc1;
+            CODE_FNC_4_A:
+              fnc4;
+            CODE_SHIFT:
+              begin
+                isNextShifted := true;
+                codeSet := CODE_CODE_B;
+              end;
+            CODE_CODE_B:
+              codeSet := CODE_CODE_B;
+            CODE_CODE_C:
+              codeSet := CODE_CODE_C;
+          end;
+      CODE_CODE_B:
+        if (code < 96) then
+        begin
+          if (shiftUpperMode = upperMode) then
+            Result := Result + Char(32 + code)
+          else
+            Result := Result + Char(32 + code + 128);
+          shiftUpperMode := false;
+        end
+        else
+          case code of
+            CODE_FNC_1:
+              fnc1;
+            CODE_FNC_4_B:
+              fnc4;
+            CODE_SHIFT:
+              begin
+                isNextShifted := true;
+                codeSet := CODE_CODE_A;
+              end;
+            CODE_CODE_A:
+              codeSet := CODE_CODE_A;
+            CODE_CODE_C:
+              codeSet := CODE_CODE_C;
+          end;
+      CODE_CODE_C:
+        if (code < 100) then
+        begin
+          if (code < 10) then
+            Result := Result + '0';
+          Result := Result + IntToStr(code);
+        end
+        else
+          case code of
+            CODE_FNC_1:
+              fnc1;
+            CODE_CODE_A:
+              codeSet := CODE_CODE_A;
+            CODE_CODE_B:
+              codeSet := CODE_CODE_B;
+          end;
+    end;
+
+    // Unshift back to another code set if we were shifted
+    if unshift then
+      if (codeSet = CODE_CODE_A) then
+        codeSet := CODE_CODE_B
+      else
+        codeSet := CODE_CODE_A;
+  end;
+end;
+
+function TCode128Reader.HasPatternDecoder: Boolean;
+begin
+  Result := true;
+end;
+
+function TCode128Reader.decodePattern(rowNumber: Integer;
+  var next: TPatternView; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+const
+  MIN_CHAR_COUNT = 4; // start + payload + checksum + stop
+  // the specification has 10, real world examples ignore that
+  QUIET_ZONE = 5;
+begin
+  Result := nil;
+  next := FindLeftGuard(next, MIN_CHAR_COUNT * CHAR_LEN, [2, 1, 1],
+    QUIET_ZONE);
+  if not next.IsValid then
+    exit;
+
+  next := next.SubView(0, CHAR_LEN);
+  var startCode := DecodeCodeOf(next, true);
+  if (startCode < CODE_START_A) or (startCode > CODE_START_C) then
+    exit;
+  var startView := next;
+
+  var codes: TArray<Integer> := [startCode];
+  while true do
+  begin
+    if not next.SkipSymbol then
+      exit;
+    var code := DecodeCodeOf(next, false);
+    if (code = -1) or (code > CODE_STOP) then
+      exit;
+    if (code = CODE_STOP) then
+      break;
+    if (code >= CODE_START_A) then
+      exit;
+    codes := codes + [code];
+  end;
+  // (the stop code is not in codes)
+  if (Length(codes) < MIN_CHAR_COUNT - 1) then
+    exit;
+
+  // the termination bar (not wider than about 2 modules) and the quiet zone
+  // (the view is 13 modules wide)
+  var stopView := next;
+  next := next.SubView(0, CHAR_LEN + 1);
+  if not next.IsValid or (next[CHAR_LEN] > next.Sum(CHAR_LEN) div 4) or
+    not next.HasQuietZoneAfter(QUIET_ZONE / 13) then
+    exit;
+
+  // the last code is the checksum
+  var checksum := codes[0];
+  for var i := 1 to High(codes) - 1 do
+    Inc(checksum, i * codes[i]);
+  if (checksum mod 103 <> codes[High(codes)]) then
+    exit;
+
+  var fnc1First: Boolean;
+  var text := CodesToText(Copy(codes, 0, High(codes)),
+    (hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.ASSUME_GS1),
+    fnc1First);
+  // false positive
+  if (text = '') then
+    exit;
+
+  var rawBytes: TArray<Byte>;
+  SetLength(rawBytes, Length(codes) + 1);
+  for var i := 0 to High(codes) do
+    rawBytes[i] := Byte(codes[i]);
+  rawBytes[High(rawBytes)] := CODE_STOP;
+
+  // the middle of the start and stop codes, like decodeRow
+  Result := TReadResult.Create(text, rawBytes,
+    [TResultPointHelpers.CreateResultPoint(startView.PixelsInFront +
+    startView.Sum / 2, rowNumber), TResultPointHelpers.CreateResultPoint
+    (stopView.PixelsInFront + stopView.Sum / 2, rowNumber)],
+    TBarcodeFormat.CODE_128);
+  if fnc1First then
+    Result.SymbologyIdentifier := ']C1'
+  else
+    Result.SymbologyIdentifier := ']C0';
+end;
 
 function TCode128Reader.FindStartPattern(row: IBitArray): TArray<Integer>;
 var
