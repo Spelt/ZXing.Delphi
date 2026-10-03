@@ -38,6 +38,15 @@ From Delphi 11 the standard camera component seems much improved.
 	
 
 ### Changes
+- Next version (branch Development, not released yet)
+	- Requires Delphi 10.4 Sydney or newer. For XE7 - 10.3 use v3.13.1 or older.
+	- Data Matrix: port of the edge tracing detector of zxing-cpp, with DMRE (rectangular) sizes, mirrored codes, pure codes of 1 pixel per module, and corrections for not flat and curved symbols (LocalGrid and timing pattern correction). The old detector stays as fallback.
+	- QR Code: port of the finder pattern detector of zxing-cpp, which handles perspective and not flat symbols much better (alignment patterns located in the image, tiled sampling). The old detector stays as fallback.
+	- Faster: luminance conversion (FMX and VCL), binarizer, inversion, closing for dot-peen codes and the 1D readers (a row cache shared by the readers). Results are unchanged.
+	- Image pyramid: when nothing is found, also downscaled copies of the image are scanned (TScanManager.TryDownscale, on by default). Helps for large, blurry and dot-peen codes.
+	- TScanManager.ScanAll: all barcodes in an image (QR Code, Data Matrix and 1D on different rows, also vertical ones with TRY_HARDER).
+	- TReadResult: Position (4 corners), Orientation, IsInverted, IsMirrored, SymbologyIdentifier (like ]Q1, ]d2, ]C1), IsGS1 and GS1HRI (the human readable form of GS1 data, like (01)...(17)...(10)...).
+	- On the black box test images of zxing-cpp (benchmark\, compared with zxing-cpp): Data Matrix 365 of 366, QR Code 482 of 525 (with TRY_HARDER and inversion); without hints Data Matrix 93 of 92, QR Code 278 of 304.
 - v3.13.0
 	- Fixes thanks to Robert Jędrzejczyk. https://github.com/Spelt/ZXing.Delphi/issues/170, https://github.com/Spelt/ZXing.Delphi/issues/171, https://github.com/Spelt/ZXing.Delphi/issues/172 
 	- 1D with TRY_HARDER: results were lost and memory leaked (#170). Codes are now also searched rotated by 90 degrees, as intended.
@@ -204,6 +213,36 @@ Include all the files in your project or use search path like included test appl
 
 FScanManager := TScanManager.Create(TBarcodeFormat.CODE_128, nil);
 FReadResult := FScanManager.Scan(scanBitmap);
+
+```
+
+Create the scan manager once and use it for all frames; it is not meant to be used by two threads at the same time. Hints are passed as a dictionary, which the scan manager frees:
+
+```Pascal
+
+var hints := TDictionary<TDecodeHintType, TObject>.Create;
+hints.Add(TDecodeHintType.TRY_HARDER, nil);        // slower, finds more (also rotated 1D codes)
+hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);  // also light codes on a dark background
+FScanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
+
+```
+
+All barcodes in an image (next version), with the extra information of a result:
+
+```Pascal
+
+var list := FScanManager.ScanAll(scanBitmap);  // a TObjectList: frees the results
+try
+  for var r in list do
+  begin
+    Memo1.Lines.Add(r.SymbologyIdentifier + ' ' + r.Text);
+    // r.Position: the 4 corners in the image, r.Orientation: the rotation in degrees
+    if r.IsGS1 then
+      Memo1.Lines.Add(r.GS1HRI);  // e.g. (01)05909990329717(17)270430(10)NE76571
+  end;
+finally
+  list.Free;
+end;
 
 ```
 
