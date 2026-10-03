@@ -30,6 +30,10 @@ type
     procedure ScanAllMixedFormats;
     [Test]
     procedure ScanAllMaxCount;
+    [Test]
+    procedure GS1HRIFromElementStrings;
+    [Test]
+    procedure GS1HRIOfDataMatrix;
   end;
 
 implementation
@@ -47,7 +51,8 @@ uses
   ZXing.ScanManager,
   ZXing.BarcodeFormat,
   ZXing.DecodeHintType,
-  ZXing.ReadResult;
+  ZXing.ReadResult,
+  ZXing.GS1;
 
 function ImagePath(const fileName: string): string;
 begin
@@ -208,6 +213,42 @@ begin
     Assert.AreEqual(2, list.Count);
   finally
     list.Free;
+  end;
+end;
+
+procedure TReadResultTest.GS1HRIFromElementStrings;
+begin
+  // fixed length (01), variable length (21) ended by GS, then (17) and (10)
+  Assert.AreEqual('(01)05909990329717(21)1039(17)270331(10)AB123',
+    HRIFromGS1('0105909990329717211039' + #29 + '1727033110AB123'));
+  // an AI of 4 digits (net weight with 3 decimals)
+  Assert.AreEqual('(3103)001234', HRIFromGS1('3103001234'));
+  // too short for (01) and an unknown AI (05)
+  Assert.AreEqual('', HRIFromGS1('01059099903297'));
+  Assert.AreEqual('', HRIFromGS1('0512345'));
+end;
+
+procedure TReadResultTest.GS1HRIOfDataMatrix;
+begin
+  // the GS1 dot-peen code of a medicine package
+  var r := Scan('dm-inverted.jpg', TBarcodeFormat.DATA_MATRIX, 0, true);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.IsTrue(r.IsGS1);
+    Assert.AreEqual('(01)05909990329717(21)1039520876635(17)270430(10)NE76571',
+      r.GS1HRI);
+  finally
+    r.Free;
+  end;
+
+  // not GS1
+  r := Scan('dmc1.png', TBarcodeFormat.DATA_MATRIX);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.IsFalse(r.IsGS1);
+    Assert.AreEqual('', r.GS1HRI);
+  finally
+    r.Free;
   end;
 end;
 

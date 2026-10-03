@@ -169,6 +169,18 @@ type
     property SymbologyIdentifier: string read FSymbologyIdentifier
       write FSymbologyIdentifier;
 
+    /// <summary>Whether the content is GS1 data (GS1 DataMatrix, GS1 QR Code,
+    /// GS1-128), by the symbology identifier.</summary>
+    function IsGS1: Boolean;
+    /// <summary>
+    /// The human readable interpretation of GS1 content, with the
+    /// application identifiers between parentheses, like
+    /// '(01)05909990329717(17)270331(10)AB123'. '' when the content is not
+    /// GS1 data or not valid. For GS1-128 use the hint ASSUME_GS1, as only
+    /// then the separators between the fields are part of the text.
+    /// </summary>
+    function GS1HRI: string;
+
     /// <summary>
     /// Gets the timestamp.
     /// </summary>
@@ -178,7 +190,8 @@ type
 implementation
 
 uses
-  System.Math;
+  System.Math,
+  ZXing.GS1;
 
 
 {$REGION 'IMetaData implementations'}
@@ -320,6 +333,27 @@ begin
       // of a Data Matrix
       Result := [p[0], p[3], p[2], p[1]];
   end;
+end;
+
+function TReadResult.IsGS1: Boolean;
+begin
+  var s := FSymbologyIdentifier;
+  Result := (s = ']d2') or (s = ']d5') or (s = ']Q3') or (s = ']Q4') or
+    (s = ']C1');
+end;
+
+function TReadResult.GS1HRI: string;
+begin
+  if not IsGS1 then
+    exit('');
+  // the text starts with the symbology identifier with ASSUME_GS1, and with
+  // a GS character for the first FNC1 of a Data Matrix without it
+  var data := FText;
+  if data.StartsWith(']') and (Length(data) >= 3) then
+    data := Copy(data, 4, MaxInt);
+  if data.StartsWith(#29) then
+    data := Copy(data, 2, MaxInt);
+  Result := HRIFromGS1(data);
 end;
 
 function TReadResult.GetOrientation: Integer;
