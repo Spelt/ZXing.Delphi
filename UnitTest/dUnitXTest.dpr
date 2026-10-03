@@ -24,6 +24,7 @@ uses
   OneDTest in 'OneDTest.pas',
   QRCodeTest in 'QRCodeTest.pas',
   AztecTest in 'AztecTest.pas',
+  ReedSolomonTest in 'ReedSolomonTest.pas',
   Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
   Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
   Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';

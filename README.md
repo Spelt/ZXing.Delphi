@@ -56,6 +56,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- QR Code: segments in Kanji mode made the decoding fail. The application indicator after FNC1 in second position (AIM) is read, and an unknown ECI no longer stops the decoding (the default character set is used, like zxing-cpp).
 	- Code 93: the right result point (and so Position and Orientation) was wrong.
 	- TBitArray.setRange set the wrong bits.
+	- Reed-Solomon (QR Code, Data Matrix, Aztec): more errors than can be corrected no longer give a wrongly "corrected" codeword. The result is checked again, and with an odd number of error correction codewords one error too many was accepted (like zxing-cpp).
 	- TScanManager.ScanAll: all barcodes in an image (QR Code, Data Matrix and 1D on different rows, also vertical ones with TRY_HARDER).
 	- TReadResult: Position (4 corners), Orientation, IsInverted, IsMirrored, SymbologyIdentifier (like ]Q1, ]d2, ]C1), IsGS1 and GS1HRI (the human readable form of GS1 data, like (01)...(17)...(10)...).
 	- TScanManager.ReturnErrors (off by default): also QR Codes, Data Matrix and Aztec codes that were found but could not be read, with TReadResult.Error ('Checksum' or 'Format') and their position, e.g. to tell the user to hold the camera still or closer. Scan returns one only when nothing could be read.

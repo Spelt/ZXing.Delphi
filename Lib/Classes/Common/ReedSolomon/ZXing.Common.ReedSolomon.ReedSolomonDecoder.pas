@@ -34,9 +34,14 @@ type
   public
     constructor Create(field: TGenericGF);
   public
+    /// <summary>Corrects received in place; false when it can not be
+    /// corrected (received may be changed then).</summary>
     function decode(received: TArray<Integer>; twoS: Integer): boolean;
   strict private
     function findErrorLocations(errorLocator: IGenericGFPoly): TArray<Integer>;
+    /// <summary>Whether a syndrome of received is not 0.</summary>
+    function hasErrors(const received: TArray<Integer>; twoS: Integer)
+      : boolean;
   strict private
     function findErrorMagnitudes(errorEvaluator: IGenericGFPoly;
       errorLocations: TArray<Integer>): TArray<Integer>;
@@ -103,6 +108,14 @@ begin
     end;
 
     sigma := sigmaOmega[0];
+    // each error costs 2 error correction codewords (with an odd twoS the
+    // locator can have one root too many, like zxing-cpp)
+    if (2 * sigma.Degree > twoS) then
+    begin
+      Result := false;
+      Exit
+    end;
+
     errorLocations := self.findErrorLocations(sigma);
     if (errorLocations = nil) then
     begin
@@ -124,6 +137,14 @@ begin
       received[position] := TGenericGF.addOrSubtract(received[position],
         errorMagnitudes[i]);
       inc(i)
+    end;
+
+    // the corrected codeword must be a valid codeword, else there were more
+    // errors than could be corrected (zxing-cpp issue #940)
+    if hasErrors(received, twoS) then
+    begin
+      Result := false;
+      Exit
     end;
 
   finally
@@ -173,6 +194,16 @@ begin
     Result := nil;
   end;
 
+end;
+
+function TReedSolomonDecoder.hasErrors(const received: TArray<Integer>;
+  twoS: Integer): boolean;
+begin
+  Result := false;
+  var poly: IGenericGFPoly := TGenericGFPoly.Create(self.field, received);
+  for var i := 0 to twoS - 1 do
+    if (poly.evaluateAt(self.field.exp(i + self.field.GeneratorBase)) <> 0) then
+      exit(true);
 end;
 
 function TReedSolomonDecoder.findErrorMagnitudes(errorEvaluator: IGenericGFPoly;
