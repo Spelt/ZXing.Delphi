@@ -45,10 +45,20 @@ type
   /// <summary>
   /// This implementation can detect and decode QR Codes in an image.
   /// </summary>
-  TQRCodeReader = class(TInterfacedObject, IReader)
+  TQRCodeReader = class(TInterfacedObject, IReader, IMultipleReader)
   private
     FDecoder: TQRDecoder;
     NO_POINTS: TArray<IResultPoint>;
+
+    /// <summary>decode, with or without the finder pattern detector of
+    /// zxing-cpp (otherwise only the pure detectors or the old one).
+    /// </summary>
+    function decodeWith(const image: TBinaryBitmap;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      newDetector: Boolean): TReadResult;
+    function createResult(decoderResult: TDecoderResult;
+      points: TArray<IResultPoint>; const position: TArray<IResultPoint>)
+      : TReadResult;
 
     /// <summary>
     /// This method detects a code in a "pure" image -- that is, pure monochrome image
@@ -96,6 +106,10 @@ type
     /// </returns>
     function decode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload;
+    /// <summary>All QR Codes in the image, see IMultipleReader.</summary>
+    procedure decodeMultiple(const image: TBinaryBitmap;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      results: TList<TReadResult>; maxCount: Integer);
 
     /// <summary>
     /// Resets any internal state the implementation has after a decode, to prepare it
@@ -132,14 +146,106 @@ end;
 
 function TQRCodeReader.decode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+begin
+  Result := decodeWith(image, hints, true);
+end;
+
+procedure TQRCodeReader.decodeMultiple(const image: TBinaryBitmap;
+  hints: TDictionary<TDecodeHintType, TObject>; results: TList<TReadResult>;
+  maxCount: Integer);
+var
+  found: Boolean;
+  qrDecoder: TQRDecoder;
+  remaining: Integer;
+begin
+  if (image = nil) or (image.BlackMatrix = nil) or
+    ResultsFull(results, maxCount) then
+    exit;
+  found := false;
+
+  if (hints = nil) or not hints.ContainsKey(TDecodeHintType.PURE_BARCODE) then
+  begin
+    qrDecoder := FDecoder;
+    remaining := 0;
+    if (maxCount > 0) then
+      remaining := maxCount - results.Count;
+    // every symbol found by the finder pattern detector of zxing-cpp
+    DetectQRCodesByFinderPatterns(image.BlackMatrix,
+      (hints <> nil) and hints.ContainsKey(TDecodeHintType.TRY_HARDER),
+      function(bits: TBitMatrix; const candidatePoints,
+        candidatePosition: TArray<IResultPoint>): Boolean
+      begin
+        var decoded := qrDecoder.decode(bits, hints);
+        Result := (decoded <> nil);
+        if not Result then
+          exit;
+        found := true;
+        try
+          var r := createResult(decoded, candidatePoints, candidatePosition);
+          if ContainsResult(results, r) then
+            r.Free
+          else
+            results.Add(r);
+        finally
+          decoded.Free;
+        end;
+      end, remaining);
+  end;
+
+  // nothing found: the pure detectors or the old detector, for one symbol
+  if not found then
+  begin
+    var r := decodeWith(image, hints, false);
+    if (r <> nil) then
+      if ContainsResult(results, r) then
+        r.Free
+      else
+        results.Add(r);
+  end;
+end;
+
+function TQRCodeReader.createResult(decoderResult: TDecoderResult;
+  points: TArray<IResultPoint>; const position: TArray<IResultPoint>)
+  : TReadResult;
+begin
+  // If the code was mirrored: swap the bottom-left and the top-right points.
+  var data := TQRCodeDecoderMetaData(decoderResult.Other);
+  if (data <> nil) then
+    data.applyMirroredCorrection(points);
+
+  Result := TReadResult.Create(decoderResult.Text, decoderResult.RawBytes,
+    points, TBarcodeFormat.QR_CODE);
+  if (position <> nil) then
+    Result.Position := position;
+  Result.SymbologyIdentifier := decoderResult.SymbologyIdentifier;
+  Result.IsMirrored := decoderResult.IsMirrored;
+
+  var byteSegments := decoderResult.byteSegments;
+
+  if (byteSegments <> nil) then
+    Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS,  TResultMetaData.CreateByteSegmentsMetadata(byteSegments));
+
+  if (Length(decoderResult.ecLevel) <> 0) then
+    Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, TResultMetaData.CreateStringMetadata(decoderResult.ecLevel));
+
+  if (decoderResult.StructuredAppend) then
+  begin
+    Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
+        TResultMetaData.CreateIntegerMetadata(decoderResult.StructuredAppendSequenceNumber));
+    Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
+      TResultMetaData.CreateIntegerMetadata(decoderResult.StructuredAppendParity))
+  end;
+end;
+
+function TQRCodeReader.decodeWith(const image: TBinaryBitmap;
+  hints: TDictionary<TDecodeHintType, TObject>;
+  newDetector: Boolean): TReadResult;
 var
   DecoderResult: TDecoderResult;
   Detector: TDetector;
   points, position: TArray<IResultPoint>;
   bits: TBitMatrix;
   DetectorResult: TDetectorResult;
-  data: TQRCodeDecoderMetaData;
-  byteSegments: IByteSegments;
 begin
   Result := nil;
   DecoderResult := nil;
@@ -174,8 +280,9 @@ begin
     else
     begin
       // the finder pattern detector of zxing-cpp first
-      DecoderResult := finderPatternDetectAndDecode(image.BlackMatrix, hints,
-        points, position);
+      if newDetector then
+        DecoderResult := finderPatternDetectAndDecode(image.BlackMatrix, hints,
+          points, position);
 
       // then the old detector
       if (DecoderResult = nil) then
@@ -200,33 +307,7 @@ begin
     if (DecoderResult = nil) then
       exit;
 
-    // If the code was mirrored: swap the bottom-left and the top-right points.
-    data := TQRCodeDecoderMetaData(DecoderResult.Other);
-    if (data <> nil) then
-      data.applyMirroredCorrection(points);
-
-    Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
-      points, TBarcodeFormat.QR_CODE);
-    if (position <> nil) then
-      Result.Position := position;
-    Result.SymbologyIdentifier := DecoderResult.SymbologyIdentifier;
-    Result.IsMirrored := DecoderResult.IsMirrored;
-
-    byteSegments := DecoderResult.byteSegments;
-
-    if (byteSegments <> nil) then
-      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS,  TResultMetaData.CreateByteSegmentsMetadata(byteSegments));
-
-    if (Length(DecoderResult.ecLevel) <> 0) then
-      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, TResultMetaData.CreateStringMetadata(DecoderResult.ecLevel));
-
-    if (DecoderResult.StructuredAppend) then
-    begin
-      Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
-          TResultMetaData.CreateIntegerMetadata(DecoderResult.StructuredAppendSequenceNumber));
-      Result.putMetadata(TResultMetadataType.STRUCTURED_APPEND_PARITY,
-        TResultMetaData.CreateIntegerMetadata(DecoderResult.StructuredAppendParity))
-    end;
+    Result := createResult(DecoderResult, points, position);
 
   finally
 

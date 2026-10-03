@@ -5,7 +5,7 @@ program ZXingBenchmark;
   * shows next to it how many of them zxing-cpp itself reads.
   *
   * Usage: ZXingBenchmark [folder prefixes] [-v] [-modes=slow,fast,pure]
-  *                       [-samples=<folder>] [-thresholds]
+  *                       [-samples=<folder>] [-thresholds] [-all]
   *
   *   folder prefixes   only these folders, e.g. "datamatrix qrcode-1"
   *   -v                list every symbol that zxing-cpp reads and Delphi not,
@@ -15,6 +15,8 @@ program ZXingBenchmark;
   *                     this repository, a copy of zxing-cpp's test/samples)
   *   -thresholds       also write the results as limits for
   *                     unitTest\ZXingCppSamplesTest.pas
+  *   -all              read all symbols of an image (TScanManager.ScanAll)
+  *                     instead of one (Scan)
   *
   * See Benchmark.Runner for the modes and how results are compared.
 }
@@ -219,6 +221,8 @@ begin
           Verbose := true
         else if SameText(arg, '-thresholds') then
           writeThresholds := true
+        else if SameText(arg, '-all') then
+          UseScanAll := true
         else if arg.StartsWith('-samples=', true) then
           samplesDir := Copy(arg, 10, MaxInt)
         else if arg.StartsWith('-modes=', true) then

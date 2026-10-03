@@ -44,18 +44,19 @@ uses
 type
   /// <summary>Gets every candidate grid: the sampled bits (freed by the
   /// detector after the call) and its corners top left, bottom left, bottom
-  /// right, top right. Return true to stop the detection.</summary>
+  /// right, top right. Return true when it was decoded.</summary>
   TDataMatrixCandidate = reference to function(bits: TBitMatrix;
     const points: TArray<IResultPoint>): Boolean;
 
 /// <summary>
 /// Looks for Data Matrix symbols by tracing edges. Without tryHarder only the
 /// center lines are scanned, with it parallel lines every 16 pixels. Without
-/// tryRotate only the scan direction to the left is used.
-/// Returns true when onCandidate stopped the detection.
+/// tryRotate only the scan direction to the left is used. Stops after
+/// maxSymbols decoded candidates (0: no limit). Returns true when at least
+/// one candidate was decoded.
 /// </summary>
 function DetectDataMatrixByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
-  const onCandidate: TDataMatrixCandidate): Boolean;
+  const onCandidate: TDataMatrixCandidate; maxSymbols: Integer = 1): Boolean;
 
 /// <summary>Detects a code in a "pure" image: an unrotated, unskewed code with
 /// only a white border around it (zxing-cpp's DetectPure). Also handles codes
@@ -1240,7 +1241,9 @@ begin
     TResultPointHelpers.CreateResultPoint(left + width, top));
 end;
 
-function DetectDataMatrixByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
+/// <summary>The edge tracing part of DetectDataMatrixByEdges. Returns true
+/// when onCandidate stopped the detection.</summary>
+function DetectByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
   const onCandidate: TDataMatrixCandidate): Boolean;
 const
   // minimum realistic size in pixel: 8 modules x 2 pixels per module
@@ -1251,21 +1254,6 @@ var
   floatMask: TFloatExceptionsMasked; // masked until this function returns
 begin
   Result := false;
-  if (image = nil) then
-    exit;
-
-  // first the very fast pure path, also because the edge tracing generally
-  // fails on pure symbols with a module size of 1 pixel
-  var purePoints: TArray<IResultPoint>;
-  var pureBits := DetectDataMatrixPure(image, purePoints);
-  if (pureBits <> nil) then
-    try
-      if onCandidate(pureBits, purePoints) then
-        exit(true);
-    finally
-      pureBits.Free;
-    end;
-
   var history: THistory := nil;
   var lines: TLines;
   for var k := 0 to 3 do
@@ -1322,6 +1310,44 @@ begin
       lines[k].Free;
     history.Free;
   end;
+end;
+
+function DetectDataMatrixByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
+  const onCandidate: TDataMatrixCandidate; maxSymbols: Integer): Boolean;
+var
+  count: Integer;
+  pureBits: TBitMatrix;
+  purePoints: TArray<IResultPoint>;
+begin
+  Result := false;
+  if (image = nil) then
+    exit;
+  count := 0;
+
+  // first the very fast pure path, also because the edge tracing generally
+  // fails on pure symbols with a module size of 1 pixel. A decoded pure
+  // image holds only that symbol.
+  pureBits := DetectDataMatrixPure(image, purePoints);
+  if (pureBits <> nil) then
+    try
+      if onCandidate(pureBits, purePoints) then
+        exit(true);
+    finally
+      pureBits.Free;
+    end;
+
+  // count the decoded candidates and stop after maxSymbols
+  DetectByEdges(image, tryHarder, tryRotate,
+    function(bits: TBitMatrix; const points: TArray<IResultPoint>): Boolean
+    begin
+      Result := false;
+      if onCandidate(bits, points) then
+      begin
+        Inc(count);
+        Result := (maxSymbols > 0) and (count >= maxSymbols);
+      end;
+    end);
+  Result := (count > 0);
 end;
 
 end.

@@ -42,7 +42,7 @@ type
   /// Encapsulates functionality and implementation that is common to all families
   /// of one-dimensional barcodes.
   /// </summary>
-  TOneDReader = class(TInterfacedObject, IReader)
+  TOneDReader = class(TInterfacedObject, IReader, IMultipleReader)
   private
     /// <summary>
     /// We're going to examine rows from the middle outward, searching alternately above and below the
@@ -56,8 +56,15 @@ type
     /// <param name="image">The image to decode</param>
     /// <param name="hints">Any hints that were requested</param>
     /// <returns>The contents of the decoded barcode</returns>
+    /// <summary>Scans the rows from the middle out and returns the first
+    /// barcode; with a collector all (new) barcodes that are read on at
+    /// least 2 rows are added to it instead, up to maxCount results (0: no
+    /// limit), and the result is nil. pending holds (and keeps, for the
+    /// caller to free) the ones read on 1 row so far.</summary>
     function doDecode(const image: TBinaryBitmap;
-      hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      collector: TList<TReadResult> = nil; maxCount: Integer = 0;
+      pending: TList<TReadResult> = nil): TReadResult;
   protected
     const INTEGER_MATH_SHIFT = 8;
 
@@ -115,6 +122,11 @@ type
     function decode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       overload; virtual;
+    /// <summary>All barcodes of this format on different rows of the image,
+    /// see IMultipleReader.</summary>
+    procedure decodeMultiple(const image: TBinaryBitmap;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      results: TList<TReadResult>; maxCount: Integer);
 
     /// <summary>
     /// Records the size of successive runs of white and black pixels in a row, starting at a given point.
@@ -220,8 +232,40 @@ begin
 
 end;
 
+procedure TOneDReader.decodeMultiple(const image: TBinaryBitmap;
+  hints: TDictionary<TDecodeHintType, TObject>; results: TList<TReadResult>;
+  maxCount: Integer);
+begin
+  if (image = nil) or ResultsFull(results, maxCount) then
+    exit;
+  var before := results.Count;
+  // every row, also after a barcode was found
+  var pending := TList<TReadResult>.Create;
+  try
+    doDecode(image, hints, results, maxCount, pending);
+  finally
+    for var r in pending do
+      r.Free;
+    pending.Free;
+  end;
+
+  // nothing new: the normal decode, which also tries the image rotated with
+  // TRY_HARDER
+  if (results.Count = before) then
+  begin
+    var r := decode(image, hints);
+    if (r <> nil) then
+      if ContainsResult(results, r) then
+        r.Free
+      else
+        results.Add(r);
+  end;
+end;
+
 function TOneDReader.doDecode(const image: TBinaryBitmap;
-  hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+  hints: TDictionary<TDecodeHintType, TObject>;
+  collector: TList<TReadResult>; maxCount: Integer;
+  pending: TList<TReadResult>): TReadResult;
 
 var
   attempt, X, rowNumber, rowStepsAboveOrBelow, width, height, middle, rowStep,
@@ -315,18 +359,56 @@ begin
         // But it was upside down, so note that
         // ReadResult.putMetadata(ResultMetadataType.orientation, TObject(180));
         // And remember to flip the result points horizontally.
+        // (all of them, also those of an add-on)
         points := ReadResult.ResultPoints;
-        if (points <> nil) then
-        begin
-          points[0] := TResultPointHelpers.CreateResultPoint
-            (width - points[0].X - 1, points[0].Y);
-          points[1] := TResultPointHelpers.CreateResultPoint
-            (width - points[1].X - 1, points[1].Y);
-        end;
+        for var i := 0 to High(points) do
+          if (points[i] <> nil) then
+            points[i] := TResultPointHelpers.CreateResultPoint
+              (width - points[i].X - 1, points[i].Y);
 
       end;
 
-      Exit(ReadResult);
+      if (collector = nil) then
+        Exit(ReadResult);
+
+      // collecting all barcodes: a new one counts when it is read on a
+      // second row too (like zxing-cpp's minLineCount 2), which prevents
+      // most false positives; then go on with the next row
+      if ContainsResult(collector, ReadResult) then
+        ReadResult.Free
+      else
+      begin
+        // the same code, also when read with another text (e.g. without its
+        // add-on) on another row
+        var confirmed := -1;
+        for var i := 0 to pending.Count - 1 do
+          if ((pending[i].BarcodeFormat = ReadResult.BarcodeFormat) and
+            (pending[i].Text = ReadResult.Text)) or
+            IsSameLinearSymbol(pending[i], ReadResult) then
+          begin
+            confirmed := i;
+            break;
+          end;
+        if (confirmed < 0) then
+          pending.Add(ReadResult)
+        else
+        begin
+          // keep the most complete reading
+          var best := pending[confirmed];
+          pending.Delete(confirmed);
+          if (Length(ReadResult.Text) > Length(best.Text)) then
+          begin
+            best.Free;
+            best := ReadResult;
+          end
+          else
+            ReadResult.Free;
+          collector.Add(best);
+          if ResultsFull(collector, maxCount) then
+            Exit(nil);
+        end;
+      end;
+      break;
 
     end; // loop
 

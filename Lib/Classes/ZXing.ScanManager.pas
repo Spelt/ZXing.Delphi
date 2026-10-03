@@ -43,6 +43,14 @@ type
     destructor Destroy; override;
 
     function Scan(const pBitmapForScan: TBitmap): TReadResult;
+    /// <summary>
+    /// All barcodes in the bitmap, at most maxCount (0: no limit), each one
+    /// once. Scans all layers (normal, inverted with ENABLE_INVERSION and
+    /// the downscaled ones), so it takes more time than Scan. The caller
+    /// frees the list, which frees the results in it.
+    /// </summary>
+    function ScanAll(const pBitmapForScan: TBitmap; maxCount: Integer = 0)
+      : TObjectList<TReadResult>;
     constructor Create(const format: TBarcodeFormat;
       Hints: TDictionary<TDecodeHintType, TObject>);
 
@@ -64,7 +72,10 @@ type
 implementation
 
 uses
-  System.Math;
+  System.Math,
+  ZXing.Reader;
+
+procedure ScaleResult(r: TReadResult; scale: Single); forward;
 
 constructor TScanManager.Create(const format: TBarcodeFormat;
   Hints: TDictionary<TDecodeHintType, TObject>);
@@ -218,25 +229,124 @@ begin
       if (Result <> nil) then
       begin
         // back to the coordinates of the full image
-        var scale: Single := fullWidth / width;
-        var position := Result.Position;
-        for var i := 0 to High(position) do
-          if (position[i] <> nil) then
-            position[i] := TResultPointHelpers.CreateResultPoint(position[i].x
-              * scale, position[i].y * scale);
-        Result.Position := position;
-        var points := Result.resultPoints;
-        for var i := 0 to High(points) do
-          if (points[i] <> nil) then
-            points[i] := TResultPointHelpers.CreateResultPoint(points[i].x *
-              scale, points[i].y * scale);
-        Result.resultPoints := points;
+        ScaleResult(Result, fullWidth / width);
         exit;
       end;
     end;
   finally
     LuminanceSource.Free;
   end;
+end;
+
+/// <summary>Scales the position and the result points of r, from a
+/// downscaled layer back to the full image.</summary>
+procedure ScaleResult(r: TReadResult; scale: Single);
+begin
+  var position := r.Position;
+  for var i := 0 to High(position) do
+    if (position[i] <> nil) then
+      position[i] := TResultPointHelpers.CreateResultPoint(position[i].x *
+        scale, position[i].y * scale);
+  r.Position := position;
+  var points := r.resultPoints;
+  for var i := 0 to High(points) do
+    if (points[i] <> nil) then
+      points[i] := TResultPointHelpers.CreateResultPoint(points[i].x * scale,
+        points[i].y * scale);
+  r.resultPoints := points;
+end;
+
+function TScanManager.ScanAll(const pBitmapForScan: TBitmap; maxCount: Integer)
+  : TObjectList<TReadResult>;
+var
+  all: TObjectList<TReadResult>;
+
+  // all barcodes of one layer, normal and inverted, scaled to the full image
+  procedure scanLayer(source: TLuminanceSource; scale: Single);
+  begin
+    var remaining := 0;
+    if (maxCount > 0) then
+      remaining := maxCount - all.Count;
+    var layerResults := TList<TReadResult>.Create;
+    try
+      var binarizer := THybridBinarizer.Create(source);
+      var bitmap := TBinaryBitmap.Create(binarizer);
+      try
+        FMultiFormatReader.decodeMultiple(bitmap, layerResults, remaining);
+
+        if FEnableInversion and not ResultsFull(layerResults, remaining) then
+        begin
+          var first := layerResults.Count;
+          var inverted := source.invert;
+          var invertedBinarizer := THybridBinarizer.CreateInverted(inverted,
+            binarizer);
+          var invertedBitmap := TBinaryBitmap.Create(invertedBinarizer);
+          try
+            FMultiFormatReader.decodeMultiple(invertedBitmap, layerResults,
+              remaining);
+          finally
+            invertedBitmap.Free;
+            invertedBinarizer.Free;
+            inverted.Free;
+          end;
+          for var i := first to layerResults.Count - 1 do
+            layerResults[i].IsInverted := true;
+        end;
+      finally
+        bitmap.Free;
+        binarizer.Free;
+      end;
+
+      for var r in layerResults do
+      begin
+        if (scale <> 1) then
+          ScaleResult(r, scale);
+        if ResultsFull(all, maxCount) or ContainsResult(all, r) then
+          r.Free
+        else
+          all.Add(r);
+      end;
+    finally
+      layerResults.Free;
+    end;
+  end;
+
+begin
+  all := TObjectList<TReadResult>.Create(true);
+  try
+    var LuminanceSource := TRGBLuminanceSource.CreateFromBitmap
+      (pBitmapForScan, pBitmapForScan.Width, pBitmapForScan.Height);
+    try
+      scanLayer(LuminanceSource, 1);
+
+      // the downscaled layers of the image pyramid
+      var fullWidth := LuminanceSource.Width;
+      var luminances := LuminanceSource.Matrix;
+      var width := LuminanceSource.Width;
+      var height := LuminanceSource.Height;
+      while FTryDownscale and not ResultsFull(all, maxCount) and
+        (Max(width, height) > DOWNSCALE_THRESHOLD) and
+        (Min(width, height) >= DOWNSCALE_FACTOR) do
+      begin
+        luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
+        width := width div DOWNSCALE_FACTOR;
+        height := height div DOWNSCALE_FACTOR;
+        var layer := TRGBLuminanceSource.Create(luminances, width, height,
+          TBitmapFormat.Gray8);
+        try
+          scanLayer(layer, fullWidth / width);
+        finally
+          layer.Free;
+        end;
+      end;
+    finally
+      LuminanceSource.Free;
+    end;
+  except
+    all.Free;
+    raise;
+  end;
+  Result := all;
 end;
 
 function TScanManager.DecodeLayer(source: TLuminanceSource): TReadResult;

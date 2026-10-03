@@ -45,7 +45,7 @@ type
   /// <summary>
   /// This implementation can detect and decode Data Matrix codes in an image.
   /// </summary>
-  TDataMatrixReader = class(TInterfacedObject, IReader)
+  TDataMatrixReader = class(TInterfacedObject, IReader, IMultipleReader)
   private const
     /// <summary>
     /// Finest grid of detector start points: 4 means start points every 1/4
@@ -61,6 +61,15 @@ type
   private
     FDecoder: TDataMatrixDecoder;
     NO_POINTS: TArray<IResultPoint>;
+
+    /// <summary>decode, with or without the edge tracing detector of
+    /// zxing-cpp (otherwise only the pure detectors or the old one).
+    /// </summary>
+    function decodeWith(const image: TBinaryBitmap;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      newDetector: Boolean): TReadResult;
+    function createResult(decoderResult: TDecoderResult;
+      const points: TArray<IResultPoint>): TReadResult;
 
     /// <summary>
     /// Detects with the edge tracing detector (ZXing.Datamatrix.Internal.
@@ -107,6 +116,11 @@ type
 
     function decode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload;
+    /// <summary>All Data Matrix codes in the image, see IMultipleReader.
+    /// </summary>
+    procedure decodeMultiple(const image: TBinaryBitmap;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      results: TList<TReadResult>; maxCount: Integer);
 
     procedure reset;
   end;
@@ -137,11 +151,131 @@ end;
 
 function TDataMatrixReader.decode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+begin
+  Result := decodeWith(image, hints, true);
+end;
+
+/// <summary>Whether the center of points lies in the area of a Data Matrix
+/// in results.</summary>
+function InFoundSymbol(results: TList<TReadResult>;
+  const points: TArray<IResultPoint>): Boolean;
+begin
+  Result := false;
+  if (points = nil) then
+    exit;
+  var cx: Single := 0;
+  var cy: Single := 0;
+  for var p in points do
+  begin
+    cx := cx + p.x / Length(points);
+    cy := cy + p.y / Length(points);
+  end;
+  for var r in results do
+    if (r.BarcodeFormat = TBarcodeFormat.DATA_MATRIX) then
+    begin
+      var minX: Single := MaxInt;
+      var minY: Single := MaxInt;
+      var maxX: Single := -MaxInt;
+      var maxY: Single := -MaxInt;
+      for var p in r.Position do
+      begin
+        minX := Min(minX, p.x);
+        minY := Min(minY, p.y);
+        maxX := Max(maxX, p.x);
+        maxY := Max(maxY, p.y);
+      end;
+      if (cx >= minX) and (cx <= maxX) and (cy >= minY) and (cy <= maxY) then
+        exit(true);
+    end;
+end;
+
+procedure TDataMatrixReader.decodeMultiple(const image: TBinaryBitmap;
+  hints: TDictionary<TDecodeHintType, TObject>; results: TList<TReadResult>;
+  maxCount: Integer);
+var
+  found, assumeGS1, tryHarder: Boolean;
+  dmDecoder: TDataMatrixDecoder;
+  remaining: Integer;
+begin
+  if (image = nil) or (image.BlackMatrix = nil) or
+    ResultsFull(results, maxCount) then
+    exit;
+  found := false;
+
+  if (hints = nil) or not hints.ContainsKey(TDecodeHintType.PURE_BARCODE) then
+  begin
+    dmDecoder := FDecoder;
+    assumeGS1 := (hints <> nil) and
+      hints.ContainsKey(TDecodeHintType.ASSUME_GS1);
+    tryHarder := (hints <> nil) and
+      hints.ContainsKey(TDecodeHintType.TRY_HARDER);
+    remaining := 0;
+    if (maxCount > 0) then
+      remaining := maxCount - results.Count;
+    // every symbol found by the edge tracing detector of zxing-cpp
+    DetectDataMatrixByEdges(image.BlackMatrix, tryHarder, tryHarder,
+      function(bits: TBitMatrix; const candidatePoints: TArray<IResultPoint>)
+        : Boolean
+      begin
+        Result := false;
+        // the same symbol is found from several scan lines: decode it once
+        if InFoundSymbol(results, candidatePoints) then
+          exit;
+        var decoded := dmDecoder.decode(bits, assumeGS1);
+        if (decoded = nil) then
+          exit;
+        found := true;
+        try
+          var r := createResult(decoded, candidatePoints);
+          if ContainsResult(results, r) then
+            r.Free
+          else
+          begin
+            results.Add(r);
+            Result := true;
+          end;
+        finally
+          decoded.Free;
+        end;
+      end, remaining);
+  end;
+
+  // nothing found: the pure detectors or the old detector, for one symbol
+  if not found then
+  begin
+    var r := decodeWith(image, hints, false);
+    if (r <> nil) then
+      if ContainsResult(results, r) then
+        r.Free
+      else
+        results.Add(r);
+  end;
+end;
+
+function TDataMatrixReader.createResult(decoderResult: TDecoderResult;
+  const points: TArray<IResultPoint>): TReadResult;
+begin
+  Result := TReadResult.Create(decoderResult.Text, decoderResult.RawBytes,
+    points, TBarcodeFormat.DATA_MATRIX);
+  Result.SymbologyIdentifier := decoderResult.SymbologyIdentifier;
+  Result.IsMirrored := decoderResult.IsMirrored;
+
+  var byteSegments := decoderResult.ByteSegments;
+
+  if (byteSegments <> nil) then
+    Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, TResultMetaData.CreateByteSegmentsMetadata( byteSegments));
+
+  if (Length(decoderResult.ECLevel) <> 0) then
+    Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, TResultMetaData.CreateStringMetadata(decoderResult.ECLevel));
+end;
+
+function TDataMatrixReader.decodeWith(const image: TBinaryBitmap;
+  hints: TDictionary<TDecodeHintType, TObject>;
+  newDetector: Boolean): TReadResult;
 var
   DecoderResult: TDecoderResult;
   points: TArray<IResultPoint>;
   bits: TBitMatrix;
-  ByteSegments: IByteSegments;
   maxDivisions, radius: Integer;
   assumeGS1, tryHarder: Boolean;
   closedMatrix: TBitMatrix;
@@ -184,8 +318,9 @@ begin
         hints.ContainsKey(TDecodeHintType.TRY_HARDER);
 
       // the edge tracing detector of zxing-cpp first
-      DecoderResult := edgeDetectAndDecode(image.BlackMatrix, tryHarder,
-        assumeGS1, points);
+      if newDetector then
+        DecoderResult := edgeDetectAndDecode(image.BlackMatrix, tryHarder,
+          assumeGS1, points);
 
       // then the old WhiteRectangle detector from start points on a grid,
       // which still reads a few codes the edge tracer misses, like dot-peen
@@ -221,22 +356,9 @@ begin
     if (DecoderResult = nil) then
       exit;
 
-    Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
-      points, TBarcodeFormat.DATA_MATRIX);
-    Result.SymbologyIdentifier := DecoderResult.SymbologyIdentifier;
-    Result.IsMirrored := DecoderResult.IsMirrored;
-
-    ByteSegments := DecoderResult.ByteSegments;
-
-    if (ByteSegments <> nil) then
-      Result.putMetadata(TResultMetadataType.BYTE_SEGMENTS, TResultMetaData.CreateByteSegmentsMetadata( byteSegments));
-
-    if (Length(DecoderResult.ECLevel) <> 0) then
-      Result.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL, TResultMetaData.CreateStringMetadata(DecoderResult.ECLevel));
+    Result := createResult(DecoderResult, points);
 
   finally
-
-    byteSegments:=nil;
 
     if Assigned(DecoderResult) then
       FreeAndNil(DecoderResult);

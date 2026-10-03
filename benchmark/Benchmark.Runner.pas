@@ -42,6 +42,11 @@ type
 
 procedure AddStats(var total: TStats; const stats: TStats);
 
+var
+  /// <summary>Use TScanManager.ScanAll (all symbols of an image) instead of
+  /// Scan (one symbol).</summary>
+  UseScanAll: Boolean = false;
+
 /// <summary>Runs all images of the folder in the given modes. When log is
 /// assigned, it gets a line for every symbol that zxing-cpp reads and Delphi
 /// not, every wrong read and every exception.</summary>
@@ -206,9 +211,12 @@ var
   original: TBitmap;
   rotated: array [0 .. 3] of TBitmap;
   mode: TTestMode;
-  rotation, i, matched: Integer;
+  rotation, i, j, matched: Integer;
   r: TReadResult;
-  text, where: string;
+  results: TObjectList<TReadResult>;
+  texts: TArray<string>;
+  used: TArray<Boolean>;
+  where: string;
   readByCpp, hasUnsupported: Boolean;
   sw: TStopwatch;
 begin
@@ -241,10 +249,21 @@ begin
         where := Format('%-40s %s/%3d', [folder.Name + '/' +
           ExtractFileName(image.FileName), TestModeName(mode), rotation * 90]);
 
-        r := nil;
+        // one result with Scan, all of them with ScanAll
+        results := TObjectList<TReadResult>.Create(true);
         sw := TStopwatch.StartNew;
         try
-          r := scanManagers[Ord(mode)].Scan(rotated[rotation]);
+          if UseScanAll then
+          begin
+            results.Free;
+            results := scanManagers[Ord(mode)].ScanAll(rotated[rotation]);
+          end
+          else
+          begin
+            r := scanManagers[Ord(mode)].Scan(rotated[rotation]);
+            if (r <> nil) then
+              results.Add(r);
+          end;
         except
           on E: Exception do
           begin
@@ -256,11 +275,14 @@ begin
         stats[mode].TimeMs := stats[mode].TimeMs + sw.Elapsed.TotalMilliseconds;
 
         try
-          text := '';
-          if (r <> nil) then
-            text := ResultText(r, image);
+          SetLength(texts, results.Count);
+          SetLength(used, results.Count);
+          for i := 0 to results.Count - 1 do
+          begin
+            texts[i] := ResultText(results[i], image);
+            used[i] := false;
+          end;
 
-          matched := -1;
           hasUnsupported := false;
           for i := 0 to High(image.Symbols) do
           begin
@@ -274,10 +296,19 @@ begin
             if readByCpp then
               Inc(stats[mode].ReadByCpp);
 
-            if (matched < 0) and (r <> nil) and Matches(image.Symbols[i], r, text)
-            then
+            // the first result that matches this symbol and no other one
+            matched := -1;
+            for j := 0 to results.Count - 1 do
+              if not used[j] and Matches(image.Symbols[i], results[j], texts[j])
+              then
+              begin
+                matched := j;
+                break;
+              end;
+
+            if (matched >= 0) then
             begin
-              matched := i;
+              used[matched] := true;
               Inc(stats[mode].ReadByDelphi);
               if not readByCpp then
                 Inc(stats[mode].DelphiOnly);
@@ -289,15 +320,16 @@ begin
 
           // A result for an image with a format variant Delphi does not know
           // (e.g. Code 32 or PZN, read as plain Code 39) is not counted as wrong.
-          if (r <> nil) and (matched < 0) and not hasUnsupported then
-          begin
-            Inc(stats[mode].Wrong);
-            if Assigned(log) then
-              log(Format('%s  WRONG:   %s', [where,
-                Abbrev(EscapeNonGraphical(text))]));
-          end;
+          for j := 0 to results.Count - 1 do
+            if not used[j] and not hasUnsupported then
+            begin
+              Inc(stats[mode].Wrong);
+              if Assigned(log) then
+                log(Format('%s  WRONG:   %s', [where,
+                  Abbrev(EscapeNonGraphical(texts[j]))]));
+            end;
         finally
-          r.Free;
+          results.Free;
         end;
       end;
     end;

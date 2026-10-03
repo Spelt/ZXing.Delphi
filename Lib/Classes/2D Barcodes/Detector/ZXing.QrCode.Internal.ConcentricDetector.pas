@@ -34,7 +34,7 @@ type
   /// <summary>Gets every candidate grid: the sampled bits (freed by the
   /// detector after the call), its result points (bottom left, top left and
   /// top right finder pattern) and its position (the corners top left, top
-  /// right, bottom right, bottom left). Return true to stop the detection.
+  /// right, bottom right, bottom left). Return true when it was decoded.
   /// </summary>
   TQRCodeCandidate = reference to function(bits: TBitMatrix;
     const points, position: TArray<IResultPoint>): Boolean;
@@ -42,10 +42,12 @@ type
 /// <summary>
 /// Looks for QR Codes (model 2) by their finder patterns. Without tryHarder
 /// every few rows are scanned, depending on the image height, with it every
-/// third row. Returns true when onCandidate stopped the detection.
+/// third row. Stops after maxSymbols decoded symbols (0: no limit); the
+/// finder patterns of a decoded symbol are not used again. Returns true
+/// when at least one candidate was decoded.
 /// </summary>
 function DetectQRCodesByFinderPatterns(image: TBitMatrix; tryHarder: Boolean;
-  const onCandidate: TQRCodeCandidate): Boolean;
+  const onCandidate: TQRCodeCandidate; maxSymbols: Integer = 1): Boolean;
 
 /// <summary>Detects a code in a "pure" image: an unrotated, unskewed code
 /// with only a white border around it (zxing-cpp's DetectPureQR). Returns
@@ -953,7 +955,7 @@ begin
 end;
 
 function DetectQRCodesByFinderPatterns(image: TBitMatrix; tryHarder: Boolean;
-  const onCandidate: TQRCodeCandidate): Boolean;
+  const onCandidate: TQRCodeCandidate; maxSymbols: Integer): Boolean;
 var
   floatMask: TFloatExceptionsMasked; // masked until this function returns
 begin
@@ -962,9 +964,29 @@ begin
     exit;
 
   var allFPs := FindFinderPatterns(image, tryHarder);
-  for var fpSet in GenerateFinderPatternSets(allFPs) do
-    if SampleQR(image, fpSet, onCandidate) then
-      exit(true);
+  // the finder patterns of decoded symbols are not used for another one
+  var usedFPs := TList<TConcentricPattern>.Create;
+  try
+    var count := 0;
+    for var fpSet in GenerateFinderPatternSets(allFPs) do
+    begin
+      if ContainsPattern(usedFPs, fpSet.bl) or ContainsPattern(usedFPs,
+        fpSet.tl) or ContainsPattern(usedFPs, fpSet.tr) then
+        continue;
+      if SampleQR(image, fpSet, onCandidate) then
+      begin
+        Result := true;
+        usedFPs.Add(fpSet.bl);
+        usedFPs.Add(fpSet.tl);
+        usedFPs.Add(fpSet.tr);
+        Inc(count);
+        if (maxSymbols > 0) and (count >= maxSymbols) then
+          exit;
+      end;
+    end;
+  finally
+    usedFPs.Free;
+  end;
 end;
 
 function DetectPureQRCode(image: TBitMatrix;

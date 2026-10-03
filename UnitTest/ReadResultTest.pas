@@ -24,6 +24,12 @@ type
     procedure MirroredDataMatrix;
     [Test]
     procedure Code128SymbologyAndPosition;
+    [Test]
+    procedure ScanAllFindsAllQRCodes;
+    [Test]
+    procedure ScanAllMixedFormats;
+    [Test]
+    procedure ScanAllMaxCount;
   end;
 
 implementation
@@ -138,6 +144,70 @@ begin
     Assert.AreEqual(0, r.Orientation);
   finally
     r.Free;
+  end;
+end;
+
+/// <summary>All barcodes in the image; the caller frees the list.</summary>
+function ScanAll(const fileName: string; format: TBarcodeFormat;
+  maxCount: Integer = 0): TObjectList<TReadResult>;
+begin
+  var bmp := LoadImage(ImagePath(fileName));
+  var scanManager := TScanManager.Create(format, nil);
+  try
+    Result := scanManager.ScanAll(bmp, maxCount);
+  finally
+    scanManager.Free;
+    bmp.Free;
+  end;
+end;
+
+procedure TReadResultTest.ScanAllFindsAllQRCodes;
+begin
+  // 4 QR Codes of a structured append sequence
+  var list := ScanAll('zxing-cpp\qrcode-2\StructApp.webp', TBarcodeFormat.Auto);
+  try
+    Assert.AreEqual(4, list.Count);
+    for var r in list do
+      Assert.AreEqual(Ord(TBarcodeFormat.QR_CODE), Ord(r.BarcodeFormat));
+  finally
+    list.Free;
+  end;
+end;
+
+procedure TReadResultTest.ScanAllMixedFormats;
+begin
+  // a QR Code and an EAN-13 (also read as UPC-A, but only once)
+  var list := ScanAll('zxing-cpp\multi-1\ean+qr.png', TBarcodeFormat.Auto);
+  try
+    Assert.AreEqual(2, list.Count);
+    var qr := 0;
+    var ean := 0;
+    for var r in list do
+      if (r.BarcodeFormat = TBarcodeFormat.QR_CODE) then
+      begin
+        Inc(qr);
+        Assert.AreEqual('www.airtable.com/jobs', r.Text);
+      end
+      else
+      begin
+        Inc(ean);
+        Assert.IsTrue(r.Text.EndsWith('31415926531'), r.Text);
+      end;
+    Assert.AreEqual(1, qr);
+    Assert.AreEqual(1, ean);
+  finally
+    list.Free;
+  end;
+end;
+
+procedure TReadResultTest.ScanAllMaxCount;
+begin
+  var list := ScanAll('zxing-cpp\qrcode-2\StructApp.webp',
+    TBarcodeFormat.QR_CODE, 2);
+  try
+    Assert.AreEqual(2, list.Count);
+  finally
+    list.Free;
   end;
 end;
 

@@ -106,6 +106,14 @@ type
     /// </returns>
     /// <throws>  ReaderException Any errors which occurred </throws>
     function DecodeWithState(image: TBinaryBitmap): TReadResult;
+    /// <summary>
+    /// Adds the barcodes of all configured formats found in image to results
+    /// (the caller owns them), at most maxCount in total (0: no limit), with
+    /// the current hints. Readers that can find only one barcode add at most
+    /// one.
+    /// </summary>
+    procedure decodeMultiple(const image: TBinaryBitmap;
+      results: TList<TReadResult>; maxCount: Integer);
     destructor Destroy; override;
 
     /// <summary> This method adds state to the MultiFormatReader. By setting the hints once, subsequent calls
@@ -287,6 +295,31 @@ begin
       Reader.Reset();
     end
   end
+end;
+
+procedure TMultiFormatReader.decodeMultiple(const image: TBinaryBitmap;
+  results: TList<TReadResult>; maxCount: Integer);
+begin
+  if (readers = nil) then
+    exit;
+  for var reader in readers do
+  begin
+    if ResultsFull(results, maxCount) then
+      exit;
+    reader.Reset();
+    var multiple: IMultipleReader;
+    if Supports(reader, IMultipleReader, multiple) then
+      multiple.decodeMultiple(image, FHints, results, maxCount)
+    else
+    begin
+      var r := reader.decode(image, FHints);
+      if (r <> nil) then
+        if ContainsResult(results, r) then
+          r.Free
+        else
+          results.Add(r);
+    end;
+  end;
 end;
 
 function TMultiFormatReader.DecodeInternal(image: TBinaryBitmap): TReadResult;
