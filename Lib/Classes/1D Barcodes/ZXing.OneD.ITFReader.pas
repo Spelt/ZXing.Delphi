@@ -31,6 +31,7 @@ uses
   ZXing.DecodeHintType,
   ZXing.ResultPoint,
   ZXing.BarcodeFormat,
+  ZXing.Common.Pattern,
   ZXing.Helpers;
 
 type
@@ -87,6 +88,15 @@ type
     function decodeStart(row: IBitArray): TArray<Integer>;
     function decodeMiddle(row: IBitArray;
       payloadStart, payloadEnd: Integer; SBResult: TStringBuilder): boolean;
+  protected
+    /// <summary>The decoder of zxing-cpp: thresholds between narrow and wide
+    /// from the widths themselves (updated per pair of digits, for slanted
+    /// scans), any even length of at least 6 digits (4 when only ITF is
+    /// searched) and a quiet zone of 6 modules.</summary>
+    function decodePattern(rowNumber: Integer; var next: TPatternView;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      override;
+    function HasPatternDecoder: Boolean; override;
   public
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult; override;
@@ -98,6 +108,124 @@ uses
   ZXing.Common.Detector.MathUtils;
 
 { TITFReader }
+
+function TITFReader.HasPatternDecoder: Boolean;
+begin
+  Result := true;
+end;
+
+/// <summary>Whether ITF is the only format searched for.</summary>
+function OnlyITF(const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
+begin
+  var o: TObject;
+  Result := (hints <> nil) and
+    hints.TryGetValue(ZXing.DecodeHintType.POSSIBLE_FORMATS, o) and
+    (o is TList<TBarcodeFormat>) and (TList<TBarcodeFormat>(o).Count = 1) and
+    (TList<TBarcodeFormat>(o)[0] = TBarcodeFormat.ITF);
+end;
+
+function TITFReader.decodePattern(rowNumber: Integer; var next: TPatternView;
+  const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+const
+  WEIGHTS: array [0 .. 4] of Integer = (1, 2, 4, 7, 0);
+  MIN_QUIET_ZONE = 6; // the spec requires 10
+begin
+  Result := nil;
+  // the lengths of the hint are checked by decodeRow only
+  if (hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.ALLOWED_LENGTHS)
+  then
+  begin
+    next := TPatternView.Empty;
+    exit;
+  end;
+  // shorter symbols when only looking for ITF
+  var minCharCount := 6;
+  if OnlyITF(hints) then
+    minCharCount := 4;
+
+  next := FindLeftGuard(next, 4 + 10 + 3, [1, 1, 1, 1], MIN_QUIET_ZONE);
+  if not next.IsValid then
+    exit;
+
+  // the threshold of the first pair of digits
+  var threshold := NarrowWideThreshold(next.SubView(4, 10));
+  if not threshold.IsValid then
+    exit;
+  // all bars and spaces of the start pattern are narrow
+  for var i := 0 to 3 do
+    if (next[i] > threshold[i]) then
+      exit;
+
+  var xStart := next.PixelsInFront;
+  var startsAtFirstBar := next.IsAtFirstBar;
+
+  next := next.SubView(4, 10);
+
+  var txt := '';
+  while next.IsValid do
+  begin
+    // end of the symbol
+    if (next[3] > threshold.Space * 3) then
+      break;
+
+    // the bars encode the first digit, the spaces the second one
+    var digits := TBarAndSpace.Create(0, 0);
+    var numWide := TBarAndSpace.Create(0, 0);
+    var bad := false;
+    for var i := 0 to 9 do
+    begin
+      bad := bad or (next[i] > threshold[i] * 3) or
+        (next[i] < threshold[i] div 3);
+      if (next[i] > threshold[i]) then
+      begin
+        numWide[i] := numWide[i] + 1;
+        digits[i] := digits[i] + WEIGHTS[i div 2];
+      end;
+    end;
+
+    if bad or (numWide.Bar <> 2) or (numWide.Space <> 2) then
+      break;
+
+    for var i := 0 to 1 do
+      if (digits[i] = 11) then
+        txt := txt + '0'
+      else
+        txt := txt + Chr(Ord('0') + digits[i]);
+
+    // update the threshold, for slanted scans
+    threshold := NarrowWideThreshold(next);
+
+    next.SkipSymbol;
+  end;
+
+  next := next.SubView(0, 3);
+
+  // the stop pattern: wide bar, narrow space, narrow bar
+  if not next.IsValid or not threshold.IsValid or (next[0] < threshold[0]) or
+    (next[1] > threshold[1]) or (next[2] > threshold[2]) then
+    exit;
+
+  // a quiet zone on both ends, or cropped at both ends
+  var quietZone := next[3];
+  if not((Min(quietZone, xStart) > MIN_QUIET_ZONE * (threshold.Bar +
+    threshold.Space) div 3) or (next.IsAtLastBar and startsAtFirstBar and
+    (Max(xStart, quietZone) < 2 * Min(xStart, quietZone) + 2))) then
+    exit;
+
+  // the minimum length depends on whether the code covers the whole row
+  var minLength := minCharCount;
+  if startsAtFirstBar and next.IsAtLastBar then
+    minLength := minCharCount div 2;
+  if (Length(txt) < minLength) then
+    exit;
+
+  var xStop := next.PixelsTillEnd;
+  Result := TReadResult.Create(txt, nil,
+    [TResultPointHelpers.CreateResultPoint(xStart, rowNumber),
+    TResultPointHelpers.CreateResultPoint(xStop, rowNumber)],
+    TBarcodeFormat.ITF);
+  Result.SymbologyIdentifier := ']I0';
+end;
 
 function TITFReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;

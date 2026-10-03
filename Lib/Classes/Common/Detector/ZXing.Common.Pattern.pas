@@ -15,14 +15,16 @@ unit ZXing.Common.Pattern;
   * See the License for the specific language governing permissions and
   * limitations under the License.
 
-  * Ported from zxing-cpp (Pattern.h, the parts used by the QR Code detector):
-  * a row of the image as the widths of its bars and spaces, and a view on a
-  * part of it to match patterns like the 1:1:3:1:1 of a QR finder pattern.
+  * Ported from zxing-cpp (Pattern.h, used by the QR Code detector and the 1D
+  * readers): a row of the image as the widths of its bars and spaces, and a
+  * view on a part of it to match patterns like the 1:1:3:1:1 of a QR finder
+  * pattern or the start pattern of a 1D code.
 }
 
 interface
 
 uses
+  ZXing.Common.BitArray,
   ZXing.Common.BitMatrix;
 
 type
@@ -53,7 +55,22 @@ type
     function SubView(offset, size: Integer): TPatternView;
     function Shift(n: Integer): Boolean;
     function SkipPair: Boolean;
+    function SkipSymbol: Boolean;
+    function SkipSingle(maxWidth: Integer): Boolean;
     procedure Extend;
+
+    /// <summary>The number of bars and spaces from the first bar to the
+    /// start of the view.</summary>
+    function Index: Integer;
+    /// <summary>The pixel position of the last pixel of the view.</summary>
+    function PixelsTillEnd: Integer;
+    function IsAtLastBar: Boolean;
+    /// <summary>The white space in front (MaxInt at the first bar).</summary>
+    function SpaceInFront: Integer;
+    function HasQuietZoneBefore(scale: Double;
+      acceptIfAtFirstBar: Boolean = false): Boolean;
+    function HasQuietZoneAfter(scale: Double;
+      acceptIfAtLastBar: Boolean = true): Boolean;
 
     /// <summary>The element i of the view; -1 is the one in front of it.
     /// </summary>
@@ -61,8 +78,28 @@ type
     property Data: Integer read FData;
   end;
 
+  /// <summary>Two values, one for the bars and one for the spaces: Items[i]
+  /// is the bar value for an even i and the space value for an odd one, so
+  /// that it can be used with the index of a TPatternView.</summary>
+  TBarAndSpace = record
+  private
+    FValues: array [0 .. 1] of Integer;
+    function GetItem(i: Integer): Integer; inline;
+    procedure SetItem(i: Integer; value: Integer); inline;
+  public
+    class function Create(bar, space: Integer): TBarAndSpace; static;
+    function IsValid: Boolean;
+    property Items[i: Integer]: Integer read GetItem write SetItem; default;
+    property Bar: Integer read FValues[0] write FValues[0];
+    property Space: Integer read FValues[1] write FValues[1];
+  end;
+
 /// <summary>The runs of row y of matrix.</summary>
-procedure GetPatternRow(matrix: TBitMatrix; y: Integer; var row: TPatternRow);
+procedure GetPatternRow(matrix: TBitMatrix; y: Integer;
+  var row: TPatternRow); overload;
+/// <summary>The runs of a row of width pixels.</summary>
+procedure GetPatternRow(const bits: IBitArray; width: Integer;
+  var row: TPatternRow); overload;
 
 /// <summary>
 /// Whether the first Length(pattern) elements of view match pattern
@@ -72,18 +109,41 @@ procedure GetPatternRow(matrix: TBitMatrix; y: Integer; var row: TPatternRow);
 /// size, or 0 when the view does not match.
 /// </summary>
 function IsPattern(const view: TPatternView; const pattern: array of Integer;
-  e2e: Boolean; spaceInPixel: Integer = 0; minQuietZone: Double = 0): Double;
-  overload;
+  e2e: Boolean; spaceInPixel: Integer = 0; minQuietZone: Double = 0;
+  moduleSizeRef: Double = 0): Double; overload;
 /// <summary>The same for a plain array of widths, like a pattern read with
 /// a cursor.</summary>
 function IsPattern(const widths: array of Integer;
   const pattern: array of Integer; e2e: Boolean): Double; overload;
 
+/// <summary>Whether view, the bars and spaces at the end of a symbol,
+/// matches the (stop) pattern followed by a quiet zone of minQuietZone
+/// modules (or the end of the row).</summary>
+function IsRightGuard(const view: TPatternView;
+  const pattern: array of Integer; minQuietZone: Double;
+  e2e: Boolean = false; moduleSizeRef: Double = 0): Boolean;
+
+type
+  /// <summary>Whether window is the guard pattern, with spaceInPixel white
+  /// pixels in front of it.</summary>
+  TGuardPredicate = reference to function(const window: TPatternView;
+    spaceInPixel: Integer): Boolean;
+
+/// <summary>The first window of len bars and spaces in view (starting on a
+/// bar) that isGuard accepts, with at least minSize elements from its start
+/// to the end of view; an invalid view when there is none.</summary>
+function FindLeftGuard(const view: TPatternView; len, minSize: Integer;
+  const isGuard: TGuardPredicate): TPatternView; overload;
+/// <summary>The same for a fixed pattern with a quiet zone of minQuietZone
+/// modules in front of it.</summary>
+function FindLeftGuard(const view: TPatternView; minSize: Integer;
+  const pattern: array of Integer; minQuietZone: Double;
+  e2e: Boolean = false): TPatternView; overload;
+
 implementation
 
 uses
-  System.Math,
-  ZXing.Common.BitArray;
+  System.Math;
 
 { TPatternView }
 
@@ -166,14 +226,94 @@ begin
   Result := Shift(2);
 end;
 
+function TPatternView.SkipSymbol: Boolean;
+begin
+  Result := Shift(FSize);
+end;
+
+function TPatternView.SkipSingle(maxWidth: Integer): Boolean;
+begin
+  Result := Shift(1) and (FRow[FData - 1] <= maxWidth);
+end;
+
 procedure TPatternView.Extend;
 begin
-  FSize := Max(0, System.Length(FRow) - FData);
+  if (FData < 0) then
+    FSize := 0
+  else
+    FSize := Max(0, System.Length(FRow) - FData);
+end;
+
+function TPatternView.Index: Integer;
+begin
+  Result := FData - 1;
+end;
+
+function TPatternView.PixelsTillEnd: Integer;
+begin
+  Result := -1;
+  for var i := 0 to FData + FSize - 1 do
+    Inc(Result, FRow[i]);
+end;
+
+function TPatternView.IsAtLastBar: Boolean;
+begin
+  Result := (FData + FSize = System.Length(FRow) - 1);
+end;
+
+function TPatternView.SpaceInFront: Integer;
+begin
+  if IsAtFirstBar then
+    Result := MaxInt
+  else
+    Result := FRow[FData - 1];
+end;
+
+function TPatternView.HasQuietZoneBefore(scale: Double;
+  acceptIfAtFirstBar: Boolean): Boolean;
+begin
+  Result := (acceptIfAtFirstBar and IsAtFirstBar) or
+    (FRow[FData - 1] >= Sum * scale);
+end;
+
+function TPatternView.HasQuietZoneAfter(scale: Double;
+  acceptIfAtLastBar: Boolean): Boolean;
+begin
+  Result := (acceptIfAtLastBar and IsAtLastBar) or
+    (FRow[FData + FSize] >= Sum * scale);
+end;
+
+{ TBarAndSpace }
+
+class function TBarAndSpace.Create(bar, space: Integer): TBarAndSpace;
+begin
+  Result.FValues[0] := bar;
+  Result.FValues[1] := space;
+end;
+
+function TBarAndSpace.GetItem(i: Integer): Integer;
+begin
+  Result := FValues[i and 1];
+end;
+
+procedure TBarAndSpace.SetItem(i: Integer; value: Integer);
+begin
+  FValues[i and 1] := value;
+end;
+
+function TBarAndSpace.IsValid: Boolean;
+begin
+  Result := (FValues[0] <> 0) and (FValues[1] <> 0);
 end;
 
 procedure GetPatternRow(matrix: TBitMatrix; y: Integer; var row: TPatternRow);
 begin
-  var width := matrix.Width;
+  GetPatternRow(matrix.getRow(y, nil), matrix.Width, row);
+end;
+
+procedure GetPatternRow(const bits: IBitArray; width: Integer;
+  var row: TPatternRow);
+begin
   SetLength(row, width + 2);
   if (width = 0) then
   begin
@@ -183,7 +323,6 @@ begin
   end;
 
   // jump from edge to edge with the word based search of the bit array
-  var bits := matrix.getRow(y, nil);
   var count := 0;
   var x := 0;
   // the first value is the number of white pixels, 0 when starting black
@@ -216,7 +355,7 @@ end;
 
 function IsPatternWidths(const widths: array of Integer; first: Integer;
   const pattern: array of Integer; e2e: Boolean; spaceInPixel: Integer;
-  minQuietZone: Double): Double;
+  minQuietZone, moduleSizeRef: Double): Double;
 var
   n, sum: Integer;
 begin
@@ -273,24 +412,88 @@ begin
   if (minQuietZone <> 0) and (spaceInPixel < minQuietZone * moduleSize - 1)
   then
     exit(0);
-  var threshold: Double := moduleSize * 0.5 + 0.5;
+  if (moduleSizeRef = 0) then
+    moduleSizeRef := moduleSize;
+  // the offset of 0.5 makes it less sensitive to quantization errors for
+  // small (near 1) module sizes
+  var threshold: Double := moduleSizeRef * 0.5 + 0.5;
   for var x := 0 to n - 1 do
-    if (Abs(widths[first + x] - pattern[x] * moduleSize) > threshold) then
+    if (Abs(widths[first + x] - pattern[x] * moduleSizeRef) > threshold) then
       exit(0);
   Result := moduleSize;
 end;
 
 function IsPattern(const view: TPatternView; const pattern: array of Integer;
-  e2e: Boolean; spaceInPixel: Integer; minQuietZone: Double): Double;
+  e2e: Boolean; spaceInPixel: Integer; minQuietZone,
+  moduleSizeRef: Double): Double;
 begin
   Result := IsPatternWidths(view.FRow, view.FData, pattern, e2e, spaceInPixel,
-    minQuietZone);
+    minQuietZone, moduleSizeRef);
 end;
 
 function IsPattern(const widths: array of Integer;
   const pattern: array of Integer; e2e: Boolean): Double;
 begin
-  Result := IsPatternWidths(widths, 0, pattern, e2e, 0, 0);
+  Result := IsPatternWidths(widths, 0, pattern, e2e, 0, 0, 0);
+end;
+
+function IsRightGuard(const view: TPatternView;
+  const pattern: array of Integer; minQuietZone: Double; e2e: Boolean;
+  moduleSizeRef: Double): Boolean;
+begin
+  if not view.IsValid then
+    exit(false);
+  var spaceInPixel: Integer;
+  if view.IsAtLastBar then
+    spaceInPixel := MaxInt
+  else
+    spaceInPixel := view.FRow[view.FData + view.FSize];
+  Result := IsPattern(view, pattern, e2e, spaceInPixel, minQuietZone,
+    moduleSizeRef) <> 0;
+end;
+
+function FindLeftGuard(const view: TPatternView; len, minSize: Integer;
+  const isGuard: TGuardPredicate): TPatternView;
+begin
+  if (view.Size < minSize) then
+    exit(TPatternView.Empty);
+
+  var window := view.SubView(0, len);
+  if window.IsAtFirstBar and isGuard(window, MaxInt) then
+    exit(window);
+  var last := view.FData + view.FSize - minSize;
+  while (window.FData < last) do
+  begin
+    if isGuard(window, window.FRow[window.FData - 1]) then
+      exit(window);
+    window.SkipPair;
+  end;
+  Result := TPatternView.Empty;
+end;
+
+function FindLeftGuard(const view: TPatternView; minSize: Integer;
+  const pattern: array of Integer; minQuietZone: Double;
+  e2e: Boolean): TPatternView;
+begin
+  var len := System.Length(pattern);
+  minSize := Max(minSize, len);
+  if (view.Size < minSize) then
+    exit(TPatternView.Empty);
+
+  // the same as above, without a closure (it can not capture an open array)
+  var window := view.SubView(0, len);
+  if window.IsAtFirstBar and (IsPatternWidths(window.FRow, window.FData,
+    pattern, e2e, MaxInt, minQuietZone, 0) <> 0) then
+    exit(window);
+  var last := view.FData + view.FSize - minSize;
+  while (window.FData < last) do
+  begin
+    if (IsPatternWidths(window.FRow, window.FData, pattern, e2e,
+      window.FRow[window.FData - 1], minQuietZone, 0) <> 0) then
+      exit(window);
+    window.SkipPair;
+  end;
+  Result := TPatternView.Empty;
 end;
 
 end.

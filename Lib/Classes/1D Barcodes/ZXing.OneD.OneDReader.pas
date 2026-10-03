@@ -32,6 +32,7 @@ uses
   ZXing.ResultMetadataType,
   ZXing.ResultPoint,
   ZXing.Common.BitArray,
+  ZXing.Common.Pattern,
   ZXing.Common.Detector.MathUtils;
 
 type
@@ -159,6 +160,38 @@ type
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       virtual; abstract;
+  protected
+    /// <summary>
+    /// The decoder of zxing-cpp (its RowReader.decodePattern): decodes the
+    /// first symbol that starts at or behind the start of next, a view on
+    /// the bars and spaces of the row. On return next is the view where
+    /// decoding stopped. nil when no symbol is found. Only used when
+    /// HasPatternDecoder, as a fallback for decodeRow.
+    /// </summary>
+    function decodePattern(rowNumber: Integer; var next: TPatternView;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      virtual;
+    function HasPatternDecoder: Boolean; virtual;
+
+    /// <summary>
+    /// The thresholds between narrow and wide bars and between narrow and
+    /// wide spaces of view, for the codes with wide elements 2 to 3 times as
+    /// wide as narrow ones (ITF, Code 39). Invalid when the widths do not
+    /// fit.
+    /// </summary>
+    class function NarrowWideThreshold(const view: TPatternView)
+      : TBarAndSpace; static;
+    /// <summary>The bars and spaces of view as bits (wide = 1); -1 when
+    /// they do not fit.</summary>
+    class function NarrowWideBitPattern(const view: TPatternView)
+      : Integer; static;
+  private
+    FBars: TPatternRow;
+    FTryHarder: Boolean;
+    /// <summary>decodeRow, else decodePattern from every bar of the row
+    /// (with TRY_HARDER) or from the first one.</summary>
+    function decodeRowWithFallback(rowNumber: Integer; const row: IBitArray;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
   end;
 
 implementation
@@ -395,6 +428,7 @@ var
   needsCallBack : boolean;
 begin
   needsCallBack := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK));
+  FTryHarder := (hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER);
   width := image.width;
   height := image.height;
   row := TBitArrayHelpers.CreateBitArray(width);
@@ -459,7 +493,7 @@ begin
       end;
 
       // Look for a barcode
-      ReadResult := decodeRow(rowNumber, row, hints);
+      ReadResult := decodeRowWithFallback(rowNumber, row, hints);
       if hadResultPointCallBack then
       begin
         hints.Add(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK, obj);
@@ -499,7 +533,7 @@ begin
         for var more := 1 to 8 do
         begin
           var rest := RowFrom(row, Trunc(rightEdge) + 1);
-          var nextResult := decodeRow(rowNumber, rest, hints);
+          var nextResult := decodeRowWithFallback(rowNumber, rest, hints);
           if (nextResult = nil) then
             break;
           var nextEdge := RightEdgeOf(nextResult);
@@ -516,6 +550,85 @@ begin
   end;
 
   Result := nil;
+end;
+
+function TOneDReader.decodePattern(rowNumber: Integer; var next: TPatternView;
+  const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+begin
+  Result := nil;
+end;
+
+function TOneDReader.HasPatternDecoder: Boolean;
+begin
+  Result := false;
+end;
+
+function TOneDReader.decodeRowWithFallback(rowNumber: Integer;
+  const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+begin
+  Result := decodeRow(rowNumber, row, hints);
+  if (Result <> nil) or not HasPatternDecoder then
+    exit;
+
+  GetPatternRow(row, row.Size, FBars);
+  var next := TPatternView.Create(FBars);
+  repeat
+    Result := decodePattern(rowNumber, next, hints);
+    if (Result <> nil) then
+      exit;
+    // make sure we make progress and start the next try on a bar
+    next.Shift(2 - (next.Index mod 2));
+    next.Extend;
+  until not FTryHarder or (next.Size = 0);
+end;
+
+class function TOneDReader.NarrowWideThreshold(const view: TPatternView)
+  : TBarAndSpace;
+begin
+  var m := TBarAndSpace.Create(view[0], view[1]);
+  var mx := m;
+  for var i := 2 to view.Size - 1 do
+  begin
+    if (view[i] < m[i]) then
+      m[i] := view[i];
+    if (view[i] > mx[i]) then
+      mx[i] := view[i];
+  end;
+
+  // the max spread between bars and spaces depends on whether both have
+  // seen narrow and wide ones
+  var maxSpread := 4;
+  if (mx[0] >= 2 * m[0]) and (mx[1] >= 2 * m[1]) then
+    maxSpread := 2;
+
+  Result := TBarAndSpace.Create(0, 0);
+  for var i := 0 to 1 do
+  begin
+    // wide <= 4 * narrow and bars and spaces not more than a factor of
+    // spread apart from each other
+    if (mx[i] > 4 * (m[i] + 1)) or (mx[i] > maxSpread * mx[i + 1]) or
+      (m[i] > maxSpread * (m[i + 1] + 1)) then
+      exit(TBarAndSpace.Create(0, 0));
+    // the average of min and max, but at least 1.5 * min
+    Result[i] := Max((m[i] + mx[i]) div 2, m[i] * 3 div 2);
+  end;
+end;
+
+class function TOneDReader.NarrowWideBitPattern(const view: TPatternView)
+  : Integer;
+begin
+  var threshold := NarrowWideThreshold(view);
+  if not threshold.IsValid then
+    exit(-1);
+
+  Result := 0;
+  for var i := 0 to view.Size - 1 do
+  begin
+    if (view[i] > threshold[i] * 2) then
+      exit(-1);
+    Result := (Result shl 1) or Ord(view[i] > threshold[i]);
+  end;
 end;
 
 class function TOneDReader.patternMatchVariance(counters: TArray<Integer>;
