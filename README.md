@@ -26,6 +26,8 @@ From Delphi 11 the standard camera component seems much improved.
 | UPC-E      | Code 93       | Data Matrix
 | EAN-8      | Code 128      | 
 | EAN-13     | ITF           | 
+|            | Codabar       | 
+|            | Telepen       | 
 
 
 ### Features
@@ -46,6 +48,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- QR Code: a symbol whose format information is readable but which can not be read is sampled once more half a pixel beside in each direction. Helps for small modules, round dots and wrinkled codes (no extra time on images without a code).
 	- Faster: luminance conversion (FMX and VCL), binarizer, inversion, closing for dot-peen codes and the 1D readers (a row cache shared by the readers). Results are unchanged.
 	- Image pyramid: when nothing is found, also downscaled copies of the image are scanned (TScanManager.TryDownscale, on by default). Helps for large, blurry and dot-peen codes.
+	- New formats: Codabar (without the start and stop characters A-D, unless RETURN_CODABAR_START_END) and Telepen (full ASCII and compressed numeric, TBarcodeFormat.TELEPEN). Not in Auto: choose them as format.
 	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39, Code 93 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode.
 	- Hints ALLOWED_EAN_EXTENSIONS and ALLOWED_LENGTHS: use TIntegerArrayHint.Create([2, 5]) as value; TScanManager frees it. Before, these hints made TScanManager crash when it freed them (an array cast to TObject still works, but is not freed). ALLOWED_EAN_EXTENSIONS now really requires an add-on: the search goes on until a code with add-on is found.
 	- Code 128: extended characters (FNC4) in code set A were all returned as character 160.

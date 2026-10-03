@@ -171,6 +171,10 @@ begin
     format := TBarcodeFormat.CODE_93
   else if (n = 'itf') then
     format := TBarcodeFormat.ITF
+  else if (n = 'codabar') then
+    format := TBarcodeFormat.CODABAR
+  else if (n = 'telepen') or (n = 'telepenalpha') or (n = 'telepennumeric') then
+    format := TBarcodeFormat.TELEPEN
   else
     Result := false;
 end;

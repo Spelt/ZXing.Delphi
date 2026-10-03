@@ -37,7 +37,9 @@ const
   // slow, fast, pure. Results after the 1D decoders of zxing-cpp (phase 7).
   // The wrong results in upce-2 are a misread of 509689-3!.webp, an image
   // that zxing-cpp can not read either.
-  FOLDER_LIMITS: array [0 .. 28] of TFolderLimits = (
+  FOLDER_LIMITS: array [0 .. 31] of TFolderLimits = (
+    (Folder: 'codabar-1'; Limits: ((MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'codabar-2'; Limits: ((MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 4; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'code128-1'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'code128-2'; Limits: ((MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'code39-1'; Limits: ((MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 6; MaxWrong: 0; MaxErrors: 0))),
@@ -62,6 +64,7 @@ const
     (Folder: 'qrcode-2'; Limits: ((MinRead: 141; MaxWrong: 0; MaxErrors: 0), (MinRead: 64; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'qrcode-3'; Limits: ((MinRead: 207; MaxWrong: 0; MaxErrors: 0), (MinRead: 104; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'qrcode-4'; Limits: ((MinRead: 71; MaxWrong: 0; MaxErrors: 0), (MinRead: 35; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'telepen-1'; Limits: ((MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'upca-1'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'upca-2'; Limits: ((MinRead: 84; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'upca-ext-1'; Limits: ((MinRead: 10; MaxWrong: 0; MaxErrors: 0), (MinRead: 10; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
@@ -74,6 +77,8 @@ type
   TZXingCppSamplesTest = class(TObject)
   public
     [Test]
+    [TestCase('codabar-1', 'codabar-1')]
+    [TestCase('codabar-2', 'codabar-2')]
     [TestCase('code128-1', 'code128-1')]
     [TestCase('code128-2', 'code128-2')]
     [TestCase('code39-1', 'code39-1')]
@@ -98,6 +103,7 @@ type
     [TestCase('qrcode-2', 'qrcode-2')]
     [TestCase('qrcode-3', 'qrcode-3')]
     [TestCase('qrcode-4', 'qrcode-4')]
+    [TestCase('telepen-1', 'telepen-1')]
     [TestCase('upca-1', 'upca-1')]
     [TestCase('upca-2', 'upca-2')]
     [TestCase('upca-ext-1', 'upca-ext-1')]

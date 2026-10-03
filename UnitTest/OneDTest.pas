@@ -26,6 +26,12 @@ type
     procedure Code128FNC4CodeSetA;
     [Test]
     procedure BitArraySetRange;
+    [Test]
+    procedure Codabar;
+    [Test]
+    procedure TelepenAlpha;
+    [Test]
+    procedure TelepenNumeric;
   end;
 
 implementation
@@ -232,6 +238,56 @@ begin
   for var i := 0 to 99 do
     Assert.AreEqual((i >= 3) and (i < 7) or (i >= 30) and (i < 70), row[i],
       'bit ' + IntToStr(i));
+end;
+
+procedure TOneDTest.Codabar;
+begin
+  // without the start and stop characters, like Java
+  var r := Scan('zxing-cpp\codabar-1\01.webp', TBarcodeFormat.CODABAR, nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('1234567890', r.Text);
+    Assert.AreEqual(']F0', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+
+  // with them
+  var hints := TDictionary<TDecodeHintType, TObject>.Create;
+  hints.Add(TDecodeHintType.RETURN_CODABAR_START_END, nil);
+  r := Scan('zxing-cpp\codabar-1\01.webp', TBarcodeFormat.CODABAR, hints);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('A1234567890A', r.Text);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.TelepenAlpha;
+begin
+  var r := Scan('zxing-cpp\telepen-1\telepen-alpha-2.png',
+    TBarcodeFormat.TELEPEN, nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('TELEPEN', r.Text);
+    Assert.AreEqual(']B0', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.TelepenNumeric;
+begin
+  var r := Scan('zxing-cpp\telepen-1\telepen-numeric-1.png',
+    TBarcodeFormat.TELEPEN, nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('01234567', r.Text);
+    Assert.AreEqual(']B1', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
 end;
 
 initialization

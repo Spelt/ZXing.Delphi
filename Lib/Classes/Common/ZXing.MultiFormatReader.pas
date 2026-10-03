@@ -44,6 +44,8 @@ uses
   ZXing.OneD.UPCAReader,
   ZXing.OneD.UPCEReader,
   ZXing.OneD.Code39Reader,
+  ZXing.OneD.CodabarReader,
+  ZXing.OneD.TelepenReader,
 
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
@@ -263,6 +265,12 @@ begin
     if (formats.Contains(TBarcodeFormat.CODE_39)) then
       readers.Add(TCode39Reader.Create(useCode39CheckDigit,
         useCode39ExtendedMode));
+
+    if formats.Contains(TBarcodeFormat.CODABAR) then
+      readers.Add(TCodabarReader.Create);
+
+    if formats.Contains(TBarcodeFormat.TELEPEN) then
+      readers.Add(TTelepenReader.Create);
   end;
 
   if (readers.Count = 0) then // must be auto, add them all

@@ -80,7 +80,11 @@ type
     MSI = 131072,
 
     /// <summary>Plessey</summary>
-    PLESSEY = 262144
+    PLESSEY = 262144,
+
+    /// <summary>Telepen 1D format (full ASCII and compressed numeric).
+    /// </summary>
+    TELEPEN = 524288
 
     );
 

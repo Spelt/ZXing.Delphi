@@ -110,6 +110,9 @@ begin
   end;
   if folder.Name.StartsWith('code39ext') then
     hints.Add(TDecodeHintType.USE_CODE_39_EXTENDED_MODE, nil);
+  // zxing-cpp returns the start and stop characters of Codabar
+  if folder.Name.StartsWith('codabar') then
+    hints.Add(TDecodeHintType.RETURN_CODABAR_START_END, nil);
   // zxing-cpp's eanAddOnSymbol "require": only EAN/UPC codes with an add-on
   if (folder.Images.Count > 0) and
     SameText(folder.Images[0].EanAddOnSymbol, 'require') then
