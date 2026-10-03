@@ -28,6 +28,7 @@ uses
   Math,
   ZXing.OneD.OneDReader,
   ZXing.Common.BitArray,
+  ZXing.Common.Pattern,
   ZXing.ReadResult,
   ZXing.DecodeHintType,
   ZXing.ResultPoint,
@@ -62,6 +63,20 @@ type
       $196, $19A, $16C, $166, $136, $13A, $12E, $1D4, $1D2, $1CA, // U-$
       $16E, $176, $1AE, $126, $1DA, $1D6, $132, $15E];            // /-*
     ASTERISK_ENCODING = $15E;
+
+    /// <summary>The character of the 6 bars and spaces of view by their
+    /// edge to edge widths, #0 when none.</summary>
+    class function DecodeChar(const view: TPatternView): Char; static;
+  protected
+    /// <summary>The decoder of zxing-cpp: the start character with a quiet
+    /// zone of half a character, the characters by their edge to edge
+    /// widths, the termination bar and the quiet zone behind the stop
+    /// character. The text is made as decodeRow does (check characters,
+    /// full ASCII).</summary>
+    function decodePattern(rowNumber: Integer; var next: TPatternView;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      override;
+    function HasPatternDecoder: Boolean; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -74,6 +89,146 @@ type
 implementation
 
 { Code93Reader }
+
+const
+  CHAR_LEN = 6; // 3 bars and 3 spaces
+  CHAR_MODS = 9;
+  ASTERISK_INDEX = 47;
+
+var
+  // the edge to edge widths (in modules) of the characters of
+  // CHARACTER_ENCODINGS
+  CharE2E: TArray<TArray<Integer>>;
+
+procedure InitE2E(const encodings: array of Integer);
+begin
+  SetLength(CharE2E, Length(encodings));
+  for var k := 0 to High(encodings) do
+  begin
+    // the widths of the bars and spaces of the 9 modules (from the left,
+    // starting with a bar)
+    var widths: TArray<Integer>;
+    var bit := 8;
+    while (bit >= 0) do
+    begin
+      var black := (encodings[k] shr bit) and 1;
+      var w := 0;
+      while (bit >= 0) and ((encodings[k] shr bit) and 1 = black) do
+      begin
+        Inc(w);
+        Dec(bit);
+      end;
+      widths := widths + [w];
+    end;
+    SetLength(CharE2E[k], CHAR_LEN - 2);
+    for var i := 0 to CHAR_LEN - 3 do
+      CharE2E[k][i] := widths[i] + widths[i + 1];
+  end;
+end;
+
+/// <summary>The index of the character of view by its edge to edge widths;
+/// -1 when none.</summary>
+function E2EIndex(const view: TPatternView): Integer;
+begin
+  Result := -1;
+  var moduleSize: Double := view.Sum(CHAR_LEN) / CHAR_MODS;
+  if not(moduleSize > 0) then
+    exit;
+  var e2e: array [0 .. CHAR_LEN - 3] of Integer;
+  for var i := 0 to CHAR_LEN - 3 do
+    e2e[i] := Trunc((view[i] + view[i + 1]) / moduleSize + 0.5);
+  for var k := 0 to High(CharE2E) do
+    if (CharE2E[k][0] = e2e[0]) and (CharE2E[k][1] = e2e[1]) and
+      (CharE2E[k][2] = e2e[2]) and (CharE2E[k][3] = e2e[3]) then
+      exit(k);
+end;
+
+class function TCode93Reader.DecodeChar(const view: TPatternView): Char;
+begin
+  if (CharE2E = nil) then
+    InitE2E(CHARACTER_ENCODINGS);
+  var k := E2EIndex(view);
+  if (k < 0) then
+    Result := #0
+  else
+    Result := ALPHABET_STRING.Chars[k];
+end;
+
+function TCode93Reader.HasPatternDecoder: Boolean;
+begin
+  Result := true;
+end;
+
+function TCode93Reader.decodePattern(rowNumber: Integer;
+  var next: TPatternView; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+const
+  // start, stop, 2 check characters and 1 character
+  MIN_CHAR_COUNT = 5;
+  // the quiet zone is half a character
+  QUIET_ZONE_SCALE = 0.5;
+begin
+  Result := nil;
+  if (CharE2E = nil) then
+    InitE2E(CHARACTER_ENCODINGS);
+
+  // the start character: 1-1-1-1 with a quiet zone, then 4-1, then its edge
+  // to edge widths
+  next := FindLeftGuard(next, CHAR_LEN, MIN_CHAR_COUNT * CHAR_LEN,
+    function(const window: TPatternView; spaceInPixel: Integer): Boolean
+    begin
+      Result := (IsPattern(window, [1, 1, 1, 1], false, spaceInPixel,
+        QUIET_ZONE_SCALE * 12) <> 0) and (window[4] > 3 * window[5] - 2) and
+        (E2EIndex(window) = ASTERISK_INDEX);
+    end);
+  if not next.IsValid then
+    exit;
+  var startView := next;
+
+  var chars := TStringBuilder.Create;
+  try
+    var c: Char;
+    repeat
+      // the remaining width
+      if not next.SkipSymbol then
+        exit;
+      c := DecodeChar(next);
+      if (c = #0) then
+        exit;
+      chars.Append(c);
+    until (c = '*');
+    // without the stop character
+    chars.Length := chars.Length - 1;
+    if (chars.Length < MIN_CHAR_COUNT - 2) then
+      exit;
+
+    // the termination bar (not wider than about 2 modules) and the quiet
+    // zone
+    var stopView := next;
+    next := next.SubView(0, CHAR_LEN + 1);
+    if not next.IsValid or (next[CHAR_LEN] > next.Sum(CHAR_LEN) div 4) or
+      not next.HasQuietZoneAfter(QUIET_ZONE_SCALE) then
+      exit;
+
+    // the same as decodeRow: both check characters, then full ASCII
+    if not checkChecksums(chars) then
+      exit;
+    chars.Length := chars.Length - 2;
+    var text := decodeExtended(chars);
+    if (text = '') then
+      exit;
+
+    // the middle of the start and stop characters
+    Result := TReadResult.Create(text, nil,
+      [TResultPointHelpers.CreateResultPoint(startView.PixelsInFront +
+      startView.Sum / 2, rowNumber), TResultPointHelpers.CreateResultPoint
+      (stopView.PixelsInFront + stopView.Sum / 2, rowNumber)],
+      TBarcodeFormat.CODE_93);
+    Result.SymbologyIdentifier := ']G0';
+  finally
+    chars.Free;
+  end;
+end;
 
 constructor TCode93Reader.Create;
 begin
@@ -318,7 +473,7 @@ begin
   end;
 
   Left := (start[1] + start[0]) div 2;
-  Right := (lastStart + lastPatternSize) / 2;
+  Right := lastStart + lastPatternSize / 2;
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(Left, rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
