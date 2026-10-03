@@ -118,6 +118,15 @@ function TCode39Reader.DecodeChar(const view: TPatternView): Char;
 begin
   Result := #0;
   var pattern := NarrowWideBitPattern(view);
+  if (pattern >= 0) and patternToChar(pattern, Result) then
+    exit;
+  // else the 3 widest elements are the wide ones, like decodeRow: for a
+  // ratio narrow to wide below 1:2 the threshold can be wrong
+  var widths: TArray<Integer>;
+  SetLength(widths, 9);
+  for var i := 0 to 8 do
+    widths[i] := view[i];
+  pattern := toNarrowWidePattern(widths);
   if (pattern < 0) or not patternToChar(pattern, Result) then
     Result := #0;
 end;

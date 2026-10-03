@@ -66,11 +66,12 @@ type
       hints: TDictionary<TDecodeHintType, TObject>;
       collector: TList<TReadResult> = nil; maxCount: Integer = 0;
       pending: TList<TReadResult> = nil): TReadResult;
-    /// <summary>Adds r to collector when it is read on a second row, keeps
-    /// it in pending otherwise, frees it when it is already known. Returns
-    /// true when collector is full.</summary>
+    /// <summary>Adds r to collector when it is read on a second row (or
+    /// confirmed otherwise), keeps it in pending otherwise, frees it when it
+    /// is already known. Returns true when collector is full.</summary>
     function CollectResult(r: TReadResult;
-      collector, pending: TList<TReadResult>; maxCount: Integer): Boolean;
+      collector, pending: TList<TReadResult>; maxCount: Integer;
+      confirmed: Boolean = false): Boolean;
   protected
     const INTEGER_MATH_SHIFT = 8;
 
@@ -166,7 +167,7 @@ type
     /// first symbol that starts at or behind the start of next, a view on
     /// the bars and spaces of the row. On return next is the view where
     /// decoding stopped. nil when no symbol is found. Only used when
-    /// HasPatternDecoder, as a fallback for decodeRow.
+    /// HasPatternDecoder, instead of decodeRow.
     /// </summary>
     function decodePattern(rowNumber: Integer; var next: TPatternView;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
@@ -205,7 +206,14 @@ type
       : Integer; static;
   private
     FTryHarder: Boolean;
+    FCheckRow: IBitArray;
     FUsePattern: Boolean;
+    /// <summary>Whether decodeRow (the decoder of before, a different
+    /// algorithm) reads the same text as r on the same row: then r counts
+    /// as confirmed, also when no other row can be read.</summary>
+    function ReadSameByDecodeRow(const image: TBinaryBitmap;
+      rowNumber: Integer; reversed: Boolean; r: TReadResult;
+      const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
     /// <summary>One pass of decodeMultiple, with decodePattern or with
     /// decodeRow (FUsePattern). Returns the first code read on 1 row only
     /// when no new code is read on 2 rows (nil otherwise).</summary>
@@ -241,9 +249,8 @@ function TOneDReader.decode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 begin
   // Like zxing-cpp: a barcode counts when it is read on 2 rows, so that a
-  // false positive does not stop the search. When there is none, the first
-  // barcode read on 1 row (the result of the first row hit, as before).
-  // With TRY_HARDER also the image rotated by 90 degrees.
+  // false positive does not stop the search (see decodeMultiple). With
+  // TRY_HARDER also the image rotated by 90 degrees.
   Result := nil;
   var results := TList<TReadResult>.Create;
   try
@@ -354,7 +361,8 @@ begin
 end;
 
 function TOneDReader.CollectResult(r: TReadResult;
-  collector, pending: TList<TReadResult>; maxCount: Integer): Boolean;
+  collector, pending: TList<TReadResult>; maxCount: Integer;
+  confirmed: Boolean): Boolean;
 begin
   Result := false;
   // a new barcode counts when it is read on a second row too (like
@@ -366,34 +374,39 @@ begin
   end;
 
   // the same code at about the same place on another row
-  var confirmed := -1;
+  var match := -1;
   for var i := 0 to pending.Count - 1 do
     if (pending[i].BarcodeFormat = r.BarcodeFormat) and
       (pending[i].Text = r.Text) and IsCloseLine(pending[i], r) then
     begin
-      confirmed := i;
+      match := i;
       break;
     end;
   // else also when read with a text that contains the other one (e.g.
   // without its add-on)
-  if (confirmed < 0) then
+  if (match < 0) then
     for var i := 0 to pending.Count - 1 do
       if IsSameLinearSymbol(pending[i], r) and
         ((Pos(pending[i].Text, r.Text) > 0) or (Pos(r.Text, pending[i].Text) > 0))
       then
       begin
-        confirmed := i;
+        match := i;
         break;
       end;
-  if (confirmed < 0) then
+  if (match < 0) then
   begin
+    if confirmed then
+    begin
+      collector.Add(r);
+      exit(ResultsFull(collector, maxCount));
+    end;
     pending.Add(r);
     exit;
   end;
 
   // keep the most complete reading
-  var best := pending[confirmed];
-  pending.Delete(confirmed);
+  var best := pending[match];
+  pending.Delete(match);
   if (CompleteLength(r) > CompleteLength(best)) then
   begin
     best.Free;
@@ -413,11 +426,11 @@ begin
     exit;
   var before := results.Count;
   var candidate: TReadResult := nil;
-  var oldCandidate: TReadResult := nil;
   try
-    // first the decoder of zxing-cpp (decodePattern), which is stricter
     if HasPatternDecoder then
     begin
+      // the decoder of zxing-cpp (decodePattern): only codes read on 2 rows
+      // (or confirmed by decodeRow on the same row), like zxing-cpp
       FUsePattern := true;
       candidate := decodeMultiplePass(image, hints, results, maxCount);
       if (results.Count > before) then
@@ -429,26 +442,25 @@ begin
       begin
         results.Add(candidate);
         candidate := nil;
-        exit;
       end;
+      exit;
     end;
 
-    // nothing read on 2 rows: the decoder of before (decodeRow)
+    // the decoder of before (decodeRow)
     FUsePattern := false;
-    oldCandidate := decodeMultiplePass(image, hints, results, maxCount);
+    candidate := decodeMultiplePass(image, hints, results, maxCount);
     if (results.Count > before) then
       exit;
 
-    // still nothing read on 2 rows: the first code read on one row only by
-    // decodeRow, the result of before (zxing-cpp has none)
-    if (oldCandidate <> nil) and not ContainsResult(results, oldCandidate) then
+    // nothing read on 2 rows: the first code read on one row only, the
+    // result of before
+    if (candidate <> nil) and not ContainsResult(results, candidate) then
     begin
-      results.Add(oldCandidate);
-      oldCandidate := nil;
+      results.Add(candidate);
+      candidate := nil;
     end;
   finally
     candidate.Free;
-    oldCandidate.Free;
   end;
 end;
 
@@ -546,12 +558,15 @@ begin
 
   middle := TMathUtils.Asr(height, 1);
 
-  // every 5th row; with TRY_HARDER every height/256th row like zxing-cpp
-  // (every row of a small image, where only a few rows may be readable),
-  // for the decoder of zxing-cpp only (decodeRow finds more false positives)
+  // every 5th row (decodeRow); for the decoder of zxing-cpp like zxing-cpp
+  // every height/256th row with TRY_HARDER (every row of a small image,
+  // where only a few rows may be readable), else every height/32th row of a
+  // small image
   rowStep := 5;
   if FTryHarder and FUsePattern then
-    rowStep := Min(rowStep, Max(1, height div 256));
+    rowStep := Min(rowStep, Max(1, height div 256))
+  else if FUsePattern then
+    rowStep := Min(rowStep, Max(1, height div 32));
   maxLines := height; // Look at the whole image, not just the center
 
   // rows close to a row with a new barcode, to confirm it quickly (like
@@ -713,6 +728,30 @@ begin
   Result := false;
 end;
 
+function TOneDReader.ReadSameByDecodeRow(const image: TBinaryBitmap;
+  rowNumber: Integer; reversed: Boolean; r: TReadResult;
+  const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
+begin
+  Result := false;
+  FCheckRow := image.getBlackRow(rowNumber, FCheckRow);
+  if (FCheckRow = nil) then
+    exit;
+  if reversed then
+    FCheckRow.Reverse;
+  var other: TReadResult := nil;
+  try
+    try
+      other := decodeRow(rowNumber, FCheckRow, hints);
+    except
+      other := nil;
+    end;
+    Result := (other <> nil) and (other.BarcodeFormat = r.BarcodeFormat) and
+      (other.Text = r.Text);
+  finally
+    other.Free;
+  end;
+end;
+
 function TOneDReader.decodePatternRow(const image: TBinaryBitmap;
   rowNumber: Integer; const hints: TDictionary<TDecodeHintType, TObject>;
   collector: TList<TReadResult>; maxCount: Integer;
@@ -754,7 +793,8 @@ begin
         if (collector = nil) then
           exit(r);
         found := true;
-        if CollectResult(r, collector, pending, maxCount) then
+        if CollectResult(r, collector, pending, maxCount,
+          ReadSameByDecodeRow(image, rowNumber, attempt = 1, r, hints)) then
           exit;
       end;
       // make sure we make progress and start the next try on a bar

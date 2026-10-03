@@ -205,11 +205,19 @@ begin
     (next[1] > threshold[1]) or (next[2] > threshold[2]) then
     exit;
 
-  // a quiet zone on both ends, or cropped at both ends
+  // a quiet zone on both ends, or cropped at both ends (about the same
+  // white space at both ends of the row); like decodeRow also a white space
+  // up to the edge of the image at one end
   var quietZone := next[3];
-  if not((Min(quietZone, xStart) > MIN_QUIET_ZONE * (threshold.Bar +
-    threshold.Space) div 3) or (next.IsAtLastBar and startsAtFirstBar and
-    (Max(xStart, quietZone) < 2 * Min(xStart, quietZone) + 2))) then
+  var minQuietZone := MIN_QUIET_ZONE * (threshold.Bar + threshold.Space) div 3;
+  if next.IsAtLastBar and startsAtFirstBar then
+  begin
+    if not((Min(quietZone, xStart) > minQuietZone) or
+      (Max(xStart, quietZone) < 2 * Min(xStart, quietZone) + 2)) then
+      exit;
+  end
+  else if not(((xStart > minQuietZone) or startsAtFirstBar) and
+    ((quietZone > minQuietZone) or next.IsAtLastBar)) then
     exit;
 
   // the minimum length depends on whether the code covers the whole row
