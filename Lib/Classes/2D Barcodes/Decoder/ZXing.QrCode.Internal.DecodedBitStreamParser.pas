@@ -194,7 +194,7 @@ begin
             begin
               if (not TDecodedBitStreamParser.decodeByteSegment(bits, res, count, currentCharacterSetECI, byteSegments, hints)) then exit;
             end
-            else if (Mode <> TMode.KANJI) then
+            else if (Mode = TMode.KANJI) then
             begin
               if (not TDecodedBitStreamParser.decodeKanjiSegment(bits, res, count)) then exit;
             end

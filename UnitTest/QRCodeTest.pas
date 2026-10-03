@@ -1,7 +1,7 @@
 unit QRCodeTest;
 
 {
-  * Tests for the QR Code decoder: QR Code model 1.
+  * Tests for the QR Code decoder: QR Code model 1, Kanji segments.
 }
 
 interface
@@ -17,6 +17,8 @@ type
     procedure Model1;
     [Test]
     procedure Model1Issue940;
+    [Test]
+    procedure KanjiSegment;
   end;
 
 implementation
@@ -34,7 +36,10 @@ uses
   ZXing.ScanManager,
   ZXing.BarcodeFormat,
   ZXing.DecodeHintType,
-  ZXing.ReadResult;
+  ZXing.ReadResult,
+  ZXing.QrCode.Internal.DecodedBitStreamParser,
+  ZXing.QrCode.Internal.Version,
+  ZXing.QrCode.Internal.ErrorCorrectionLevel;
 
 function ImagePath(const fileName: string): string;
 begin
@@ -78,6 +83,24 @@ begin
     Assert.AreEqual('N023X-3431800-V034PG03X-3436010-A1125032918310706',
       r.Text);
     Assert.AreEqual(']Q0', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TQRCodeTest.KanjiSegment;
+begin
+  // Kanji mode (1000), 1 character (8 bits in version 1), the 13 bits of
+  // Shift_JIS $935F: ($935F - $8140) = $121F, $12 * $C0 + $1F = 3487
+  // (0110110011111), the terminator (0000) and 3 padding bits:
+  // 1000 0000 | 0001 0110 | 1100 1111 | 1000 0000
+  var bytes: TArray<Byte> := [$80, $16, $CF, $80];
+  var r := TDecodedBitStreamParser.decode(bytes, TVersion.getVersionForNumber(1),
+    TErrorCorrectionLevel.L, nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    // U+70B9, the kanji for 'point'
+    Assert.AreEqual(string(Char($70B9)), r.Text);
   finally
     r.Free;
   end;
