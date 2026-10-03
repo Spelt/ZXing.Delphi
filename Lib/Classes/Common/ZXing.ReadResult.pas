@@ -415,15 +415,12 @@ begin
 end;
 
 destructor TReadResult.Destroy;
-var i:Integer;
 begin
-
-  for I := Low(FResultPoints) to High(FResultPoints) do
-  begin
-    FResultPoints[i] := nil;
-  end;
-
+  // only release the array: it can be shared with other results (the
+  // points of a detector), whose points must stay (the interfaces in it are
+  // released when the last reference to the array goes)
   FResultPoints := nil;
+  FPosition := nil;
   FRawBytes := nil;
 
   if FResultMetadata <> nil then
