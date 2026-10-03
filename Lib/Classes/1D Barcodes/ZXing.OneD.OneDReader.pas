@@ -163,6 +163,8 @@ type
 
 implementation
 
+procedure MapFromRotated(r: TReadResult; rotatedHeight: Integer); forward;
+
 { TOneDReader }
 
 function TOneDReader.decode(const image: TBinaryBitmap): TReadResult;
@@ -175,9 +177,6 @@ function TOneDReader.decode(const image: TBinaryBitmap;
 var
   tryHarder, tryHarderWithoutRotation: Boolean;
   rotatedImage: TBinaryBitmap;
-  metadata: TResultMetadata;
-  orientation, height, i, l: Integer;
-  points: TArray<IResultPoint>;
 
 begin
   Result := doDecode(image, hints);
@@ -204,37 +203,43 @@ begin
         Exit;
       end;
 
-      // Record that we found it rotated 90 degrees CCW / 270 degrees CW
-      metadata := Result.ResultMetadata;
-      orientation := 270;
-      if ((metadata <> nil) and metadata.ContainsKey
-        (ZXing.ResultMetadataType.orientation)) then
-      begin
-        // But if we found it reversed in doDecode(), add in that result here:
-        orientation :=
-          (orientation + (metadata[ZXing.ResultMetadataType.orientation]
-          as IIntegerMetadata).Value) mod 360;
-      end;
-
-      Result.putMetadata(ZXing.ResultMetadataType.orientation,
-        TResultMetadata.CreateIntegerMetadata(orientation));
-      // Update result points
-      points := Result.ResultPoints;
-      if (points <> nil) then
-      begin
-        height := rotatedImage.height;
-        l := Length(points) - 1;
-        for i := 0 to l do
-        begin
-          points[i] := TResultPointHelpers.CreateResultPoint
-            (height - points[i].Y - 1, points[i].X);
-        end;
-      end;
+      MapFromRotated(Result, rotatedImage.height);
     finally
       rotatedImage.Free;
     end;
   end;
 
+end;
+
+/// <summary>For a result found in the image rotated by 90 degrees counter
+/// clockwise (with height rotatedHeight): records the orientation and maps
+/// the result points back to the image.</summary>
+procedure MapFromRotated(r: TReadResult; rotatedHeight: Integer);
+var
+  metadata: TResultMetadata;
+  orientation: Integer;
+  points: TArray<IResultPoint>;
+begin
+  // Record that we found it rotated 90 degrees CCW / 270 degrees CW
+  metadata := r.ResultMetadata;
+  orientation := 270;
+  if ((metadata <> nil) and metadata.ContainsKey
+    (ZXing.ResultMetadataType.orientation)) then
+  begin
+    // But if we found it reversed in doDecode(), add in that result here:
+    orientation :=
+      (orientation + (metadata[ZXing.ResultMetadataType.orientation]
+      as IIntegerMetadata).Value) mod 360;
+  end;
+
+  r.putMetadata(ZXing.ResultMetadataType.orientation,
+    TResultMetadata.CreateIntegerMetadata(orientation));
+  // Update result points
+  points := r.ResultPoints;
+  for var i := 0 to High(points) do
+    if (points[i] <> nil) then
+      points[i] := TResultPointHelpers.CreateResultPoint
+        (rotatedHeight - points[i].Y - 1, points[i].X);
 end;
 
 /// <summary>The largest x of the result points of r.</summary>
@@ -312,26 +317,65 @@ begin
   if (image = nil) or ResultsFull(results, maxCount) then
     exit;
   var before := results.Count;
-  // every row, also after a barcode was found
+  var rotated: TBinaryBitmap := nil;
+  // the codes read on one row only (not counted, see doDecode)
   var pending := TList<TReadResult>.Create;
+  var rotatedPending := TList<TReadResult>.Create;
   try
+    // every row, also after a barcode was found
     doDecode(image, hints, results, maxCount, pending);
+
+    // with TRY_HARDER also the image rotated by 90 degrees, for vertical
+    // codes, also when horizontal ones were found
+    var rotate := (hints <> nil) and
+      hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER) and
+      not hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER_WITHOUT_ROTATION);
+    if rotate and image.RotateSupported and not ResultsFull(results, maxCount)
+    then
+    begin
+      rotated := image.rotateCounterClockwise;
+      var rotatedResults := TList<TReadResult>.Create;
+      try
+        doDecode(rotated, hints, rotatedResults, 0, rotatedPending);
+        for var r in rotatedResults do
+        begin
+          MapFromRotated(r, rotated.height);
+          if ResultsFull(results, maxCount) or ContainsResult(results, r) then
+            r.Free
+          else
+            results.Add(r);
+        end;
+      finally
+        rotatedResults.Free;
+      end;
+    end;
+
+    // nothing new: the first code read on one row only, which is what decode
+    // returns (it scans the rows in the same order)
+    if (results.Count = before) then
+    begin
+      var r: TReadResult := nil;
+      if (pending.Count > 0) then
+        r := pending.Extract(pending[0])
+      else if (rotatedPending.Count > 0) then
+      begin
+        r := rotatedPending.Extract(rotatedPending[0]);
+        MapFromRotated(r, rotated.height);
+      end;
+      if (r <> nil) then
+        if ContainsResult(results, r) then
+          r.Free
+        else
+          results.Add(r);
+    end;
   finally
     for var r in pending do
       r.Free;
+    for var r in rotatedPending do
+      r.Free;
     pending.Free;
-  end;
-
-  // nothing new: the normal decode, which also tries the image rotated with
-  // TRY_HARDER
-  if (results.Count = before) then
-  begin
-    var r := decode(image, hints);
-    if (r <> nil) then
-      if ContainsResult(results, r) then
-        r.Free
-      else
-        results.Add(r);
+    rotatedPending.Free;
+    rotated.Free;
   end;
 end;
 

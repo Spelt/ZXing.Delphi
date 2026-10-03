@@ -33,6 +33,8 @@ type
     [Test]
     procedure ScanAllStackedCode128;
     [Test]
+    procedure ScanAllWithVerticalCode128;
+    [Test]
     procedure GS1HRIFromElementStrings;
     [Test]
     procedure GS1HRIOfDataMatrix;
@@ -234,6 +236,33 @@ begin
     Assert.IsTrue(texts.Contains('[Code 128]'), texts);
   finally
     list.Free;
+  end;
+end;
+
+procedure TReadResultTest.ScanAllWithVerticalCode128;
+begin
+  // a horizontal and a vertical Code 128, a QR Code and a Data Matrix; the
+  // vertical one is found in the rotated image (TRY_HARDER), also when the
+  // horizontal one was found already
+  var hints := TDictionary<TDecodeHintType, TObject>.Create;
+  hints.Add(TDecodeHintType.TRY_HARDER, nil);
+  var bmp := LoadImage(ImagePath('scanall-sheet.png'));
+  var scanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
+  var list := scanManager.ScanAll(bmp);
+  try
+    Assert.AreEqual(4, list.Count);
+    var texts := '';
+    for var r in list do
+      texts := texts + '[' + r.Text + ']';
+    Assert.IsTrue(texts.Contains('[123123]'), texts);
+    Assert.IsTrue(texts.Contains('[Code 128]'), texts);
+    Assert.IsTrue(texts.Contains('[QR-never-gonna-give-you-up]'), texts);
+    // GS1: the text starts with a GS character
+    Assert.IsTrue(texts.Contains('0104150034194612]'), texts);
+  finally
+    list.Free;
+    scanManager.Free;
+    bmp.Free;
   end;
 end;
 
