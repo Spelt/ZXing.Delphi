@@ -65,8 +65,11 @@ type
     FecBlocks: TArray<TECBlocks>;
     FTotalCodewords: Integer;
     FversionNumber: Integer;
+    FIsModel1: Boolean;
 
     class var BuildVersions : TArray<TVersion>;
+    class var Model1Versions: TArray<TVersion>;
+    class function GetModel1Versions: TArray<TVersion>; static;
     /// <summary> See ISO 18004:2006 Annex D.
     /// Element i represents the raw version bits that specify version i + 7
     /// </summary>
@@ -97,7 +100,15 @@ type
       const dimension: Integer): TVersion; static;
     class function getVersionForNumber(
       const versionNumber: Integer): TVersion; static;
+    /// <summary>The version of a QR Code model 1 (1 to 14, without
+    /// alignment patterns and version information) of dimension modules;
+    /// nil when there is none.</summary>
+    class function getModel1VersionForDimension(
+      const dimension: Integer): TVersion; static;
     function ToString: String; override;
+
+    /// <summary>Whether this is a version of QR Code model 1.</summary>
+    property IsModel1: Boolean read FIsModel1;
 
     property DimensionForVersion: Integer read CalcDimensionForVersion;
     property alignmentPatternCenters: TArray<Integer>
@@ -677,6 +688,50 @@ begin
   Result := TVersion.BuildVersions[(versionNumber - 1)];
 end;
 
+class function TVersion.getModel1VersionForDimension(
+  const dimension: Integer): TVersion;
+begin
+  var number := (dimension - 17) div 4;
+  if ((dimension - 17) mod 4 <> 0) or (number < 1) or (number > 14) then
+    exit(nil);
+  Result := TVersion.Model1Versions[number - 1];
+end;
+
+class function TVersion.GetModel1Versions: TArray<TVersion>;
+const
+  // See ISO 18004:2000 M.4.2 Table M.2 and M.5 Table M.4: per version the
+  // error correction codewords per block, the number of blocks and the data
+  // codewords per block of L, M, Q and H (zxing-cpp's QRVersion.cpp)
+  TABLE: array [1 .. 14, 0 .. 11] of Integer = (
+    (7, 1, 19, 10, 1, 16, 13, 1, 13, 17, 1, 9),
+    (10, 1, 36, 16, 1, 30, 22, 1, 24, 30, 1, 16),
+    (15, 1, 57, 28, 1, 44, 36, 1, 36, 48, 1, 24),
+    (20, 1, 80, 40, 1, 60, 50, 1, 50, 66, 1, 34),
+    (26, 1, 108, 52, 1, 82, 66, 1, 68, 44, 2, 23),
+    (34, 1, 136, 32, 2, 53, 42, 2, 43, 56, 2, 29),
+    (42, 1, 170, 40, 2, 66, 52, 2, 54, 46, 3, 24),
+    (24, 2, 104, 48, 2, 80, 64, 2, 64, 56, 3, 29),
+    (30, 2, 123, 60, 2, 93, 50, 3, 52, 68, 3, 34),
+    (34, 2, 145, 68, 2, 111, 58, 3, 61, 58, 4, 31),
+    (40, 2, 168, 40, 4, 64, 52, 4, 52, 54, 5, 29),
+    (46, 2, 192, 46, 4, 73, 58, 4, 61, 62, 5, 33),
+    (36, 3, 144, 52, 4, 83, 66, 4, 69, 58, 6, 32),
+    (40, 3, 163, 60, 4, 92, 60, 5, 62, 66, 6, 35));
+begin
+  SetLength(Result, 14);
+  for var n := 1 to 14 do
+  begin
+    var levels: TArray<TECBlocks>;
+    SetLength(levels, 4);
+    for var level := 0 to 3 do
+      levels[level] := TECBlocks.Create(TABLE[n, level * 3],
+        TArray<TECB>.Create(TECB.Create(TABLE[n, level * 3 + 1],
+        TABLE[n, level * 3 + 2])));
+    Result[n - 1] := TVersion.Create(n, nil, levels);
+    Result[n - 1].FIsModel1 := true;
+  end;
+end;
+
 function TVersion.ToString: string;
 begin
   result := self.versionNumber.ToString();
@@ -691,6 +746,7 @@ begin
     $26A64, $27541, $28C69);
 
   TVersion.BuildVersions := TVersion.GetBuildVersions;
+  TVersion.Model1Versions := TVersion.GetModel1Versions;
 end;
 
 class procedure TVersion.ClassFinal();
@@ -704,6 +760,10 @@ begin
   end;
   
   TVersion.BuildVersions :=nil;
+
+  for version in TVersion.Model1Versions do
+    version.Free;
+  TVersion.Model1Versions := nil;
 end;
 
 

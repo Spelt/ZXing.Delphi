@@ -39,6 +39,9 @@ type
     parsedVersion: TVersion;
 
     function copyBit(const i, j, versionBits: Integer): Integer;
+    /// <summary>The codewords of a QR Code model 1, from the unmasked
+    /// matrix; nil when their number is wrong.</summary>
+    function readCodewordsModel1(Version: TVersion): TArray<Byte>;
   public
     parsedFormatInfo: TFormatInformation;
 
@@ -179,6 +182,9 @@ begin
   dimension := bitMatrix.Height;
   DataMask.unmaskBitMatrix(BitMatrix, dimension);
 
+  if Version.IsModel1 then
+    exit(readCodewordsModel1(Version));
+
   functionPattern := Version.buildFunctionPattern;
 
   try
@@ -246,6 +252,91 @@ begin
   end;
 end;
 
+function TBitMatrixParser.readCodewordsModel1(Version: TVersion): TArray<Byte>;
+var
+  count: Integer;
+  codewords: TArray<Byte>;
+
+  // the byte of the 8 bits of a 2 x 4 (width 2) or 4 x 2 (width 4) block
+  // with its last bit at x, y (the matrix is unmasked already)
+  procedure readByte(x, y, width: Integer);
+  begin
+    var currentByte := 0;
+    for var b := 0 to 7 do
+    begin
+      var bx := x - b mod width;
+      var by := y - b div width;
+      currentByte := currentByte shl 1;
+      if (bx >= 0) and (by >= 0) and (bx < bitMatrix.Width) and
+        (by < bitMatrix.Height) and bitMatrix[bx, by] then
+        currentByte := currentByte or 1;
+    end;
+    if (count < Length(codewords)) then
+      codewords[count] := Byte(currentByte);
+    Inc(count);
+  end;
+
+begin
+  // the layout of QR Code model 1 (zxing-cpp's ReadQRCodewordsModel1):
+  // vertical blocks of 2 x 4 modules on the right and left sides, horizontal
+  // ones of 4 x 2 modules in between, skipping the extension patterns
+  SetLength(codewords, Version.TotalCodewords);
+  count := 0;
+  var dimension := bitMatrix.Height;
+  var columns := dimension div 4 + 1 + 2;
+  for var j := 0 to columns - 1 do
+    if (j <= 1) then
+    begin
+      // vertical blocks on the right side
+      var rows := (dimension - 8) div 4;
+      for var i := 0 to rows - 1 do
+      begin
+        // extension pattern
+        if (j = 0) and (i mod 2 = 0) and (i > 0) and (i < rows - 1) then
+          continue;
+        readByte((dimension - 1) - j * 2, (dimension - 1) - i * 4, 2);
+      end;
+    end
+    else if (columns - j <= 4) then
+    begin
+      // vertical blocks on the left side
+      var rows := (dimension - 16) div 4;
+      for var i := 0 to rows - 1 do
+      begin
+        // (beside the timing pattern)
+        var x := (columns - j - 1) * 2 + 1;
+        if (columns - j = 4) then
+          Inc(x);
+        readByte(x, (dimension - 1) - 8 - i * 4, 2);
+      end;
+    end
+    else
+    begin
+      // horizontal blocks
+      var rows := dimension div 2;
+      for var i := 0 to rows - 1 do
+      begin
+        // alignment and finder pattern
+        if (j = 2) and (i >= rows - 4) then
+          continue;
+        // extension pattern
+        if (i = 0) and (j mod 2 = 1) and (j + 1 <> columns - 4) then
+          continue;
+        // (beside the timing pattern)
+        var y := (dimension - 1) - i * 2;
+        if (i >= rows - 3) then
+          Dec(y);
+        readByte((dimension - 1) - 2 * 2 - (j - 2) * 4, y, 4);
+      end;
+    end;
+
+  if (count <> Version.TotalCodewords) then
+    exit(nil);
+  // the corner
+  codewords[0] := codewords[0] and $0F;
+  Result := codewords;
+end;
+
 function TBitMatrixParser.readFormatInformation: TFormatInformation;
 var
   formatInfoBits1,
@@ -302,6 +393,16 @@ begin
   end;
 
   dimension := Self.bitMatrix.Height;
+
+  // QR Code model 1 has no version information: the version follows from
+  // the dimension
+  var formatInfo := readFormatInformation;
+  if (formatInfo <> nil) and formatInfo.IsModel1 then
+  begin
+    parsedVersion := TVersion.getModel1VersionForDimension(dimension);
+    exit(parsedVersion);
+  end;
+
   provisionalVersion := TMathUtils.Asr((dimension - 17), 2);
   if (provisionalVersion <= 6) then
   begin

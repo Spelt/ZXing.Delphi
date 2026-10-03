@@ -42,6 +42,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- Requires Delphi 10.4 Sydney or newer. For XE7 - 10.3 use v3.13.1 or older.
 	- Data Matrix: port of the edge tracing detector of zxing-cpp, with DMRE (rectangular) sizes, mirrored codes, pure codes of 1 pixel per module, and corrections for not flat and curved symbols (LocalGrid and timing pattern correction). The old detector stays as fallback.
 	- QR Code: port of the finder pattern detector of zxing-cpp, which handles perspective and not flat symbols much better (alignment patterns located in the image, tiled sampling). The old detector stays as fallback.
+	- QR Code model 1 (the original QR Code of ISO 18004:2000 annex M) is read too, like zxing-cpp; its SymbologyIdentifier is ]Q0, the format stays QR_CODE.
 	- Faster: luminance conversion (FMX and VCL), binarizer, inversion, closing for dot-peen codes and the 1D readers (a row cache shared by the readers). Results are unchanged.
 	- Image pyramid: when nothing is found, also downscaled copies of the image are scanned (TScanManager.TryDownscale, on by default). Helps for large, blurry and dot-peen codes.
 	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode. Code 93 keeps the decoder of before.
@@ -50,7 +51,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- TBitArray.setRange set the wrong bits.
 	- TScanManager.ScanAll: all barcodes in an image (QR Code, Data Matrix and 1D on different rows, also vertical ones with TRY_HARDER).
 	- TReadResult: Position (4 corners), Orientation, IsInverted, IsMirrored, SymbologyIdentifier (like ]Q1, ]d2, ]C1), IsGS1 and GS1HRI (the human readable form of GS1 data, like (01)...(17)...(10)...).
-	- On the black box test images of zxing-cpp (benchmark\, compared with zxing-cpp): Data Matrix 365 of 366, QR Code 482 of 525, 1D 368 of 362 (with TRY_HARDER and inversion); without hints Data Matrix 93 of 92, QR Code 278 of 304, 1D 234 of 226.
+	- On the black box test images of zxing-cpp (benchmark\, compared with zxing-cpp): Data Matrix 365 of 366, QR Code 490 of 525, 1D 368 of 362 (with TRY_HARDER and inversion); without hints Data Matrix 93 of 92, QR Code 284 of 304, 1D 234 of 226.
 - v3.13.0
 	- Fixes thanks to Robert Jędrzejczyk. https://github.com/Spelt/ZXing.Delphi/issues/170, https://github.com/Spelt/ZXing.Delphi/issues/171, https://github.com/Spelt/ZXing.Delphi/issues/172 
 	- 1D with TRY_HARDER: results were lost and memory leaked (#170). Codes are now also searched rotated by 90 degrees, as intended.

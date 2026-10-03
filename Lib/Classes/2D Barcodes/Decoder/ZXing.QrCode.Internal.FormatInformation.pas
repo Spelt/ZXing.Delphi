@@ -41,6 +41,7 @@ type
   private
     FErrorCorrectionLevel: TErrorCorrectionLevel;
     FDataMask: Byte;
+    FIsModel1: Boolean;
 
     class function doDecodeFormatInformation(const maskedFormatInfo1,
       maskedFormatInfo2: Integer): TFormatInformation; static;
@@ -66,6 +67,9 @@ type
     property ErrorCorrectionLevel: TErrorCorrectionLevel
       read FErrorCorrectionLevel;
     property DataMask: Byte read FDataMask;
+    /// <summary>Whether the format information is the one of a QR Code
+    /// model 1 (the original QR Code of ISO 18004:2000 annex M).</summary>
+    property IsModel1: Boolean read FIsModel1;
   end;
 
 implementation
@@ -85,6 +89,8 @@ class function TFormatInformation.decodeFormatInformation(
   const maskedFormatInfo1, maskedFormatInfo2: Integer): TFormatInformation;
 const
   FORMAT_INFO_MASK_QR: Integer = $5412;
+  // QR Code model 1 masks the format information with another pattern
+  FORMAT_INFO_MASK_MODEL1: Integer = $2825;
 var
   formatInfo: TFormatInformation;
 begin
@@ -99,6 +105,16 @@ begin
     Result := TFormatInformation.doDecodeFormatInformation
       ((maskedFormatInfo1 xor FORMAT_INFO_MASK_QR),
       (maskedFormatInfo2 xor FORMAT_INFO_MASK_QR));
+
+  // else a model 1 code (the table holds the codes masked for model 2)
+  if (Result = nil) then
+  begin
+    Result := TFormatInformation.doDecodeFormatInformation
+      ((maskedFormatInfo1 xor FORMAT_INFO_MASK_MODEL1 xor FORMAT_INFO_MASK_QR),
+      (maskedFormatInfo2 xor FORMAT_INFO_MASK_MODEL1 xor FORMAT_INFO_MASK_QR));
+    if (Result <> nil) then
+      Result.FIsModel1 := true;
+  end;
 end;
 
 class function TFormatInformation.doDecodeFormatInformation

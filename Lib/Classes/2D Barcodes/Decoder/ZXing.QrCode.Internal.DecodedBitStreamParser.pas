@@ -115,6 +115,14 @@ begin
       fc1InEffect := false;
       symbologyModifier := 1; // ]Q1: QR Code model 2
       hasECI := false;
+      if version.IsModel1 then
+      begin
+        // ]Q0: QR Code model 1, which starts with 4 bits 0
+        symbologyModifier := 0;
+        if (bits.available < 4) then
+          exit;
+        bits.readBits(4);
+      end;
       repeat
         // While still another segment to read...
         if (bits.available < 4) then
@@ -153,6 +161,9 @@ begin
           end
           else if (Mode = TMode.ECI) then
           begin
+            // QR Code model 1 has no ECI
+            if version.IsModel1 then
+              exit;
             // Count doesn't apply to ECI
             value := parseECIValue(bits);
             currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue(value);

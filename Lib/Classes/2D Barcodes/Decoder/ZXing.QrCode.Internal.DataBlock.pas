@@ -150,14 +150,24 @@ begin
   // The last elements of result may be 1 element longer;
   // first fill out as many elements as all of them have
   rawCodewordsOffset := 0;
-  for i := 0 to Pred(shorterBlocksNumDataCodewords) do
-  begin
+  if version.IsModel1 then
+    // in QR Code model 1 the data blocks are one after the other
     for j := 0 to Pred(numResultBlocks) do
+      for i := 0 to Pred(shorterBlocksNumDataCodewords) do
+      begin
+        Result[j].codewords[i] := rawCodewords[rawCodewordsOffset];
+        Inc(rawCodewordsOffset);
+      end
+  else
+    // in model 2 they are interleaved
+    for i := 0 to Pred(shorterBlocksNumDataCodewords) do
     begin
-      Result[j].codewords[i] := rawCodewords[rawCodewordsOffset];
-      Inc(rawCodewordsOffset);
+      for j := 0 to Pred(numResultBlocks) do
+      begin
+        Result[j].codewords[i] := rawCodewords[rawCodewordsOffset];
+        Inc(rawCodewordsOffset);
+      end;
     end;
-  end;
   // Fill out the last data block in the longer ones
   for j := longerBlocksStartAt to Pred(numResultBlocks) do
   begin
@@ -168,20 +178,32 @@ begin
   // Now add in error correction blocks
   max := Length(result[0].codewords);
 
-  for i := shorterBlocksNumDataCodewords to Pred(max) do
-  begin
+  if version.IsModel1 then
     for j := 0 to Pred(numResultBlocks) do
+      for i := shorterBlocksNumDataCodewords to Pred(max) do
+      begin
+        if (j < longerBlocksStartAt) then
+          iOffset := i
+        else
+          iOffset := i + 1;
+        Result[j].codewords[iOffset] := rawCodewords[rawCodewordsOffset];
+        Inc(rawCodewordsOffset);
+      end
+  else
+    for i := shorterBlocksNumDataCodewords to Pred(max) do
     begin
-      if (j < longerBlocksStartAt)
-      then
-         iOffset := i
-      else
-         iOffset := i + 1;
+      for j := 0 to Pred(numResultBlocks) do
+      begin
+        if (j < longerBlocksStartAt)
+        then
+           iOffset := i
+        else
+           iOffset := i + 1;
 
-      Result[j].codewords[iOffset] := rawCodewords[rawCodewordsOffset];
-      Inc(rawCodewordsOffset);
+        Result[j].codewords[iOffset] := rawCodewords[rawCodewordsOffset];
+        Inc(rawCodewordsOffset);
+      end;
     end;
-  end;
 end;
 
 end.
