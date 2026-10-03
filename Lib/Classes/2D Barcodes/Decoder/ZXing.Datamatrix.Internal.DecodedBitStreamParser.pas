@@ -273,6 +273,15 @@ begin
     else
       result := TDecoderResult.Create(bytes, text, byteSegments, '');
 
+    // ISO/IEC 15424: ]d1, ]d2 with FNC1 as first codeword (GS1), 3 higher
+    // when ECIs are used
+    var modifier := 1;
+    if (System.Length(bytes) > 0) and (bytes[0] = 232) then
+      modifier := 2;
+    if (ecis.Count > 0) then
+      Inc(modifier, 3);
+    result.SymbologyIdentifier := ']d' + IntToStr(modifier);
+
   finally
     bits.Free;
     res.Free;

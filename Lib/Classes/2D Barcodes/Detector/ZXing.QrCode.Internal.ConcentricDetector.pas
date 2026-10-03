@@ -32,11 +32,12 @@ uses
 
 type
   /// <summary>Gets every candidate grid: the sampled bits (freed by the
-  /// detector after the call) and its result points (bottom left, top left
-  /// and top right finder pattern). Return true to stop the detection.
+  /// detector after the call), its result points (bottom left, top left and
+  /// top right finder pattern) and its position (the corners top left, top
+  /// right, bottom right, bottom left). Return true to stop the detection.
   /// </summary>
   TQRCodeCandidate = reference to function(bits: TBitMatrix;
-    const points: TArray<IResultPoint>): Boolean;
+    const points, position: TArray<IResultPoint>): Boolean;
 
 /// <summary>
 /// Looks for QR Codes (model 2) by their finder patterns. Without tryHarder
@@ -782,13 +783,20 @@ function SampleQR(image: TBitMatrix; const fp: TFinderPatternSet;
 var
   points: TArray<IResultPoint>;
 
-  function yieldGrid(bits: TBitMatrix): Boolean;
+  function yieldGrid(bits: TBitMatrix; dimension: Integer;
+    const m2p: TPerspectiveTransformF): Boolean;
   begin
     Result := false;
     if (bits = nil) then
       exit;
     try
-      Result := onCandidate(bits, points);
+      // the corners of the symbol (with the transformation of its tiles
+      // only approximately)
+      var position: TArray<IResultPoint> := [ResultPointOf(m2p.Map(PointD(0,
+        0))), ResultPointOf(m2p.Map(PointD(dimension, 0))),
+        ResultPointOf(m2p.Map(PointD(dimension, dimension))),
+        ResultPointOf(m2p.Map(PointD(0, dimension)))];
+      Result := onCandidate(bits, points, position);
     finally
       bits.Free;
     end;
@@ -914,10 +922,10 @@ begin
           apP[n * System.Length(apM) + n], fp.bl.p));
 
       if yieldGrid(SampleGridAligned(image, dimension, dimension, mod2Pix, apP,
-        apFound, apM, apM)) then
+        apFound, apM, apM), dimension, mod2Pix) then
         exit(true);
     end
-    else if yieldGrid(plainGrid(dimension, mod2Pix)) then
+    else if yieldGrid(plainGrid(dimension, mod2Pix), dimension, mod2Pix) then
       exit(true);
 
     // if we have not found the br alignment pattern, we check
@@ -933,7 +941,7 @@ begin
     begin
       mod2Pix := MakeMod2Pix(dimension, PointD(0, 0), Quad(fp.tl.p, fp.tr.p,
         fp.tr.p - fp.tl.p + fp.bl.p, fp.bl.p));
-      if yieldGrid(plainGrid(dimension, mod2Pix)) then
+      if yieldGrid(plainGrid(dimension, mod2Pix), dimension, mod2Pix) then
         exit(true);
     end;
   finally

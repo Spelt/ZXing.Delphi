@@ -235,7 +235,7 @@ function TCode128Reader.decodeRow(const rowNumber: Integer;
   : TReadResult;
 var
   shiftUpperMode, upperMode, lastCharacterWasPrintable, convertFNC1, done,
-    unshift, isNextShifted: Boolean;
+    unshift, isNextShifted, fnc1First: Boolean;
   counters, startPatternInfo: TArray<Integer>;
   lastPatternSize, multiplier, checksumTotal, code, lastCode, nextStart,
     lastStart, startCode, codeSet, l, rawCodesSize: Integer;
@@ -249,6 +249,7 @@ var
   resultPoints: TArray<IResultPoint>;
   resultPointLeft, resultPointRight: IResultPoint;
 begin
+  fnc1First := false;
   convertFNC1 := (hints <> nil) and
     (hints.ContainsKey(ZXing.DecodeHintType.ASSUME_GS1));
 
@@ -385,6 +386,9 @@ begin
               case code of
                 CODE_FNC_1:
                   begin
+                    // FNC1 as first character: GS1-128 (symbology ]C1)
+                    if (Length(aResult) = 0) then
+                      fnc1First := true;
                     if convertFNC1 then
                     begin
                       if Length(aResult) = 0 then
@@ -465,6 +469,9 @@ begin
               case code of
                 CODE_FNC_1:
                   begin
+                    // FNC1 as first character: GS1-128 (symbology ]C1)
+                    if (Length(aResult) = 0) then
+                      fnc1First := true;
                     if convertFNC1 then
                     begin
                       if Length(aResult) = 0 then
@@ -540,6 +547,9 @@ begin
               case code of
                 CODE_FNC_1:
                   begin
+                    // FNC1 as first character: GS1-128 (symbology ]C1)
+                    if (Length(aResult) = 0) then
+                      fnc1First := true;
                     if convertFNC1 then
                     begin
                       if Length(aResult) = 0 then
@@ -666,6 +676,10 @@ begin
 
   result := TReadResult.Create(aResult, rawBytes, resultPoints,
     TBarcodeFormat.CODE_128);
+  if fnc1First then
+    result.SymbologyIdentifier := ']C1'
+  else
+    result.SymbologyIdentifier := ']C0';
 end;
 
 end.

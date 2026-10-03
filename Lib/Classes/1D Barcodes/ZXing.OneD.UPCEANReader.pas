@@ -494,10 +494,16 @@ begin
       TResultPointHelpers.CreateResultPoint(right, rowNumber));
 
     decodeResult := TReadResult.Create(resultString, nil, resultPoints, format);
+    // ISO/IEC 15424: ]E4 for EAN-8, ]E0 for the others, ]E3 with add-on
+    if (format = TBarcodeFormat.EAN_8) then
+      decodeResult.SymbologyIdentifier := ']E4'
+    else
+      decodeResult.SymbologyIdentifier := ']E0';
     extensionLength := 0;
     extensionResult := extensionReader.decodeRow(rowNumber, row, endRange[1]);
     if (extensionResult <> nil) then
     begin
+      decodeResult.SymbologyIdentifier := ']E3';
       decodeResult.putMetadata(TResultMetadataType.UPC_EAN_EXTENSION,
         TResultMetaData.CreateStringMetadata(extensionResult.Text));
       decodeResult.putAllMetadata(extensionResult.ResultMetadata);

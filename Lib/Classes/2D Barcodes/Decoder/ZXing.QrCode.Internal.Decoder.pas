@@ -192,8 +192,11 @@ begin
         Result := decode(parser, hints);
 
         if (Result <> nil) then
+        begin
           // Success! Notify the caller that the code was mirrored.
           Result.Other := TQRCodeDecoderMetaData.Create(true);
+          Result.IsMirrored := true;
+        end;
       end;
     finally
       parser.Free;

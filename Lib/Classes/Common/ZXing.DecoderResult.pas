@@ -37,6 +37,11 @@ type
     StructuredAppendParity: Integer;
     StructuredAppendSequenceNumber: Integer;
     Text: string;
+    /// <summary>The symbology identifier of ISO/IEC 15424 (like ']d2'), set
+    /// by the decoders that know it.</summary>
+    SymbologyIdentifier: string;
+    /// <summary>True when the symbol was decoded mirrored.</summary>
+    IsMirrored: Boolean;
 
     constructor Create(RawBytes: TArray<Byte>; const Text: string;
       ByteSegments: IByteSegments; ECLevel: string); overload;

@@ -98,6 +98,8 @@ var
   currentCharacterSetECI: TCharacterSetECI;
   ecstring,s: String;
   res: TStringBuilder;
+  symbologyModifier: Integer;
+  hasECI: Boolean;
 begin
   Result := nil;
 
@@ -111,6 +113,8 @@ begin
     try
       currentCharacterSetECI := nil;
       fc1InEffect := false;
+      symbologyModifier := 1; // ]Q1: QR Code model 2
+      hasECI := false;
       repeat
         // While still another segment to read...
         if (bits.available < 4) then
@@ -133,6 +137,11 @@ begin
           begin
             // We do little with FNC1 except alter the parsed result a bit according to the spec
             fc1InEffect := true;
+            // symbology identifier ]Q3 (GS1) or ]Q5 (AIM)
+            if (Mode = TMode.FNC1_FIRST_POSITION) then
+              symbologyModifier := 3
+            else
+              symbologyModifier := 5;
           end
           else if (Mode = TMode.STRUCTURED_APPEND) then
           begin
@@ -148,6 +157,7 @@ begin
             value := parseECIValue(bits);
             currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue(value);
             if (currentCharacterSetECI = nil) then exit;
+            hasECI := true;
           end
           else if (Mode = TMode.HANZI) then // First handle Hanzi mode which does not start with character count
           begin
@@ -199,6 +209,11 @@ begin
 
     s:= res.toString.Replace(#13+#10, #10).Replace(#10, #13);
     Result := TDecoderResult.Create(bytes, s, byteSegments, ecstring, symbolSequence, parityData);
+    // ISO/IEC 15424: ]Q1, ]Q3 (FNC1 first position) or ]Q5 (second), one
+    // higher when ECIs are used
+    if hasECI then
+      Inc(symbologyModifier);
+    Result.SymbologyIdentifier := ']Q' + IntToStr(symbologyModifier);
   finally
     res.Clear();
 

@@ -214,6 +214,7 @@ begin
 
   Result := TReadResult.Create(stringResult, nil, resultPoints,
     TBarcodeFormat.ITF);
+  Result.SymbologyIdentifier := ']I0';
 end;
 
 function TITFReader.decodeDigit(counters: TArray<Integer>;

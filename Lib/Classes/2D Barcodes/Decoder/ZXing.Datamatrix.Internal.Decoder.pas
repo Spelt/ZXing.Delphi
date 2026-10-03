@@ -128,6 +128,8 @@ begin
   var mirrored := FlippedL(bits);
   try
     Result := doDecode(mirrored, assumeGS1);
+    if (Result <> nil) then
+      Result.IsMirrored := true;
   finally
     mirrored.Free;
   end;

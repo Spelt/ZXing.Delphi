@@ -281,6 +281,7 @@
         <DCCReference Include="OneDFullAsciiTest.pas"/>
         <DCCReference Include="DataMatrixBitStreamTest.pas"/>
         <DCCReference Include="MultiFormatReaderTest.pas"/>
+        <DCCReference Include="ReadResultTest.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Samples.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Images.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Runner.pas"/>

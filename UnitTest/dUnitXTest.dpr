@@ -20,6 +20,7 @@ uses
   OneDFullAsciiTest in 'OneDFullAsciiTest.pas',
   DataMatrixBitStreamTest in 'DataMatrixBitStreamTest.pas',
   MultiFormatReaderTest in 'MultiFormatReaderTest.pas',
+  ReadResultTest in 'ReadResultTest.pas',
   Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
   Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
   Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';

@@ -320,6 +320,13 @@ begin
 
   Result := TReadResult.Create(resultString, nil, resultPoints,
     TBarcodeFormat.CODE_39);
+  // ISO/IEC 15424: +3 check digit validated and stripped, +4 full ASCII
+  var modifier := 0;
+  if usingCheckDigit then
+    Inc(modifier, 3);
+  if extendedMode then
+    Inc(modifier, 4);
+  Result.SymbologyIdentifier := ']A' + IntToStr(modifier);
 
 end;
 

@@ -223,6 +223,8 @@ begin
 
     Result := TReadResult.Create(DecoderResult.Text, DecoderResult.RawBytes,
       points, TBarcodeFormat.DATA_MATRIX);
+    Result.SymbologyIdentifier := DecoderResult.SymbologyIdentifier;
+    Result.IsMirrored := DecoderResult.IsMirrored;
 
     ByteSegments := DecoderResult.ByteSegments;
 

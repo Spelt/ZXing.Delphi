@@ -219,6 +219,12 @@ begin
       begin
         // back to the coordinates of the full image
         var scale: Single := fullWidth / width;
+        var position := Result.Position;
+        for var i := 0 to High(position) do
+          if (position[i] <> nil) then
+            position[i] := TResultPointHelpers.CreateResultPoint(position[i].x
+              * scale, position[i].y * scale);
+        Result.Position := position;
         var points := Result.resultPoints;
         for var i := 0 to High(points) do
           if (points[i] <> nil) then
@@ -265,6 +271,8 @@ begin
         HybridBinarizer := invertedBinarizer;
         BinaryBitmap := TBinaryBitmap.Create(HybridBinarizer);
         Result := FMultiFormatReader.Decode(BinaryBitmap, true);
+        if (Result <> nil) then
+          Result.IsInverted := true;
 
       end;
     end;
