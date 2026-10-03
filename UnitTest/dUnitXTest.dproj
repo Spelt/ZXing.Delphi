@@ -284,6 +284,7 @@
         <DCCReference Include="ReadResultTest.pas"/>
         <DCCReference Include="OneDTest.pas"/>
         <DCCReference Include="QRCodeTest.pas"/>
+        <DCCReference Include="AztecTest.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Samples.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Images.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Runner.pas"/>

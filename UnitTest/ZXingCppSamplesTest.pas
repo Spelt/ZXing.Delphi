@@ -37,7 +37,9 @@ const
   // slow, fast, pure. Results after the 1D decoders of zxing-cpp (phase 7).
   // The wrong results in upce-2 are a misread of 509689-3!.webp, an image
   // that zxing-cpp can not read either.
-  FOLDER_LIMITS: array [0 .. 31] of TFolderLimits = (
+  FOLDER_LIMITS: array [0 .. 33] of TFolderLimits = (
+    (Folder: 'aztec-1'; Limits: ((MinRead: 132; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'aztec-2'; Limits: ((MinRead: 62; MaxWrong: 0; MaxErrors: 0), (MinRead: 61; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'codabar-1'; Limits: ((MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'codabar-2'; Limits: ((MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 4; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'code128-1'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0))),
@@ -77,6 +79,8 @@ type
   TZXingCppSamplesTest = class(TObject)
   public
     [Test]
+    [TestCase('aztec-1', 'aztec-1')]
+    [TestCase('aztec-2', 'aztec-2')]
     [TestCase('codabar-1', 'codabar-1')]
     [TestCase('codabar-2', 'codabar-2')]
     [TestCase('code128-1', 'code128-1')]

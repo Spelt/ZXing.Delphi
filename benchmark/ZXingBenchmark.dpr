@@ -96,6 +96,8 @@ begin
     Result := 'DataMatrix'
   else if folderName.StartsWith('qrcode') then
     Result := 'QR Code'
+  else if folderName.StartsWith('aztec') then
+    Result := 'Aztec'
   else if folderName.StartsWith('multi') or folderName.StartsWith('none') then
     Result := 'mixed / none'
   else

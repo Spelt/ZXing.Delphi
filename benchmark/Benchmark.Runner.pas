@@ -295,7 +295,8 @@ begin
               log(Format('%s  FAILED: %s %s', [where,
                 IfThen(results[i].BarcodeFormat = TBarcodeFormat.QR_CODE, 'QR',
                 IfThen(results[i].BarcodeFormat = TBarcodeFormat.DATA_MATRIX, 'DM',
-                IntToStr(Ord(results[i].BarcodeFormat)))), results[i].Error]));
+                IfThen(results[i].BarcodeFormat = TBarcodeFormat.AZTEC, 'Aztec',
+                IntToStr(Ord(results[i].BarcodeFormat))))), results[i].Error]));
             results.Delete(i);
           end;
 

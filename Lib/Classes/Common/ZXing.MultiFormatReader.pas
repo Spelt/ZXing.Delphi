@@ -49,7 +49,8 @@ uses
 
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
-  ZXing.Datamatrix.DataMatrixReader;
+  ZXing.Datamatrix.DataMatrixReader,
+  ZXing.Aztec.AztecReader;
 
 /// <summary>
 /// MultiFormatReader is a convenience class and the main entry point into the library for most uses.
@@ -246,6 +247,9 @@ begin
 
     if formats.Contains(TBarcodeFormat.DATA_MATRIX) then
       readers.Add(TDataMatrixReader.Create);
+
+    if formats.Contains(TBarcodeFormat.AZTEC) then
+      readers.Add(TAztecReader.Create);
 
     if (formats.Contains(TBarcodeFormat.EAN_13)) then
       readers.Add(TEAN13Reader.Create());

@@ -60,6 +60,13 @@ type
       const timingStart: TPoint; const timingDirs: TArray<TPoint>;
       const blackStart: TPoint; const blackDirs: TArray<TPoint>;
       const whiteStart: TPoint; const whiteDirs: TArray<TPoint>): Boolean;
+    /// <summary>Whether there is a cross of timing patterns (alternating
+    /// black and white, black or white at the center) at module p, up to
+    /// radius modules in 4 directions, with at most errorThreshold wrong
+    /// modules. Near the edge of the grid the arms continue on the other side.
+    /// </summary>
+    function IsTimingPatternCross(const p: TPoint; isBlack: Boolean;
+      radius: Integer; errorThreshold: Integer = 0): Boolean;
   public
     /// <summary>mod2Pix: the global module (grid) to image (pixel)
     /// transformation; dim: the size of the grid in modules.</summary>
@@ -83,6 +90,13 @@ type
       const timingDirs: TGridDirections; const blackStart: TPoint;
       const blackDirs: TGridDirections; const whiteStart: TPoint;
       const whiteDirs: TGridDirections; out position: TPointD): Boolean;
+    /// <summary>
+    /// Looks in a spiral around the grid center for a cross of timing
+    /// patterns (like the reference grid of an Aztec Code) of radius modules;
+    /// true and the (adjusted) pixel position of its center when found.
+    /// </summary>
+    function FindTimingPatternCross(isBlack: Boolean; radius: Integer;
+      out position: TPointD): Boolean;
   end;
 
   /// <summary>A region of interest of the grid (x0 to x1 and y0 to y1,
@@ -454,6 +468,79 @@ begin
         FOrigin := original;
       position := FOrigin;
       exit(true);
+    end;
+  Result := false;
+end;
+
+function TLocalGrid.IsTimingPatternCross(const p: TPoint; isBlack: Boolean;
+  radius, errorThreshold: Integer): Boolean;
+
+  // near the edge of the grid: continue on the other side of the center
+  function wrapOffset(center, offset, dim: Integer): Integer;
+  begin
+    var pos := center + offset;
+    if (pos < 0) then
+      Result := radius - pos
+    else if (pos >= dim) then
+      Result := -(radius + (pos - dim) + 1)
+    else
+      Result := offset;
+  end;
+
+var
+  errors: Integer;
+
+  procedure check(x, y: Integer);
+  begin
+    x := wrapOffset(FCenter.X, x, FDim.X);
+    y := wrapOffset(FCenter.Y, y, FDim.Y);
+    var d := Point(x, y);
+    // black on even distances when the center is black (like zxing-cpp,
+    // also for negative distances)
+    var black: Boolean;
+    if isBlack then
+      black := ((x + y) mod 2 = 0)
+    else
+      black := ((x + y) mod 2 = 1);
+    if not FindValue(Point(p.X + d.X, p.Y + d.Y), d, Ord(black)) then
+      Inc(errors);
+  end;
+
+begin
+  errors := 0;
+  for var r := 0 to radius do
+  begin
+    check(-r, 0);
+    check(r, 0);
+    check(0, -r);
+    check(0, r);
+    if (errors > errorThreshold) then
+      exit(false);
+  end;
+  Result := (errors <= errorThreshold);
+end;
+
+function TLocalGrid.FindTimingPatternCross(isBlack: Boolean; radius: Integer;
+  out position: TPointD): Boolean;
+begin
+  for var p in Spiral3 do
+    // a cross candidate at p with half the radius
+    if IsTimingPatternCross(p, isBlack, radius div 2) then
+    begin
+      var original := FOrigin;
+      FOrigin := GetPos(p);
+      // adjust origin and step with the full radius, only in the direction
+      // of the timing patterns
+      AdjustOriginAndStep(FStepX, radius, [-FStepX, FStepX]);
+      AdjustOriginAndStep(FStepY, radius, [-FStepY, FStepY]);
+
+      // check again with the full radius, aligned to the timing patterns
+      if IsTimingPatternCross(Point(0, 0), isBlack, radius) then
+      begin
+        position := FOrigin;
+        exit(true);
+      end;
+      FOrigin := original;
     end;
   Result := false;
 end;
