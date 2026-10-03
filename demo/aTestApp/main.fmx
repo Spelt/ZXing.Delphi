@@ -98,6 +98,15 @@ object MainForm: TMainForm
         Text = 'Start Camera'
         OnClick = btnStartCameraClick
       end
+      object chkScanAll: TCheckBox
+        Align = Client
+        Margins.Left = 12.000000000000000000
+        Size.Width = 404.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Text = 'All codes (ScanAll)'
+      end
     end
     object Camera1: TCamera
       AngleOfView = 45.000000000000000000

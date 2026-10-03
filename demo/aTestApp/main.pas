@@ -29,6 +29,7 @@ uses
   System.Actions,
   System.Threading,
   System.Permissions,
+  Generics.Collections,
   FMX.Types,
   FMX.Controls,
   FMX.Forms,
@@ -67,6 +68,7 @@ type
     Memo1: TMemo;
     openDlg: TOpenDialog;
     Camera1: TCamera;
+    chkScanAll: TCheckBox;
     procedure btnStartCameraClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnStopCameraClick(Sender: TObject);
@@ -109,7 +111,8 @@ uses
   Androidapi.JNI.JavaTypes,
   Androidapi.JNI.Os,
 {$ENDIF}
-  FMX.DialogService;
+  FMX.DialogService,
+  ZXing.DecodeHintType;
 
 {$R *.fmx}
 
@@ -131,7 +134,11 @@ begin
   // One scan manager for all frames, like a real app would do. Only one scan
   // may use it at a time. Pass hints (e.g. ENABLE_INVERSION, TRY_HARDER) as
   // second parameter; the scan manager frees them.
-  fScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+
+  var hints := TDictionary<TDecodeHintType, TObject>.Create();
+  //hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);
+  hints.Add(TDecodeHintType.TRY_HARDER, nil);
+  fScanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
 
 {$IFDEF ANDROID}
   fPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
@@ -244,20 +251,45 @@ begin
 end;
 
 procedure TMainForm.ParseImage(const scanBitmap: TBitmap);
+var
+  scanAll: Boolean;
 begin
+  // read the check box here, in the main thread
+  scanAll := chkScanAll.IsChecked;
 
   TThread.CreateAnonymousThread(
     procedure
     var
       ReadResult: TReadResult;
-
+      results: TObjectList<TReadResult>;
+      lines: TArray<string>;
     begin
-      ReadResult := nil;
+      results := nil;
 
       try
 
         try
-          ReadResult := fScanManager.Scan(scanBitmap);
+          // all codes in the frame, or the first one
+          if scanAll then
+            results := fScanManager.ScanAll(scanBitmap)
+          else
+          begin
+            results := TObjectList<TReadResult>.Create(true);
+            ReadResult := fScanManager.Scan(scanBitmap);
+            if (ReadResult <> nil) then
+              results.Add(ReadResult);
+          end;
+
+          // the text of every code, with its symbology identifier and for
+          // GS1 codes also the human readable form, like (01)...(17)...
+          for ReadResult in results do
+          begin
+            var line := ReadResult.SymbologyIdentifier + ' ' +
+              ReadResult.Text.Replace(#29, '<GS>');
+            if ReadResult.IsGS1 then
+              line := line + sLineBreak + '    ' + ReadResult.GS1HRI;
+            lines := lines + [line];
+          end;
         except
           on E: Exception do
           begin
@@ -279,17 +311,21 @@ begin
               lblScanStatus.Text := '*';
             end;
 
-            lblScanStatus.Text := lblScanStatus.Text + '*';
-            if (ReadResult <> nil) then
+            if Length(lines) > 0 then
             begin
-              Memo1.Lines.Insert(0, ReadResult.Text);
+              lblScanStatus.Text := lblScanStatus.Text + '*';
+              // newest on top, the codes of one frame in their order
+              Memo1.Lines.Clear();
+              var dt := FormatDateTime('h:nn:ss:z',Now);
+              for var i := High(lines) downto 0 do
+                Memo1.Lines.Add(dt + ': ' + lines[i]);
             end;
 
           end);
 
       finally
-        if ReadResult <> nil then
-          FreeAndNil(ReadResult);
+        // frees the results too
+        results.Free;
 
         // An FMX bitmap must be freed in the main thread (on Android it holds
         // a graphics handle), so free the frame copy there.
