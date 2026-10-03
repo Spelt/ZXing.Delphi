@@ -95,7 +95,7 @@ type
 /// <summary>Samples the module centers of every region of interest; nil when
 /// a transformation is invalid or a point lies outside the image.</summary>
 function SampleGridROIs(image: TBitMatrix; width, height: Integer;
-  const rois: TArray<TGridROI>): TBitMatrix;
+  const rois: TArray<TGridROI>; dx: Double = 0; dy: Double = 0): TBitMatrix;
 
 /// <summary>
 /// Samples a grid piecewise between alignment points: apP holds the pixel
@@ -106,7 +106,8 @@ function SampleGridROIs(image: TBitMatrix; width, height: Integer;
 /// </summary>
 function SampleGridAligned(image: TBitMatrix; width, height: Integer;
   const mod2Pix: TPerspectiveTransformF; apP: TArray<TPointD>;
-  const found: TArray<Boolean>; const apMX, apMY: TArray<Integer>): TBitMatrix;
+  const found: TArray<Boolean>; const apMX, apMY: TArray<Integer>;
+  dx: Double = 0; dy: Double = 0): TBitMatrix;
 
 implementation
 
@@ -460,7 +461,7 @@ end;
 { grid sampling }
 
 function SampleGridROIs(image: TBitMatrix; width, height: Integer;
-  const rois: TArray<TGridROI>): TBitMatrix;
+  const rois: TArray<TGridROI>; dx, dy: Double): TBitMatrix;
 
   function isInside(const mod2Pix: TPerspectiveTransformF; x, y: Integer)
     : Boolean;
@@ -486,7 +487,7 @@ begin
     for var y := roi.y0 to roi.y1 - 1 do
       for var x := roi.x0 to roi.x1 - 1 do
       begin
-        var q := roi.mod2Pix.Map(CenteredOf(x, y));
+        var q := roi.mod2Pix.Map(CenteredOf(x, y)) + PointD(dx, dy);
         // even when all corners are inside, an inner point can be outside due
         // to numerical instability (see zxing-cpp #563)
         if not IsInImage(image, q) then
@@ -501,7 +502,8 @@ end;
 
 function SampleGridAligned(image: TBitMatrix; width, height: Integer;
   const mod2Pix: TPerspectiveTransformF; apP: TArray<TPointD>;
-  const found: TArray<Boolean>; const apMX, apMY: TArray<Integer>): TBitMatrix;
+  const found: TArray<Boolean>; const apMX, apMY: TArray<Integer>;
+  dx, dy: Double): TBitMatrix;
 begin
   var nx := System.Length(apMX);
   var w := nx - 1;
@@ -555,7 +557,7 @@ begin
       rois[y * w + x] := roi;
     end;
 
-  Result := SampleGridROIs(image, width, height, rois);
+  Result := SampleGridROIs(image, width, height, rois, dx, dy);
 end;
 
 initialization

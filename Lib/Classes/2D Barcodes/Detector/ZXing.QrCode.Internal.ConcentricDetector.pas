@@ -60,6 +60,7 @@ implementation
 
 uses
   System.Types,
+  System.SysUtils,
   System.Math,
   System.Generics.Collections,
   System.Generics.Defaults,
@@ -68,7 +69,22 @@ uses
   ZXing.Common.Pattern,
   ZXing.Common.ConcentricFinder,
   ZXing.Common.LocalGrid,
-  ZXing.QrCode.Internal.Version;
+  ZXing.QrCode.Internal.Version,
+  ZXing.QrCode.Internal.BitMatrixParser;
+
+/// <summary>Whether the format information of the sampled bits of a QR Code
+/// is readable.</summary>
+function HasFormatInformation(bits: TBitMatrix): Boolean;
+begin
+  var parser := TBitMatrixParser.createBitMatrixParser(bits);
+  if (parser = nil) then
+    exit(false);
+  try
+    Result := (parser.readFormatInformation <> nil);
+  finally
+    parser.Free;
+  end;
+end;
 
 const
   // the 1:1:3:1:1 finder pattern
@@ -777,6 +793,21 @@ begin
     end;
 end;
 
+/// <summary>The grid of dimension modules sampled with mod2Pix, the module
+/// centers moved by dx, dy pixels.</summary>
+function PlainGrid(image: TBitMatrix; dimension: Integer;
+  const mod2Pix: TPerspectiveTransformF; dx, dy: Double): TBitMatrix;
+begin
+  var rois: TArray<TGridROI>;
+  SetLength(rois, 1);
+  rois[0].x0 := 0;
+  rois[0].x1 := dimension;
+  rois[0].y0 := 0;
+  rois[0].y1 := dimension;
+  rois[0].mod2Pix := mod2Pix;
+  Result := SampleGridROIs(image, dimension, dimension, rois, dx, dy);
+end;
+
 /// <summary>Samples the grid of the symbol with the finder patterns fp in
 /// one or more ways and passes the results to onCandidate. Returns true
 /// when it stopped the detection.</summary>
@@ -785,36 +816,52 @@ function SampleQR(image: TBitMatrix; const fp: TFinderPatternSet;
 var
   points: TArray<IResultPoint>;
 
-  function yieldGrid(bits: TBitMatrix; dimension: Integer;
-    const m2p: TPerspectiveTransformF): Boolean;
+  // sample(dx, dy) samples the grid with the module centers moved by dx, dy
+  // pixels
+  function yieldGrid(const sample: TFunc<Double, Double, TBitMatrix>;
+    dimension: Integer; const m2p: TPerspectiveTransformF): Boolean;
+  const
+    // half a pixel beside: the module centers of a symbol that is not read
+    // can lie on the edge of their modules (small modules, round dots), see
+    // qrcode-2/qr-circles-1.png
+    OFFSETS: array [0 .. 3, 0 .. 1] of Double = ((-0.5, 0), (0.5, 0),
+      (0, -0.5), (0, 0.5));
   begin
     Result := false;
+    var bits := sample(0, 0);
     if (bits = nil) then
       exit;
+    // the corners of the symbol (with the transformation of its tiles
+    // only approximately)
+    var position: TArray<IResultPoint> := [ResultPointOf(m2p.Map(PointD(0,
+      0))), ResultPointOf(m2p.Map(PointD(dimension, 0))),
+      ResultPointOf(m2p.Map(PointD(dimension, dimension))),
+      ResultPointOf(m2p.Map(PointD(0, dimension)))];
+    var isQRCode: Boolean;
     try
-      // the corners of the symbol (with the transformation of its tiles
-      // only approximately)
-      var position: TArray<IResultPoint> := [ResultPointOf(m2p.Map(PointD(0,
-        0))), ResultPointOf(m2p.Map(PointD(dimension, 0))),
-        ResultPointOf(m2p.Map(PointD(dimension, dimension))),
-        ResultPointOf(m2p.Map(PointD(0, dimension)))];
       Result := onCandidate(bits, points, position);
+      // not read, but certainly a QR Code: its format information is
+      // readable
+      isQRCode := not Result and HasFormatInformation(bits);
     finally
       bits.Free;
     end;
-  end;
+    if not isQRCode then
+      exit;
 
-  function plainGrid(dimension: Integer;
-    const mod2Pix: TPerspectiveTransformF): TBitMatrix;
-  begin
-    var rois: TArray<TGridROI>;
-    SetLength(rois, 1);
-    rois[0].x0 := 0;
-    rois[0].x1 := dimension;
-    rois[0].y0 := 0;
-    rois[0].y1 := dimension;
-    rois[0].mod2Pix := mod2Pix;
-    Result := SampleGridROIs(image, dimension, dimension, rois);
+    // sample it once more half a pixel beside in each direction
+    for var i := 0 to High(OFFSETS) do
+    begin
+      bits := sample(OFFSETS[i, 0], OFFSETS[i, 1]);
+      if (bits = nil) then
+        continue;
+      try
+        if onCandidate(bits, points, position) then
+          exit(true);
+      finally
+        bits.Free;
+      end;
+    end;
   end;
 
 var
@@ -923,12 +970,25 @@ begin
         mod2Pix := MakeMod2Pix(dimension, PointD(3, 3), Quad(fp.tl.p, fp.tr.p,
           apP[n * System.Length(apM) + n], fp.bl.p));
 
-      if yieldGrid(SampleGridAligned(image, dimension, dimension, mod2Pix, apP,
-        apFound, apM, apM), dimension, mod2Pix) then
+      var m2p := mod2Pix;
+      if yieldGrid(
+        function(dx, dy: Double): TBitMatrix
+        begin
+          Result := SampleGridAligned(image, dimension, dimension, m2p, apP,
+            apFound, apM, apM, dx, dy);
+        end, dimension, mod2Pix) then
         exit(true);
     end
-    else if yieldGrid(plainGrid(dimension, mod2Pix), dimension, mod2Pix) then
-      exit(true);
+    else
+    begin
+      var m2p := mod2Pix;
+      if yieldGrid(
+        function(dx, dy: Double): TBitMatrix
+        begin
+          Result := PlainGrid(image, dimension, m2p, dx, dy);
+        end, dimension, mod2Pix) then
+        exit(true);
+    end;
 
     // if we have not found the br alignment pattern, we check
     // a) if we have a version 1 symbol and tried and failed with the
@@ -943,7 +1003,12 @@ begin
     begin
       mod2Pix := MakeMod2Pix(dimension, PointD(0, 0), Quad(fp.tl.p, fp.tr.p,
         fp.tr.p - fp.tl.p + fp.bl.p, fp.bl.p));
-      if yieldGrid(plainGrid(dimension, mod2Pix), dimension, mod2Pix) then
+      var m2p := mod2Pix;
+      if yieldGrid(
+        function(dx, dy: Double): TBitMatrix
+        begin
+          Result := PlainGrid(image, dimension, m2p, dx, dy);
+        end, dimension, mod2Pix) then
         exit(true);
     end;
   finally
