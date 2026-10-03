@@ -82,7 +82,8 @@ function IsPattern(const widths: array of Integer;
 implementation
 
 uses
-  System.Math;
+  System.Math,
+  ZXing.Common.BitArray;
 
 { TPatternView }
 
@@ -174,33 +175,43 @@ procedure GetPatternRow(matrix: TBitMatrix; y: Integer; var row: TPatternRow);
 begin
   var width := matrix.Width;
   SetLength(row, width + 2);
-  FillChar(row[0], System.Length(row) * SizeOf(Integer), 0);
   if (width = 0) then
   begin
     SetLength(row, 1);
+    row[0] := 0;
     exit;
   end;
 
+  // jump from edge to edge with the word based search of the bit array
+  var bits := matrix.getRow(y, nil);
+  var count := 0;
+  var x := 0;
   // the first value is the number of white pixels, 0 when starting black
-  var pos := 0;
-  var last := matrix[0, y];
-  if last then
-    pos := 1;
-  Inc(row[pos]);
-  for var x := 1 to width - 1 do
+  var black := bits[0];
+  while (x < width) do
   begin
-    var v := matrix[x, y];
-    if (v <> last) then
+    var next: Integer;
+    if black then
+      next := Min(bits.getNextUnset(x), width)
+    else
+      next := Min(bits.getNextSet(x), width);
+    if (count = 0) and black then
     begin
-      Inc(pos);
-      last := v;
+      row[0] := 0;
+      count := 1;
     end;
-    Inc(row[pos]);
+    row[count] := next - x;
+    Inc(count);
+    x := next;
+    black := not black;
   end;
   // the last value is the number of white pixels, 0 when ending black
-  if last then
-    Inc(pos);
-  SetLength(row, pos + 1);
+  if not black then
+  begin
+    row[count] := 0;
+    Inc(count);
+  end;
+  SetLength(row, count);
 end;
 
 function IsPatternWidths(const widths: array of Integer; first: Integer;
