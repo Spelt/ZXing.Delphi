@@ -21,6 +21,10 @@ type
     [Test]
     procedure KanjiSegment;
     [Test]
+    procedure FNC1SecondPosition;
+    [Test]
+    procedure UnknownECI;
+    [Test]
     procedure ReturnErrorsUnreadable;
     [Test]
     procedure ReturnErrorsReadable;
@@ -108,6 +112,42 @@ begin
     Assert.IsNotNull(r, ' Nil result ');
     // U+70B9, the kanji for 'point'
     Assert.AreEqual(string(Char($70B9)), r.Text);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TQRCodeTest.FNC1SecondPosition;
+begin
+  // FNC1 in second position (1001) with application indicator 37
+  // (00100101), numeric mode (0001), 3 digits (0000000011), 123
+  // (0001111011), the terminator (0000):
+  // 1001 0010 | 0101 0001 | 0000 0000 | 1100 0111 | 1011 0000
+  var bytes: TArray<Byte> := [$92, $51, $00, $C7, $B0];
+  var r := TDecodedBitStreamParser.decode(bytes, TVersion.getVersionForNumber(1),
+    TErrorCorrectionLevel.L, nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('37123', r.Text);
+    Assert.AreEqual(']Q5', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TQRCodeTest.UnknownECI;
+begin
+  // ECI (0111) 127 (01111111), not a known character set, byte mode (0100),
+  // 1 byte (00000001), 'A' (01000001), the terminator (0000) and padding:
+  // 0111 0111 | 1111 0100 | 0000 0001 | 0100 0001 | 0000 0000
+  var bytes: TArray<Byte> := [$77, $F4, $01, $41, $00];
+  var r := TDecodedBitStreamParser.decode(bytes, TVersion.getVersionForNumber(1),
+    TErrorCorrectionLevel.L, nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('A', r.Text);
+    // ]Q1 + 1 for the ECI
+    Assert.AreEqual(']Q2', r.SymbologyIdentifier);
   finally
     r.Free;
   end;

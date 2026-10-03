@@ -48,7 +48,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39, Code 93 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode.
 	- Hints ALLOWED_EAN_EXTENSIONS and ALLOWED_LENGTHS: use TIntegerArrayHint.Create([2, 5]) as value; TScanManager frees it. Before, these hints made TScanManager crash when it freed them (an array cast to TObject still works, but is not freed). ALLOWED_EAN_EXTENSIONS now really requires an add-on: the search goes on until a code with add-on is found.
 	- Code 128: extended characters (FNC4) in code set A were all returned as character 160.
-	- QR Code: segments in Kanji mode made the decoding fail.
+	- QR Code: segments in Kanji mode made the decoding fail. The application indicator after FNC1 in second position (AIM) is read, and an unknown ECI no longer stops the decoding (the default character set is used, like zxing-cpp).
 	- Code 93: the right result point (and so Position and Orientation) was wrong.
 	- TBitArray.setRange set the wrong bits.
 	- TScanManager.ScanAll: all barcodes in an image (QR Code, Data Matrix and 1D on different rows, also vertical ones with TRY_HARDER).

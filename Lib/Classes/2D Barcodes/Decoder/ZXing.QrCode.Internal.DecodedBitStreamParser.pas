@@ -149,7 +149,21 @@ begin
             if (Mode = TMode.FNC1_FIRST_POSITION) then
               symbologyModifier := 3
             else
+            begin
               symbologyModifier := 5;
+              // the AIM application indicator (ISO/IEC 18004:2015 7.4.8.3):
+              // 8 bits, 00-99 or a letter + 100, before the data
+              if (bits.available < 8) then
+                exit;
+              var appInd := bits.readBits(8);
+              if (appInd < 100) then
+                res.Append(Format('%.2d', [appInd]))
+              else if ((appInd >= 165) and (appInd <= 190)) or
+                ((appInd >= 197) and (appInd <= 222)) then
+                res.Append(Char(appInd - 100))
+              else
+                exit;
+            end;
           end
           else if (Mode = TMode.STRUCTURED_APPEND) then
           begin
@@ -166,8 +180,9 @@ begin
               exit;
             // Count doesn't apply to ECI
             value := parseECIValue(bits);
+            // an unknown ECI: go on with the default character set (like
+            // zxing-cpp) instead of failing
             currentCharacterSetECI := TCharacterSetECI.getCharacterSetECIByValue(value);
-            if (currentCharacterSetECI = nil) then exit;
             hasECI := true;
           end
           else if (Mode = TMode.HANZI) then // First handle Hanzi mode which does not start with character count

@@ -174,7 +174,9 @@ begin
     exit
   end;
 
-  Result := TCharacterSetECI.VALUE_TO_ECI[value];
+  // nil for an unknown value (the indexer would raise an exception)
+  if not TCharacterSetECI.VALUE_TO_ECI.TryGetValue(value, Result) then
+    Result := nil;
 end;
 
 end.
