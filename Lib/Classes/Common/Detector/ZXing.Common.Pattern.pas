@@ -21,6 +21,8 @@ unit ZXing.Common.Pattern;
   * pattern or the start pattern of a 1D code.
 }
 
+{$POINTERMATH ON}
+
 interface
 
 uses
@@ -37,7 +39,10 @@ type
   /// </summary>
   TPatternView = record
   private
-    FRow: TPatternRow;
+    // the row (not managed, so that copies of views are cheap: the row
+    // has to exist as long as the view is used) and its length
+    FRow: PInteger;
+    FLen: Integer;
     FData: Integer; // -1: no view
     FSize: Integer;
     function GetItem(i: Integer): Integer; inline;
@@ -149,7 +154,8 @@ uses
 
 class function TPatternView.Create(const row: TPatternRow): TPatternView;
 begin
-  Result.FRow := row;
+  Result.FRow := PInteger(row);
+  Result.FLen := System.Length(row);
   Result.FData := 1;
   Result.FSize := System.Length(row) - 1;
 end;
@@ -157,6 +163,7 @@ end;
 class function TPatternView.Empty: TPatternView;
 begin
   Result.FRow := nil;
+  Result.FLen := 0;
   Result.FData := -1;
   Result.FSize := 0;
 end;
@@ -194,7 +201,7 @@ end;
 
 function TPatternView.IsValid(n: Integer): Boolean;
 begin
-  Result := (FData >= 0) and (FData + n <= System.Length(FRow));
+  Result := (FData >= 0) and (FData + n <= FLen);
 end;
 
 function TPatternView.IsValid: Boolean;
@@ -209,6 +216,7 @@ begin
   else if (size < 0) then
     size := FSize - offset + size;
   Result.FRow := FRow;
+  Result.FLen := FLen;
   Result.FData := FData + offset;
   Result.FSize := Max(size, 0);
 end;
@@ -218,7 +226,7 @@ begin
   if (FData < 0) then
     exit(false);
   Inc(FData, n);
-  Result := (FData + FSize <= System.Length(FRow));
+  Result := (FData + FSize <= FLen);
 end;
 
 function TPatternView.SkipPair: Boolean;
@@ -241,7 +249,7 @@ begin
   if (FData < 0) then
     FSize := 0
   else
-    FSize := Max(0, System.Length(FRow) - FData);
+    FSize := Max(0, FLen - FData);
 end;
 
 function TPatternView.Index: Integer;
@@ -258,7 +266,7 @@ end;
 
 function TPatternView.IsAtLastBar: Boolean;
 begin
-  Result := (FData + FSize = System.Length(FRow) - 1);
+  Result := (FData + FSize = FLen - 1);
 end;
 
 function TPatternView.SpaceInFront: Integer;
@@ -382,7 +390,7 @@ begin
   SetLength(row, count);
 end;
 
-function IsPatternWidths(const widths: array of Integer; first: Integer;
+function IsPatternWidths(widths: PInteger; first: Integer;
   const pattern: array of Integer; e2e: Boolean; spaceInPixel: Integer;
   minQuietZone, moduleSizeRef: Double): Double;
 var
@@ -463,7 +471,7 @@ end;
 function IsPattern(const widths: array of Integer;
   const pattern: array of Integer; e2e: Boolean): Double;
 begin
-  Result := IsPatternWidths(widths, 0, pattern, e2e, 0, 0, 0);
+  Result := IsPatternWidths(@widths[0], 0, pattern, e2e, 0, 0, 0);
 end;
 
 function IsRightGuard(const view: TPatternView;
@@ -514,13 +522,36 @@ begin
   if window.IsAtFirstBar and (IsPatternWidths(window.FRow, window.FData,
     pattern, e2e, MaxInt, minQuietZone, 0) <> 0) then
     exit(window);
+
+  // most windows have not enough white space in front: skip those without
+  // calling IsPatternWidths (it rejects a window with a space smaller than
+  // minQuietZone * width / patternSum - 1)
+  var quickCheck := (minQuietZone > 0) and not e2e;
+  var patternSum := 0;
+  for var p in pattern do
+    Inc(patternSum, p);
+
+  var row := window.FRow;
   var last := view.FData + view.FSize - minSize;
-  while (window.FData < last) do
+  var d := window.FData;
+  while (d < last) do
   begin
-    if (IsPatternWidths(window.FRow, window.FData, pattern, e2e,
-      window.FRow[window.FData - 1], minQuietZone, 0) <> 0) then
+    var space := row[d - 1];
+    var enoughSpace := true;
+    if quickCheck then
+    begin
+      var width := 0;
+      for var i := d to d + len - 1 do
+        Inc(width, row[i]);
+      enoughSpace := (space + 1) * patternSum >= minQuietZone * width;
+    end;
+    if enoughSpace and (IsPatternWidths(row, d, pattern, e2e, space,
+      minQuietZone, 0) <> 0) then
+    begin
+      window.FData := d;
       exit(window);
-    window.SkipPair;
+    end;
+    Inc(d, 2);
   end;
   Result := TPatternView.Empty;
 end;

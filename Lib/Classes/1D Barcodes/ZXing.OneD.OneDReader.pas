@@ -204,7 +204,6 @@ type
       maxIndividualVariance: Double; requireUnambiguousMatch: Boolean = true)
       : Integer; static;
   private
-    FBars: TPatternRow;
     FTryHarder: Boolean;
     FUsePattern: Boolean;
     /// <summary>One pass of decodeMultiple, with decodePattern or with
@@ -733,17 +732,9 @@ begin
   // decode upside down barcodes
   for var attempt := 0 to 1 do
   begin
-    var view: TPatternView;
-    if (attempt = 0) then
-      view := TPatternView.Create(bars)
-    else
-    begin
-      var n := Length(bars);
-      SetLength(FBars, n);
-      for var i := 0 to n - 1 do
-        FBars[i] := bars[n - 1 - i];
-      view := TPatternView.Create(FBars);
-    end;
+    if (attempt = 1) then
+      bars := image.getPatternRow(rowNumber, true);
+    var view := TPatternView.Create(bars);
 
     var found := false;
     var r: TReadResult;

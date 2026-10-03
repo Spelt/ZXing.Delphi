@@ -44,6 +44,7 @@ type
     // the widths of the bars and spaces of the black rows, shared by the 1D
     // readers of zxing-cpp (decodePattern)
     FPatternRows: TArray<TPatternRow>;
+    FPatternRowsReversed: TArray<TPatternRow>;
     FPatternState: TArray<Byte>; // 0 not calculated, 1 nil, 2 cached
     FPatternBits: IBitArray;
     function GetWidth: Integer;
@@ -65,10 +66,11 @@ type
     function getBlackRow(y: Integer; row: IBitArray): IBitArray;
     /// <summary>
     /// The widths of the bars and spaces of black row y (see TPatternRow),
-    /// calculated once; nil when the binarizer has no row. The caller must
-    /// not change it.
+    /// from right to left when reversed, calculated once; nil when the
+    /// binarizer has no row. The caller must not change it.
     /// </summary>
-    function getPatternRow(y: Integer): TPatternRow;
+    function getPatternRow(y: Integer; reversed: Boolean = false)
+      : TPatternRow;
     function RotateSupported: Boolean;
     function rotateCounterClockwise(): TBinaryBitmap;
 
@@ -157,7 +159,8 @@ begin
   result := row;
 end;
 
-function TBinaryBitmap.getPatternRow(y: Integer): TPatternRow;
+function TBinaryBitmap.getPatternRow(y: Integer; reversed: Boolean)
+  : TPatternRow;
 begin
   if (y < 0) or (y >= Height) then
     exit(nil);
@@ -177,7 +180,22 @@ begin
       FPatternState[y] := 2;
     end;
   end;
-  Result := FPatternRows[y];
+  if not reversed then
+    exit(FPatternRows[y]);
+
+  // the row from right to left: the widths in reverse order
+  if (FPatternRowsReversed = nil) then
+    SetLength(FPatternRowsReversed, Height);
+  Result := FPatternRowsReversed[y];
+  if (Result = nil) and (FPatternRows[y] <> nil) then
+  begin
+    var row := FPatternRows[y];
+    var n := Length(row);
+    SetLength(Result, n);
+    for var i := 0 to n - 1 do
+      Result[i] := row[n - 1 - i];
+    FPatternRowsReversed[y] := Result;
+  end;
 end;
 
 function TBinaryBitmap.GetHeight: Integer;
