@@ -122,7 +122,14 @@ type
     /// Allowes for inversion of an image.
     ///  Add the to invert the image
     /// </summary>
-    ENABLE_INVERSION
+    ENABLE_INVERSION,
+    /// <summary>
+    /// Used by TScanManager (see its ReturnErrors): a TList&lt;TReadResult&gt;
+    /// to which the QR Code and Data Matrix readers add the symbols they
+    /// found but could not read (with Error set). The caller owns the list
+    /// and its results.
+    /// </summary>
+    RETURN_ERRORS
     );
 
   /// <summary>

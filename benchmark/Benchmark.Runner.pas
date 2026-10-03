@@ -46,6 +46,9 @@ var
   /// <summary>Use TScanManager.ScanAll (all symbols of an image) instead of
   /// Scan (one symbol).</summary>
   UseScanAll: Boolean = false;
+  /// <summary>TScanManager.ReturnErrors: the symbols found but not read are
+  /// logged (FAILED) and not counted.</summary>
+  UseReturnErrors: Boolean = false;
 
 /// <summary>Runs all images of the folder in the given modes. When log is
 /// assigned, it gets a line for every symbol that zxing-cpp reads and Delphi
@@ -57,6 +60,7 @@ implementation
 
 uses
   System.Diagnostics,
+  System.StrUtils,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -114,6 +118,7 @@ begin
 
   // the scan manager owns and frees the hints
   Result := TScanManager.Create(folder.ScanFormat, hints);
+  Result.ReturnErrors := UseReturnErrors;
 end;
 
 /// <summary>Expands an 8 digit UPC-E code to the 12 digit UPC-A code.</summary>
@@ -278,6 +283,18 @@ begin
           end;
         end;
         stats[mode].TimeMs := stats[mode].TimeMs + sw.Elapsed.TotalMilliseconds;
+
+        // the symbols found but not read (ReturnErrors): only logged
+        for i := results.Count - 1 downto 0 do
+          if (results[i].Error <> '') then
+          begin
+            if Assigned(log) then
+              log(Format('%s  FAILED: %s %s', [where,
+                IfThen(results[i].BarcodeFormat = TBarcodeFormat.QR_CODE, 'QR',
+                IfThen(results[i].BarcodeFormat = TBarcodeFormat.DATA_MATRIX, 'DM',
+                IntToStr(Ord(results[i].BarcodeFormat)))), results[i].Error]));
+            results.Delete(i);
+          end;
 
         try
           SetLength(texts, results.Count);

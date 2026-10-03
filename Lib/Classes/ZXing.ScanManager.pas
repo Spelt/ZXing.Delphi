@@ -31,6 +31,21 @@ type
     FResultPointEvent: TResultPointCallback;
     FMultiFormatReader: TMultiFormatReader;
     listFormats: TList<TBarcodeFormat>;
+    FReturnErrors: Boolean;
+    // during a scan with ReturnErrors: the symbols found but not read
+    // (hint RETURN_ERRORS), in the coordinates of the full image after each
+    // layer
+    FFailed: TObjectList<TReadResult>;
+
+    /// <summary>With ReturnErrors: a new list of failed results, given to
+    /// the readers as hint RETURN_ERRORS.</summary>
+    procedure BeginFailed;
+    /// <summary>Removes the hint and frees the failed results.</summary>
+    procedure EndFailed;
+    function FailedCount: Integer;
+    /// <summary>The failed results from index first on were found in a
+    /// downscaled or inverted layer.</summary>
+    procedure AdjustFailed(first: Integer; scale: Single; inverted: Boolean);
 
     function GetMultiFormatReader(const format: TBarcodeFormat)
       : TMultiFormatReader;
@@ -39,6 +54,9 @@ type
     /// <summary>Decodes one image (layer), also inverted with
     /// ENABLE_INVERSION. Does not free source.</summary>
     function DecodeLayer(source: TLuminanceSource): TReadResult;
+    /// <summary>Scan without the failed results: the full image, then the
+    /// downscaled layers.</summary>
+    function ScanLayers(const pBitmapForScan: TBitmap): TReadResult;
   public
     destructor Destroy; override;
 
@@ -67,6 +85,18 @@ type
     /// on images without a code.
     /// </summary>
     property TryDownscale: Boolean read FTryDownscale write FTryDownscale;
+
+    /// <summary>
+    /// Also return QR Codes and Data Matrix codes that were found but could
+    /// not be read, with Error set ('Checksum' or 'Format') and their
+    /// position, e.g. to tell the user to hold the camera still or closer.
+    /// Scan returns one only when no barcode could be read; ScanAll adds
+    /// them behind the barcodes that were read (not at the same place).
+    /// QR Codes count only when their format information could be read,
+    /// Data Matrix codes only when the edge tracing detector found them with
+    /// a valid size. Off by default.
+    /// </summary>
+    property ReturnErrors: Boolean read FReturnErrors write FReturnErrors;
   end;
 
 implementation
@@ -204,7 +234,58 @@ begin
     end;
 end;
 
+procedure TScanManager.BeginFailed;
+begin
+  if not FReturnErrors then
+    exit;
+  if (FHints = nil) then
+    FHints := TDictionary<TDecodeHintType, TObject>.Create;
+  FFailed := TObjectList<TReadResult>.Create(true);
+  FHints.AddOrSetValue(ZXing.DecodeHintType.RETURN_ERRORS, FFailed);
+end;
+
+procedure TScanManager.EndFailed;
+begin
+  if (FFailed = nil) then
+    exit;
+  FHints.Remove(ZXing.DecodeHintType.RETURN_ERRORS);
+  FreeAndNil(FFailed);
+end;
+
+function TScanManager.FailedCount: Integer;
+begin
+  if (FFailed = nil) then
+    Result := 0
+  else
+    Result := FFailed.Count;
+end;
+
+procedure TScanManager.AdjustFailed(first: Integer; scale: Single;
+  inverted: Boolean);
+begin
+  for var i := first to FailedCount - 1 do
+  begin
+    if (scale <> 1) then
+      ScaleResult(FFailed[i], scale);
+    if inverted then
+      FFailed[i].IsInverted := true;
+  end;
+end;
+
 function TScanManager.Scan(const pBitmapForScan: TBitmap): TReadResult;
+begin
+  BeginFailed;
+  try
+    Result := ScanLayers(pBitmapForScan);
+    // nothing read: the first symbol found but not read
+    if (Result = nil) and (FailedCount > 0) then
+      Result := FFailed.Extract(FFailed[0]);
+  finally
+    EndFailed;
+  end;
+end;
+
+function TScanManager.ScanLayers(const pBitmapForScan: TBitmap): TReadResult;
 begin
   var LuminanceSource := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
     pBitmapForScan.Width, pBitmapForScan.Height);
@@ -226,11 +307,13 @@ begin
       height := height div DOWNSCALE_FACTOR;
       var layer := TRGBLuminanceSource.Create(luminances, width, height,
         TBitmapFormat.Gray8);
+      var failedBefore := FailedCount;
       try
         Result := DecodeLayer(layer);
       finally
         layer.Free;
       end;
+      AdjustFailed(failedBefore, fullWidth / width, false);
 
       if (Result <> nil) then
       begin
@@ -277,11 +360,14 @@ var
     try
       var binarizer := THybridBinarizer.Create(source);
       var bitmap := TBinaryBitmap.Create(binarizer);
+      var failedBefore := FailedCount;
       try
         FMultiFormatReader.decodeMultiple(bitmap, layerResults, remaining);
+        AdjustFailed(failedBefore, scale, false);
 
         if FEnableInversion and not ResultsFull(layerResults, remaining) then
         begin
+          failedBefore := FailedCount;
           var first := layerResults.Count;
           var inverted := source.invert;
           var invertedBinarizer := THybridBinarizer.CreateInverted(inverted,
@@ -297,6 +383,7 @@ var
           end;
           for var i := first to layerResults.Count - 1 do
             layerResults[i].IsInverted := true;
+          AdjustFailed(failedBefore, scale, true);
         end;
       finally
         bitmap.Free;
@@ -319,6 +406,7 @@ var
 
 begin
   all := TObjectList<TReadResult>.Create(true);
+  BeginFailed;
   try
     var LuminanceSource := TRGBLuminanceSource.CreateFromBitmap
       (pBitmapForScan, pBitmapForScan.Width, pBitmapForScan.Height);
@@ -348,10 +436,21 @@ begin
     finally
       LuminanceSource.Free;
     end;
+
+    // the symbols found but not read, where nothing was read
+    var i := 0;
+    while (i < FailedCount) do
+      if not ResultsFull(all, maxCount) and not OverlapsResult(all, FFailed[i])
+      then
+        all.Add(FFailed.Extract(FFailed[i]))
+      else
+        Inc(i);
   except
     all.Free;
+    EndFailed;
     raise;
   end;
+  EndFailed;
   Result := all;
 end;
 
@@ -386,9 +485,11 @@ begin
         FreeAndNil(HybridBinarizer);
         HybridBinarizer := invertedBinarizer;
         BinaryBitmap := TBinaryBitmap.Create(HybridBinarizer);
+        var failedBefore := FailedCount;
         Result := FMultiFormatReader.Decode(BinaryBitmap, true);
         if (Result <> nil) then
           Result.IsInverted := true;
+        AdjustFailed(failedBefore, 1, true);
 
       end;
     end;

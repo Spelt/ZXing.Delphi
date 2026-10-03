@@ -41,6 +41,7 @@ type
   TDataMatrixDecoder = class sealed
   private
     rsDecoder: TReedSolomonDecoder;
+    FLastError: string;
     function doDecode(bits: TBitMatrix; assumeGS1: boolean): TDecoderResult;
   public
     constructor Create;
@@ -50,6 +51,11 @@ type
     function decode(bits: TBitMatrix; assumeGS1: boolean = false)
       : TDecoderResult; overload;
     function decode(image: TArray < TArray < boolean >> ): TDecoderResult; overload;
+
+    /// <summary>Why the last decode returned nil although the symbol had
+    /// a valid size: 'Checksum' or 'Format'; empty when it decoded or when
+    /// there was no Data Matrix.</summary>
+    property LastError: string read FLastError;
   end;
 
 implementation
@@ -119,17 +125,22 @@ end;
 function TDataMatrixDecoder.decode(bits: TBitMatrix; assumeGS1: boolean)
   : TDecoderResult;
 begin
+  FLastError := '';
   Result := doDecode(bits, assumeGS1);
   if (Result <> nil) then
     exit;
 
   // also try the symbol mirrored (printed on the back of a transparent label
   // or seen through a mirror); error correction prevents false results
+  var error := FLastError;
   var mirrored := FlippedL(bits);
   try
     Result := doDecode(mirrored, assumeGS1);
     if (Result <> nil) then
-      Result.IsMirrored := true;
+      Result.IsMirrored := true
+    else
+      // the error of the symbol as it is
+      FLastError := error;
   finally
     mirrored.Free;
   end;
@@ -190,7 +201,10 @@ begin
       codewordBytes := DataBlock.codewords;
       numDataCodewords := DataBlock.numDataCodewords;
       if (not correctErrors(codewordBytes, numDataCodewords)) then
+      begin
+        FLastError := 'Checksum';
         exit;
+      end;
       for i := 0 to Pred(numDataCodewords) do
       begin
         // De-interlace data blocks.
@@ -200,6 +214,8 @@ begin
 
     // Decode the contents of that stream of bytes
     Result := TDecodedBitStreamParser.decode(resultBytes, assumeGS1);
+    if (Result = nil) then
+      FLastError := 'Format';
 
   finally
     // all blocks, also the ones after a block that could not be corrected

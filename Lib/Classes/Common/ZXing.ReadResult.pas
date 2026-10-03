@@ -73,6 +73,7 @@ type
     FIsInverted: Boolean;
     FIsMirrored: Boolean;
     FSymbologyIdentifier: string;
+    FError: string;
     function GetPosition: TArray<IResultPoint>;
     function GetOrientation: Integer;
 
@@ -101,6 +102,10 @@ type
     constructor Create(const text: string; const rawBytes: TArray<Byte>;
       const resultPoints: TArray<IResultPoint>; const format: TBarcodeFormat;
       const timeStamp: TDateTime); overload;
+    /// <summary>A barcode that was found at resultPoints but could not be
+    /// read, see Error.</summary>
+    constructor CreateFailed(const resultPoints: TArray<IResultPoint>;
+      const format: TBarcodeFormat; const error: string);
     destructor Destroy; override;
 
     function ToString: String; override;
@@ -168,6 +173,12 @@ type
     /// from text (which can also start with it, see ASSUME_GS1).</summary>
     property SymbologyIdentifier: string read FSymbologyIdentifier
       write FSymbologyIdentifier;
+    /// <summary>Empty for a decoded barcode. For a barcode that was found
+    /// but could not be read (TScanManager.ReturnErrors, QR Code and Data
+    /// Matrix): 'Checksum' (too many errors for the error correction) or
+    /// 'Format' (the data can not be interpreted); Text is empty then, the
+    /// position is known.</summary>
+    property Error: string read FError write FError;
 
     /// <summary>Whether the content is GS1 data (GS1 DataMatrix, GS1 QR Code,
     /// GS1-128), by the symbology identifier.</summary>
@@ -391,6 +402,16 @@ begin
   FFormat := format;
   FResultMetadata := nil;
   FTimeStamp := timeStamp;
+end;
+
+constructor TReadResult.CreateFailed(const resultPoints: TArray<IResultPoint>;
+  const format: TBarcodeFormat; const error: string);
+begin
+  // without text and bytes (which Create does not allow)
+  FResultPoints := resultPoints;
+  FFormat := format;
+  FTimeStamp := Now;
+  FError := error;
 end;
 
 destructor TReadResult.Destroy;

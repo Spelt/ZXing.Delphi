@@ -1,7 +1,8 @@
 unit QRCodeTest;
 
 {
-  * Tests for the QR Code decoder: QR Code model 1, Kanji segments.
+  * Tests for the QR Code decoder: QR Code model 1, Kanji segments, and the
+  * symbols found but not read (TScanManager.ReturnErrors).
 }
 
 interface
@@ -19,6 +20,12 @@ type
     procedure Model1Issue940;
     [Test]
     procedure KanjiSegment;
+    [Test]
+    procedure ReturnErrorsUnreadable;
+    [Test]
+    procedure ReturnErrorsReadable;
+    [Test]
+    procedure ReturnErrorsScanAll;
   end;
 
 implementation
@@ -103,6 +110,100 @@ begin
     Assert.AreEqual(string(Char($70B9)), r.Text);
   finally
     r.Free;
+  end;
+end;
+
+/// <summary>Scans the image without hints, with ReturnErrors; the caller
+/// frees the result.</summary>
+function ScanWithErrors(const fileName: string;
+  format: TBarcodeFormat): TReadResult;
+begin
+  var bmp := LoadImage(ImagePath(fileName));
+  var scanManager := TScanManager.Create(format, nil);
+  try
+    scanManager.ReturnErrors := true;
+    Result := scanManager.Scan(bmp);
+  finally
+    scanManager.Free;
+    bmp.Free;
+  end;
+end;
+
+procedure TQRCodeTest.ReturnErrorsUnreadable;
+begin
+  // a wrinkled QR Code that is found but can not be read
+  const fileName = 'zxing-cpp\qrcode-4\wrinkle1-05!.webp';
+  var r := Scan(fileName);
+  try
+    Assert.IsNull(r, 'read without ReturnErrors');
+  finally
+    r.Free;
+  end;
+
+  r := ScanWithErrors(fileName, TBarcodeFormat.QR_CODE);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('Checksum', r.Error);
+    Assert.AreEqual('', r.Text);
+    Assert.AreEqual(Ord(TBarcodeFormat.QR_CODE), Ord(r.BarcodeFormat));
+    Assert.AreEqual(4, Integer(Length(r.Position)));
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TQRCodeTest.ReturnErrorsReadable;
+begin
+  // a readable code: no error, the same as without ReturnErrors
+  var r := ScanWithErrors('zxing-cpp\qrcode-1\1.png', TBarcodeFormat.Auto);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('', r.Error);
+    Assert.IsTrue(r.Text <> '');
+  finally
+    r.Free;
+  end;
+
+  // an image without a code
+  r := ScanWithErrors('zxing-cpp\none-1\01.webp', TBarcodeFormat.Auto);
+  try
+    Assert.IsNull(r, 'result in an image without a code');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TQRCodeTest.ReturnErrorsScanAll;
+begin
+  // 4 readable QR Codes: no failed results beside them
+  var bmp := LoadImage(ImagePath('zxing-cpp\qrcode-2\StructApp.webp'));
+  var scanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+  var list: TObjectList<TReadResult> := nil;
+  try
+    scanManager.ReturnErrors := true;
+    list := scanManager.ScanAll(bmp);
+    Assert.AreEqual(4, list.Count);
+    for var r in list do
+      Assert.AreEqual('', r.Error);
+  finally
+    list.Free;
+    scanManager.Free;
+    bmp.Free;
+  end;
+
+  // the wrinkled code: one failed result
+  bmp := LoadImage(ImagePath('zxing-cpp\qrcode-4\wrinkle1-05!.webp'));
+  scanManager := TScanManager.Create(TBarcodeFormat.QR_CODE, nil);
+  list := nil;
+  try
+    scanManager.ReturnErrors := true;
+    list := scanManager.ScanAll(bmp);
+    Assert.AreEqual(1, list.Count);
+    Assert.AreEqual('Checksum', list[0].Error);
+  finally
+    list.Free;
+    scanManager.Free;
+    bmp.Free;
   end;
 end;
 

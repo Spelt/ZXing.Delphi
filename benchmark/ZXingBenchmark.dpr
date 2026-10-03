@@ -221,6 +221,8 @@ begin
           Verbose := true
         else if SameText(arg, '-thresholds') then
           writeThresholds := true
+        else if SameText(arg, '-errors') then
+          UseReturnErrors := true
         else if SameText(arg, '-all') then
           UseScanAll := true
         else if arg.StartsWith('-samples=', true) then

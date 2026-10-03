@@ -44,6 +44,7 @@ type
   /// </summary>
   TQRDecoder = class
   private
+    FLastError: string;
     rsDecoder: TReedSolomonDecoder;
     /// <summary>
     /// <p>Given data and error-correction codewords received, possibly corrupted by errors, attempts to
@@ -89,6 +90,11 @@ type
     function decode(const bits: TBitMatrix;
       const hints: TDictionary<TDecodeHintType, TObject>)
       : TDecoderResult; overload;
+
+    /// <summary>Why the last decode returned nil although the format
+    /// information could be read: 'Checksum' or 'Format'; empty when it
+    /// decoded or when there was no QR Code.</summary>
+    property LastError: string read FLastError;
   end;
 
 implementation
@@ -158,6 +164,7 @@ var
 begin
   Result := nil;
 
+  FLastError := '';
   // Construct a parser and read version, error-correction level
   parser := TBitMatrixParser.createBitMatrixParser(bits);
   if Assigned(parser) then
@@ -227,13 +234,10 @@ begin
 
   ecLevel := formatInfo.ErrorCorrectionLevel;
 
-  // Read codewords
+  // Read codewords (the parser owns formatInfo)
   codeWords := parser.readCodewords;
   if (codeWords = nil) then
-  begin
-    FreeAndNil(formatInfo);
     exit;
-  end;
 
   // Separate into data blocks
   dataBlocks := TDataBlock.getDataBlocks(codeWords, Version, ecLevel);
@@ -256,6 +260,7 @@ begin
       numDataCodewords := DataBlock.numDataCodewords;
       if (not self.correctErrors(codewordBytes, numDataCodewords)) then
       begin
+        FLastError := 'Checksum';
         exit(nil);
       end;
 
@@ -269,11 +274,12 @@ begin
     // Decode the contents of that stream of bytes
     Result := TDecodedBitStreamParser.decode(resultBytes, Version,
       ecLevel, hints);
+    if (Result = nil) then
+      FLastError := 'Format';
 
   finally
     for DataBlock in dataBlocks do
       DataBlock.Free;
-    FreeAndNil(formatInfo);
   end;
 
 end;

@@ -46,6 +46,7 @@ type
     parsedFormatInfo: TFormatInformation;
 
     constructor Create(const BitMatrix: TBitMatrix);
+    destructor Destroy; override;
 
     /// <param name="bitMatrix">{@link TBitMatrix} to parse</param>
     /// <throws>ReaderException if dimension is not >= 21 and 1 mod 4</throws>
@@ -108,6 +109,12 @@ constructor TBitMatrixParser.Create(const bitMatrix: TBitMatrix);
 begin
   // Should only be called from createBitMatrixParser with the important checks before
   Self.bitMatrix := BitMatrix;
+end;
+
+destructor TBitMatrixParser.Destroy;
+begin
+  parsedFormatInfo.Free;
+  inherited;
 end;
 
 class function TBitMatrixParser.createBitMatrixParser(
@@ -455,7 +462,8 @@ end;
 procedure TBitMatrixParser.setMirror(const mirror: Boolean);
 begin
   Self.parsedVersion := nil;
-  Self.parsedFormatInfo := nil;
+  // (the parser owns its format information)
+  FreeAndNil(Self.parsedFormatInfo);
   Self.mirrored := mirror;
 end;
 

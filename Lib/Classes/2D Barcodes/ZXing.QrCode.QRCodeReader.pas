@@ -178,7 +178,11 @@ begin
         var decoded := qrDecoder.decode(bits, hints);
         Result := (decoded <> nil);
         if not Result then
+        begin
+          AddFailedResult(hints, qrDecoder.LastError, TBarcodeFormat.QR_CODE,
+            candidatePoints, candidatePosition);
           exit;
+        end;
         found := true;
         try
           var r := createResult(decoded, candidatePoints, candidatePosition);
@@ -274,6 +278,9 @@ begin
         begin
           DecoderResult := Decoder.decode(bits, hints);
           bits.Free;
+          if (DecoderResult = nil) then
+            AddFailedResult(hints, Decoder.LastError, TBarcodeFormat.QR_CODE,
+              points, nil);
         end;
       end;
     end
@@ -295,6 +302,9 @@ begin
             DecoderResult := Decoder.decode(DetectorResult.bits, hints);
             points := DetectorResult.points;
             DetectorResult.Free;
+            if (DecoderResult = nil) then
+              AddFailedResult(hints, Decoder.LastError,
+                TBarcodeFormat.QR_CODE, points, nil);
           end
           else
             exit;
@@ -345,7 +355,10 @@ begin
       begin
         foundPoints := candidatePoints;
         foundPosition := candidatePosition;
-      end;
+      end
+      else
+        AddFailedResult(hints, qrDecoder.LastError, TBarcodeFormat.QR_CODE,
+          candidatePoints, candidatePosition);
     end);
 
   Result := decoded;

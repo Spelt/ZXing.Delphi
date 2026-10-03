@@ -53,6 +53,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- TBitArray.setRange set the wrong bits.
 	- TScanManager.ScanAll: all barcodes in an image (QR Code, Data Matrix and 1D on different rows, also vertical ones with TRY_HARDER).
 	- TReadResult: Position (4 corners), Orientation, IsInverted, IsMirrored, SymbologyIdentifier (like ]Q1, ]d2, ]C1), IsGS1 and GS1HRI (the human readable form of GS1 data, like (01)...(17)...(10)...).
+	- TScanManager.ReturnErrors (off by default): also QR Codes and Data Matrix codes that were found but could not be read, with TReadResult.Error ('Checksum' or 'Format') and their position, e.g. to tell the user to hold the camera still or closer. Scan returns one only when nothing could be read.
 	- On the black box test images of zxing-cpp (benchmark\, compared with zxing-cpp): Data Matrix 365 of 366, QR Code 502 of 525, 1D 368 of 362 (with TRY_HARDER and inversion); without hints Data Matrix 93 of 92, QR Code 292 of 304, 1D 234 of 226.
 - v3.13.0
 	- Fixes thanks to Robert Jędrzejczyk. https://github.com/Spelt/ZXing.Delphi/issues/170, https://github.com/Spelt/ZXing.Delphi/issues/171, https://github.com/Spelt/ZXing.Delphi/issues/172 
@@ -250,6 +251,18 @@ try
 finally
   list.Free;
 end;
+
+```
+
+A QR Code or Data Matrix that was found but could not be read (next version, off by default):
+
+```Pascal
+
+FScanManager.ReturnErrors := true;
+var r := FScanManager.Scan(scanBitmap);
+if (r <> nil) and (r.Error <> '') then
+  // r.Text is empty, r.Position is where the code is: e.g. ask to hold the camera still or closer
+  lblStatus.Text := 'Barcode found, but not readable (' + r.Error + ')';
 
 ```
 

@@ -75,7 +75,8 @@ type
     /// Detects with the edge tracing detector (ZXing.Datamatrix.Internal.
     /// EdgeDetector) and decodes the first candidate that decodes.
     /// </summary>
-    function edgeDetectAndDecode(const image: TBitMatrix; tryHarder,
+    function edgeDetectAndDecode(const image: TBitMatrix;
+      hints: TDictionary<TDecodeHintType, TObject>; tryHarder,
       assumeGS1: Boolean; var points: TArray<IResultPoint>): TDecoderResult;
 
     /// <summary>
@@ -223,7 +224,11 @@ begin
           exit;
         var decoded := dmDecoder.decode(bits, assumeGS1);
         if (decoded = nil) then
+        begin
+          AddFailedResult(hints, dmDecoder.LastError,
+            TBarcodeFormat.DATA_MATRIX, candidatePoints, nil);
           exit;
+        end;
         found := true;
         try
           var r := createResult(decoded, candidatePoints);
@@ -309,6 +314,9 @@ begin
         begin
           DecoderResult := FDecoder.decode(bits, assumeGS1);
           FreeAndNil(bits);
+          if (DecoderResult = nil) then
+            AddFailedResult(hints, FDecoder.LastError,
+              TBarcodeFormat.DATA_MATRIX, points, nil);
         end;
       end;
     end
@@ -319,7 +327,7 @@ begin
 
       // the edge tracing detector of zxing-cpp first
       if newDetector then
-        DecoderResult := edgeDetectAndDecode(image.BlackMatrix, tryHarder,
+        DecoderResult := edgeDetectAndDecode(image.BlackMatrix, hints, tryHarder,
           assumeGS1, points);
 
       // then the old WhiteRectangle detector from start points on a grid,
@@ -368,6 +376,7 @@ begin
 end;
 
 function TDataMatrixReader.edgeDetectAndDecode(const image: TBitMatrix;
+  hints: TDictionary<TDecodeHintType, TObject>;
   tryHarder, assumeGS1: Boolean; var points: TArray<IResultPoint>)
   : TDecoderResult;
 var
@@ -386,7 +395,10 @@ begin
       decoded := decoder.decode(bits, assumeGS1);
       Result := (decoded <> nil);
       if Result then
-        foundPoints := candidatePoints;
+        foundPoints := candidatePoints
+      else
+        AddFailedResult(hints, decoder.LastError, TBarcodeFormat.DATA_MATRIX,
+          candidatePoints, nil);
     end);
 
   Result := decoded;

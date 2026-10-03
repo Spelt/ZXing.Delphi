@@ -26,6 +26,8 @@ uses
   System.Generics.Collections,
   ZXing.BinaryBitmap,
   ZXing.ReadResult,
+  ZXing.ResultPoint,
+  ZXing.BarcodeFormat,
   ZXing.DecodeHintType;
 
 type
@@ -92,13 +94,20 @@ function ResultsFull(results: TList<TReadResult>; maxCount: Integer): Boolean;
 /// contains the other one, like UPC-A and EAN-13 or with and without
 /// add-on.</summary>
 function IsSameLinearSymbol(a, b: TReadResult): Boolean;
+/// <summary>Whether the center of r lies in the area of one of results,
+/// whatever its format and text.</summary>
+function OverlapsResult(results: TList<TReadResult>; r: TReadResult): Boolean;
+/// <summary>With the hint RETURN_ERRORS: adds a result for a symbol that was
+/// found at points (and position) but could not be read, with the error,
+/// unless one is there already at that place.</summary>
+procedure AddFailedResult(const hints: TDictionary<TDecodeHintType, TObject>;
+  const error: string; format: TBarcodeFormat; const points,
+  position: TArray<IResultPoint>);
 
 implementation
 
 uses
-  System.Math,
-  ZXing.BarcodeFormat,
-  ZXing.ResultPoint;
+  System.Math;
 
 /// <summary>The bounding box of the position of r, enlarged by a quarter of
 /// its size (at least 10 pixels) in every direction. A line (the position of
@@ -242,6 +251,49 @@ end;
 function ResultsFull(results: TList<TReadResult>; maxCount: Integer): Boolean;
 begin
   Result := (maxCount > 0) and (results.Count >= maxCount);
+end;
+
+function OverlapsResult(results: TList<TReadResult>; r: TReadResult): Boolean;
+begin
+  var pos := r.Position;
+  if (pos = nil) then
+    exit(false);
+  var cx: Single := 0;
+  var cy: Single := 0;
+  for var p in pos do
+  begin
+    cx := cx + p.x / System.Length(pos);
+    cy := cy + p.y / System.Length(pos);
+  end;
+  for var other in results do
+  begin
+    if (other.Position = nil) then
+      continue;
+    var minX, minY, maxX, maxY: Single;
+    GetArea(other, minX, minY, maxX, maxY);
+    if (cx >= minX) and (cx <= maxX) and (cy >= minY) and (cy <= maxY) then
+      exit(true);
+  end;
+  Result := false;
+end;
+
+procedure AddFailedResult(const hints: TDictionary<TDecodeHintType, TObject>;
+  const error: string; format: TBarcodeFormat; const points,
+  position: TArray<IResultPoint>);
+begin
+  var o: TObject;
+  if (error = '') or (points = nil) or (hints = nil) or
+    not hints.TryGetValue(TDecodeHintType.RETURN_ERRORS, o) or
+    not(o is TList<TReadResult>) then
+    exit;
+  var failed := TList<TReadResult>(o);
+  var r := TReadResult.CreateFailed(points, format, error);
+  if (position <> nil) then
+    r.Position := position;
+  if OverlapsResult(failed, r) then
+    r.Free
+  else
+    failed.Add(r);
 end;
 
 end.
