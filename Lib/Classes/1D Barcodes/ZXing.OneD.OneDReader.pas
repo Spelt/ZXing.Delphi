@@ -65,6 +65,11 @@ type
       hints: TDictionary<TDecodeHintType, TObject>;
       collector: TList<TReadResult> = nil; maxCount: Integer = 0;
       pending: TList<TReadResult> = nil): TReadResult;
+    /// <summary>Adds r to collector when it is read on a second row, keeps
+    /// it in pending otherwise, frees it when it is already known. Returns
+    /// true when collector is full.</summary>
+    function CollectResult(r: TReadResult;
+      collector, pending: TList<TReadResult>; maxCount: Integer): Boolean;
   protected
     const INTEGER_MATH_SHIFT = 8;
 
@@ -232,6 +237,74 @@ begin
 
 end;
 
+/// <summary>The largest x of the result points of r.</summary>
+function RightEdgeOf(r: TReadResult): Single;
+begin
+  Result := 0;
+  for var p in r.ResultPoints do
+    if (p <> nil) and (p.X > Result) then
+      Result := p.X;
+end;
+
+/// <summary>A copy of row with all bits before start cleared (white).
+/// </summary>
+function RowFrom(const row: IBitArray; start: Integer): IBitArray;
+begin
+  Result := TBitArrayHelpers.CreateBitArray(row.Size);
+  var bits := row.Bits;
+  for var i := Max(start, 0) shr 5 to High(bits) do
+  begin
+    var word := bits[i];
+    if (i = start shr 5) and ((start and $1F) <> 0) then
+      // only the bits from start on
+      word := word and not ((1 shl (start and $1F)) - 1);
+    if (word <> 0) then
+      Result.setBulk(i shl 5, word);
+  end;
+end;
+
+function TOneDReader.CollectResult(r: TReadResult;
+  collector, pending: TList<TReadResult>; maxCount: Integer): Boolean;
+begin
+  Result := false;
+  // a new barcode counts when it is read on a second row too (like
+  // zxing-cpp's minLineCount 2), which prevents most false positives
+  if ContainsResult(collector, r) then
+  begin
+    r.Free;
+    exit;
+  end;
+
+  // the same code, also when read with another text (e.g. without its
+  // add-on) on another row
+  var confirmed := -1;
+  for var i := 0 to pending.Count - 1 do
+    if ((pending[i].BarcodeFormat = r.BarcodeFormat) and
+      (pending[i].Text = r.Text)) or IsSameLinearSymbol(pending[i], r) then
+    begin
+      confirmed := i;
+      break;
+    end;
+  if (confirmed < 0) then
+  begin
+    pending.Add(r);
+    exit;
+  end;
+
+  // keep the most complete reading
+  var best := pending[confirmed];
+  pending.Delete(confirmed);
+  if (Length(r.Text) > Length(best.Text)) then
+  begin
+    best.Free;
+    best := r;
+  end
+  else
+    r.Free;
+  collector.Add(best);
+  Result := ResultsFull(collector, maxCount);
+end;
+
 procedure TOneDReader.decodeMultiple(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>; results: TList<TReadResult>;
   maxCount: Integer);
@@ -371,43 +444,27 @@ begin
       if (collector = nil) then
         Exit(ReadResult);
 
-      // collecting all barcodes: a new one counts when it is read on a
-      // second row too (like zxing-cpp's minLineCount 2), which prevents
-      // most false positives; then go on with the next row
-      if ContainsResult(collector, ReadResult) then
-        ReadResult.Free
-      else
-      begin
-        // the same code, also when read with another text (e.g. without its
-        // add-on) on another row
-        var confirmed := -1;
-        for var i := 0 to pending.Count - 1 do
-          if ((pending[i].BarcodeFormat = ReadResult.BarcodeFormat) and
-            (pending[i].Text = ReadResult.Text)) or
-            IsSameLinearSymbol(pending[i], ReadResult) then
-          begin
-            confirmed := i;
-            break;
-          end;
-        if (confirmed < 0) then
-          pending.Add(ReadResult)
-        else
+      // collecting all barcodes
+      var rightEdge := RightEdgeOf(ReadResult);
+      if CollectResult(ReadResult, collector, pending, maxCount) then
+        Exit(nil);
+
+      // more barcodes further on the same row (only the first one of a row
+      // is found): look again behind the found one
+      if (attempt = 0) then
+        for var more := 1 to 8 do
         begin
-          // keep the most complete reading
-          var best := pending[confirmed];
-          pending.Delete(confirmed);
-          if (Length(ReadResult.Text) > Length(best.Text)) then
-          begin
-            best.Free;
-            best := ReadResult;
-          end
-          else
-            ReadResult.Free;
-          collector.Add(best);
-          if ResultsFull(collector, maxCount) then
+          var rest := RowFrom(row, Trunc(rightEdge) + 1);
+          var nextResult := decodeRow(rowNumber, rest, hints);
+          if (nextResult = nil) then
+            break;
+          var nextEdge := RightEdgeOf(nextResult);
+          if CollectResult(nextResult, collector, pending, maxCount) then
             Exit(nil);
+          if (nextEdge <= rightEdge) then
+            break;
+          rightEdge := nextEdge;
         end;
-      end;
       break;
 
     end; // loop

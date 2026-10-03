@@ -31,6 +31,8 @@ type
     [Test]
     procedure ScanAllMaxCount;
     [Test]
+    procedure ScanAllStackedCode128;
+    [Test]
     procedure GS1HRIFromElementStrings;
     [Test]
     procedure GS1HRIOfDataMatrix;
@@ -211,6 +213,25 @@ begin
     TBarcodeFormat.QR_CODE, 2);
   try
     Assert.AreEqual(2, list.Count);
+  finally
+    list.Free;
+  end;
+end;
+
+procedure TReadResultTest.ScanAllStackedCode128;
+begin
+  // two different Code 128 close to each other, one above the other
+  var list := ScanAll('two-code128-stacked.png', TBarcodeFormat.Auto);
+  try
+    Assert.AreEqual(2, list.Count);
+    var texts := '';
+    for var r in list do
+    begin
+      Assert.AreEqual(Ord(TBarcodeFormat.CODE_128), Ord(r.BarcodeFormat));
+      texts := texts + '[' + r.Text + ']';
+    end;
+    Assert.IsTrue(texts.Contains('[1234567]'), texts);
+    Assert.IsTrue(texts.Contains('[Code 128]'), texts);
   finally
     list.Free;
   end;

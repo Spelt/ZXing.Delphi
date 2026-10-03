@@ -88,8 +88,9 @@ function ContainsResult(results: TList<TReadResult>; r: TReadResult): Boolean;
 /// <summary>Whether results holds maxCount results (0: no limit).</summary>
 function ResultsFull(results: TList<TReadResult>; maxCount: Integer): Boolean;
 /// <summary>Whether a and b are readings of the same 1D code (from rows
-/// close to each other), possibly in another format or with another text,
-/// like UPC-A and EAN-13 or with and without add-on.</summary>
+/// close to each other), possibly in another format or with a text that
+/// contains the other one, like UPC-A and EAN-13 or with and without
+/// add-on.</summary>
 function IsSameLinearSymbol(a, b: TReadResult): Boolean;
 
 implementation
@@ -184,10 +185,25 @@ begin
       (Abs((aMinX + aMaxX) - (bMinX + bMaxX)) / 2 <= across);
 end;
 
+function IsUPCEAN(r: TReadResult): Boolean;
+begin
+  var f := r.BarcodeFormat;
+  Result := (f = TBarcodeFormat.EAN_13) or (f = TBarcodeFormat.EAN_8) or
+    (f = TBarcodeFormat.UPC_A) or (f = TBarcodeFormat.UPC_E);
+end;
+
 function IsSameLinearSymbol(a, b: TReadResult): Boolean;
 begin
-  Result := not Is2D(a) and not Is2D(b) and (a.Position <> nil) and
-    (b.Position <> nil) and SameLine(a, b);
+  Result := false;
+  if Is2D(a) or Is2D(b) or (a.Position = nil) or (b.Position = nil) or
+    not SameLine(a, b) then
+    exit;
+  // the EAN/UPC readers read the same symbol in each other's formats (UPC-A
+  // as EAN-13, part of an EAN-13 as EAN-8, with and without add-on); other
+  // codes only when the one text contains the other, so that different
+  // codes close to each other are kept apart
+  Result := (IsUPCEAN(a) and IsUPCEAN(b)) or (Pos(a.Text, b.Text) > 0) or
+    (Pos(b.Text, a.Text) > 0);
 end;
 
 function ContainsResult(results: TList<TReadResult>; r: TReadResult): Boolean;
