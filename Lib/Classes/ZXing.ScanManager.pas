@@ -98,6 +98,12 @@ begin
     for hint in FHints do
     begin
       o := hint.Value;
+      // the lengths can also be an array cast to TObject (as in older
+      // versions): that is not an object, and the caller frees it
+      if (hint.Key in [ZXing.DecodeHintType.ALLOWED_LENGTHS,
+        ZXing.DecodeHintType.ALLOWED_EAN_EXTENSIONS]) and
+        not IsIntegerArrayHint(o) then
+        continue;
       if Assigned(o) then
         o.Free;
     end;

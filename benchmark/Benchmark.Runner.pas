@@ -106,6 +106,11 @@ begin
   end;
   if folder.Name.StartsWith('code39ext') then
     hints.Add(TDecodeHintType.USE_CODE_39_EXTENDED_MODE, nil);
+  // zxing-cpp's eanAddOnSymbol "require": only EAN/UPC codes with an add-on
+  if (folder.Images.Count > 0) and
+    SameText(folder.Images[0].EanAddOnSymbol, 'require') then
+    hints.Add(TDecodeHintType.ALLOWED_EAN_EXTENSIONS,
+      TIntegerArrayHint.Create([2, 5]));
 
   // the scan manager owns and frees the hints
   Result := TScanManager.Create(folder.ScanFormat, hints);

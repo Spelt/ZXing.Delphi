@@ -52,7 +52,9 @@ type
     CHARACTER_SET,
 
     /// <summary>
-    /// Allowed lengths of encoded data -- reject anything else. Maps to an int[].
+    /// Allowed lengths of encoded data -- reject anything else. Maps to a
+    /// <see cref="TIntegerArrayHint" />, for example
+    /// TIntegerArrayHint.Create([10, 14]).
     /// </summary>
     ALLOWED_LENGTHS,
 
@@ -109,7 +111,8 @@ type
 
     /// <summary>
     /// Allowed extension lengths for EAN or UPC barcodes. Other formats will ignore this.
-    /// Maps to an <see cref="Array.int" /> of the allowed extension lengths, for example [2], [5], or [2, 5].
+    /// Maps to a <see cref="TIntegerArrayHint" /> of the allowed extension
+    /// lengths, for example TIntegerArrayHint.Create([2, 5]).
     /// If it is optional to have an extension, do not set this hint. If this is set,
     /// and a UPC or EAN barcode is found but an extension is not, then no result will be returned
     /// at all.
@@ -122,6 +125,95 @@ type
     ENABLE_INVERSION
     );
 
+  /// <summary>
+  /// The value of the hints ALLOWED_LENGTHS and ALLOWED_EAN_EXTENSIONS, for
+  /// example TIntegerArrayHint.Create([2, 5]). Like the other hint values it
+  /// is freed by the scan manager.
+  /// </summary>
+  TIntegerArrayHint = class
+  private
+    FValues: TArray<Integer>;
+  public
+    constructor Create(const values: array of Integer);
+    destructor Destroy; override;
+    property Values: TArray<Integer> read FValues;
+  end;
+
+/// <summary>
+/// The integers of a hint value: a TIntegerArrayHint or, as in older
+/// versions, a TArray&lt;Integer&gt; cast to TObject (which the caller keeps
+/// alive); nil for nil.
+/// </summary>
+function IntegerArrayHintValues(value: TObject): TArray<Integer>;
+/// <summary>
+/// Whether value is a TIntegerArrayHint, and not a TArray&lt;Integer&gt;
+/// cast to TObject (which is not an object and can not be freed).
+/// </summary>
+function IsIntegerArrayHint(value: TObject): Boolean;
+
 implementation
+
+uses
+  System.Generics.Collections;
+
+var
+  // the TIntegerArrayHint objects that exist: a value that is not one of
+  // them is an array cast to TObject (that can not be checked with 'is')
+  Instances: TList<Pointer>;
+
+constructor TIntegerArrayHint.Create(const values: array of Integer);
+begin
+  inherited Create;
+  SetLength(FValues, Length(values));
+  for var i := 0 to High(values) do
+    FValues[i] := values[i];
+  TMonitor.Enter(Instances);
+  try
+    Instances.Add(Self);
+  finally
+    TMonitor.Exit(Instances);
+  end;
+end;
+
+destructor TIntegerArrayHint.Destroy;
+begin
+  TMonitor.Enter(Instances);
+  try
+    Instances.Remove(Self);
+  finally
+    TMonitor.Exit(Instances);
+  end;
+  inherited;
+end;
+
+function IsIntegerArrayHint(value: TObject): Boolean;
+begin
+  if (value = nil) then
+    exit(false);
+  TMonitor.Enter(Instances);
+  try
+    Result := Instances.Contains(value);
+  finally
+    TMonitor.Exit(Instances);
+  end;
+end;
+
+function IntegerArrayHintValues(value: TObject): TArray<Integer>;
+begin
+  if (value = nil) then
+    Result := nil
+  else if IsIntegerArrayHint(value) then
+    Result := TIntegerArrayHint(value).Values
+  else
+    Result := TArray<Integer>(Pointer(value));
+end;
+
+initialization
+
+Instances := TList<Pointer>.Create;
+
+finalization
+
+Instances.Free;
 
 end.

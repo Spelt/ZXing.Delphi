@@ -565,7 +565,7 @@ begin
   // required: without it (length 0) there is no result either.
   if (hints <> nil) and
     (hints.ContainsKey(TDecodeHintType.ALLOWED_EAN_EXTENSIONS)) then
-    allowedExtensions := TArray<Integer>
+    allowedExtensions := IntegerArrayHintValues
       (hints[TDecodeHintType.ALLOWED_EAN_EXTENSIONS])
   else
     allowedExtensions := nil;

@@ -21,6 +21,7 @@ uses
   DataMatrixBitStreamTest in 'DataMatrixBitStreamTest.pas',
   MultiFormatReaderTest in 'MultiFormatReaderTest.pas',
   ReadResultTest in 'ReadResultTest.pas',
+  OneDTest in 'OneDTest.pas',
   Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
   Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
   Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';

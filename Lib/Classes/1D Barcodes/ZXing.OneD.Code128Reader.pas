@@ -249,7 +249,7 @@ begin
           if (shiftUpperMode = upperMode) then
             Result := Result + Char(32 + code)
           else
-            Result := Result + Char(32 + 128); // (as decodeRow)
+            Result := Result + Char(32 + code + 128);
           shiftUpperMode := false;
         end
         else if (code < 96) then
@@ -659,7 +659,7 @@ begin
               end
               else
               begin
-                aResult := aResult + Char(32 + 128)
+                aResult := aResult + Char(32 + code + 128)
               end;
               shiftUpperMode := false
             end

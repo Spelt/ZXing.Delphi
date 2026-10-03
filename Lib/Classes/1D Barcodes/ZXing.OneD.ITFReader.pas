@@ -88,11 +88,16 @@ type
     function decodeStart(row: IBitArray): TArray<Integer>;
     function decodeMiddle(row: IBitArray;
       payloadStart, payloadEnd: Integer; SBResult: TStringBuilder): boolean;
+    /// <summary>Whether a code of len digits is allowed: one of the lengths
+    /// of the hint ALLOWED_LENGTHS (default 6 to 14) or longer.</summary>
+    function IsAllowedLength(len: Integer;
+      const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
   protected
     /// <summary>The decoder of zxing-cpp: thresholds between narrow and wide
     /// from the widths themselves (updated per pair of digits, for slanted
     /// scans), any even length of at least 6 digits (4 when only ITF is
-    /// searched) and a quiet zone of 6 modules.</summary>
+    /// searched, with ALLOWED_LENGTHS also those) and a quiet zone of 6
+    /// modules.</summary>
     function decodePattern(rowNumber: Integer; var next: TPatternView;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       override;
@@ -131,13 +136,8 @@ const
   MIN_QUIET_ZONE = 6; // the spec requires 10
 begin
   Result := nil;
-  // the lengths of the hint are checked by decodeRow only
-  if (hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.ALLOWED_LENGTHS)
-  then
-  begin
-    next := TPatternView.Empty;
-    exit;
-  end;
+  var hasAllowedLengths := (hints <> nil) and
+    hints.ContainsKey(ZXing.DecodeHintType.ALLOWED_LENGTHS);
   // shorter symbols when only looking for ITF
   var minCharCount := 6;
   if OnlyITF(hints) then
@@ -218,6 +218,9 @@ begin
     minLength := minCharCount div 2;
   if (Length(txt) < minLength) then
     exit;
+  // with the hint ALLOWED_LENGTHS the lengths of decodeRow
+  if hasAllowedLengths and not IsAllowedLength(Length(txt), hints) then
+    exit;
 
   var xStop := next.PixelsTillEnd;
   Result := TReadResult.Create(txt, nil,
@@ -227,17 +230,47 @@ begin
   Result.SymbologyIdentifier := ']I0';
 end;
 
+function TITFReader.IsAllowedLength(len: Integer;
+  const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
+var
+  allowedLengths: TArray<Integer>;
+begin
+  // longer than the default lengths: always
+  if (len > LARGEST_DEFAULT_ALLOWED_LENGTH) then
+    exit(true);
+
+  var maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
+  allowedLengths := nil;
+  if (hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.ALLOWED_LENGTHS)
+  then
+  begin
+    allowedLengths := IntegerArrayHintValues
+      (hints[ZXing.DecodeHintType.ALLOWED_LENGTHS]);
+    maxAllowedLength := 0;
+  end;
+  if (allowedLengths = nil) then
+  begin
+    allowedLengths := TArray<Integer>(DEFAULT_ALLOWED_LENGTHS);
+    maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
+  end;
+
+  // one of the lengths, or longer than all of them
+  for var allowedLength in allowedLengths do
+  begin
+    if (len = allowedLength) then
+      exit(true);
+    if (allowedLength > maxAllowedLength) then
+      maxAllowedLength := allowedLength;
+  end;
+  Result := (len > maxAllowedLength);
+end;
+
 function TITFReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
   const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
 var
-  allowedLength: Integer;
   startRange: TArray<Integer>;
   endRange: TArray<Integer>;
   stringResult: string;
-  allowedLengths: TOneDPattern;
-  maxAllowedLength: Integer;
-  len: Integer;
-  lengthOK: boolean;
   SBResult: TStringBuilder;
   resultPointCallback: TResultPointCallback;
   obj: TObject;
@@ -266,52 +299,8 @@ begin
   stringResult := SBResult.ToString();
   FreeAndNil(sbResult);
 
-  allowedLengths := nil;
-  maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
-  if ((hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.ALLOWED_LENGTHS)) then
-  begin
-    allowedLengths := TOneDPattern(hints[ZXing.DecodeHintType.ALLOWED_LENGTHS]);
-    maxAllowedLength := 0
-  end;
-
-  if (allowedLengths = nil) then
-  begin
-    allowedLengths := DEFAULT_ALLOWED_LENGTHS;
-    maxAllowedLength := LARGEST_DEFAULT_ALLOWED_LENGTH;
-  end;
-
-  len := Length(stringResult);
-  lengthOK := (len > LARGEST_DEFAULT_ALLOWED_LENGTH);
-  if (not lengthOK) then
-  begin
-
-    for allowedLength in allowedLengths do
-    begin
-
-      if (len = allowedLength) then
-      begin
-        lengthOK := true;
-        break;
-      end;
-
-      if (allowedLength > maxAllowedLength) then
-      begin
-        maxAllowedLength := allowedLength;
-      end;
-
-    end;
-
-    if ((not lengthOK) and (len > maxAllowedLength)) then
-    begin
-      lengthOK := true;
-    end;
-
-    if (not lengthOK) then
-    begin
-      Exit(nil);
-    end
-
-  end;
+  if not IsAllowedLength(Length(stringResult), hints) then
+    Exit(nil);
 
   resultPointLeft := TResultPointHelpers.CreateResultPoint(startRange[1], rowNumber);
   resultPointRight := TResultPointHelpers.CreateResultPoint(endRange[0], rowNumber);

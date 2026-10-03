@@ -329,9 +329,9 @@ begin
   begin
     if (i > firstInt)
     then
-       firstBit := start
+       firstBit := 0
     else
-       firstBit := $1F;
+       firstBit := (start and $1F);
     if (i < lastInt)
     then
        lastBit := 31
