@@ -185,13 +185,46 @@ type
     /// they do not fit.</summary>
     class function NarrowWideBitPattern(const view: TPatternView)
       : Integer; static;
+    /// <summary>
+    /// How closely the first Length(pattern) bars and spaces of view match
+    /// pattern: the total variance divided by the total width, a large
+    /// value when one element differs more than maxIndividualVariance
+    /// modules.
+    /// </summary>
+    class function PatternMatchVarianceF(const view: TPatternView;
+      const pattern: TOneDPattern; maxIndividualVariance: Double)
+      : Double; static;
+    /// <summary>
+    /// The index of the pattern that matches view best, with a variance
+    /// below maxAvgVariance; -1 when none does (or, when
+    /// requireUnambiguousMatch, when two match equally well).
+    /// </summary>
+    class function DecodeDigitF(const view: TPatternView;
+      const patterns: TOneDPatterns; maxAvgVariance,
+      maxIndividualVariance: Double; requireUnambiguousMatch: Boolean = true)
+      : Integer; static;
   private
     FBars: TPatternRow;
     FTryHarder: Boolean;
-    /// <summary>decodeRow, else decodePattern from every bar of the row
-    /// (with TRY_HARDER) or from the first one.</summary>
-    function decodeRowWithFallback(rowNumber: Integer; const row: IBitArray;
-      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+    FUsePattern: Boolean;
+    /// <summary>One pass of decodeMultiple, with decodePattern or with
+    /// decodeRow (FUsePattern). Returns the first code read on 1 row only
+    /// when no new code is read on 2 rows (nil otherwise).</summary>
+    function decodeMultiplePass(const image: TBinaryBitmap;
+      hints: TDictionary<TDecodeHintType, TObject>;
+      results: TList<TReadResult>; maxCount: Integer): TReadResult;
+    /// <summary>
+    /// The barcodes decodePattern finds on row rowNumber, in both
+    /// directions: from every bar with TRY_HARDER, else from the first
+    /// guard and behind each barcode found. Without collector the first
+    /// one is returned; else they are collected (see CollectResult), with
+    /// the rows next to a new one in checkRows, and the result is nil.
+    /// </summary>
+    function decodePatternRow(const image: TBinaryBitmap; rowNumber: Integer;
+      const hints: TDictionary<TDecodeHintType, TObject>;
+      collector: TList<TReadResult>; maxCount: Integer;
+      pending: TList<TReadResult>; isCheckRow: Boolean;
+      var checkRows: TArray<Integer>): TReadResult;
   end;
 
 implementation
@@ -207,41 +240,22 @@ end;
 
 function TOneDReader.decode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
-var
-  tryHarder, tryHarderWithoutRotation: Boolean;
-  rotatedImage: TBinaryBitmap;
-
 begin
-  Result := doDecode(image, hints);
-  if (Result <> nil) then
-  begin
-    Exit;
+  // Like zxing-cpp: a barcode counts when it is read on 2 rows, so that a
+  // false positive does not stop the search. When there is none, the first
+  // barcode read on 1 row (the result of the first row hit, as before).
+  // With TRY_HARDER also the image rotated by 90 degrees.
+  Result := nil;
+  var results := TList<TReadResult>.Create;
+  try
+    decodeMultiple(image, hints, results, 1);
+    if (results.Count > 0) then
+      Result := results.Extract(results[0]);
+  finally
+    for var r in results do
+      r.Free;
+    results.Free;
   end;
-
-  // Not found: with TRY_HARDER also try the image rotated by 90 degrees.
-  tryHarder := (hints <> nil) and
-    (hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER));
-
-  tryHarderWithoutRotation := (hints <> nil) and
-    (hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER_WITHOUT_ROTATION));
-
-  if (tryHarder and ((not tryHarderWithoutRotation) and image.RotateSupported))
-  then
-  begin
-    rotatedImage := image.rotateCounterClockwise();
-    try
-      Result := doDecode(rotatedImage, hints);
-      if (Result = nil) then
-      begin
-        Exit;
-      end;
-
-      MapFromRotated(Result, rotatedImage.height);
-    finally
-      rotatedImage.Free;
-    end;
-  end;
-
 end;
 
 /// <summary>For a result found in the image rotated by 90 degrees counter
@@ -301,6 +315,45 @@ begin
   end;
 end;
 
+/// <summary>Whether the lines of two results, read on different rows, can
+/// be the same symbol, like zxing-cpp: the starts less than half the length
+/// apart and the lengths less than 20% different (in either direction, as a
+/// row can be read reversed).</summary>
+function IsCloseLine(a, b: TReadResult): Boolean;
+
+  function dist(const p, q: IResultPoint): Single;
+  begin
+    Result := Max(Abs(p.X - q.X), Abs(p.Y - q.Y));
+  end;
+
+begin
+  var pa := a.ResultPoints;
+  var pb := b.ResultPoints;
+  if (Length(pa) < 2) or (Length(pb) < 2) or (pa[0] = nil) or
+    (pa[High(pa)] = nil) or (pb[0] = nil) or (pb[High(pb)] = nil) then
+    exit(true);
+  var a0 := pa[0];
+  var a1 := pa[High(pa)];
+  var b0 := pb[0];
+  var b1 := pb[High(pb)];
+  var lenA := dist(a0, a1);
+  var lenB := dist(b0, b1);
+  var dStart := Min(dist(a0, b0), dist(a0, b1));
+  Result := (dStart < lenA / 2) and (Abs(lenA - lenB) < lenA / 5);
+end;
+
+/// <summary>The length of the text of r, with its EAN/UPC add-on.</summary>
+function CompleteLength(r: TReadResult): Integer;
+begin
+  Result := Length(r.Text);
+  var meta: IMetaData;
+  var ext: IStringMetadata;
+  if (r.ResultMetaData <> nil) and r.ResultMetaData.TryGetValue
+    (TResultMetadataType.UPC_EAN_EXTENSION, meta) and
+    Supports(meta, IStringMetadata, ext) then
+    Inc(Result, Length(ext.Value));
+end;
+
 function TOneDReader.CollectResult(r: TReadResult;
   collector, pending: TList<TReadResult>; maxCount: Integer): Boolean;
 begin
@@ -313,16 +366,26 @@ begin
     exit;
   end;
 
-  // the same code, also when read with another text (e.g. without its
-  // add-on) on another row
+  // the same code at about the same place on another row
   var confirmed := -1;
   for var i := 0 to pending.Count - 1 do
-    if ((pending[i].BarcodeFormat = r.BarcodeFormat) and
-      (pending[i].Text = r.Text)) or IsSameLinearSymbol(pending[i], r) then
+    if (pending[i].BarcodeFormat = r.BarcodeFormat) and
+      (pending[i].Text = r.Text) and IsCloseLine(pending[i], r) then
     begin
       confirmed := i;
       break;
     end;
+  // else also when read with a text that contains the other one (e.g.
+  // without its add-on)
+  if (confirmed < 0) then
+    for var i := 0 to pending.Count - 1 do
+      if IsSameLinearSymbol(pending[i], r) and
+        ((Pos(pending[i].Text, r.Text) > 0) or (Pos(r.Text, pending[i].Text) > 0))
+      then
+      begin
+        confirmed := i;
+        break;
+      end;
   if (confirmed < 0) then
   begin
     pending.Add(r);
@@ -332,7 +395,7 @@ begin
   // keep the most complete reading
   var best := pending[confirmed];
   pending.Delete(confirmed);
-  if (Length(r.Text) > Length(best.Text)) then
+  if (CompleteLength(r) > CompleteLength(best)) then
   begin
     best.Free;
     best := r;
@@ -350,6 +413,52 @@ begin
   if (image = nil) or ResultsFull(results, maxCount) then
     exit;
   var before := results.Count;
+  var candidate: TReadResult := nil;
+  var oldCandidate: TReadResult := nil;
+  try
+    // first the decoder of zxing-cpp (decodePattern), which is stricter
+    if HasPatternDecoder then
+    begin
+      FUsePattern := true;
+      candidate := decodeMultiplePass(image, hints, results, maxCount);
+      if (results.Count > before) then
+        exit;
+      // a pure barcode or an image of one row: one row is enough (like
+      // zxing-cpp)
+      if (candidate <> nil) and ((image.Height < 2) or (hints <> nil) and
+        hints.ContainsKey(ZXing.DecodeHintType.PURE_BARCODE)) then
+      begin
+        results.Add(candidate);
+        candidate := nil;
+        exit;
+      end;
+    end;
+
+    // nothing read on 2 rows: the decoder of before (decodeRow)
+    FUsePattern := false;
+    oldCandidate := decodeMultiplePass(image, hints, results, maxCount);
+    if (results.Count > before) then
+      exit;
+
+    // still nothing read on 2 rows: the first code read on one row only by
+    // decodeRow, the result of before (zxing-cpp has none)
+    if (oldCandidate <> nil) and not ContainsResult(results, oldCandidate) then
+    begin
+      results.Add(oldCandidate);
+      oldCandidate := nil;
+    end;
+  finally
+    candidate.Free;
+    oldCandidate.Free;
+  end;
+end;
+
+function TOneDReader.decodeMultiplePass(const image: TBinaryBitmap;
+  hints: TDictionary<TDecodeHintType, TObject>; results: TList<TReadResult>;
+  maxCount: Integer): TReadResult;
+begin
+  Result := nil;
+  var before := results.Count;
   var rotated: TBinaryBitmap := nil;
   // the codes read on one row only (not counted, see doDecode)
   var pending := TList<TReadResult>.Create;
@@ -363,13 +472,22 @@ begin
     var rotate := (hints <> nil) and
       hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER) and
       not hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER_WITHOUT_ROTATION);
+    // (decode with decodeRow, maxCount 1: only when nothing was read, as
+    // before)
+    if (maxCount = 1) and not FUsePattern and (pending.Count > 0) then
+      rotate := false;
     if rotate and image.RotateSupported and not ResultsFull(results, maxCount)
     then
     begin
       rotated := image.rotateCounterClockwise;
       var rotatedResults := TList<TReadResult>.Create;
       try
-        doDecode(rotated, hints, rotatedResults, 0, rotatedPending);
+        // stop as soon as the rest is found (the results are not in
+        // results yet)
+        var remaining := 0;
+        if (maxCount > 0) then
+          remaining := maxCount - results.Count;
+        doDecode(rotated, hints, rotatedResults, remaining, rotatedPending);
         for var r in rotatedResults do
         begin
           MapFromRotated(r, rotated.height);
@@ -383,23 +501,16 @@ begin
       end;
     end;
 
-    // nothing new: the first code read on one row only, which is what decode
-    // returns (it scans the rows in the same order)
+    // nothing new: the first code read on one row only (the first row hit)
     if (results.Count = before) then
     begin
-      var r: TReadResult := nil;
       if (pending.Count > 0) then
-        r := pending.Extract(pending[0])
+        Result := pending.Extract(pending[0])
       else if (rotatedPending.Count > 0) then
       begin
-        r := rotatedPending.Extract(rotatedPending[0]);
-        MapFromRotated(r, rotated.height);
+        Result := rotatedPending.Extract(rotatedPending[0]);
+        MapFromRotated(Result, rotated.height);
       end;
-      if (r <> nil) then
-        if ContainsResult(results, r) then
-          r.Free
-        else
-          results.Add(r);
     end;
   finally
     for var r in pending do
@@ -436,25 +547,59 @@ begin
 
   middle := TMathUtils.Asr(height, 1);
 
-  	rowStep := 5;
+  // every 5th row; with TRY_HARDER every height/256th row like zxing-cpp
+  // (every row of a small image, where only a few rows may be readable),
+  // for the decoder of zxing-cpp only (decodeRow finds more false positives)
+  rowStep := 5;
+  if FTryHarder and FUsePattern then
+    rowStep := Min(rowStep, Max(1, height div 256));
   maxLines := height; // Look at the whole image, not just the center
 
-  for X := 0 to maxLines - 1 do
+  // rows close to a row with a new barcode, to confirm it quickly (like
+  // zxing-cpp); the last one is next
+  var checkRows: TArray<Integer> := nil;
+  X := -1;
+  while true do
   begin
-    // Scanning from the middle out. Determine which row we're looking at next:
-    rowStepsAboveOrBelow := TMathUtils.Asr((X + 1), 1);
-    isAbove := (X and $01) = 0; // i.e. is x even?
-
-    if (not isAbove) then
+    var isCheckRow := (Length(checkRows) > 0);
+    if isCheckRow then
     begin
-      rowStepsAboveOrBelow := rowStepsAboveOrBelow * -1;
+      rowNumber := checkRows[High(checkRows)];
+      SetLength(checkRows, High(checkRows));
+      if (rowNumber < 0) or (rowNumber >= height) then
+        continue;
+    end
+    else
+    begin
+      Inc(X);
+      if (X >= maxLines) then
+        break;
+      // Scanning from the middle out. Determine which row we're looking at next:
+      rowStepsAboveOrBelow := TMathUtils.Asr((X + 1), 1);
+      isAbove := (X and $01) = 0; // i.e. is x even?
+
+      if (not isAbove) then
+      begin
+        rowStepsAboveOrBelow := rowStepsAboveOrBelow * -1;
+      end;
+      rowNumber := middle + rowStep * rowStepsAboveOrBelow;
+
+      if ((rowNumber < 0) or (rowNumber >= height)) then
+      begin
+        // Oops, if we run off the top or bottom, stop
+        break;
+      end;
     end;
-    rowNumber := middle + rowStep * rowStepsAboveOrBelow;
 
-    if ((rowNumber < 0) or (rowNumber >= height)) then
+    // the decoder of zxing-cpp, on the bars and spaces of the row
+    if FUsePattern then
     begin
-      // Oops, if we run off the top or bottom, stop
-      break;
+      ReadResult := decodePatternRow(image, rowNumber, hints, collector,
+        maxCount, pending, isCheckRow, checkRows);
+      if (ReadResult <> nil) or (collector <> nil) and
+        ResultsFull(collector, maxCount) then
+        Exit(ReadResult);
+      continue;
     end;
 
     // Estimate black point for this row and load it:
@@ -493,7 +638,7 @@ begin
       end;
 
       // Look for a barcode
-      ReadResult := decodeRowWithFallback(rowNumber, row, hints);
+      ReadResult := decodeRow(rowNumber, row, hints);
       if hadResultPointCallBack then
       begin
         hints.Add(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK, obj);
@@ -523,6 +668,7 @@ begin
         Exit(ReadResult);
 
       // collecting all barcodes
+      var pendingBefore := pending.Count;
       var rightEdge := RightEdgeOf(ReadResult);
       if CollectResult(ReadResult, collector, pending, maxCount) then
         Exit(nil);
@@ -533,7 +679,7 @@ begin
         for var more := 1 to 8 do
         begin
           var rest := RowFrom(row, Trunc(rightEdge) + 1);
-          var nextResult := decodeRowWithFallback(rowNumber, rest, hints);
+          var nextResult := decodeRow(rowNumber, rest, hints);
           if (nextResult = nil) then
             break;
           var nextEdge := RightEdgeOf(nextResult);
@@ -543,6 +689,11 @@ begin
             break;
           rightEdge := nextEdge;
         end;
+
+      // a new barcode (read on this row only): check the rows next to it
+      if (pending.Count > pendingBefore) and not isCheckRow then
+        checkRows := [rowNumber + 2, rowNumber - 2, rowNumber + 1,
+          rowNumber - 1];
       break;
 
     end; // loop
@@ -563,24 +714,73 @@ begin
   Result := false;
 end;
 
-function TOneDReader.decodeRowWithFallback(rowNumber: Integer;
-  const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
-  : TReadResult;
+function TOneDReader.decodePatternRow(const image: TBinaryBitmap;
+  rowNumber: Integer; const hints: TDictionary<TDecodeHintType, TObject>;
+  collector: TList<TReadResult>; maxCount: Integer;
+  pending: TList<TReadResult>; isCheckRow: Boolean;
+  var checkRows: TArray<Integer>): TReadResult;
 begin
-  Result := decodeRow(rowNumber, row, hints);
-  if (Result <> nil) or not HasPatternDecoder then
+  Result := nil;
+  var bars := image.getPatternRow(rowNumber);
+  if (bars = nil) then
     exit;
+  var pendingBefore := 0;
+  if (pending <> nil) then
+    pendingBefore := pending.Count;
+  var width := image.Width;
 
-  GetPatternRow(row, row.Size, FBars);
-  var next := TPatternView.Create(FBars);
-  repeat
-    Result := decodePattern(rowNumber, next, hints);
-    if (Result <> nil) then
-      exit;
-    // make sure we make progress and start the next try on a bar
-    next.Shift(2 - (next.Index mod 2));
-    next.Extend;
-  until not FTryHarder or (next.Size = 0);
+  // the row and, like zxing-cpp, the row reversed (cheap for the widths) to
+  // decode upside down barcodes
+  for var attempt := 0 to 1 do
+  begin
+    var view: TPatternView;
+    if (attempt = 0) then
+      view := TPatternView.Create(bars)
+    else
+    begin
+      var n := Length(bars);
+      SetLength(FBars, n);
+      for var i := 0 to n - 1 do
+        FBars[i] := bars[n - 1 - i];
+      view := TPatternView.Create(FBars);
+    end;
+
+    var found := false;
+    var r: TReadResult;
+    repeat
+      r := decodePattern(rowNumber, view, hints);
+      if (r <> nil) then
+      begin
+        // upside down: flip the points horizontally
+        if (attempt = 1) then
+        begin
+          var points := r.ResultPoints;
+          for var i := 0 to High(points) do
+            if (points[i] <> nil) then
+              points[i] := TResultPointHelpers.CreateResultPoint
+                (width - points[i].X - 1, points[i].Y);
+        end;
+        if (collector = nil) then
+          exit(r);
+        found := true;
+        if CollectResult(r, collector, pending, maxCount) then
+          exit;
+      end;
+      // make sure we make progress and start the next try on a bar
+      view.Shift(2 - (view.Index mod 2));
+      view.Extend;
+      // without TRY_HARDER only behind a barcode found
+    until (not FTryHarder and (r = nil)) or (view.Size = 0);
+
+    // found in this direction: not the other one, like decodeRow
+    if found then
+      break;
+  end;
+
+  // a new barcode (read on this row only): check the rows next to it
+  if (pending <> nil) and (pending.Count > pendingBefore) and not isCheckRow
+  then
+    checkRows := [rowNumber + 2, rowNumber - 2, rowNumber + 1, rowNumber - 1];
 end;
 
 class function TOneDReader.NarrowWideThreshold(const view: TPatternView)
@@ -628,6 +828,55 @@ begin
     if (view[i] > threshold[i] * 2) then
       exit(-1);
     Result := (Result shl 1) or Ord(view[i] > threshold[i]);
+  end;
+end;
+
+class function TOneDReader.PatternMatchVarianceF(const view: TPatternView;
+  const pattern: TOneDPattern; maxIndividualVariance: Double): Double;
+const
+  NO_MATCH = 1E30;
+begin
+  var n := Length(pattern);
+  var total := view.Sum(n);
+  var patternLength := 0;
+  for var p in pattern do
+    Inc(patternLength, p);
+  // less than one pixel per module: too small to match reliably
+  if (total < patternLength) then
+    exit(NO_MATCH);
+
+  var unitBarWidth: Double := total / patternLength;
+  maxIndividualVariance := maxIndividualVariance * unitBarWidth;
+
+  var totalVariance: Double := 0;
+  for var x := 0 to n - 1 do
+  begin
+    var variance: Double := Abs(view[x] - pattern[x] * unitBarWidth);
+    if (variance > maxIndividualVariance) then
+      exit(NO_MATCH);
+    totalVariance := totalVariance + variance;
+  end;
+  Result := totalVariance / total;
+end;
+
+class function TOneDReader.DecodeDigitF(const view: TPatternView;
+  const patterns: TOneDPatterns; maxAvgVariance, maxIndividualVariance: Double;
+  requireUnambiguousMatch: Boolean): Integer;
+begin
+  var bestVariance := maxAvgVariance; // the worst variance accepted
+  Result := -1;
+  for var i := 0 to High(patterns) do
+  begin
+    var variance := PatternMatchVarianceF(view, patterns[i],
+      maxIndividualVariance);
+    if (variance < bestVariance) then
+    begin
+      bestVariance := variance;
+      Result := i;
+    end
+    else if requireUnambiguousMatch and (variance = bestVariance) then
+      // two equally good matches: not reliable
+      Result := -1;
   end;
 end;
 
@@ -762,5 +1011,4 @@ procedure TOneDReader.reset;
 begin
   // do nothing
 end;
-
 end.

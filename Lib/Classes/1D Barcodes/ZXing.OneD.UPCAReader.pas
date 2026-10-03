@@ -33,7 +33,8 @@ uses
   ZXing.BarcodeFormat,
   ZXing.Helpers,
   ZXing.OneD.EAN13Reader,
-  ZXing.OneD.UPCEANReader;
+  ZXing.OneD.UPCEANReader,
+  ZXing.Common.Pattern;
 
 type
 
@@ -41,6 +42,7 @@ type
   private
     EAN13Reader: TUPCEANReader;
     function maybeReturnResult(pResult: TReadResult): TReadResult;
+    procedure SetAlsoEAN13(value: Boolean);
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -61,6 +63,14 @@ type
       reintroduce; overload;
 
     function BarcodeFormat: TBarcodeFormat; override;
+
+    /// <summary>Whether also EAN-13 codes that are not a UPC-A are returned
+    /// (as EAN-13) by decodePattern; decodeRow always does.</summary>
+    property AlsoEAN13: Boolean write SetAlsoEAN13;
+    // (public like in TUPCEANReader)
+    function decodePattern(rowNumber: Integer; var next: TPatternView;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      override;
   end;
 
 implementation
@@ -72,6 +82,7 @@ begin
   inherited;
 
   EAN13Reader := TEAN13Reader.Create;
+  EAN13Reader.UPCAOnly := true;
 end;
 
 destructor TUPCAReader.Destroy;
@@ -107,6 +118,19 @@ function TUPCAReader.decodeRow(const rowNumber: Integer; const row: IBitArray;
 begin
   result := maybeReturnResult
     (self.EAN13Reader.doDecodeRow(rowNumber, row, startGuardRange, hints))
+end;
+
+function TUPCAReader.decodePattern(rowNumber: Integer; var next: TPatternView;
+  const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+begin
+  // (only UPC-A, see UPCAOnly)
+  result := maybeReturnResult(EAN13Reader.decodePattern(rowNumber,
+    next, hints));
+end;
+
+procedure TUPCAReader.SetAlsoEAN13(value: Boolean);
+begin
+  EAN13Reader.UPCAOnly := not value;
 end;
 
 function TUPCAReader.BarcodeFormat: TBarcodeFormat;

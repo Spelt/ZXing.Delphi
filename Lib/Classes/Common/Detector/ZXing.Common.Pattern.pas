@@ -311,6 +311,22 @@ begin
   GetPatternRow(matrix.getRow(y, nil), matrix.Width, row);
 end;
 
+const
+  // de Bruijn sequence: the number of trailing zero bits of w is
+  // DE_BRUIJN_BITS[((w and -w) * DE_BRUIJN) shr 27]
+  DE_BRUIJN = $077CB531;
+  DE_BRUIJN_BITS: array [0 .. 31] of Byte = (0, 1, 28, 2, 29, 14, 24, 3, 30,
+    22, 20, 15, 25, 17, 4, 8, 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11,
+    5, 10, 9);
+
+/// <summary>The number of trailing zero bits of w (not 0).</summary>
+function TrailingZeros(w: Cardinal): Integer; inline;
+begin
+{$IFOPT Q+}{$DEFINE PATTERN_Q}{$Q-}{$ENDIF}
+  Result := DE_BRUIJN_BITS[((w and (not w + 1)) * DE_BRUIJN) shr 27];
+{$IFDEF PATTERN_Q}{$Q+}{$UNDEF PATTERN_Q}{$ENDIF}
+end;
+
 procedure GetPatternRow(const bits: IBitArray; width: Integer;
   var row: TPatternRow);
 begin
@@ -322,23 +338,36 @@ begin
     exit;
   end;
 
-  // jump from edge to edge with the word based search of the bit array
+  // jump from edge to edge through the words of the bit array: the next
+  // edge is the lowest bit (from x on) that differs from the current color
+  var words := bits.Bits;
+  var lastWord := Min(High(words), (width - 1) shr 5);
   var count := 0;
   var x := 0;
   // the first value is the number of white pixels, 0 when starting black
-  var black := bits[0];
+  var black := (words[0] and 1) <> 0;
+  if black then
+  begin
+    row[0] := 0;
+    count := 1;
+  end;
   while (x < width) do
   begin
-    var next: Integer;
+    var i := x shr 5;
+    var w := Cardinal(words[i]);
     if black then
-      next := Min(bits.getNextUnset(x), width)
-    else
-      next := Min(bits.getNextSet(x), width);
-    if (count = 0) and black then
+      w := not w;
+    w := w and (Cardinal($FFFFFFFF) shl (x and 31));
+    while (w = 0) and (i < lastWord) do
     begin
-      row[0] := 0;
-      count := 1;
+      Inc(i);
+      w := Cardinal(words[i]);
+      if black then
+        w := not w;
     end;
+    var next := width;
+    if (w <> 0) then
+      next := Min((i shl 5) + TrailingZeros(w), width);
     row[count] := next - x;
     Inc(count);
     x := next;

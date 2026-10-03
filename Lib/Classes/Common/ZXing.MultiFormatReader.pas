@@ -251,7 +251,10 @@ begin
     if (formats.Contains(TBarcodeFormat.EAN_8)) then
       readers.Add(TEAN8Reader.Create());
 
-    if (formats.Contains(TBarcodeFormat.UPC_A)) then
+    // the UPC-A reader uses an EAN-13 reader: after the EAN-13 reader it
+    // can not find anything more
+    if (formats.Contains(TBarcodeFormat.UPC_A)) and
+      not formats.Contains(TBarcodeFormat.EAN_13) then
       readers.Add(TUPCAReader.Create());
 
     if (formats.Contains(TBarcodeFormat.UPC_E)) then
@@ -267,9 +270,13 @@ begin
 
     // 1D readers
     readers.Add(TCode128Reader.Create());
-    readers.Add(TUPCAReader.Create());
+    // the UPC-A reader also returns the EAN-13 codes (its EAN-13 reader
+    // finds them anyway), so no separate EAN-13 reader that would do the
+    // same work again
+    var upca := TUPCAReader.Create();
+    upca.AlsoEAN13 := true;
+    readers.Add(upca);
     readers.Add(TUPCEReader.Create());
-    readers.Add(TEAN13Reader.Create());
     readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());
     readers.Add(TITFReader.Create());

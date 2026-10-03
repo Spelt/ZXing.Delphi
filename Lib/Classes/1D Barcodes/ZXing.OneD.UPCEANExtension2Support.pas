@@ -41,14 +41,14 @@ type
   private
     function decodeMiddle(const row: IBitArray; const startRange: TArray<Integer>;
       const resultString: TStringBuilder): Integer;
-
+  public
     /// <summary>
     /// Parses the extension string.
     /// </summary>
     /// <param name="raw">raw content of extension</param>
     /// <returns>formatted interpretation of raw content as a {@link TMap} mapping
     function parseExtensionString(const raw: String): TResultMetadata;
-  public
+
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const extensionStartRange: TArray<Integer>): TReadResult;
   end;

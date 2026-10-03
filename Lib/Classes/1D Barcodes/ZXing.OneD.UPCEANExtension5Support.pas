@@ -48,6 +48,8 @@ type
 
     function determineCheckDigit(const lgPatternFound: Integer; var checkDigit: Integer): Boolean;
 
+    function parseExtension5String(const raw: String): String;
+  public
     /// <summary>
     /// Parses the extension string.
     /// </summary>
@@ -56,8 +58,6 @@ type
     /// one {@link TResultMetadataType} to appropriate value, or {@code nil} if not known</returns>
     function parseExtensionString(const raw: string): TResultMetadata;
 
-    function parseExtension5String(const raw: String): String;
-  public
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const extensionStartRange: TArray<Integer>): TReadResult;
   end;
@@ -242,7 +242,7 @@ begin
   Result := '';
 
   case raw[1] of
-    '0' : currency := '£';
+    '0' : currency := 'ï¿½';
     '5' : currency := '$';
     '9' : begin
             // Reference: http://www.jollytech.com

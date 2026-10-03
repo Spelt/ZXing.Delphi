@@ -46,6 +46,9 @@ type
 
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const rowOffset: Integer): TReadResult;
+    /// <summary>The metadata of the text of a 2 or 5 digit add-on (issue
+    /// number or suggested price), nil when there is none.</summary>
+    function parseExtensionString(const raw: string): TResultMetadata;
   end;
 
 implementation
@@ -70,6 +73,17 @@ begin
   fiveSupport.Free;
 
   inherited;
+end;
+
+function TUPCEANExtensionSupport.parseExtensionString(const raw: string)
+  : TResultMetadata;
+begin
+  if (Length(raw) = 5) then
+    Result := fiveSupport.parseExtensionString(raw)
+  else if (Length(raw) = 2) then
+    Result := twoSupport.parseExtensionString(raw)
+  else
+    Result := nil;
 end;
 
 function TUPCEANExtensionSupport.decodeRow(const rowNumber: Integer;

@@ -25,7 +25,8 @@ uses
   ZXing.Binarizer,
   ZXing.LuminanceSource,
   ZXing.Common.BitArray,
-  ZXing.Common.BitMatrix;
+  ZXing.Common.BitMatrix,
+  ZXing.Common.Pattern;
 
 type
   TBinaryBitmap = class
@@ -40,6 +41,11 @@ type
     // words of the row, or nil with FRowState 1 when the binarizer gave nil
     FRowCache: TArray<TArray<Integer>>;
     FRowState: TArray<Byte>; // 0 not calculated, 1 nil, 2 cached
+    // the widths of the bars and spaces of the black rows, shared by the 1D
+    // readers of zxing-cpp (decodePattern)
+    FPatternRows: TArray<TPatternRow>;
+    FPatternState: TArray<Byte>; // 0 not calculated, 1 nil, 2 cached
+    FPatternBits: IBitArray;
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetBlackMatrix: TBitMatrix;
@@ -57,6 +63,12 @@ type
     /// </param>
     /// <returns> The array of bits for this row (true means black).</returns>
     function getBlackRow(y: Integer; row: IBitArray): IBitArray;
+    /// <summary>
+    /// The widths of the bars and spaces of black row y (see TPatternRow),
+    /// calculated once; nil when the binarizer has no row. The caller must
+    /// not change it.
+    /// </summary>
+    function getPatternRow(y: Integer): TPatternRow;
     function RotateSupported: Boolean;
     function rotateCounterClockwise(): TBinaryBitmap;
 
@@ -143,6 +155,29 @@ begin
     if (words[i] <> 0) then
       row.setBulk(i shl 5, words[i]);
   result := row;
+end;
+
+function TBinaryBitmap.getPatternRow(y: Integer): TPatternRow;
+begin
+  if (y < 0) or (y >= Height) then
+    exit(nil);
+  if (FPatternState = nil) then
+  begin
+    SetLength(FPatternState, Height);
+    SetLength(FPatternRows, Height);
+  end;
+  if (FPatternState[y] = 0) then
+  begin
+    FPatternBits := getBlackRow(y, FPatternBits);
+    if (FPatternBits = nil) then
+      FPatternState[y] := 1
+    else
+    begin
+      ZXing.Common.Pattern.GetPatternRow(FPatternBits, Width, FPatternRows[y]);
+      FPatternState[y] := 2;
+    end;
+  end;
+  Result := FPatternRows[y];
 end;
 
 function TBinaryBitmap.GetHeight: Integer;
