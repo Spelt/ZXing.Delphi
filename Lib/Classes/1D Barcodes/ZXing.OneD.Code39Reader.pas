@@ -26,6 +26,7 @@ uses
   Math,
   ZXing.OneD.OneDReader,
   ZXing.Common.BitArray,
+  ZXing.Common.Pattern,
   ZXing.ReadResult,
   ZXing.DecodeHintType,
   ZXing.ResultPoint,
@@ -60,6 +61,23 @@ type
     ];
     ASTERISK_ENCODING = $094;
 
+    /// <summary>The character of the narrow and wide bars and spaces of
+    /// view, #0 when none.</summary>
+    function DecodeChar(const view: TPatternView): Char;
+    /// <summary>The text as decodeRow makes it (check digit, extended
+    /// mode), from the characters between the start and stop characters;
+    /// '' when not valid.</summary>
+    function MakeText(const chars: string): string;
+  protected
+    /// <summary>The decoder of zxing-cpp: the start character from its
+    /// narrow bars and spaces with a quiet zone, thresholds between narrow
+    /// and wide per character, the space between the characters checked.
+    /// </summary>
+    function decodePattern(rowNumber: Integer; var next: TPatternView;
+      const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+      override;
+    function HasPatternDecoder: Boolean; override;
+
   public
     function decodeRow(const rowNumber: Integer; const row: IBitArray;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
@@ -89,6 +107,122 @@ begin
   counters := nil;
   FreeAndNil(decodeRowResult);
   inherited;
+end;
+
+function TCode39Reader.HasPatternDecoder: Boolean;
+begin
+  Result := true;
+end;
+
+function TCode39Reader.DecodeChar(const view: TPatternView): Char;
+begin
+  Result := #0;
+  var pattern := NarrowWideBitPattern(view);
+  if (pattern < 0) or not patternToChar(pattern, Result) then
+    Result := #0;
+end;
+
+function TCode39Reader.MakeText(const chars: string): string;
+begin
+  // the same as decodeRow
+  var s := chars;
+  if usingCheckDigit then
+  begin
+    // the check digit is the sum of the character values modulo 43
+    var max := Length(s) - 1;
+    if (max < 0) then
+      exit('');
+    var total := 0;
+    for var i := 0 to max - 1 do
+      Inc(total, CHECK_DIGIT_STRING.IndexOf(s.Chars[i]));
+    if (s.Chars[max] <> CHECK_DIGIT_STRING.Chars[total mod 43]) then
+      exit('');
+    // drop the check digit (the last character)
+    SetLength(s, max);
+  end;
+  if (s = '') then
+    exit('');
+  if extendedMode then
+    Result := decodeExtended(s)
+  else
+    Result := s;
+end;
+
+function TCode39Reader.decodePattern(rowNumber: Integer;
+  var next: TPatternView; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+const
+  CHAR_LEN = 9; // 5 bars and 4 spaces
+  // start, a character and stop
+  MIN_CHAR_COUNT = 3;
+  // the spec requires a quiet zone of 10 narrow bars (with 1:3 and 3 wide
+  // and 6 narrow elements a scale of 2/3 of a character); real world
+  // examples need 1/3
+  QUIET_ZONE_SCALE = 1 / 3;
+begin
+  Result := nil;
+  // the start character '*' by its 6 narrow bars and spaces, which have to
+  // be equally wide, with a quiet zone in front
+  next := FindLeftGuard(next, CHAR_LEN, MIN_CHAR_COUNT * CHAR_LEN,
+    function(const window: TPatternView; spaceInPixel: Integer): Boolean
+    const
+      NARROW: array [0 .. 5] of Integer = (0, 2, 3, 5, 7, 8);
+    begin
+      var width := 0;
+      for var i in NARROW do
+        Inc(width, window[i]);
+      var moduleSize: Double := width / 6;
+      if (spaceInPixel < QUIET_ZONE_SCALE * 12 * moduleSize - 1) then
+        exit(false);
+      var threshold: Double := moduleSize * 0.5 + 0.5;
+      for var i in NARROW do
+        if (Abs(window[i] - moduleSize) > threshold) then
+          exit(false);
+      Result := true;
+    end);
+  if not next.IsValid then
+    exit;
+  if (DecodeChar(next) <> '*') then
+    exit;
+
+  var startView := next;
+  // the spec says 1 narrow space, half a character is about 4
+  var maxInterCharacterSpace := next.Sum div 2;
+
+  var chars := '';
+  var c: Char;
+  repeat
+    // the remaining width and the space between the characters
+    if not next.SkipSymbol or not next.SkipSingle(maxInterCharacterSpace) then
+      exit;
+    c := DecodeChar(next);
+    if (c = #0) then
+      exit;
+    chars := chars + c;
+  until (c = '*');
+  // without the stop character
+  SetLength(chars, Length(chars) - 1);
+
+  if (Length(chars) < MIN_CHAR_COUNT - 2) or
+    not next.HasQuietZoneAfter(QUIET_ZONE_SCALE) then
+    exit;
+
+  var text := MakeText(chars);
+  if (text = '') then
+    exit;
+
+  // the middle of the start and stop characters, like decodeRow
+  Result := TReadResult.Create(text, nil,
+    [TResultPointHelpers.CreateResultPoint(startView.PixelsInFront +
+    startView.Sum / 2, rowNumber), TResultPointHelpers.CreateResultPoint
+    (next.PixelsInFront + next.Sum / 2, rowNumber)], TBarcodeFormat.CODE_39);
+  // ISO/IEC 15424: +3 check digit validated and stripped, +4 full ASCII
+  var modifier := 0;
+  if usingCheckDigit then
+    Inc(modifier, 3);
+  if extendedMode then
+    Inc(modifier, 4);
+  Result.SymbologyIdentifier := ']A' + IntToStr(modifier);
 end;
 
 function TCode39Reader.decodeExtended(encoded: string): string;
