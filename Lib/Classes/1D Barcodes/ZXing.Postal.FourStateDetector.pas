@@ -234,20 +234,33 @@ end;
 
 /// <summary>The middle of the part that the bars from first to last have
 /// in common (the tracker) at x0, along a line with the slope; false when
-/// they have nothing in common.</summary>
+/// they have nothing in common. When that part is longer than half the
+/// longest bar it is no tracker (the bars there are all ascenders and full
+/// bars, or all descenders and full bars): then the bars around them too.
+/// </summary>
 function CommonMiddle(const bars: TArray<TBar>; first, last: Integer;
   slope, x0: Double; out middle: Double): Boolean;
 begin
-  var top := -MaxDouble;
-  var bottom := MaxDouble;
-  for var i := Max(first, 0) to Min(last, High(bars)) do
-  begin
-    var shift := slope * (x0 - bars[i].X);
-    top := Max(top, bars[i].Top + shift);
-    bottom := Min(bottom, bars[i].Bottom + shift);
-  end;
-  Result := bottom > top;
-  middle := (top + bottom) / 2;
+  var maxLength := 0.0;
+  for var bar in bars do
+    maxLength := Max(maxLength, bar.Bottom - bar.Top);
+  repeat
+    var top := -MaxDouble;
+    var bottom := MaxDouble;
+    for var i := Max(first, 0) to Min(last, High(bars)) do
+    begin
+      var shift := slope * (x0 - bars[i].X);
+      top := Max(top, bars[i].Top + shift);
+      bottom := Min(bottom, bars[i].Bottom + shift);
+    end;
+    Result := bottom > top;
+    middle := (top + bottom) / 2;
+    if not Result or (bottom - top <= 0.5 * maxLength) or
+      ((first <= 0) and (last >= High(bars))) then
+      exit;
+    Dec(first, 4);
+    Inc(last, 4);
+  until false;
 end;
 
 /// <summary>Divides the values in two levels at the largest gap: the

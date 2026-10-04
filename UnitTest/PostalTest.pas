@@ -40,6 +40,8 @@ type
     [Test]
     procedure IMbSamples;
     [Test]
+    procedure PostalSamples;
+    [Test]
     procedure NotInAuto;
   end;
 
@@ -782,6 +784,50 @@ begin
     end;
   end;
   Assert.IsTrue(read >= 8, IntToStr(read) + ' of 10 read');
+end;
+
+procedure TPostalTest.PostalSamples;
+const
+  // the folders of the formats (images named format_number_text, '-' in the
+  // text written as '_')
+  FOLDERS: array [0 .. 7] of string = ('AustraliaPost', 'IMb', 'JapanPost',
+    'KIX', 'Mailmark', 'PLANET', 'POSTNET', 'RM4SCC');
+  FORMATS: array [0 .. 7] of TBarcodeFormat = (TBarcodeFormat.AUSTRALIA_POST,
+    TBarcodeFormat.IMB, TBarcodeFormat.JAPAN_POST, TBarcodeFormat.KIX,
+    TBarcodeFormat.MAILMARK_4STATE, TBarcodeFormat.PLANET,
+    TBarcodeFormat.POSTNET, TBarcodeFormat.RM4SCC);
+begin
+  for var f := 0 to High(FOLDERS) do
+    for var name in TDirectory.GetFiles(ExtractFileDir(ParamStr(0)) +
+      '\..\..\images\postal\' + FOLDERS[f], '*.png') do
+    begin
+      var base := TPath.GetFileNameWithoutExtension(name);
+      // (the text: after the second _)
+      base := base.Substring(base.IndexOf('_') + 1);
+      var expected := base.Substring(base.IndexOf('_') + 1).Replace('_', '-');
+      // (JapanPost_10: bar 65 is drawn as a line of 1 pixel, unreadable)
+      if (expected = '9800811') then
+        continue;
+      // the customer information TEST has the bars of the digits 634621:
+      // the bars do not tell which (digits taken, like zint encodes them)
+      if (expected = '6212345678TEST') then
+        expected := '6212345678634621';
+      var bmp := LoadImage(name);
+      var scanManager := TScanManager.Create(FORMATS[f], nil);
+      try
+        var r := scanManager.Scan(bmp);
+        try
+          Assert.IsNotNull(r, ' Nil result ' + name);
+          Assert.AreEqual(expected, r.Text, name);
+          Assert.AreEqual(Ord(FORMATS[f]), Ord(r.BarcodeFormat), name);
+        finally
+          r.Free;
+        end;
+      finally
+        scanManager.Free;
+        bmp.Free;
+      end;
+    end;
 end;
 
 procedure TPostalTest.NotInAuto;
