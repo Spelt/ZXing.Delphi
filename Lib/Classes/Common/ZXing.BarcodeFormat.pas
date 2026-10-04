@@ -184,7 +184,12 @@ type
 
     /// <summary>Deutsche Post Identcode (ITF of 12 digits): only when asked
     /// for, Auto returns it as ITF.</summary>
-    DP_IDENTCODE = 268435474
+    DP_IDENTCODE = 268435474,
+
+    // stacked formats, in Auto
+
+    /// <summary>Codablock F (rows of Code 128 characters).</summary>
+    CODABLOCK_F = 268435475
 
     );
 

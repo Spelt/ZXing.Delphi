@@ -58,6 +58,7 @@ uses
   ZXing.OneD.KoreaPostReader,
   ZXing.OneD.FIMReader,
   ZXing.OneD.DeutschePostReader,
+  ZXing.Stacked.CodablockFReader,
   ZXing.OneD.PharmacodeReader,
   ZXing.Postal.PostalReader,
 
@@ -240,6 +241,10 @@ begin
   if formats <> nil then
   begin
 
+    // the stacked Codablock F before Code 128 (its rows are Code 128 rows)
+    if formats.Contains(TBarcodeFormat.CODABLOCK_F) then
+      readers.Add(TCodablockFReader.Create);
+
     // 1D readers
 
     if (formats.Contains(TBarcodeFormat.CODE_128)) then
@@ -376,6 +381,9 @@ begin
 
   if (readers.Count = 0) then // must be auto, add them all
   begin
+
+    // the stacked Codablock F before Code 128 (its rows are Code 128 rows)
+    readers.Add(TCodablockFReader.Create);
 
     // 1D readers
     readers.Add(TCode128Reader.Create());

@@ -104,7 +104,7 @@ type
     function FindStartPattern(row: IBitArray): TArray<Integer>;
     function DecodeCode(row: IBitArray; counters: TArray<Integer>;
       rowOffset: Integer; var code: Integer): Boolean;
-
+  public
     /// <summary>The code of the 6 bars and spaces of view: the reference
     /// algorithm of the specification (edge to edge widths), else (not for
     /// the start code) the variance of before; -1 when none.</summary>

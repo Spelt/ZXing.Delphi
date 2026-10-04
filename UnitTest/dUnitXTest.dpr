@@ -30,6 +30,7 @@ uses
   MicroQRTest in 'MicroQRTest.pas',
   MaxiCodeTest in 'MaxiCodeTest.pas',
   PostalTest in 'PostalTest.pas',
+  StackedTest in 'StackedTest.pas',
   Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
   Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
   Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';

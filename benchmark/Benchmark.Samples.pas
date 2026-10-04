@@ -236,6 +236,8 @@ begin
     format := TBarcodeFormat.DP_LEITCODE
   else if (n = 'identcode') or (n = 'dpident') then
     format := TBarcodeFormat.DP_IDENTCODE
+  else if (n = 'codablockf') or (n = 'codablock') then
+    format := TBarcodeFormat.CODABLOCK_F
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then
