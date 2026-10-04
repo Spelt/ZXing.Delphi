@@ -129,6 +129,9 @@ begin
     Assert.AreEqual('01095040000591012112345678p901' + #29 + '101234567p' +
       #29 + '171411208200http://www.gs1.org/demo/', r.Text);
     Assert.AreEqual(']z1', r.SymbologyIdentifier);
+    Assert.IsTrue(r.IsGS1, 'not GS1');
+    Assert.AreEqual('(01)09504000059101(21)12345678p901(10)1234567p(17)141120' +
+      '(8200)http://www.gs1.org/demo/', r.GS1HRI);
   finally
     r.Free;
   end;

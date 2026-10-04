@@ -349,8 +349,11 @@ end;
 function TReadResult.IsGS1: Boolean;
 begin
   var s := FSymbologyIdentifier;
+  // Data Matrix, QR Code, GS1-128, GS1 DataBar, Aztec (also with ECI and
+  // Structured Append)
   Result := (s = ']d2') or (s = ']d5') or (s = ']Q3') or (s = ']Q4') or
-    (s = ']C1');
+    (s = ']C1') or (s = ']e0') or (s = ']z1') or (s = ']z4') or
+    (s = ']z7') or (s = ']zA');
 end;
 
 function TReadResult.GS1HRI: string;

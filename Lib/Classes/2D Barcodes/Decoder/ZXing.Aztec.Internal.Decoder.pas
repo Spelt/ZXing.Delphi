@@ -586,7 +586,11 @@ begin
     saSequence := (saIndex shl 4) or Max(saCount - 1, 0);
   Result := TDecoderResult.Create(res.Bytes, res.Text, nil,
     IntToStr(ecLevel) + '%', saSequence, -1);
-  Result.SymbologyIdentifier := ']z' + Char(Ord('0') + modifier);
+  // 0 to 9, then A, B (like zxing-cpp)
+  if (modifier >= 10) then
+    Result.SymbologyIdentifier := ']z' + Char(Ord('A') + modifier - 10)
+  else
+    Result.SymbologyIdentifier := ']z' + Char(Ord('0') + modifier);
 end;
 
 function DecodeAztec(detected: TAztecDetectorResult;
