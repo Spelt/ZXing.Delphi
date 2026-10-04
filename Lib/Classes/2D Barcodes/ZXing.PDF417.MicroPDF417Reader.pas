@@ -38,6 +38,11 @@ type
   /// </summary>
   TMicroPDF417Reader = class(TInterfacedObject, IReader, IMultipleReader)
   public
+    /// <summary>When FineBottom is 0 or more: the rows from FineTop to
+    /// FineBottom only, every 2nd (the 2D component of a GS1 Composite, rows
+    /// of 2 modules), not turned.</summary>
+    FineTop, FineBottom: Integer;
+    constructor Create;
     function decode(const image: TBinaryBitmap): TReadResult; overload;
     function decode(const image: TBinaryBitmap;
       hints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload;
@@ -48,6 +53,12 @@ type
       results: TList<TReadResult>; maxCount: Integer);
     procedure reset;
   end;
+
+/// <summary>The index (1 to 52) of the row address pattern of the 6 widths
+/// (10 modules), a left or right one or a center one; 0 when it is none.
+/// </summary>
+function MicroPDF417RAPIndex(const widths: array of Integer;
+  center: Boolean): Integer;
 
 implementation
 
@@ -339,6 +350,15 @@ begin
   Result.Ms := ms;
 end;
 
+function MicroPDF417RAPIndex(const widths: array of Integer;
+  center: Boolean): Integer;
+begin
+  var t := rapL;
+  if center then
+    t := rapC;
+  Result := RAPIndex(ToIntPattern(NormalizedE2E(widths, 6, 10, 5)), t);
+end;
+
 { TRAPPair }
 
 class function TRAPPair.Create(f, s: Integer): TRAPPair;
@@ -625,8 +645,8 @@ begin
   end;
 end;
 
-function FindCandidates(image: TBitMatrix; tryHarder, reversed: Boolean)
-  : TObjectList<TCluster>;
+function FindCandidates(image: TBitMatrix; tryHarder, reversed: Boolean;
+  fineTop: Integer = 0; fineBottom: Integer = -1): TObjectList<TCluster>;
 const
   // the shortest MicroPDF417 has 4 rows
   MIN_CLUSTER_SIZE = 4;
@@ -646,9 +666,21 @@ begin
     skip := 8;
   end;
 
+  var lastY := height - margin;
+  if (fineBottom >= 0) then
+  begin
+    skip := 2;
+    margin := fineTop;
+    lastY := fineBottom + 1;
+    if reversed then
+    begin
+      margin := height - 1 - fineBottom;
+      lastY := height - fineTop;
+    end;
+  end;
   var row: TPatternRow;
   var y := margin;
-  while (y < height - margin) do
+  while (y < lastY) do
   begin
     var imageY := y;
     if reversed then
@@ -1191,7 +1223,7 @@ begin
     hints.ContainsKey(TDecodeHintType.PURE_BARCODE);
   var tryHarder := (hints <> nil) and
     hints.ContainsKey(TDecodeHintType.TRY_HARDER);
-  var tryRotate := tryHarder and not isPure;
+  var tryRotate := tryHarder and not isPure and (FineBottom < 0);
 
   for var rotate90 := 0 to Ord(tryRotate) do
   begin
@@ -1201,7 +1233,8 @@ begin
     try
       for var reversed in [false, true] do
       begin
-        var candidates := FindCandidates(binImg, tryHarder, reversed);
+        var candidates := FindCandidates(binImg, tryHarder, reversed, FineTop,
+          FineBottom);
         try
           for var lraps in candidates do
           begin
@@ -1253,6 +1286,13 @@ begin
         binImg.Free;
     end;
   end;
+end;
+
+constructor TMicroPDF417Reader.Create;
+begin
+  inherited Create;
+  FineTop := 0;
+  FineBottom := -1;
 end;
 
 procedure TMicroPDF417Reader.reset;

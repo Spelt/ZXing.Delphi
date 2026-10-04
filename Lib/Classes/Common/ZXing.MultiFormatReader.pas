@@ -62,6 +62,7 @@ uses
   ZXing.Stacked.Code16KReader,
   ZXing.Stacked.Code49Reader,
   ZXing.Stacked.StackedReader,
+  ZXing.Composite.Linker,
   ZXing.OneD.PharmacodeReader,
   ZXing.Postal.PostalReader,
 
@@ -89,8 +90,19 @@ type
 
     FHints: TDictionary<TDecodeHintType, TObject>;
     readers: TList<IReader>;
+    // the 2D components of GS1 Composites linked (in Auto or asked for), only
+    // GS1 Composites (asked for without their linear formats)
+    FComposite, FOnlyComposite: Boolean;
+    // the formats with the linear ones of GS1 Composite (asked for)
+    FCompositeFormats: TList<TBarcodeFormat>;
 
     function DecodeInternal(image: TBinaryBitmap): TReadResult;
+    procedure DecodeMultipleOfReaders(const image: TBinaryBitmap;
+      results: TList<TReadResult>; maxCount: Integer);
+    /// <summary>The linear components of the results from first on with
+    /// their 2D components (GS1 Composite).</summary>
+    procedure LinkComposites(const image: TBinaryBitmap;
+      results: TList<TReadResult>; first: Integer);
     procedure Set_Hints(const Value: TDictionary<TDecodeHintType, TObject>);
     function Get_Hints: TDictionary<TDecodeHintType, TObject>;
 
@@ -192,6 +204,7 @@ end;
 destructor TMultiFormatReader.Destroy;
 begin
   FreeReaders;
+  FCompositeFormats.Free;
   inherited;
 end;
 
@@ -237,6 +250,27 @@ begin
   begin
     formats := Value[ZXing.DecodeHintType.POSSIBLE_FORMATS]
       as TList<TBarcodeFormat>
+  end;
+
+  // GS1 Composite: its 2D component linked to the linear components; asked
+  // for: their readers too
+  FComposite := (formats = nil) or
+    formats.Contains(TBarcodeFormat.GS1_COMPOSITE);
+  FOnlyComposite := false;
+  FreeAndNil(FCompositeFormats);
+  if (formats <> nil) and formats.Contains(TBarcodeFormat.GS1_COMPOSITE) then
+  begin
+    FOnlyComposite := true;
+    FCompositeFormats := TList<TBarcodeFormat>.Create(formats);
+    for var f in [TBarcodeFormat.EAN_13, TBarcodeFormat.EAN_8,
+      TBarcodeFormat.UPC_A, TBarcodeFormat.UPC_E, TBarcodeFormat.RSS_14,
+      TBarcodeFormat.RSS_LIMITED, TBarcodeFormat.RSS_EXPANDED,
+      TBarcodeFormat.CODE_128] do
+      if formats.Contains(f) then
+        FOnlyComposite := false
+      else
+        FCompositeFormats.Add(f);
+    formats := FCompositeFormats;
   end;
 
   // add readers from the hints
@@ -449,6 +483,50 @@ procedure TMultiFormatReader.decodeMultiple(const image: TBinaryBitmap;
 begin
   if (readers = nil) then
     exit;
+  var first := results.Count;
+  try
+    DecodeMultipleOfReaders(image, results, maxCount);
+  finally
+    if FComposite then
+      LinkComposites(image, results, first);
+  end;
+end;
+
+procedure TMultiFormatReader.LinkComposites(const image: TBinaryBitmap;
+  results: TList<TReadResult>; first: Integer);
+begin
+  // the linear components with their 2D component, the 2D components
+  // linked left out
+  var components: TArray<string> := [];
+  for var i := results.Count - 1 downto first do
+    if IsCompositeLinear(results[i]) then
+    begin
+      var component := FindCompositeComponent(image, results[i], FHints);
+      if (component <> '') then
+      begin
+        results[i] := MakeComposite(results[i], component);
+        components := components + [component];
+      end
+      else if FOnlyComposite then
+      begin
+        results[i].Free;
+        results.Delete(i);
+      end;
+    end;
+  for var i := results.Count - 1 downto first do
+    if (results[i].SymbologyIdentifier = ']e1') then
+      for var component in components do
+        if (results[i].Text = component) then
+        begin
+          results[i].Free;
+          results.Delete(i);
+          break;
+        end;
+end;
+
+procedure TMultiFormatReader.DecodeMultipleOfReaders(const image: TBinaryBitmap;
+  results: TList<TReadResult>; maxCount: Integer);
+begin
   for var reader in readers do
   begin
     if ResultsFull(results, maxCount) then
@@ -496,6 +574,18 @@ begin
     Reader := readers[i];
     Reader.Reset();
     result := Reader.decode(image, FHints);
+    // the 2D component of a GS1 Composite above (or below) a linear one
+    if (result <> nil) and FComposite and IsCompositeLinear(result) then
+    begin
+      var component := FindCompositeComponent(image, result, FHints);
+      if (component <> '') then
+        result := MakeComposite(result, component)
+      else if FOnlyComposite then
+      begin
+        FreeAndNil(result);
+        continue;
+      end;
+    end;
     if result <> nil then
     begin
 

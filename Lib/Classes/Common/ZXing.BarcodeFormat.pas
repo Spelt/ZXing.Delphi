@@ -195,7 +195,14 @@ type
     CODE_16K = 268435476,
 
     /// <summary>Code 49 (rows of 4 symbol characters).</summary>
-    CODE_49 = 268435477
+    CODE_49 = 268435477,
+
+    // GS1 Composite, in Auto
+
+    /// <summary>GS1 Composite: a linear component (EAN/UPC, GS1 DataBar,
+    /// GS1-128) with a 2D component (CC-A, CC-B, CC-C) above it; the text of
+    /// both with '|' between them.</summary>
+    GS1_COMPOSITE = 268435478
 
     );
 

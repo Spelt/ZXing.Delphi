@@ -27,6 +27,11 @@ interface
 /// when they can not be decoded.</summary>
 function DecodeExpandedBits(const bits: TArray<Boolean>): string;
 
+/// <summary>The GS1 text of the bits of the 2D component of a GS1 Composite
+/// (CC-A, CC-B or CC-C, ISO/IEC 24723: the encodation methods 0, 10 and
+/// 11); '' when they can not be decoded.</summary>
+function DecodeCompositeBits(const bits: TArray<Boolean>): string;
+
 implementation
 
 uses
@@ -83,7 +88,8 @@ begin
   Result := Format('%.*d', [width, value]);
 end;
 
-function DecodeGeneralPurposeBits(var bits: TBitReader): string;
+function DecodeGeneralPurposeBits(var bits: TBitReader;
+  alphanumeric: Boolean = false; latchAfterFNC1: Boolean = true): string;
 const
   LUT_58_TO_62 = '*,-./';
   LUT_232_TO_252 = '!"%&''()*+,-./:;<=>?_ ';
@@ -107,7 +113,7 @@ var
       res := res + GS;
       state := gpNumeric;
       // some generators wrongly place a numeric latch '000' after an FNC1
-      if (bits.Size >= 7) and (bits.PeekBits(7) < 8) then
+      if latchAfterFNC1 and (bits.Size >= 7) and (bits.PeekBits(7) < 8) then
         bits.SkipBits(3);
     end
     else
@@ -127,6 +133,8 @@ var
 
 begin
   state := gpNumeric;
+  if alphanumeric then
+    state := gpAlpha;
   res := '';
   while (bits.Size >= 3) do
     case state of
@@ -358,6 +366,128 @@ begin
       63:
         Result := DecodeAI013x0x1x(r, '320', '17');
     end;
+  except
+    on EDataBarFormat do
+      Result := '';
+  end;
+end;
+
+function DecodeCompositeBits(const bits: TArray<Boolean>): string;
+const
+  // Table 3: the letters of AI 90 with a 4 bit value
+  TABLE_3 = 'BDHIJKLNPQRSTVWZ';
+begin
+  Result := '';
+  var r: TBitReader;
+  r.Bits := bits;
+  r.Pos := 0;
+  try
+    // encodation method 0: the general purpose field only
+    if (r.ReadBits(1) = 0) then
+      exit(DecodeGeneralPurposeBits(r, false, false));
+
+    if (r.ReadBits(1) = 0) then
+    begin
+      // encodation method 10: a date (AI 11 or 17) and a lot number (AI 10)
+      if (r.PeekBits(2) = 3) then
+      begin
+        // no date: the lot number
+        r.SkipBits(2);
+        exit('10' + DecodeGeneralPurposeBits(r, false, false));
+      end;
+      var date := r.ReadBits(16);
+      var ai := '11';
+      if (r.ReadBits(1) = 1) then
+        ai := '17';
+      var head := ai + Digits(date div 384, 2) + Digits(date mod 384 div 32 + 1,
+        2) + Digits(date mod 32, 2);
+      var field := DecodeGeneralPurposeBits(r, false, false);
+      // an FNC1 first: no lot number
+      if (field = '') then
+        Result := head
+      else if (field[1] = GS) then
+        Result := head + Copy(field, 2, MaxInt)
+      else
+        Result := head + '10' + field;
+      exit;
+    end;
+
+    // encodation method 11: AI 90 (and AI 21 or 8004 behind it)
+    var mode := 1;
+    if (r.ReadBits(1) = 1) then
+    begin
+      // alpha (11) or numeric (10)
+      if (r.ReadBits(1) = 1) then
+        mode := 2
+      else
+        mode := 3;
+    end;
+    var crop := '';
+    if (r.ReadBits(1) = 1) then
+    begin
+      if (r.ReadBits(1) = 0) then
+        crop := '21'
+      else
+        crop := '8004';
+    end;
+    // the number (0 to 999) and the letter that start the data of AI 90
+    var number := r.ReadBits(5);
+    var letter: Char;
+    if (number < 31) then
+      letter := TABLE_3[r.ReadBits(4) + 1]
+    else
+    begin
+      number := r.ReadBits(10);
+      letter := Chr(Ord('A') + r.ReadBits(5));
+    end;
+    var text := '90';
+    if (number > 0) then
+      text := text + IntToStr(number);
+    text := text + letter;
+    var field: string;
+    if (mode = 2) then
+    begin
+      // alpha: letters (5 bits) and digits (6 bits) up to an FNC1 (11111)
+      var ended := false;
+      while (r.Size >= 5) do
+      begin
+        var v := r.PeekBits(5);
+        if (v = 31) then
+        begin
+          r.SkipBits(5);
+          ended := true;
+          break;
+        end;
+        if (v < 26) then
+        begin
+          r.SkipBits(5);
+          text := text + Chr(Ord('A') + v);
+        end
+        else
+        begin
+          v := r.ReadBits(6) - 52;
+          if (v < 0) or (v > 9) then
+            exit('');
+          text := text + Chr(Ord('0') + v);
+        end;
+      end;
+      field := '';
+      if ended then
+        field := GS + DecodeGeneralPurposeBits(r, false, false);
+    end
+    else
+      field := DecodeGeneralPurposeBits(r, mode = 1, false);
+    // the AI behind AI 90 (21 or 8004) is left out: behind the FNC1
+    if (crop <> '') then
+    begin
+      var p := Pos(GS, field);
+      if (p = 0) then
+        exit('');
+      Insert(crop, field, p + 1);
+    end;
+    Result := text + field;
+    if Result.EndsWith(GS) then
+      SetLength(Result, Length(Result) - 1);
   except
     on EDataBarFormat do
       Result := '';

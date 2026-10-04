@@ -292,6 +292,7 @@
         <DCCReference Include="MaxiCodeTest.pas"/>
         <DCCReference Include="PostalTest.pas"/>
         <DCCReference Include="StackedTest.pas"/>
+        <DCCReference Include="CompositeTest.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Samples.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Images.pas"/>
         <DCCReference Include="..\benchmark\Benchmark.Runner.pas"/>

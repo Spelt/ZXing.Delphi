@@ -48,7 +48,8 @@ uses
   System.SysUtils,
   System.Math,
   ZXing.Common.ECIContent,
-  ZXing.PDF417.Internal.ErrorCorrection;
+  ZXing.PDF417.Internal.ErrorCorrection,
+  ZXing.OneD.DataBarExpandedBitDecoder;
 
 type
   TMode = (mdAlpha, mdLower, mdMixed, mdPunct, mdAlphaShift, mdPunctShift);
@@ -636,6 +637,7 @@ begin
 
   var res := TECIContent.Create;
   var readerInit := false;
+  var composite := false;
   var macro := false;
   var data := TPDF417ResultMetadata.Create;
   var dataIntf: IPDF417ResultMetadata := data;
@@ -676,7 +678,9 @@ begin
           // the first codeword after the symbol length (GS1 Composite
           // ISO/IEC 24723:2010 4.3)
           if (codeIndex <> 2) then
-            raise EPDF417Format.Create('Format');
+            raise EPDF417Format.Create('Format')
+          else
+            composite := true;
         LINKAGE_OTHER:
           // may be treated as invalid in Basic Channel Mode (ISO/IEC
           // 24723:2010 5.4.1.5)
@@ -735,6 +739,27 @@ begin
     data.FIsLastSegment then
     data.FSegmentCount := data.FSegmentIndex + 1;
   data.FReaderInit := readerInit;
+
+  // the 2D component of a GS1 Composite (CC-B, CC-C): the bits of its
+  // bytes encoded as ISO/IEC 24723 has it, ]e1
+  if composite then
+  begin
+    var bits: TArray<Boolean>;
+    SetLength(bits, 8 * Length(res.Bytes));
+    for var i := 0 to High(res.Bytes) do
+      for var b := 0 to 7 do
+        bits[8 * i + b] := (res.Bytes[i] shr (7 - b)) and 1 = 1;
+    var text := DecodeCompositeBits(bits);
+    if (text = '') then
+    begin
+      error := 'Format';
+      exit;
+    end;
+    Result := TDecoderResult.Create(res.Bytes, text, nil, '');
+    Result.SymbologyIdentifier := ']e1';
+    extra := dataIntf;
+    exit;
+  end;
 
   Result := TDecoderResult.Create(res.Bytes, res.Text, nil, '');
   // ISO/IEC 15424: ]L2, ]L1 with ECI
