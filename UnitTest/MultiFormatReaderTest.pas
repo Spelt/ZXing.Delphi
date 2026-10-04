@@ -17,6 +17,9 @@ type
     /// access violation and to leak the readers of the previous call.</summary>
     [Test]
     procedure DecodeWithoutHints;
+    /// <summary>Auto reads the formats that were added later too.</summary>
+    [Test]
+    procedure AutoReadsAllFormats;
   end;
 
 implementation
@@ -36,6 +39,7 @@ uses
   ZXing.MultiFormatReader,
   ZXing.BarcodeFormat,
   ZXing.ReadResult,
+  ZXing.ScanManager,
   Benchmark.Images;
 
 procedure TMultiFormatReaderTest.DecodeWithoutHints;
@@ -72,6 +76,55 @@ begin
     binarizer.Free;
     source.Free;
     bitmap.Free;
+  end;
+end;
+
+procedure TMultiFormatReaderTest.AutoReadsAllFormats;
+type
+  TSample = record
+    FileName: string;
+    Format: TBarcodeFormat;
+    Text: string;
+  end;
+const
+  SAMPLES: array [0 .. 8] of TSample = (
+    (FileName: 'codabar-1\01.webp'; Format: TBarcodeFormat.CODABAR;
+    Text: '1234567890'),
+    (FileName: 'telepen-1\telepen-alpha-2.png'; Format: TBarcodeFormat.TELEPEN;
+    Text: 'TELEPEN'),
+    (FileName: 'aztec-1\7.png'; Format: TBarcodeFormat.AZTEC;
+    Text: 'Code 2D!'),
+    (FileName: 'databarOmni-1\1.png'; Format: TBarcodeFormat.RSS_14;
+    Text: '0104412345678909'),
+    (FileName: 'databarExp-3\1.png'; Format: TBarcodeFormat.RSS_EXPANDED;
+    Text: '0190012345678908310301223315991231'),
+    (FileName: 'databarLtd-1\00.png'; Format: TBarcodeFormat.RSS_LIMITED;
+    Text: '0100000000000000'),
+    (FileName: 'pdf417-1\01.png'; Format: TBarcodeFormat.PDF_417;
+    Text: 'This is PDF417'),
+    (FileName: 'micropdf417-1\MPDF-0.png';
+    Format: TBarcodeFormat.MICRO_PDF417; Text: 'I have the best words.'),
+    (FileName: 'qrcode-1\1.png'; Format: TBarcodeFormat.QR_CODE; Text: ''));
+begin
+  for var s in SAMPLES do
+  begin
+    var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
+      '\..\..\Images\zxing-cpp\' + s.FileName);
+    var scanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+    try
+      var r := scanManager.Scan(bitmap);
+      try
+        Assert.IsNotNull(r, 'Nil result: ' + s.FileName);
+        Assert.AreEqual(Ord(s.Format), Ord(r.BarcodeFormat), s.FileName);
+        if (s.Text <> '') then
+          Assert.AreEqual(s.Text, r.Text, s.FileName);
+      finally
+        r.Free;
+      end;
+    finally
+      scanManager.Free;
+      bitmap.Free;
+    end;
   end;
 end;
 

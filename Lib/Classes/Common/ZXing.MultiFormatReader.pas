@@ -314,11 +314,18 @@ begin
     readers.Add(TITFReader.Create());
     readers.Add(TCode39Reader.Create(useCode39CheckDigit,
       useCode39ExtendedMode));
-
+    readers.Add(TCodabarReader.Create);
+    readers.Add(TTelepenReader.Create);
+    readers.Add(TDataBarReader.Create);
+    readers.Add(TDataBarExpandedReader.Create);
+    readers.Add(TDataBarLimitedReader.Create);
 
     // 2D readers
     readers.Add(TQRCodeReader.Create());
-    readers.Add(TDataMatrixReader.Create)
+    readers.Add(TDataMatrixReader.Create);
+    readers.Add(TAztecReader.Create);
+    readers.Add(TPDF417Reader.Create);
+    readers.Add(TMicroPDF417Reader.Create);
   end;
 
 end;
