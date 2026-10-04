@@ -183,6 +183,8 @@ begin
     format := TBarcodeFormat.RSS_EXPANDED
   else if (n = 'databarltd') or (n = 'databarlimited') then
     format := TBarcodeFormat.RSS_LIMITED
+  else if (n = 'dxfilmedge') then
+    format := TBarcodeFormat.DX_FILM_EDGE
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

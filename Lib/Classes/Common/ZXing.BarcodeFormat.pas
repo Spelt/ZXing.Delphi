@@ -98,7 +98,10 @@ type
     MICRO_QR_CODE = 4194304,
 
     /// <summary>rMQR Code (rectangular Micro QR Code) 2D format.</summary>
-    RMQR_CODE = 8388608
+    RMQR_CODE = 8388608,
+
+    /// <summary>DX film edge code of 35 mm film (1D).</summary>
+    DX_FILM_EDGE = 16777216
 
     );
 

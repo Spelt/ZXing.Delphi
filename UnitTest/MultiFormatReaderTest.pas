@@ -87,7 +87,9 @@ type
     Text: string;
   end;
 const
-  SAMPLES: array [0 .. 11] of TSample = (
+  SAMPLES: array [0 .. 12] of TSample = (
+    (FileName: 'dxfilmedge-1\2.png'; Format: TBarcodeFormat.DX_FILM_EDGE;
+    Text: '80-11/23'),
     (FileName: 'maxicode-1\MODE5.png'; Format: TBarcodeFormat.MAXICODE;
     Text: ''),
     (FileName: 'microqrcode-1\M2-Alpha.png';

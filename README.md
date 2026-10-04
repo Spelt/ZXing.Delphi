@@ -29,7 +29,7 @@ From Delphi 11 the standard camera component seems much improved.
 | GS1 DataBar (also stacked) | Codabar | MicroPDF417
 | GS1 DataBar Expanded (also stacked) | Telepen | Micro QR Code
 | GS1 DataBar Limited |  | rMQR Code
-|            |               | MaxiCode (pure symbols only)
+| DX Film Edge |               | MaxiCode (pure symbols only)
 
 
 ### Features
@@ -56,7 +56,8 @@ From Delphi 11 the standard camera component seems much improved.
 	- New formats: PDF417 (TBarcodeFormat.PDF_417) and MicroPDF417 (new: MICRO_PDF417), port of the readers of zxing-cpp: the PDF417 detector of start and stop patterns (also several symbols, 90/180/270 degrees with TRY_HARDER) and its pure detector, the MicroPDF417 detector of row address patterns, Reed-Solomon in GF(929) with erasures, text, byte and numeric compaction, ECI (]L1), Reader Initialisation, Macro PDF417 / Structured Append and the Macro 05/06 headers of MicroPDF417. The Macro PDF417 data (segment index and count, file id, file name, ...) is in the metadata PDF417_EXTRA_METADATA (IPDF417ResultMetadata).
 	- New formats: Micro QR Code (new: MICRO_QR_CODE, M1 to M4) and rMQR Code (new: RMQR_CODE, the rectangular Micro QR Code of ISO/IEC 23941), port of the readers of zxing-cpp: found by their finder pattern (also several in an image) or as pure symbol, numeric, alphanumeric, byte and Kanji segments, and ECI and FNC1 (GS1) for rMQR. The QR Code reader no longer raises an exception on a pure symbol smaller than a QR Code.
 	- New format: MaxiCode (TBarcodeFormat.MAXICODE), port of the reader of zxing-cpp. Like zxing-cpp only symbols that fill the image (unrotated, a "pure" image) are read: there is no MaxiCode detector yet. All modes (2 to 6), the Structured Carrier Message, ECI and Structured Append (STRUCTURED_APPEND_SEQUENCE).
-	- Auto (TBarcodeFormat.Auto) reads all formats, also the new ones (Codabar, Telepen, Aztec, GS1 DataBar, PDF417, MicroPDF417, Micro QR Code, rMQR Code, MaxiCode), as users expect. On images without a barcode this costs about 45% more time than before: choose the formats you need for the best speed.
+	- New format: DX Film Edge (new: DX_FILM_EDGE), the DX code on the edge of 35 mm film, port of the reader of zxing-cpp: the text is the product and generation number and, when there, the frame number, like 115-10/11A.
+	- Auto (TBarcodeFormat.Auto) reads all formats, also the new ones (Codabar, Telepen, Aztec, GS1 DataBar, PDF417, MicroPDF417, Micro QR Code, rMQR Code, MaxiCode, DX Film Edge), as users expect. On images without a barcode this costs about 45% more time than before: choose the formats you need for the best speed.
 	- TScanManager.ScanAll: a result whose position was the same array as its result points (Aztec, and the symbols found but not read) got its position scaled twice in the downscaled layers.
 	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39, Code 93 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode.
 	- Hints ALLOWED_EAN_EXTENSIONS and ALLOWED_LENGTHS: use TIntegerArrayHint.Create([2, 5]) as value; TScanManager frees it. Before, these hints made TScanManager crash when it freed them (an array cast to TObject still works, but is not freed). ALLOWED_EAN_EXTENSIONS now really requires an add-on: the search goes on until a code with add-on is found.

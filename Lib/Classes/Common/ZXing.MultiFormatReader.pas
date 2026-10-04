@@ -49,6 +49,7 @@ uses
   ZXing.OneD.DataBarReader,
   ZXing.OneD.DataBarExpandedReader,
   ZXing.OneD.DataBarLimitedReader,
+  ZXing.OneD.DXFilmEdgeReader,
 
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
@@ -306,6 +307,9 @@ begin
 
     if formats.Contains(TBarcodeFormat.RSS_LIMITED) then
       readers.Add(TDataBarLimitedReader.Create);
+
+    if formats.Contains(TBarcodeFormat.DX_FILM_EDGE) then
+      readers.Add(TDXFilmEdgeReader.Create);
   end;
 
   if (readers.Count = 0) then // must be auto, add them all
@@ -330,6 +334,7 @@ begin
     readers.Add(TDataBarReader.Create);
     readers.Add(TDataBarExpandedReader.Create);
     readers.Add(TDataBarLimitedReader.Create);
+    readers.Add(TDXFilmEdgeReader.Create);
 
     // 2D readers
     readers.Add(TQRCodeReader.Create());

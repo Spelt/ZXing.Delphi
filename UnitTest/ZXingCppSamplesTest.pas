@@ -37,7 +37,7 @@ const
   // slow, fast, pure. Results after the 1D decoders of zxing-cpp (phase 7).
   // The wrong results in upce-2 are a misread of 509689-3!.webp, an image
   // that zxing-cpp can not read either.
-  FOLDER_LIMITS: array [0 .. 48] of TFolderLimits = (
+  FOLDER_LIMITS: array [0 .. 49] of TFolderLimits = (
     (Folder: 'aztec-1'; Limits: ((MinRead: 132; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'aztec-2'; Limits: ((MinRead: 62; MaxWrong: 0; MaxErrors: 0), (MinRead: 61; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'codabar-1'; Limits: ((MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0))),
@@ -60,6 +60,7 @@ const
     (Folder: 'datamatrix-3'; Limits: ((MinRead: 111; MaxWrong: 0; MaxErrors: 0), (MinRead: 28; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'datamatrix-4'; Limits: ((MinRead: 84; MaxWrong: 0; MaxErrors: 0), (MinRead: 21; MaxWrong: 0; MaxErrors: 0), (MinRead: 19; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'datamatrix-5'; Limits: ((MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 2; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'dxfilmedge-1'; Limits: ((MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 1; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'ean13-1'; Limits: ((MinRead: 36; MaxWrong: 0; MaxErrors: 0), (MinRead: 36; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'ean13-2'; Limits: ((MinRead: 44; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'ean13-ext-1'; Limits: ((MinRead: 10; MaxWrong: 0; MaxErrors: 0), (MinRead: 9; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
@@ -116,6 +117,7 @@ type
     [TestCase('datamatrix-3', 'datamatrix-3')]
     [TestCase('datamatrix-4', 'datamatrix-4')]
     [TestCase('datamatrix-5', 'datamatrix-5')]
+    [TestCase('dxfilmedge-1', 'dxfilmedge-1')]
     [TestCase('ean13-1', 'ean13-1')]
     [TestCase('ean13-2', 'ean13-2')]
     [TestCase('ean13-ext-1', 'ean13-ext-1')]

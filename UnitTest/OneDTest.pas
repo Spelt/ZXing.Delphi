@@ -32,6 +32,10 @@ type
     procedure TelepenAlpha;
     [Test]
     procedure TelepenNumeric;
+    [Test]
+    procedure DXFilmEdge;
+    [Test]
+    procedure DXFilmEdgeWithFrameNumber;
   end;
 
 implementation
@@ -285,6 +289,32 @@ begin
     Assert.IsNotNull(r, ' Nil result ');
     Assert.AreEqual('01234567', r.Text);
     Assert.AreEqual(']B1', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.DXFilmEdge;
+begin
+  // product number 10, generation 3
+  var r := Scan('zxing-cpp\dxfilmedge-1\3.webp', TBarcodeFormat.DX_FILM_EDGE,
+    nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('10-3', r.Text);
+    Assert.AreEqual(']XF', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.DXFilmEdgeWithFrameNumber;
+begin
+  var r := Scan('zxing-cpp\dxfilmedge-1\2.png', TBarcodeFormat.DX_FILM_EDGE,
+    nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('80-11/23', r.Text);
   finally
     r.Free;
   end;
