@@ -126,7 +126,13 @@ type
     RM4SCC = 268435457,
 
     /// <summary>USPS Intelligent Mail Barcode (4-state).</summary>
-    IMB = 268435458
+    IMB = 268435458,
+
+    /// <summary>POSTNET (USPS, tall and short bars).</summary>
+    POSTNET = 268435459,
+
+    /// <summary>PLANET (USPS, tall and short bars).</summary>
+    PLANET = 268435460
 
     );
 

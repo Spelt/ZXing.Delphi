@@ -33,9 +33,9 @@ uses
 
 type
   /// <summary>
-  /// Reads the postal barcodes of formats (KIX, RM4SCC, IMB): rows of bars that
-  /// differ in height, horizontal or vertical, also upside down and a bit
-  /// slanted.
+  /// Reads the postal barcodes of formats (KIX, RM4SCC, IMB, POSTNET,
+  /// PLANET): rows of bars that differ in height, horizontal or vertical,
+  /// also upside down, slanted and in perspective.
   /// </summary>
   TPostalReader = class(TInterfacedObject, IReader, IMultipleReader)
   private
@@ -67,6 +67,9 @@ function DecodeKIX(const states: TArray<Byte>): string;
 /// between the start and the stop bar, the check character checked and
 /// removed; '' when they are none.</summary>
 function DecodeRM4SCC(const states: TArray<Byte>): string;
+/// <summary>POSTNET or PLANET (USPS, tall and short bars): the digits, the
+/// check digit checked and removed; '' when they are none.</summary>
+function DecodePostnet(const states: TArray<Byte>; planet: Boolean): string;
 
 implementation
 
@@ -94,7 +97,8 @@ const
 function IsPostalFormat(format: TBarcodeFormat): Boolean;
 begin
   Result := (format = TBarcodeFormat.KIX) or (format = TBarcodeFormat.RM4SCC)
-    or (format = TBarcodeFormat.IMB);
+    or (format = TBarcodeFormat.IMB) or (format = TBarcodeFormat.POSTNET) or
+    (format = TBarcodeFormat.PLANET);
 end;
 
 /// <summary>The index of the RM4SCC/KIX character of the 4 bars from
@@ -169,6 +173,54 @@ begin
   end;
 end;
 
+function DecodePostnet(const states: TArray<Byte>; planet: Boolean): string;
+const
+  // the tall bars of the digits (POSTNET; PLANET the other way around)
+  DIGITS: array [0 .. 9, 0 .. 4] of Byte = ((1, 1, 0, 0, 0), (0, 0, 0, 1, 1),
+    (0, 0, 1, 0, 1), (0, 0, 1, 1, 0), (0, 1, 0, 0, 1), (0, 1, 0, 1, 0),
+    (0, 1, 1, 0, 0), (1, 0, 0, 0, 1), (1, 0, 0, 1, 0), (1, 0, 1, 0, 0));
+begin
+  Result := '';
+  // only tall (ascender) and short (tracker) bars: frame bars, digits of 5
+  // bars, a check digit
+  var n := Length(states);
+  if (n < 2) or ((n - 2) mod 5 <> 0) then
+    exit;
+  for var state in states do
+    if (state <> BAR_ASCENDER) and (state <> BAR_TRACKER) then
+      exit;
+  if (states[0] <> BAR_ASCENDER) or (states[n - 1] <> BAR_ASCENDER) then
+    exit;
+  var count := (n - 2) div 5;
+  // the lengths of the standard (5, 9 or 11 digits POSTNET, 11 or 13
+  // PLANET) with the check digit
+  if planet and (count <> 12) and (count <> 14) or not planet and
+    (count <> 6) and (count <> 10) and (count <> 12) then
+    exit;
+  var sum := 0;
+  for var i := 0 to count - 1 do
+  begin
+    var digit := -1;
+    for var d := 0 to 9 do
+    begin
+      var same := true;
+      for var k := 0 to 4 do
+        if ((states[1 + 5 * i + k] = BAR_ASCENDER) <> ((DIGITS[d, k] = 1) xor
+          planet)) then
+          same := false;
+      if same then
+        digit := d;
+    end;
+    if (digit < 0) then
+      exit('');
+    Inc(sum, digit);
+    if (i < count - 1) then
+      Result := Result + Chr(Ord('0') + digit);
+  end;
+  if (sum mod 10 <> 0) then
+    Result := '';
+end;
+
 /// <summary>The image turned: rows become columns.</summary>
 function Transposed(image: TBitMatrix): TBitMatrix;
 begin
@@ -206,6 +258,16 @@ begin
   begin
     Result := DecodeRM4SCC(states);
     format := TBarcodeFormat.RM4SCC;
+  end;
+  if not strongOnly and (Result = '') and Wants(TBarcodeFormat.POSTNET) then
+  begin
+    Result := DecodePostnet(states, false);
+    format := TBarcodeFormat.POSTNET;
+  end;
+  if not strongOnly and (Result = '') and Wants(TBarcodeFormat.PLANET) then
+  begin
+    Result := DecodePostnet(states, true);
+    format := TBarcodeFormat.PLANET;
   end;
   if (Result = '') and Wants(TBarcodeFormat.IMB) then
   begin

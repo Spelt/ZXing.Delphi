@@ -204,6 +204,10 @@ begin
     format := TBarcodeFormat.RM4SCC
   else if (n = 'imb') or (n = 'uspsimail') then
     format := TBarcodeFormat.IMB
+  else if (n = 'postnet') then
+    format := TBarcodeFormat.POSTNET
+  else if (n = 'planet') then
+    format := TBarcodeFormat.PLANET
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

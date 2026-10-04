@@ -1,9 +1,9 @@
 unit PostalTest;
 
 {
-  * Tests for the postal barcodes: KIX and RM4SCC drawn (as zint), also
-  * upside down and vertical, and the Intelligent Mail Barcode images of
-  * ZXing.Net.
+  * Tests for the postal barcodes: KIX, RM4SCC, POSTNET and PLANET drawn (as
+  * zint), also upside down and vertical, and the images of ZXing.Net
+  * (Intelligent Mail Barcode, POSTNET).
 }
 
 interface
@@ -23,6 +23,12 @@ type
     procedure RM4SCC;
     [Test]
     procedure RM4SCCWrongCheckCharacter;
+    [Test]
+    procedure Postnet;
+    [Test]
+    procedure Planet;
+    [Test]
+    procedure PostnetPhoto;
     [Test]
     procedure IMbSamples;
     [Test]
@@ -94,6 +100,31 @@ begin
     Result := Result + [RM4KIX[c, 0], RM4KIX[c, 1], RM4KIX[c, 2],
       RM4KIX[c, 3], 0];
   end;
+end;
+
+/// <summary>The bars of a POSTNET or PLANET of digits (as zint): tall 1
+/// (ascender), short 3 (tracker), with the check digit (+ checkOffset).
+/// </summary>
+function PostnetBars(const digits: string; planet: Boolean;
+  checkOffset: Integer = 0): TArray<Byte>;
+const
+  TALL: array [0 .. 9, 0 .. 4] of Byte = ((1, 1, 0, 0, 0), (0, 0, 0, 1, 1),
+    (0, 0, 1, 0, 1), (0, 0, 1, 1, 0), (0, 1, 0, 0, 1), (0, 1, 0, 1, 0),
+    (0, 1, 1, 0, 0), (1, 0, 0, 0, 1), (1, 0, 0, 1, 0), (1, 0, 1, 0, 0));
+begin
+  Result := [1];
+  var sum := 0;
+  var all := digits;
+  for var c in digits do
+    Inc(sum, Ord(c) - Ord('0'));
+  all := all + Chr(Ord('0') + ((10 - sum mod 10) mod 10 + checkOffset) mod 10);
+  for var c in all do
+    for var k := 0 to 4 do
+      if ((TALL[Ord(c) - Ord('0'), k] = 1) xor planet) then
+        Result := Result + [1]
+      else
+        Result := Result + [3];
+  Result := Result + [1];
 end;
 
 /// <summary>Reads the bars drawn in an image (a bar and a space of 3 pixels,
@@ -224,6 +255,71 @@ begin
     Assert.IsNull(r, 'RM4SCC with a wrong check character');
   finally
     r.Free;
+  end;
+end;
+
+procedure TPostalTest.Postnet;
+begin
+  for var digits in ['94306', '943061234', '94306123456'] do
+    for var upsideDown in [false, true] do
+    begin
+      var r := ReadBars(PostnetBars(digits, false), TBarcodeFormat.POSTNET,
+        upsideDown, upsideDown);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + digits);
+        Assert.AreEqual(Ord(TBarcodeFormat.POSTNET), Ord(r.BarcodeFormat));
+        // without the check digit
+        Assert.AreEqual(digits, r.Text);
+      finally
+        r.Free;
+      end;
+    end;
+
+  var r := ReadBars(PostnetBars('94306', false, 1), TBarcodeFormat.POSTNET);
+  try
+    Assert.IsNull(r, 'POSTNET with a wrong check digit');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TPostalTest.Planet;
+begin
+  var r := ReadBars(PostnetBars('40123456789', true), TBarcodeFormat.PLANET);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual(Ord(TBarcodeFormat.PLANET), Ord(r.BarcodeFormat));
+    Assert.AreEqual('40123456789', r.Text);
+  finally
+    r.Free;
+  end;
+
+  // a PLANET is no POSTNET
+  r := ReadBars(PostnetBars('40123456789', true), TBarcodeFormat.POSTNET);
+  try
+    Assert.IsNull(r, 'PLANET read as POSTNET');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TPostalTest.PostnetPhoto;
+begin
+  // the POSTNET below the IMb in a photo of ZXing.Net (ZIP+4 94704-9844)
+  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
+    '\..\..\images\zxing-net\imb-1\10.jpg');
+  var scanManager := TScanManager.Create(TBarcodeFormat.POSTNET, nil);
+  try
+    var r := scanManager.Scan(bmp);
+    try
+      Assert.IsNotNull(r, ' Nil result ');
+      Assert.AreEqual('947049844', r.Text);
+    finally
+      r.Free;
+    end;
+  finally
+    scanManager.Free;
+    bmp.Free;
   end;
 end;
 
