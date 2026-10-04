@@ -16,8 +16,9 @@
 
   * Ported from zxing-cpp (MCReader.cpp, MCBitMatrixParser.cpp,
   * MCDecoder.cpp), originally by mike32767 and Manuel Kasten: MaxiCode
-  * (ISO/IEC 16023). Like zxing-cpp only symbols that fill the image
-  * ("pure", unrotated) are read: there is no detector yet.
+  * (ISO/IEC 16023). zxing-cpp only reads symbols that fill the image
+  * ("pure", unrotated); the detector for symbols anywhere in the image
+  * (rotated, skewed, in perspective) is not in zxing-cpp.
 }
 
 unit ZXing.MaxiCode.MaxiCodeReader;
@@ -37,7 +38,8 @@ uses
 
 type
   /// <summary>
-  /// Reads MaxiCode symbols that fill the image (unrotated).
+  /// Reads MaxiCode symbols: those that fill the image, and others by
+  /// their bullseye.
   /// </summary>
   TMaxiCodeReader = class(TInterfacedObject, IReader, IMultipleReader)
   public
@@ -59,9 +61,13 @@ implementation
 
 uses
   System.Math,
+  System.Types,
+  System.Generics.Defaults,
   ZXing.ResultPoint,
   ZXing.ResultMetadataType,
   ZXing.Common.ECIContent,
+  ZXing.Common.Geometry,
+  ZXing.Common.Pattern,
   ZXing.Common.ReedSolomon.GenericGF,
   ZXing.Common.ReedSolomon.ReedSolomonDecoder;
 
@@ -484,6 +490,960 @@ begin
   end;
 end;
 
+{ Detector (not in zxing-cpp): the bullseye in the center gives the position
+  and the skew of the symbol, the orientation modules around it the rotation
+  and the scale. }
+
+const
+  // the radius of the middle of the outer dark ring of the bullseye, in
+  // modules (the distance between the centers of two modules in a row); it
+  // differs a few percent between generators, the inner rings more
+  RING3_RADIUS = 4.1;
+  // the orientation modules: row, column, dark (in BITNR -2 and -1)
+  ORIENTATION: array [0 .. 17] of record Row, Col: Integer; Dark: Boolean;
+    end = ((Row: 9; Col: 10; Dark: true), (Row: 9; Col: 11; Dark: true),
+    (Row: 10; Col: 11; Dark: true), (Row: 15; Col: 7; Dark: true),
+    (Row: 16; Col: 8; Dark: true), (Row: 16; Col: 20; Dark: true),
+    (Row: 17; Col: 20; Dark: true), (Row: 22; Col: 10; Dark: true),
+    (Row: 22; Col: 17; Dark: true), (Row: 23; Col: 10; Dark: true),
+    (Row: 23; Col: 17; Dark: true), (Row: 9; Col: 17; Dark: false),
+    (Row: 10; Col: 17; Dark: false), (Row: 10; Col: 18; Dark: false),
+    (Row: 16; Col: 7; Dark: false), (Row: 16; Col: 21; Dark: false),
+    (Row: 22; Col: 11; Dark: false), (Row: 23; Col: 16; Dark: false));
+  MIN_ORIENTATION_SCORE = 17;
+  // the distance between rows relative to the distance between modules in a
+  // row: sqrt(3)/2 for a perfect hexagonal grid, a bit more in practice; 1
+  // when the bullseye is drawn as an ellipse (some generators)
+  ROW_DISTANCES: array [0 .. 1] of Double = (0.88, 1);
+  // the coarse search of the orientation: scales and angles (degrees)
+  MIN_SCALE = 0.88;
+  SCALE_STEP = 0.06;
+  SCALE_COUNT = 5;
+  ANGLE_STEP = 3;
+  // then decoding at the best orientations
+  MAX_ORIENTATIONS = 4;
+
+type
+  // a system of at most 8 linear equations: the coefficients, then the
+  // constant
+  TLinearSystem = array [0 .. 7, 0 .. 8] of Double;
+
+  TMatrix2 = record
+    A, B, C, D: Double; // (A B; C D)
+    function Apply(const p: TPointD): TPointD;
+    class operator Multiply(const m, n: TMatrix2): TMatrix2;
+  end;
+
+  TRingEdges = array [0 .. 4] of Double;
+
+  TMCGeometry = record
+    Center: TPointD;
+    // the circle of the bullseye (in modules) to its ellipse in the image,
+    // without rotation
+    Shape: TMatrix2;
+    /// <summary>The grid (in modules, from the bullseye) to the image.
+    /// </summary>
+    function Transform(angle, scale: Double): TMatrix2;
+  end;
+
+  TOrientation = record
+    Score: Integer;
+    Angle, Scale, RowDistance: Double;
+  end;
+
+  /// <summary>Perspective transform (u, v) to (x, y): x = (H0 u + H1 v + H2)
+  /// / w, y = (H3 u + H4 v + H5) / w with w = H6 u + H7 v + 1.</summary>
+  THomography = record
+    H: array [0 .. 7] of Double;
+    function Map(u, v: Double): TPointD;
+    /// <summary>Least squares fit of the points src to the points dst.
+    /// </summary>
+    class function Fit(const src, dst: TArray<TPointD>;
+      out homography: THomography): Boolean; static;
+  end;
+
+  /// <summary>The grid of the modules in the image: points in modules from
+  /// the bullseye (y in rows) to the image.</summary>
+  TMCGrid = record
+    Homography: THomography;
+    class function Create(const geometry: TMCGeometry;
+      const orientation: TOrientation): TMCGrid; static;
+    function Map(gx, gy: Double): TPointD;
+    /// <summary>The image point of the center of the module x, y, moved by
+    /// dx, dy modules.</summary>
+    function ModulePoint(x, y: Integer; dx, dy: Double): TPointD;
+    /// <summary>The color at ModulePoint; false when it is outside the
+    /// image.</summary>
+    function IsModuleDark(image: TBitMatrix; x, y: Integer; dx, dy: Double;
+      out dark: Boolean): Boolean;
+  end;
+
+function TMatrix2.Apply(const p: TPointD): TPointD;
+begin
+  Result := PointD(A * p.X + B * p.Y, C * p.X + D * p.Y);
+end;
+
+class operator TMatrix2.Multiply(const m, n: TMatrix2): TMatrix2;
+begin
+  Result.A := m.A * n.A + m.B * n.C;
+  Result.B := m.A * n.B + m.B * n.D;
+  Result.C := m.C * n.A + m.D * n.C;
+  Result.D := m.C * n.B + m.D * n.D;
+end;
+
+function TMCGeometry.Transform(angle, scale: Double): TMatrix2;
+begin
+  var rotation: TMatrix2;
+  rotation.A := scale * Cos(angle);
+  rotation.B := -scale * Sin(angle);
+  rotation.C := -rotation.B;
+  rotation.D := rotation.A;
+  Result := Shape * rotation;
+end;
+
+function IsDarkXY(image: TBitMatrix; x, y: Double; out dark: Boolean)
+  : Boolean; inline;
+begin
+  Result := (x >= 0) and (y >= 0) and (x < image.Width) and
+    (y < image.Height);
+  if Result then
+    dark := image[Trunc(x), Trunc(y)];
+end;
+
+function IsDarkAt(image: TBitMatrix; const p: TPointD;
+  out dark: Boolean): Boolean; inline;
+begin
+  Result := IsDarkXY(image, p.X, p.Y, dark);
+end;
+
+/// <summary>Runs[i .. i + 10]: the 3 dark rings and the light center of a
+/// bullseye (about 1:1:1:1:1:1-3:1:1:1:1:1); the outer ring may touch other
+/// modules.</summary>
+function IsBullseyePattern(const runs: TPatternRow; i: Integer): Boolean;
+begin
+  Result := false;
+  // the size of the rings from the inner 4 at both sides
+  var left := runs[i + 1] + runs[i + 2] + runs[i + 3] + runs[i + 4];
+  var right := runs[i + 6] + runs[i + 7] + runs[i + 8] + runs[i + 9];
+  var moduleSize := (left + right) / 8;
+  if (moduleSize < 1) then
+    exit;
+  for var k := 0 to 10 do
+    if (k <> 5) and ((runs[i + k] < 0.3 * moduleSize) or (runs[i + k] > 2 *
+      moduleSize) and (k <> 0) and (k <> 10)) then
+      exit;
+  // left and right about the same
+  if (Abs(left - right) > 0.3 * Max(left, right)) then
+    exit;
+  // the center wider than the light rings (not stripes), with a pixel
+  // margin for small symbols
+  var center := runs[i + 5];
+  var light := (runs[i + 1] + runs[i + 3] + runs[i + 7] + runs[i + 9]) / 4;
+  Result := (center + 1 >= 1.2 * light) and (center <= 5 * moduleSize);
+end;
+
+/// <summary>From the light center of a bullseye in the direction dir: the
+/// distances of the first 5 edges of the 3 dark rings, in steps of step
+/// pixels; false when there are not 5 edges before maxDistance.</summary>
+function RingEdges(image: TBitMatrix; const center, dir: TPointD;
+  maxDistance, step: Double; out edges: TRingEdges): Boolean;
+begin
+  Result := false;
+  // no ring or gap is longer than about a third of the bullseye
+  var maxRun := 0.45 * maxDistance;
+  var dark := false;
+  var count := 0;
+  var t := 0.0;
+  var last := 0.0;
+  while (count < Length(edges)) do
+  begin
+    t := t + step;
+    if (t > maxDistance) or (t - last > maxRun) then
+      exit;
+    var d: Boolean;
+    if not IsDarkXY(image, center.X + t * dir.X, center.Y + t * dir.Y, d) then
+      exit;
+    if (d <> dark) then
+    begin
+      last := t - step / 2;
+      edges[count] := last;
+      Inc(count);
+      dark := d;
+    end;
+  end;
+  Result := true;
+end;
+
+/// <summary>The radii of the middles of the outer 2 dark rings; the outer
+/// one from its inside edge (its outside often touches other modules);
+/// false when they are not at about the expected ratio.</summary>
+function RingMiddles(const edges: TRingEdges; out r2, r3: Double): Boolean;
+begin
+  var r1 := (edges[0] + edges[1]) / 2;
+  r2 := (edges[2] + edges[3]) / 2;
+  r3 := edges[4] + (edges[3] - edges[2]) / 2;
+  Result := (r1 > 0) and (r2 > 1.2 * r1) and (r3 > 1.25 * r2) and
+    (r3 < 1.9 * r2);
+end;
+
+/// <summary>The center of the bullseye along a line through p in the
+/// direction dir, and its radius (about the outside of the outer ring).
+/// </summary>
+function CenterOnLine(image: TBitMatrix; const p, dir: TPointD;
+  maxDistance: Double; out center: TPointD; out radius: Double): Boolean;
+var
+  e1, e2: TRingEdges;
+begin
+  var a2, a3, b2, b3: Double;
+  Result := RingEdges(image, p, dir, maxDistance, 1, e1) and
+    RingEdges(image, p, -dir, maxDistance, 1, e2) and RingMiddles(e1, a2, a3) and
+    RingMiddles(e2, b2, b3);
+  if not Result then
+    exit;
+  // the middles of the rings must be about symmetric
+  var r3 := (a3 + b3) / 2;
+  radius := r3 * 1.1;
+  Result := Abs(a3 - b3) < 0.3 * r3;
+  center := p + ((a2 - b2 + a3 - b3) / 4) * dir;
+end;
+
+/// <summary>Adds the equation v . x = value, as least squares, to the normal
+/// equations of n unknowns.</summary>
+procedure AddEquation(var system: TLinearSystem; n: Integer;
+  const v: array of Double; value: Double);
+begin
+  for var i := 0 to n - 1 do
+  begin
+    for var j := 0 to n - 1 do
+      system[i, j] := system[i, j] + v[i] * v[j];
+    system[i, n] := system[i, n] + v[i] * value;
+  end;
+end;
+
+/// <summary>Solves the n equations (Gauss-Jordan with partial pivoting);
+/// false when they have no unique solution.</summary>
+function SolveLinear(var system: TLinearSystem; n: Integer;
+  out x: array of Double): Boolean;
+begin
+  Result := false;
+  for var col := 0 to n - 1 do
+  begin
+    var pivot := col;
+    for var r := col + 1 to n - 1 do
+      if (Abs(system[r, col]) > Abs(system[pivot, col])) then
+        pivot := r;
+    if (Abs(system[pivot, col]) < 1E-12) then
+      exit;
+    if (pivot <> col) then
+      for var k := 0 to n do
+      begin
+        var t := system[col, k];
+        system[col, k] := system[pivot, k];
+        system[pivot, k] := t;
+      end;
+    for var r := 0 to n - 1 do
+      if (r <> col) then
+      begin
+        var f := system[r, col] / system[col, col];
+        for var k := col to n do
+          system[r, k] := system[r, k] - f * system[col, k];
+      end;
+  end;
+  for var i := 0 to n - 1 do
+    x[i] := system[i, n] / system[i, i];
+  Result := true;
+end;
+
+/// <summary>Least squares fit of the ellipse a x^2 + b xy + c y^2 + d x + e y
+/// = 1 through points relative to origin: its center and the matrix M with
+/// (p - center)' M (p - center) = 1.</summary>
+function FitEllipse(const points: TArray<TPointD>; const origin: TPointD;
+  out center: TPointD; out m: TMatrix2): Boolean;
+var
+  system: TLinearSystem;
+  x: array [0 .. 4] of Double;
+begin
+  Result := false;
+  if (Length(points) < 8) then
+    exit;
+  FillChar(system, SizeOf(system), 0);
+  for var p in points do
+  begin
+    var q := p - origin;
+    AddEquation(system, 5, [q.X * q.X, q.X * q.Y, q.Y * q.Y, q.X, q.Y], 1);
+  end;
+  if not SolveLinear(system, 5, x) then
+    exit;
+  var a := x[0];
+  var b := x[1];
+  var c := x[2];
+  var d := x[3];
+  var e := x[4];
+  var det := 4 * a * c - b * b;
+  if (det <= 0) then
+    exit;
+  var x0 := (b * e - 2 * c * d) / det;
+  var y0 := (b * d - 2 * a * e) / det;
+  var k := 1 - (a * x0 * x0 + b * x0 * y0 + c * y0 * y0 + d * x0 + e * y0);
+  if (k <= 0) then
+    exit;
+  center := origin + PointD(x0, y0);
+  m.A := a / k;
+  m.B := b / (2 * k);
+  m.C := m.B;
+  m.D := c / k;
+  Result := m.A > 0;
+end;
+
+/// <summary>FitEllipse, then again without the points that are off by more
+/// than a few percent (rays through a gap between the pixels of a ring).
+/// </summary>
+function FitEllipseRobust(const points: TArray<TPointD>;
+  const origin: TPointD; out center: TPointD; out m: TMatrix2): Boolean;
+const
+  MAX_DEVIATION = 0.08;
+begin
+  Result := FitEllipse(points, origin, center, m);
+  if not Result then
+    exit;
+  var good: TArray<TPointD> := [];
+  for var p in points do
+  begin
+    var q := p - center;
+    var d := Sqrt(Abs(Dot(q, m.Apply(q))));
+    if (Abs(d - 1) <= MAX_DEVIATION) then
+      good := good + [p];
+  end;
+  if (Length(good) < Length(points)) and (2 * Length(good) >= Length(points))
+  then
+    Result := FitEllipse(good, origin, center, m);
+end;
+
+/// <summary>The ellipse through the middles of the outer 2 rings of the
+/// bullseye around center (of about radius pixels), along rays in steps of
+/// step pixels: its center, its matrix and the ratio of the rings.</summary>
+function FitRings(image: TBitMatrix; const center: TPointD;
+  radius: Double; rays: Integer; step: Double; out fitted: TPointD;
+  out m: TMatrix2; out ratio: Double): Boolean;
+var
+  edges: TRingEdges;
+  dirs: TArray<TPointD>;
+  radii2, radii3, ratios: TArray<Double>;
+begin
+  Result := false;
+  SetLength(dirs, rays);
+  SetLength(radii2, rays);
+  SetLength(radii3, rays);
+  SetLength(ratios, rays);
+  var count := 0;
+  for var i := 0 to rays - 1 do
+  begin
+    var dir := PointD(Cos(2 * Pi * i / rays), Sin(2 * Pi * i / rays));
+    if RingEdges(image, center, dir, 2 * radius, step, edges) and
+      RingMiddles(edges, radii2[count], radii3[count]) then
+    begin
+      dirs[count] := dir;
+      ratios[count] := radii3[count] / radii2[count];
+      Inc(count);
+    end;
+  end;
+  // at least half of the rays
+  if (count < rays div 2) then
+    exit;
+  // the middle ring scaled to the outer one with the median ratio
+  TArray.Sort<Double>(ratios, TComparer<Double>.Default, 0, count);
+  ratio := ratios[count div 2];
+  var points: TArray<TPointD>;
+  SetLength(points, 2 * count);
+  for var i := 0 to count - 1 do
+  begin
+    points[2 * i] := center + radii3[i] * dirs[i];
+    points[2 * i + 1] := center + (ratio * radii2[i]) * dirs[i];
+  end;
+  Result := FitEllipseRobust(points, center, fitted, m) and
+    (PointDistance(fitted, center) <= radius / 2);
+end;
+
+/// <summary>The circle of the bullseye in modules to the ellipse m in the
+/// image.</summary>
+function EllipseShape(const m: TMatrix2; out shape: TMatrix2): Boolean;
+begin
+  // M = S' S with S = sqrt(M) maps the ellipse to the unit circle, so the
+  // circle of radius RING3_RADIUS to the image is (RING3_RADIUS * S)^-1
+  var det := m.A * m.D - m.B * m.C;
+  var s := Sqrt(det);
+  var t := Sqrt(m.A + m.D + 2 * s);
+  var sq: TMatrix2;
+  sq.A := (m.A + s) / t;
+  sq.B := m.B / t;
+  sq.C := m.C / t;
+  sq.D := (m.D + s) / t;
+  var sqDet := (sq.A * sq.D - sq.B * sq.C) * RING3_RADIUS;
+  Result := sqDet > 0;
+  if not Result then
+    exit;
+  shape.A := sq.D / sqDet;
+  shape.B := -sq.B / sqDet;
+  shape.C := -sq.C / sqDet;
+  shape.D := sq.A / sqDet;
+end;
+
+/// <summary>Whether the rings of the bullseye and the gaps between them are
+/// where expected (ratio: of the outer 2 rings) at at least minFit of the
+/// points.</summary>
+function RingsFit(image: TBitMatrix; const geometry: TMCGeometry;
+  ratio: Double; rays: Integer; minFit: Double): Boolean;
+begin
+  var r2 := RING3_RADIUS / ratio;
+  var circles: TArray<Double> := [RING3_RADIUS, r2,
+    (RING3_RADIUS + r2) / 2, r2 - (RING3_RADIUS - r2) / 2];
+  var same := 0;
+  for var i := 0 to rays - 1 do
+  begin
+    var dir := PointD(Cos(2 * Pi * i / rays), Sin(2 * Pi * i / rays));
+    for var k := 0 to 3 do
+    begin
+      var dark: Boolean;
+      if IsDarkAt(image, geometry.Center + geometry.Shape.Apply(circles[k] *
+        dir), dark) and (dark = (k < 2)) then
+        Inc(same);
+    end;
+  end;
+  Result := same >= minFit * 4 * rays;
+end;
+
+/// <summary>The geometry of the bullseye around center (of about radius
+/// pixels): the ellipse through the middles of its outer rings.</summary>
+function FitBullseye(image: TBitMatrix; center: TPointD; radius: Double;
+  out geometry: TMCGeometry): Boolean;
+const
+  // first a quick check, then more precise
+  QUICK_RAYS = 16;
+  RAYS = 36;
+  MAX_PASSES = 4;
+begin
+  Result := false;
+  var m: TMatrix2;
+  var ratio: Double;
+  if not FitRings(image, center, radius, QUICK_RAYS, 0.5, geometry.Center, m,
+    ratio) or not EllipseShape(m, geometry.Shape) or
+    not RingsFit(image, geometry, ratio, QUICK_RAYS, 0.7) then
+    exit;
+
+  // again from the fitted center until that stays about the same
+  center := geometry.Center;
+  for var pass := 1 to MAX_PASSES do
+  begin
+    var fitted: TPointD;
+    if not FitRings(image, center, radius, RAYS, 0.5, fitted, m, ratio) then
+      exit;
+    var moved := PointDistance(fitted, center);
+    center := fitted;
+    if (moved < 0.5) then
+      break;
+  end;
+  geometry.Center := center;
+  Result := EllipseShape(m, geometry.Shape) and RingsFit(image, geometry,
+    ratio, RAYS, 0.8);
+end;
+
+/// <summary>How many orientation modules are as expected.</summary>
+function OrientationScore(image: TBitMatrix; const geometry: TMCGeometry;
+  const transform: TMatrix2; rowDistance: Double): Integer;
+begin
+  Result := 0;
+  for var o in ORIENTATION do
+  begin
+    // as geometry.Point, faster
+    var gx := o.Col + 0.5 * (o.Row and 1) - 14;
+    var gy := (o.Row - 16) * rowDistance;
+    var dark: Boolean;
+    if IsDarkXY(image, geometry.Center.X + transform.A * gx + transform.B *
+      gy, geometry.Center.Y + transform.C * gx + transform.D * gy, dark) and
+      (dark = o.Dark) then
+      Inc(Result);
+  end;
+end;
+
+{ THomography }
+
+function THomography.Map(u, v: Double): TPointD;
+begin
+  var w := H[6] * u + H[7] * v + 1;
+  Result := PointD((H[0] * u + H[1] * v + H[2]) / w,
+    (H[3] * u + H[4] * v + H[5]) / w);
+end;
+
+class function THomography.Fit(const src, dst: TArray<TPointD>;
+  out homography: THomography): Boolean;
+var
+  system: TLinearSystem;
+  x: array [0 .. 7] of Double;
+begin
+  Result := false;
+  if (Length(src) < 8) then
+    exit;
+  // dst relative to its mean and scaled, for precision
+  var mean := PointD(0, 0);
+  for var p in dst do
+    mean := mean + p;
+  mean := mean / Length(dst);
+  var scale := 0.0;
+  for var p in dst do
+    scale := scale + PointDistance(p, mean);
+  scale := scale / Length(dst);
+  if (scale <= 0) then
+    exit;
+  FillChar(system, SizeOf(system), 0);
+  for var i := 0 to High(src) do
+  begin
+    var u := src[i].X;
+    var v := src[i].Y;
+    var d := (dst[i] - mean) / scale;
+    AddEquation(system, 8, [u, v, 1, 0, 0, 0, -u * d.X, -v * d.X], d.X);
+    AddEquation(system, 8, [0, 0, 0, u, v, 1, -u * d.Y, -v * d.Y], d.Y);
+  end;
+  if not SolveLinear(system, 8, x) then
+    exit;
+  // back to the image: x = scale * x' + mean.X
+  homography.H[0] := scale * x[0] + mean.X * x[6];
+  homography.H[1] := scale * x[1] + mean.X * x[7];
+  homography.H[2] := scale * x[2] + mean.X;
+  homography.H[3] := scale * x[3] + mean.Y * x[6];
+  homography.H[4] := scale * x[4] + mean.Y * x[7];
+  homography.H[5] := scale * x[5] + mean.Y;
+  homography.H[6] := x[6];
+  homography.H[7] := x[7];
+  Result := true;
+end;
+
+{ TMCGrid }
+
+class function TMCGrid.Create(const geometry: TMCGeometry;
+  const orientation: TOrientation): TMCGrid;
+begin
+  var transform := geometry.Transform(orientation.Angle * Pi / 180,
+    orientation.Scale);
+  var rowDistance := orientation.RowDistance;
+  Result.Homography.H[0] := transform.A;
+  Result.Homography.H[1] := transform.B * rowDistance;
+  Result.Homography.H[2] := geometry.Center.X;
+  Result.Homography.H[3] := transform.C;
+  Result.Homography.H[4] := transform.D * rowDistance;
+  Result.Homography.H[5] := geometry.Center.Y;
+  Result.Homography.H[6] := 0;
+  Result.Homography.H[7] := 0;
+end;
+
+function TMCGrid.Map(gx, gy: Double): TPointD;
+begin
+  Result := Homography.Map(gx, gy);
+end;
+
+function TMCGrid.ModulePoint(x, y: Integer; dx, dy: Double): TPointD;
+begin
+  // the bullseye is at module 14 of row 16, odd rows half a module to the
+  // right
+  Result := Map(x + 0.5 * (y and 1) - 14 + dx, y - 16 + dy);
+end;
+
+function TMCGrid.IsModuleDark(image: TBitMatrix; x, y: Integer; dx, dy: Double;
+  out dark: Boolean): Boolean;
+begin
+  // as ModulePoint, faster
+  var u := x + 0.5 * (y and 1) - 14 + dx;
+  var v := y - 16 + dy;
+  var w := Homography.H[6] * u + Homography.H[7] * v + 1;
+  Result := IsDarkXY(image, (Homography.H[0] * u + Homography.H[1] * v +
+    Homography.H[2]) / w, (Homography.H[3] * u + Homography.H[4] * v +
+    Homography.H[5]) / w, dark);
+end;
+
+/// <summary>The modules of the symbol; nil when a module is outside the
+/// image.</summary>
+function SampleSymbol(image: TBitMatrix; const grid: TMCGrid): TBitMatrix;
+begin
+  Result := TBitMatrix.Create(MATRIX_WIDTH, MATRIX_HEIGHT);
+  for var y := 0 to MATRIX_HEIGHT - 1 do
+    for var x := 0 to MATRIX_WIDTH - 1 do
+    begin
+      var dark: Boolean;
+      if not grid.IsModuleDark(image, x, y, 0, 0, dark) then
+      begin
+        FreeAndNil(Result);
+        exit;
+      end;
+      if dark then
+        Result[x, y] := true;
+    end;
+end;
+
+/// <summary>Whether the module x, y is a module (not in the bullseye) up to
+/// radius modules from the bullseye.</summary>
+function IsModuleInRadius(x, y: Integer; radius: Double): Boolean;
+begin
+  Result := (x >= 0) and (x < MATRIX_WIDTH) and (y >= 0) and
+    (y < MATRIX_HEIGHT) and (BITNR[y, x] <> -3) and
+    (Sqr(x + 0.5 * (y and 1) - 14) + Sqr((y - 16) * 0.87) <= Sqr(radius));
+end;
+
+/// <summary>How well the grid fits the modules up to radius modules from the
+/// bullseye: the part of the points around their centers with the color of
+/// the center (about 0.5 at random, 1 when perfect).</summary>
+function GridFit(image: TBitMatrix; const grid: TMCGrid;
+  radius: Double): Double;
+const
+  SHIFT = 0.3;
+  OFFSETS: array [0 .. 3, 0 .. 1] of Double = ((-SHIFT, 0), (SHIFT, 0),
+    (0, -SHIFT), (0, SHIFT));
+begin
+  var same := 0;
+  var count := 0;
+  for var y := 0 to MATRIX_HEIGHT - 1 do
+    for var x := 0 to MATRIX_WIDTH - 1 do
+    begin
+      if not IsModuleInRadius(x, y, radius) then
+        continue;
+      var dark, d: Boolean;
+      if not grid.IsModuleDark(image, x, y, 0, 0, dark) then
+        continue;
+      for var k := 0 to 3 do
+      begin
+        Inc(count);
+        if grid.IsModuleDark(image, x, y, OFFSETS[k, 0], OFFSETS[k, 1], d)
+          and (d = dark) then
+          Inc(same);
+      end;
+    end;
+  Result := 0;
+  if (count > 0) then
+    Result := same / count;
+end;
+
+/// <summary>Where the grid point between the neighboring modules a and b
+/// should be: on the edge between them when they differ in color, measured
+/// along the line through their centers (the other direction as it is);
+/// false when there is no single edge.</summary>
+function EdgeBetween(image: TBitMatrix; const grid: TMCGrid;
+  xa, ya, xb, yb: Integer; out gridPoint, imagePoint: TPointD): Boolean;
+begin
+  Result := false;
+  var pa := grid.ModulePoint(xa, ya, 0, 0);
+  var pb := grid.ModulePoint(xb, yb, 0, 0);
+  var darkA, darkB: Boolean;
+  if not IsDarkAt(image, pa, darkA) or not IsDarkAt(image, pb, darkB) or
+    (darkA = darkB) then
+    exit;
+  var distance := PointDistance(pa, pb);
+  if (distance < 2) then
+    exit;
+  // in steps of about a pixel
+  var steps := Max(4, Ceil(distance));
+  var dx := (pb.X - pa.X) / steps;
+  var dy := (pb.Y - pa.Y) / steps;
+  var edge := -1.0;
+  var dark := darkA;
+  for var k := 1 to steps - 1 do
+  begin
+    var d: Boolean;
+    IsDarkXY(image, pa.X + k * dx, pa.Y + k * dy, d);
+    if (d <> dark) then
+    begin
+      // only one edge
+      if (edge >= 0) then
+        exit;
+      edge := (k - 0.5) / steps;
+      dark := d;
+    end;
+  end;
+  if (edge < 0.2) or (edge > 0.8) then
+    exit;
+  gridPoint := PointD((xa + 0.5 * (ya and 1) + xb + 0.5 * (yb and 1)) / 2 -
+    14, (ya + yb) / 2 - 16);
+  var middle := grid.Map(gridPoint.X, gridPoint.Y);
+  var direction := (pb - pa) / distance;
+  imagePoint := middle + Dot(pa + edge * (pb - pa) - middle, direction) *
+    direction;
+  Result := true;
+end;
+
+/// <summary>Fits the grid to the edges between the modules (perspective),
+/// first near the bullseye, then further out.</summary>
+procedure RefineGrid(image: TBitMatrix; var grid: TMCGrid);
+const
+  RADII: array [0 .. 9] of Double = (7, 8, 9, 11, 13, 15, 18, 22, 30, 30);
+  MIN_EDGES = 20;
+var
+  src, dst: TArray<TPointD>;
+begin
+  // at most 3 edges per module
+  SetLength(src, 3 * MATRIX_WIDTH * MATRIX_HEIGHT);
+  SetLength(dst, Length(src));
+  for var radius in RADII do
+  begin
+    var count := 0;
+    for var y := 0 to MATRIX_HEIGHT - 1 do
+      for var x := 0 to MATRIX_WIDTH - 1 do
+      begin
+        if not IsModuleInRadius(x, y, radius) then
+          continue;
+        // the neighbors to the right and in the next row
+        var next := x - 1 + (y and 1);
+        for var k := 0 to 2 do
+        begin
+          var nx := next + k - 1;
+          var ny := y + 1;
+          if (k = 0) then
+          begin
+            nx := x + 1;
+            ny := y;
+          end;
+          if IsModuleInRadius(nx, ny, radius) and EdgeBetween(image, grid, x,
+            y, nx, ny, src[count], dst[count]) then
+            Inc(count);
+        end;
+      end;
+    var fitted: THomography;
+    if (count < MIN_EDGES) or not THomography.Fit(Copy(src, 0, count),
+      Copy(dst, 0, count), fitted) then
+      exit;
+    grid.Homography := fitted;
+  end;
+end;
+
+/// <summary>Whether p (of radius) is near one of the centers: closer than
+/// factor times the smaller radius.</summary>
+function IsNear(const centers: TArray<TPointD>; const radii: TArray<Double>;
+  const p: TPointD; radius, factor: Double): Boolean;
+begin
+  for var k := 0 to High(centers) do
+    if (PointDistance(centers[k], p) < factor * Min(radii[k], radius)) then
+      exit(true);
+  Result := false;
+end;
+
+/// <summary>The bullseye around p (found in a row, of about size pixels,
+/// the light center centerRun pixels wide): vertical, then horizontal again
+/// through the center, and the diagonals.</summary>
+function CheckBullseye(image: TBitMatrix; const p: TPointD;
+  size, centerRun: Integer; out center: TPointD; out radius: Double): Boolean;
+begin
+  Result := false;
+  // first quick: the light center about as high as wide (the bullseye can
+  // be an ellipse)
+  var x := Trunc(p.X);
+  var y := Trunc(p.Y);
+  var maxHeight := 4 * centerRun + 2;
+  var top := y;
+  while (top > 0) and (y - top < maxHeight) and not image[x, top - 1] do
+    Dec(top);
+  var bottom := y;
+  while (bottom < image.Height - 1) and (bottom - top < maxHeight) and
+    not image[x, bottom + 1] do
+    Inc(bottom);
+  var height := bottom - top + 1;
+  if (height > maxHeight) or (4 * height < centerRun) then
+    exit;
+
+  var c, c2: TPointD;
+  var r1, r2, r3, r4: Double;
+  Result := CenterOnLine(image, p, PointD(0, 1), size, c, r1) and
+    CenterOnLine(image, c, PointD(1, 0), size, center, r2) and
+    CenterOnLine(image, center, PointD(Sqrt(0.5), Sqrt(0.5)), size, c2, r3)
+    and CenterOnLine(image, center, PointD(Sqrt(0.5), -Sqrt(0.5)), size, c2,
+    r4) and (MaxValue([r1, r2, r3, r4]) < 3 * MinValue([r1, r2, r3, r4]));
+  radius := MaxValue([r1, r2, r3, r4]);
+end;
+
+/// <summary>The centers and radii of bullseyes in the image.</summary>
+procedure FindBullseyes(image: TBitMatrix; rowStep: Integer;
+  var centers: TArray<TPointD>; var radii: TArray<Double>);
+var
+  runs: TPatternRow;
+begin
+  var y := rowStep div 2;
+  while (y < image.Height) do
+  begin
+    GetPatternRow(image, y, runs);
+    // the outer ring at a dark run: odd index
+    var i := 1;
+    var x := runs[0];
+    while (i + 10 < Length(runs)) do
+    begin
+      if IsBullseyePattern(runs, i) then
+      begin
+        var p := PointD(x + runs[i] + runs[i + 1] + runs[i + 2] + runs[i + 3]
+          + runs[i + 4] + runs[i + 5] / 2, y + 0.5);
+        var size := 0;
+        for var k := 0 to 10 do
+          Inc(size, runs[i + k]);
+        // (not again for one found in a row before)
+        var center: TPointD;
+        var radius: Double;
+        if not IsNear(centers, radii, p, size / 2, 0.5) and
+          CheckBullseye(image, p, size, runs[i + 5], center, radius) and
+          not IsNear(centers, radii, center, radius, 0.3) then
+        begin
+          centers := centers + [center];
+          radii := radii + [radius];
+        end;
+      end;
+      Inc(x, runs[i] + runs[i + 1]);
+      Inc(i, 2);
+    end;
+    Inc(y, rowStep);
+  end;
+end;
+
+/// <summary>Decodes the symbol on the grid; nil when that fails.</summary>
+function DecodeGrid(image: TBitMatrix; const grid: TMCGrid;
+  out position: TArray<IResultPoint>): TDecoderResult;
+begin
+  Result := nil;
+  var bits := SampleSymbol(image, grid);
+  if (bits = nil) then
+    exit;
+  try
+    var error: string;
+    Result := DecodeMaxiCode(bits, error);
+  finally
+    bits.Free;
+  end;
+  if (Result = nil) then
+    exit;
+  // the corners of the symbol; the bullseye is half a module left of the
+  // middle
+  var w := MATRIX_WIDTH / 2;
+  var h := MATRIX_HEIGHT / 2;
+  position := [];
+  for var corner in [PointD(0.5 - w, -h), PointD(0.5 + w, -h),
+    PointD(0.5 + w, h), PointD(0.5 - w, h)] do
+  begin
+    var p := grid.Map(corner.X, corner.Y);
+    position := position + [TResultPointHelpers.CreateResultPoint(p.X, p.Y)];
+  end;
+end;
+
+/// <summary>How well the grid at the orientation fits the modules near the
+/// bullseye.</summary>
+function FitNearBullseye(image: TBitMatrix; const geometry: TMCGeometry;
+  const orientation: TOrientation): Double;
+const
+  RADIUS = 9;
+begin
+  Result := GridFit(image, TMCGrid.Create(geometry, orientation), RADIUS);
+end;
+
+/// <summary>Decodes the symbol at about the orientation, if needed with a
+/// grid fitted to the modules; nil when that fails.</summary>
+function DecodeAtOrientation(image: TBitMatrix; const geometry: TMCGeometry;
+  const orientation: TOrientation;
+  out position: TArray<IResultPoint>): TDecoderResult;
+const
+  // the fine search of the orientation near the bullseye
+  FINE_ANGLE_STEP = 0.5;
+  FINE_SCALE_STEP = 0.01;
+  FINE_ROW_DISTANCE_STEP = 0.02;
+  // the fit near the bullseye of a symbol (about 0.5 at random)
+  MIN_FINE_FIT = 0.85;
+begin
+  Result := nil;
+  // the best fit near the bullseye: the angle, the scale, the distance of
+  // the rows and the angle again
+  var best := orientation;
+  var bestFit := FitNearBullseye(image, geometry, best);
+  for var parameter := 0 to 3 do
+  begin
+    var base := best;
+    for var i := -4 to 4 do
+    begin
+      var o := base;
+      case parameter of
+        0, 3:
+          o.Angle := base.Angle + i * FINE_ANGLE_STEP;
+        1:
+          o.Scale := base.Scale + i * FINE_SCALE_STEP;
+        2:
+          o.RowDistance := base.RowDistance + i * FINE_ROW_DISTANCE_STEP;
+      end;
+      var fit := FitNearBullseye(image, geometry, o);
+      if (fit > bestFit) then
+      begin
+        best := o;
+        bestFit := fit;
+      end;
+    end;
+  end;
+  if (bestFit < MIN_FINE_FIT) then
+    exit;
+
+  var grid := TMCGrid.Create(geometry, best);
+  Result := DecodeGrid(image, grid, position);
+  if (Result = nil) then
+  begin
+    RefineGrid(image, grid);
+    Result := DecodeGrid(image, grid, position);
+  end;
+end;
+
+/// <summary>Decodes the symbol around the bullseye; nil when that fails.
+/// </summary>
+function DecodeAtBullseye(image: TBitMatrix; const center: TPointD;
+  radius: Double; out position: TArray<IResultPoint>): TDecoderResult;
+begin
+  Result := nil;
+  var geometry: TMCGeometry;
+  if not FitBullseye(image, center, radius, geometry) then
+    exit;
+
+  // the orientations (rotation, scale) with the best scores of the
+  // orientation modules
+  var found: TArray<TOrientation> := [];
+  for var rowDistance in ROW_DISTANCES do
+    for var s := 0 to SCALE_COUNT - 1 do
+    begin
+      var a := 0;
+      while (a < 360) do
+      begin
+        var o: TOrientation;
+        o.Angle := a;
+        o.Scale := MIN_SCALE + s * SCALE_STEP;
+        o.RowDistance := rowDistance;
+        o.Score := OrientationScore(image, geometry,
+          geometry.Transform(o.Angle * Pi / 180, o.Scale), rowDistance);
+        if (o.Score >= MIN_ORIENTATION_SCORE) then
+          found := found + [o];
+        Inc(a, ANGLE_STEP);
+      end;
+    end;
+
+  // the best first, not close to one tried before
+  var tried: TArray<TOrientation> := [];
+  while (Length(tried) < MAX_ORIENTATIONS) do
+  begin
+    var best := -1;
+    for var i := 0 to High(found) do
+      if (best < 0) or (found[i].Score > found[best].Score) then
+        best := i;
+    if (best < 0) then
+      exit;
+    var o := found[best];
+    Delete(found, best, 1);
+    var close := false;
+    for var t in tried do
+      if (t.RowDistance = o.RowDistance) and
+        (Abs(t.Scale - o.Scale) <= SCALE_STEP + 0.001) and
+        (Abs(180 - Abs(Abs(t.Angle - o.Angle) - 180)) <= ANGLE_STEP) then
+        close := true;
+    if close then
+      continue;
+    tried := tried + [o];
+    Result := DecodeAtOrientation(image, geometry, o, position);
+    if (Result <> nil) then
+      exit;
+  end;
+end;
+
 { TMaxiCodeReader }
 
 function TMaxiCodeReader.decode(const image: TBinaryBitmap): TReadResult;
@@ -507,6 +1467,28 @@ begin
   end;
 end;
 
+/// <summary>Adds the result of decoded at position, unless it is already
+/// there.</summary>
+procedure AddResult(decoded: TDecoderResult;
+  const position: TArray<IResultPoint>; results: TList<TReadResult>);
+begin
+  var r := TReadResult.Create(decoded.Text, decoded.RawBytes, position,
+    TBarcodeFormat.MAXICODE);
+  r.Position := Copy(position);
+  r.SymbologyIdentifier := decoded.SymbologyIdentifier;
+  r.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
+    TResultMetaData.CreateStringMetadata(decoded.ECLevel));
+  if decoded.StructuredAppend or (decoded.StructuredAppendSequenceNumber
+    >= 0) then
+    r.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
+      TResultMetaData.CreateIntegerMetadata
+      (decoded.StructuredAppendSequenceNumber));
+  if ContainsResult(results, r) then
+    r.Free
+  else
+    results.Add(r);
+end;
+
 procedure TMaxiCodeReader.decodeMultiple(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>; results: TList<TReadResult>;
   maxCount: Integer);
@@ -514,44 +1496,63 @@ begin
   if (image = nil) or (image.BlackMatrix = nil) or
     ResultsFull(results, maxCount) then
     exit;
+  var matrix := image.BlackMatrix;
+
+  // first as a symbol that fills the image
+  // (no checksum errors are returned: there is no check that this is a
+  // MaxiCode at all)
+  var error: string;
+  var decoded: TDecoderResult := nil;
   var left, top, width, height: Integer;
-  var bits := ExtractPureBits(image.BlackMatrix, left, top, width, height);
-  if (bits = nil) then
-    exit;
-  try
-    // (no checksum errors are returned: without a detector there is no
-    // check that this is a MaxiCode at all)
-    var error: string;
-    var decoded := DecodeMaxiCode(bits, error);
-    if (decoded = nil) then
-      exit;
+  var bits := ExtractPureBits(matrix, left, top, width, height);
+  if (bits <> nil) then
     try
-      var position: TArray<IResultPoint> :=
-        [TResultPointHelpers.CreateResultPoint(left, top),
+      decoded := DecodeMaxiCode(bits, error);
+    finally
+      bits.Free;
+    end;
+  if (decoded <> nil) then
+  begin
+    try
+      AddResult(decoded, [TResultPointHelpers.CreateResultPoint(left, top),
         TResultPointHelpers.CreateResultPoint(left + width - 1, top),
         TResultPointHelpers.CreateResultPoint(left + width - 1,
         top + height - 1), TResultPointHelpers.CreateResultPoint(left,
-        top + height - 1)];
-      var r := TReadResult.Create(decoded.Text, decoded.RawBytes, position,
-        TBarcodeFormat.MAXICODE);
-      r.Position := Copy(position);
-      r.SymbologyIdentifier := decoded.SymbologyIdentifier;
-      r.putMetadata(TResultMetadataType.ERROR_CORRECTION_LEVEL,
-        TResultMetaData.CreateStringMetadata(decoded.ECLevel));
-      if decoded.StructuredAppend or (decoded.StructuredAppendSequenceNumber
-        >= 0) then
-        r.putMetadata(TResultMetadataType.STRUCTURED_APPEND_SEQUENCE,
-          TResultMetaData.CreateIntegerMetadata
-          (decoded.StructuredAppendSequenceNumber));
-      if ContainsResult(results, r) then
-        r.Free
-      else
-        results.Add(r);
+        top + height - 1)], results);
     finally
       decoded.Free;
     end;
-  finally
-    bits.Free;
+    exit;
+  end;
+  if (hints <> nil) and hints.ContainsKey(TDecodeHintType.PURE_BARCODE) then
+    exit;
+
+  // then at the bullseyes in the image
+  var rowStep := 3;
+  if (hints <> nil) and hints.ContainsKey(TDecodeHintType.TRY_HARDER) then
+    rowStep := 2;
+  var centers: TArray<TPointD> := [];
+  var radii: TArray<Double> := [];
+  FindBullseyes(matrix, rowStep, centers, radii);
+  // (not again inside a symbol found: the bullseye is about a quarter of it)
+  var symbols: TArray<TPointD> := [];
+  var symbolRadii: TArray<Double> := [];
+  for var i := 0 to High(centers) do
+  begin
+    if ResultsFull(results, maxCount) then
+      exit;
+    if IsNear(symbols, symbolRadii, centers[i], 4 * radii[i], 1) then
+      continue;
+    var position: TArray<IResultPoint>;
+    decoded := DecodeAtBullseye(matrix, centers[i], radii[i], position);
+    if (decoded <> nil) then
+      try
+        AddResult(decoded, position, results);
+        symbols := symbols + [centers[i]];
+        symbolRadii := symbolRadii + [4 * radii[i]];
+      finally
+        decoded.Free;
+      end;
   end;
 end;
 

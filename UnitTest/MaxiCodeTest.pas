@@ -1,7 +1,8 @@
 unit MaxiCodeTest;
 
 {
-  * Tests for the MaxiCode reader (symbols that fill the image).
+  * Tests for the MaxiCode reader: symbols that fill the image, and symbols
+  * found by their bullseye (in a photo, rotated).
 }
 
 interface
@@ -21,6 +22,12 @@ type
     procedure FullECCSequence;
     [Test]
     procedure MixedECIs;
+    [Test]
+    procedure PhotoOfLabel;
+    [Test]
+    procedure SymbolInImage;
+    [Test]
+    procedure SymbolInImageRotated;
   end;
 
 implementation
@@ -40,10 +47,22 @@ uses
   ZXing.ReadResult,
   ZXing.ResultMetadataType;
 
-function Scan(const fileName: string): TReadResult;
+/// <summary>Scans the image in the test images, turned quarterTurns times
+/// 90 degrees.</summary>
+function ScanImage(const fileName: string; quarterTurns: Integer = 0)
+  : TReadResult;
 begin
-  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\images\zxing-cpp\maxicode-1\' + fileName);
+  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) + '\..\..\images\' +
+    fileName);
+  if (quarterTurns <> 0) then
+  begin
+    var rotated := RotateImage(bmp, quarterTurns);
+    if (rotated <> bmp) then
+    begin
+      bmp.Free;
+      bmp := rotated;
+    end;
+  end;
   var scanManager := TScanManager.Create(TBarcodeFormat.MAXICODE, nil);
   try
     Result := scanManager.Scan(bmp);
@@ -51,6 +70,11 @@ begin
     scanManager.Free;
     bmp.Free;
   end;
+end;
+
+function Scan(const fileName: string): TReadResult;
+begin
+  Result := ScanImage('zxing-cpp\maxicode-1\' + fileName);
 end;
 
 function Meta(r: TReadResult; t: TResultMetadataType): IMetaData;
@@ -120,6 +144,49 @@ begin
     Assert.AreEqual(Length(EXPECTED), Length(r.RawBytes), 'length');
     for var i := 0 to High(EXPECTED) do
       Assert.AreEqual(EXPECTED[i], r.RawBytes[i], 'byte ' + IntToStr(i));
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TMaxiCodeTest.PhotoOfLabel;
+begin
+  // a photo of a shipping label: found by the bullseye, in perspective
+  var r := ScanImage('zxing-cpp\maxicode-2\03.webp');
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('[)>'#30'01'#29'96100110000'#29'840'#29'001'#29 +
+      '1Z40411757'#29'UPSN'#29'661907'#29'100'#29#29'20/24'#29'20'#29'N'#29#29
+      + 'NEW YORK'#29'NY'#30#4, r.Text);
+    Assert.AreEqual(4, Length(r.ResultPoints));
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TMaxiCodeTest.SymbolInImage;
+begin
+  // a symbol on a white square in a photo
+  var r := ScanImage('MaxiCode-in-photo-1.webp');
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('200 by Rick Asley', r.Text);
+    // the corners of the symbol, about (178, 107) and (277, 203)
+    Assert.AreEqual(178.0, r.ResultPoints[0].x, 3.0);
+    Assert.AreEqual(107.0, r.ResultPoints[0].y, 3.0);
+    Assert.AreEqual(277.0, r.ResultPoints[2].x, 3.0);
+    Assert.AreEqual(203.0, r.ResultPoints[2].y, 3.0);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TMaxiCodeTest.SymbolInImageRotated;
+begin
+  var r := ScanImage('MaxiCode-in-photo-2.webp', 1);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('400 by Rick Asley', r.Text);
   finally
     r.Free;
   end;

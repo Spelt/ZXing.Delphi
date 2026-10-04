@@ -69,7 +69,7 @@ const
     (Folder: 'itf-2'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'micropdf417-1'; Limits: ((MinRead: 21; MaxWrong: 0; MaxErrors: 0), (MinRead: 20; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'maxicode-1'; Limits: ((MinRead: 9; MaxWrong: 0; MaxErrors: 0), (MinRead: 9; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
-    (Folder: 'maxicode-2'; Limits: ((MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'maxicode-2'; Limits: ((MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'microqrcode-1'; Limits: ((MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'multi-1'; Limits: ((MinRead: 20; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'none-1'; Limits: ((MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
