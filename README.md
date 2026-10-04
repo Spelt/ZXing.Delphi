@@ -20,19 +20,44 @@ From Delphi 11 the standard camera component seems much improved.
 
 ## Supported Formats
 
-| 1D product | 1D industrial | 2D
-| ---------- | ------------- | --------------
-| UPC-A      | Code 39       | QR Code
-| UPC-E      | Code 93       | Data Matrix
-| EAN-8      | Code 128      | Aztec
-| EAN-13     | ITF           | PDF417
-| GS1 DataBar (also stacked) | Codabar | MicroPDF417
-| GS1 DataBar Expanded (also stacked) | Telepen | Micro QR Code
-| GS1 DataBar Limited |  | rMQR Code
-| DX Film Edge |               | MaxiCode (with detector)
-|            | Code 32, PZN (when asked for) |
-|            | MSI, Plessey, Pharmacode (when asked for) |
+All formats are read with TBarcodeFormat.Auto, except the ones marked "only when asked for" (choose them as TScanManager format or in the hint POSSIBLE_FORMATS).
 
+### 1D
+
+| Format | TBarcodeFormat | Also | Notes
+| ------ | -------------- | ---- | -----
+| UPC-A | UPC_A | 2 or 5 digit add-on | add-on with the hint ALLOWED_EAN_EXTENSIONS
+| UPC-E | UPC_E | 2 or 5 digit add-on |
+| EAN-8 | EAN_8 | |
+| EAN-13 | EAN_13 | 2 or 5 digit add-on, ISBN (as EAN-13) |
+| Code 39 | CODE_39 | Full ASCII (USE_CODE_39_EXTENDED_MODE), check digit (ASSUME_CODE_39_CHECK_DIGIT) |
+| Code 32 | CODE_32 | | Italian pharmacy code; only when asked for (Auto: CODE_39)
+| PZN | PZN | | German Pharmazentralnummer; only when asked for (Auto: CODE_39)
+| Code 93 | CODE_93 | Full ASCII |
+| Code 128 | CODE_128 | GS1-128 |
+| ITF | ITF | ITF-14 (as ITF), any even length from 6 digits (ALLOWED_LENGTHS) |
+| Codabar | CODABAR | start and stop characters with RETURN_CODABAR_START_END |
+| Telepen | TELEPEN | full ASCII and compressed numeric |
+| GS1 DataBar | RSS_14 | Omnidirectional, Truncated, Stacked, Stacked Omnidirectional |
+| GS1 DataBar Expanded | RSS_EXPANDED | Expanded Stacked |
+| GS1 DataBar Limited | RSS_LIMITED | |
+| DX Film Edge | DX_FILM_EDGE | frame number |
+| MSI | MSI | modulo 10 check digit (ASSUME_MSI_CHECK_DIGIT) | only when asked for
+| Plessey | PLESSEY | | CRC checked; only when asked for
+| Pharmacode | PHARMA_CODE | | Laetus one track; only when asked for
+
+### 2D
+
+| Format | TBarcodeFormat | Also | Notes
+| ------ | -------------- | ---- | -----
+| QR Code | QR_CODE | Model 1 and 2, ECI, GS1, Structured Append | perspective and not flat symbols
+| Micro QR Code | MICRO_QR_CODE | M1 to M4 |
+| rMQR Code | RMQR_CODE | ECI, GS1 | rectangular Micro QR Code
+| Data Matrix | DATA_MATRIX | square, rectangular and DMRE sizes, ECI, GS1, mirrored | dot-peen codes with TRY_HARDER
+| Aztec | AZTEC | compact and full range, Aztec Runes, ECI, GS1, Structured Append, mirrored |
+| PDF417 | PDF_417 | Compact PDF417, Macro PDF417, ECI |
+| MicroPDF417 | MICRO_PDF417 | Macro PDF417, ECI |
+| MaxiCode | MAXICODE | modes 2 to 6, ECI, Structured Append | with detector: anywhere in the image, rotated and in perspective (camera)
 
 ### Features
 - Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
@@ -55,7 +80,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- New formats: Codabar (without the start and stop characters A-D, unless RETURN_CODABAR_START_END) and Telepen (full ASCII and compressed numeric, TBarcodeFormat.TELEPEN).
 	- New format: Aztec (TBarcodeFormat.AZTEC), port of the Aztec reader of zxing-cpp: compact and full range symbols (with the reference grid for large ones), Aztec Runes (the text is the value as 3 digits), mirrored symbols, ECI, GS1 (FNC1) and Structured Append (STRUCTURED_APPEND_SEQUENCE like QR Code: index in the high nibble, count - 1 in the low one).
 	- New formats: GS1 DataBar, port of the DataBar readers of zxing-cpp: DataBar Omnidirectional, Truncated and Stacked (TBarcodeFormat.RSS_14), DataBar Expanded and Expanded Stacked (RSS_EXPANDED) and DataBar Limited (new: RSS_LIMITED). The text is the GS1 data without parentheses (GS between variable length fields), SymbologyIdentifier ]e0; IsGS1 and GS1HRI give the readable form like (01)04412345678909. Stacked symbols have a Position with 4 corners.
-	- New formats: PDF417 (TBarcodeFormat.PDF_417) and MicroPDF417 (new: MICRO_PDF417), port of the readers of zxing-cpp: the PDF417 detector of start and stop patterns (also several symbols, 90/180/270 degrees with TRY_HARDER) and its pure detector, the MicroPDF417 detector of row address patterns, Reed-Solomon in GF(929) with erasures, text, byte and numeric compaction, ECI (]L1), Reader Initialisation, Macro PDF417 / Structured Append and the Macro 05/06 headers of MicroPDF417. The Macro PDF417 data (segment index and count, file id, file name, ...) is in the metadata PDF417_EXTRA_METADATA (IPDF417ResultMetadata).
+	- New formats: PDF417 (TBarcodeFormat.PDF_417) and MicroPDF417 (new: MICRO_PDF417), port of the readers of zxing-cpp: the PDF417 detector of start and stop patterns (Compact PDF417 too: its right row indicator is missing) (also several symbols, 90/180/270 degrees with TRY_HARDER) and its pure detector, the MicroPDF417 detector of row address patterns, Reed-Solomon in GF(929) with erasures, text, byte and numeric compaction, ECI (]L1), Reader Initialisation, Macro PDF417 / Structured Append and the Macro 05/06 headers of MicroPDF417. The Macro PDF417 data (segment index and count, file id, file name, ...) is in the metadata PDF417_EXTRA_METADATA (IPDF417ResultMetadata).
 	- New formats: Micro QR Code (new: MICRO_QR_CODE, M1 to M4) and rMQR Code (new: RMQR_CODE, the rectangular Micro QR Code of ISO/IEC 23941), port of the readers of zxing-cpp: found by their finder pattern (also several in an image) or as pure symbol, numeric, alphanumeric, byte and Kanji segments, and ECI and FNC1 (GS1) for rMQR. The QR Code reader no longer raises an exception on a pure symbol smaller than a QR Code.
 	- New format: MaxiCode (TBarcodeFormat.MAXICODE), port of the reader of zxing-cpp: all modes (2 to 6), the Structured Carrier Message, ECI and Structured Append (STRUCTURED_APPEND_SEQUENCE). zxing-cpp only reads symbols that fill the image (a "pure" image); ZXing.Delphi also has a detector of its own that finds the symbol anywhere in the image by its bullseye, so it works with the camera too: rotated, skewed and in perspective (the grid is fitted to the edges between the modules), also several symbols with ScanAll. It reads all 4 photos of shipping labels of the zxing-cpp samples (zxing-cpp none of them).
 	- New format: DX Film Edge (new: DX_FILM_EDGE), the DX code on the edge of 35 mm film, port of the reader of zxing-cpp: the text is the product and generation number and, when there, the frame number, like 115-10/11A.

@@ -2,8 +2,8 @@ unit PDF417Test;
 
 {
   * Tests for the PDF417 and MicroPDF417 readers: text, ECI, Reader
-  * Initialisation, Macro PDF417 (PDF417_EXTRA_METADATA), the pure detector
-  * and the Macro 06 header of MicroPDF417.
+  * Initialisation, Macro PDF417 (PDF417_EXTRA_METADATA), the pure detector,
+  * the Macro 06 header of MicroPDF417 and Compact PDF417.
 }
 
 interface
@@ -29,6 +29,8 @@ type
     procedure MicroPDF417;
     [Test]
     procedure MicroPDF417Macro06;
+    [Test]
+    procedure CompactPDF417;
   end;
 
 implementation
@@ -179,6 +181,28 @@ begin
   finally
     r.Free;
   end;
+end;
+
+procedure TPDF417Test.CompactPDF417;
+const
+  // made of pdf417-1\01.png and 02.png: the right row indicator and the
+  // stop pattern replaced by the stop line of one module
+  FILES: array [0 .. 1] of string = ('..\PDF417-compact-1.png',
+    '..\PDF417-compact-2.png');
+  TEXTS: array [0 .. 1] of string = ('This is PDF417', '12345678');
+begin
+  for var i := 0 to 1 do
+    for var format in [TBarcodeFormat.PDF_417, TBarcodeFormat.Auto] do
+    begin
+      var r := Scan(FILES[i], format);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + FILES[i]);
+        Assert.AreEqual(Ord(TBarcodeFormat.PDF_417), Ord(r.BarcodeFormat));
+        Assert.AreEqual(TEXTS[i], r.Text);
+      finally
+        r.Free;
+      end;
+    end;
 end;
 
 initialization
