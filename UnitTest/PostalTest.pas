@@ -1,9 +1,9 @@
 unit PostalTest;
 
 {
-  * Tests for the postal barcodes: KIX, RM4SCC, POSTNET and PLANET drawn (as
-  * zint), also upside down and vertical, and the images of ZXing.Net
-  * (Intelligent Mail Barcode, POSTNET).
+  * Tests for the postal barcodes: KIX, RM4SCC, POSTNET, PLANET and Japan Post
+  * drawn (as zint), also upside down and vertical, and the images of
+  * ZXing.Net (Intelligent Mail Barcode, POSTNET).
 }
 
 interface
@@ -29,6 +29,8 @@ type
     procedure Planet;
     [Test]
     procedure PostnetPhoto;
+    [Test]
+    procedure JapanPost;
     [Test]
     procedure IMbSamples;
     [Test]
@@ -125,6 +127,45 @@ begin
       else
         Result := Result + [3];
   Result := Result + [1];
+end;
+
+/// <summary>The bars of a Japan Post of text (as zint), with the check
+/// character (+ checkOffset).</summary>
+function JapanBars(const text: string; checkOffset: Integer = 0)
+  : TArray<Byte>;
+const
+  CHARS = '1234567890-abcdefgh';
+  CHECK_CHARS = '0123456789-abcdefgh';
+  BARS: array [0 .. 18, 0 .. 2] of Byte = ((0, 0, 3), (0, 2, 1), (2, 0, 1),
+    (0, 1, 2), (0, 3, 0), (2, 1, 0), (1, 0, 2), (1, 2, 0), (3, 0, 0),
+    (0, 3, 3), (3, 0, 3), (2, 1, 3), (2, 3, 1), (1, 2, 3), (3, 2, 1),
+    (1, 3, 2), (3, 1, 2), (3, 3, 0), (0, 0, 0));
+begin
+  // letters: a, b or c and a digit; padding d up to 20
+  var symbols := '';
+  for var c in text do
+    if CharInSet(c, ['0' .. '9', '-']) then
+      symbols := symbols + c
+    else if (c <= 'J') then
+      symbols := symbols + 'a' + Chr(Ord(c) - Ord('A') + Ord('0'))
+    else if (c <= 'T') then
+      symbols := symbols + 'b' + Chr(Ord(c) - Ord('K') + Ord('0'))
+    else
+      symbols := symbols + 'c' + Chr(Ord(c) - Ord('U') + Ord('0'));
+  while (Length(symbols) < 20) do
+    symbols := symbols + 'd';
+  var sum := 0;
+  for var c in symbols do
+    Inc(sum, CHECK_CHARS.IndexOf(c));
+  symbols := symbols + CHECK_CHARS.Chars[((19 - sum mod 19) mod 19 +
+    checkOffset) mod 19];
+  Result := [0, 2];
+  for var c in symbols do
+  begin
+    var k := CHARS.IndexOf(c);
+    Result := Result + [BARS[k, 0], BARS[k, 1], BARS[k, 2]];
+  end;
+  Result := Result + [2, 0];
 end;
 
 /// <summary>Reads the bars drawn in an image (a bar and a space of 3 pixels,
@@ -320,6 +361,32 @@ begin
   finally
     scanManager.Free;
     bmp.Free;
+  end;
+end;
+
+procedure TPostalTest.JapanPost;
+begin
+  // a postal code and an address with letters
+  for var text in ['15400233-16-4-205', '0600804-1-1-ABC'] do
+    for var upsideDown in [false, true] do
+    begin
+      var r := ReadBars(JapanBars(text), TBarcodeFormat.JAPAN_POST, upsideDown,
+        upsideDown);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + text);
+        Assert.AreEqual(Ord(TBarcodeFormat.JAPAN_POST), Ord(r.BarcodeFormat));
+        Assert.AreEqual(text, r.Text);
+      finally
+        r.Free;
+      end;
+    end;
+
+  var r := ReadBars(JapanBars('15400233-16-4-205', 1),
+    TBarcodeFormat.JAPAN_POST);
+  try
+    Assert.IsNull(r, 'Japan Post with a wrong check character');
+  finally
+    r.Free;
   end;
 end;
 

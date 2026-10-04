@@ -132,7 +132,10 @@ type
     POSTNET = 268435459,
 
     /// <summary>PLANET (USPS, tall and short bars).</summary>
-    PLANET = 268435460
+    PLANET = 268435460,
+
+    /// <summary>Japan Post (Kasutama barcode, 4-state).</summary>
+    JAPAN_POST = 268435461
 
     );
 

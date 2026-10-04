@@ -34,8 +34,8 @@ uses
 type
   /// <summary>
   /// Reads the postal barcodes of formats (KIX, RM4SCC, IMB, POSTNET,
-  /// PLANET): rows of bars that differ in height, horizontal or vertical,
-  /// also upside down, slanted and in perspective.
+  /// PLANET, JAPAN_POST): rows of bars that differ in height, horizontal or
+  /// vertical, also upside down, slanted and in perspective.
   /// </summary>
   TPostalReader = class(TInterfacedObject, IReader, IMultipleReader)
   private
@@ -70,6 +70,9 @@ function DecodeRM4SCC(const states: TArray<Byte>): string;
 /// <summary>POSTNET or PLANET (USPS, tall and short bars): the digits, the
 /// check digit checked and removed; '' when they are none.</summary>
 function DecodePostnet(const states: TArray<Byte>; planet: Boolean): string;
+/// <summary>Japan Post (Kasutama): the postal code and the address, the check
+/// character checked; '' when the bars are none.</summary>
+function DecodeJapanPost(const states: TArray<Byte>): string;
 
 implementation
 
@@ -98,7 +101,8 @@ function IsPostalFormat(format: TBarcodeFormat): Boolean;
 begin
   Result := (format = TBarcodeFormat.KIX) or (format = TBarcodeFormat.RM4SCC)
     or (format = TBarcodeFormat.IMB) or (format = TBarcodeFormat.POSTNET) or
-    (format = TBarcodeFormat.PLANET);
+    (format = TBarcodeFormat.PLANET) or
+    (format = TBarcodeFormat.JAPAN_POST);
 end;
 
 /// <summary>The index of the RM4SCC/KIX character of the 4 bars from
@@ -221,6 +225,78 @@ begin
     Result := '';
 end;
 
+function DecodeJapanPost(const states: TArray<Byte>): string;
+const
+  // the symbol characters and their bars (as zint)
+  CHARS = '1234567890-abcdefgh';
+  // the values of the characters for the check character
+  CHECK_CHARS = '0123456789-abcdefgh';
+  BARS: array [0 .. 18, 0 .. 2] of Byte = ((0, 0, 3), (0, 2, 1), (2, 0, 1),
+    (0, 1, 2), (0, 3, 0), (2, 1, 0), (1, 0, 2), (1, 2, 0), (3, 0, 0),
+    (0, 3, 3), (3, 0, 3), (2, 1, 3), (2, 3, 1), (1, 2, 3), (3, 2, 1),
+    (1, 3, 2), (3, 1, 2), (3, 3, 0), (0, 0, 0));
+  JAPAN_BARS = 67;
+begin
+  Result := '';
+  // start (full, descender), 20 characters, check character, stop
+  // (descender, full)
+  if (Length(states) <> JAPAN_BARS) or (states[0] <> BAR_FULL) or
+    (states[1] <> BAR_DESCENDER) or (states[JAPAN_BARS - 2] <> BAR_DESCENDER)
+    or (states[JAPAN_BARS - 1] <> BAR_FULL) then
+    exit;
+  var symbols := '';
+  var sum := 0;
+  for var i := 0 to 20 do
+  begin
+    var c := -1;
+    for var k := 0 to 18 do
+      if (states[2 + 3 * i] = BARS[k, 0]) and
+        (states[3 + 3 * i] = BARS[k, 1]) and
+        (states[4 + 3 * i] = BARS[k, 2]) then
+        c := k;
+    if (c < 0) then
+      exit;
+    var value := CHECK_CHARS.IndexOf(CHARS.Chars[c]);
+    if (i < 20) then
+    begin
+      symbols := symbols + CHARS.Chars[c];
+      Inc(sum, value);
+    end
+    else if ((19 - sum mod 19) mod 19 <> value) then
+      exit;
+  end;
+
+  // digits and '-'; a, b and c with a digit: A-J, K-T and U-Z; d padding
+  var i := 0;
+  while (i < Length(symbols)) do
+  begin
+    var c := symbols.Chars[i];
+    if CharInSet(c, ['0' .. '9', '-']) then
+      Result := Result + c
+    else if CharInSet(c, ['a' .. 'c']) and (i + 1 < Length(symbols)) and
+      CharInSet(symbols.Chars[i + 1], ['0' .. '9']) then
+    begin
+      var letter := Ord('A') + 10 * (Ord(c) - Ord('a')) +
+        Ord(symbols.Chars[i + 1]) - Ord('0');
+      if (letter > Ord('Z')) then
+        exit('');
+      Result := Result + Chr(letter);
+      Inc(i);
+    end
+    else if (c = 'd') then
+    begin
+      // only padding after it
+      for var k := i to Length(symbols) - 1 do
+        if (symbols.Chars[k] <> 'd') then
+          exit('');
+      break;
+    end
+    else
+      exit('');
+    Inc(i);
+  end;
+end;
+
 /// <summary>The image turned: rows become columns.</summary>
 function Transposed(image: TBitMatrix): TBitMatrix;
 begin
@@ -258,6 +334,12 @@ begin
   begin
     Result := DecodeRM4SCC(states);
     format := TBarcodeFormat.RM4SCC;
+  end;
+  if not strongOnly and (Result = '') and Wants(TBarcodeFormat.JAPAN_POST)
+  then
+  begin
+    Result := DecodeJapanPost(states);
+    format := TBarcodeFormat.JAPAN_POST;
   end;
   if not strongOnly and (Result = '') and Wants(TBarcodeFormat.POSTNET) then
   begin
