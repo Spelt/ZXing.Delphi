@@ -48,12 +48,15 @@ type
     procedure Pharmacode;
     [Test]
     procedure NotInAuto;
+    [Test]
+    procedure MSISamples;
   end;
 
 implementation
 
 uses
   System.SysUtils,
+  System.IOUtils,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -658,6 +661,49 @@ begin
     finally
       r.Free;
     end;
+  end;
+end;
+
+procedure TOneDTest.MSISamples;
+begin
+  // the MSI images of ZXing.Net: like ZXing.Net at least 5 of the 6, also
+  // turned 180 degrees, and nothing wrong
+  for var turns in [0, 2] do
+  begin
+    var read := 0;
+    for var i := 1 to 6 do
+    begin
+      var name := Format('zxing-net\msi-1\%.2d', [i]);
+      var expected := Trim(TFile.ReadAllText(ImagePath(name + '.txt')));
+      var bmp := LoadImage(ImagePath(name + '.png'));
+      if (turns <> 0) then
+      begin
+        var rotated := RotateImage(bmp, turns);
+        if (rotated <> bmp) then
+        begin
+          bmp.Free;
+          bmp := rotated;
+        end;
+      end;
+      var scanManager := TScanManager.Create(TBarcodeFormat.MSI, nil);
+      try
+        var r := scanManager.Scan(bmp);
+        try
+          if (r <> nil) then
+          begin
+            Assert.AreEqual(expected, r.Text, name);
+            Inc(read);
+          end;
+        finally
+          r.Free;
+        end;
+      finally
+        scanManager.Free;
+        bmp.Free;
+      end;
+    end;
+    Assert.IsTrue(read >= 5, Format('%d of 6 read, turned %d', [read,
+      90 * turns]));
   end;
 end;
 
