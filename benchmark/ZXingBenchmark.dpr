@@ -98,6 +98,8 @@ begin
     Result := 'QR Code'
   else if folderName.StartsWith('aztec') then
     Result := 'Aztec'
+  else if folderName.StartsWith('maxicode') then
+    Result := 'MaxiCode'
   else if folderName.StartsWith('microqrcode') or
     folderName.StartsWith('rmqrcode') then
     Result := 'Micro QR'

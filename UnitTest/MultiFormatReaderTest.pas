@@ -87,7 +87,9 @@ type
     Text: string;
   end;
 const
-  SAMPLES: array [0 .. 10] of TSample = (
+  SAMPLES: array [0 .. 11] of TSample = (
+    (FileName: 'maxicode-1\MODE5.png'; Format: TBarcodeFormat.MAXICODE;
+    Text: ''),
     (FileName: 'microqrcode-1\M2-Alpha.png';
     Format: TBarcodeFormat.MICRO_QR_CODE; Text: 'ABC'),
     (FileName: 'rmqrcode-1\R7x43-H.png'; Format: TBarcodeFormat.RMQR_CODE;

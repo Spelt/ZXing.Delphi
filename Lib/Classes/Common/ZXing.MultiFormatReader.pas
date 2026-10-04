@@ -56,7 +56,8 @@ uses
   ZXing.Aztec.AztecReader,
   ZXing.PDF417.PDF417Reader,
   ZXing.PDF417.MicroPDF417Reader,
-  ZXing.QrCode.MicroQRCodeReader;
+  ZXing.QrCode.MicroQRCodeReader,
+  ZXing.MaxiCode.MaxiCodeReader;
 
 /// <summary>
 /// MultiFormatReader is a convenience class and the main entry point into the library for most uses.
@@ -269,6 +270,9 @@ begin
         (formats.Contains(TBarcodeFormat.MICRO_QR_CODE),
         formats.Contains(TBarcodeFormat.RMQR_CODE)));
 
+    if formats.Contains(TBarcodeFormat.MAXICODE) then
+      readers.Add(TMaxiCodeReader.Create);
+
     if (formats.Contains(TBarcodeFormat.EAN_13)) then
       readers.Add(TEAN13Reader.Create());
 
@@ -334,6 +338,7 @@ begin
     readers.Add(TPDF417Reader.Create);
     readers.Add(TMicroPDF417Reader.Create);
     readers.Add(TMicroQRCodeReader.Create);
+    readers.Add(TMaxiCodeReader.Create);
   end;
 
 end;

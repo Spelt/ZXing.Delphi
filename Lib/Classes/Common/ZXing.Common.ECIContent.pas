@@ -45,6 +45,8 @@ type
     /// </summary>
     procedure SwitchCharset(eci: Integer);
     procedure Erase(index, count: Integer);
+    /// <summary>Inserts the characters of s (as bytes) at index.</summary>
+    procedure Insert(index: Integer; const s: string);
     function IsEmpty: Boolean;
     /// <summary>The bytes as text, each part in its character set.
     /// </summary>
@@ -104,6 +106,18 @@ begin
   for var i := 0 to High(Starts) do
     if (Starts[i] > index) then
       Starts[i] := Max(index, Starts[i] - count);
+end;
+
+procedure TECIContent.Insert(index: Integer; const s: string);
+begin
+  var ins: TBytes;
+  SetLength(ins, Length(s));
+  for var i := 1 to Length(s) do
+    ins[i - 1] := Byte(Ord(s[i]));
+  System.Insert(ins, Bytes, index);
+  for var i := 0 to High(Starts) do
+    if (Starts[i] > index) then
+      Inc(Starts[i], Length(s));
 end;
 
 function TECIContent.IsEmpty: Boolean;

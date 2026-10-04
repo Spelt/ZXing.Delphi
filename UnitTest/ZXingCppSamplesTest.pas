@@ -37,7 +37,7 @@ const
   // slow, fast, pure. Results after the 1D decoders of zxing-cpp (phase 7).
   // The wrong results in upce-2 are a misread of 509689-3!.webp, an image
   // that zxing-cpp can not read either.
-  FOLDER_LIMITS: array [0 .. 46] of TFolderLimits = (
+  FOLDER_LIMITS: array [0 .. 48] of TFolderLimits = (
     (Folder: 'aztec-1'; Limits: ((MinRead: 132; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'aztec-2'; Limits: ((MinRead: 62; MaxWrong: 0; MaxErrors: 0), (MinRead: 61; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'codabar-1'; Limits: ((MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0))),
@@ -67,6 +67,8 @@ const
     (Folder: 'itf-1'; Limits: ((MinRead: 28; MaxWrong: 0; MaxErrors: 0), (MinRead: 26; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'itf-2'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'micropdf417-1'; Limits: ((MinRead: 21; MaxWrong: 0; MaxErrors: 0), (MinRead: 20; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'maxicode-1'; Limits: ((MinRead: 9; MaxWrong: 0; MaxErrors: 0), (MinRead: 9; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'maxicode-2'; Limits: ((MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'microqrcode-1'; Limits: ((MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'multi-1'; Limits: ((MinRead: 20; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'none-1'; Limits: ((MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
@@ -121,6 +123,8 @@ type
     [TestCase('itf-1', 'itf-1')]
     [TestCase('itf-2', 'itf-2')]
     [TestCase('micropdf417-1', 'micropdf417-1')]
+    [TestCase('maxicode-1', 'maxicode-1')]
+    [TestCase('maxicode-2', 'maxicode-2')]
     [TestCase('microqrcode-1', 'microqrcode-1')]
     [TestCase('multi-1', 'multi-1')]
     [TestCase('none-1', 'none-1')]
