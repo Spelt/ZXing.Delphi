@@ -192,7 +192,10 @@ type
     CODABLOCK_F = 268435475,
 
     /// <summary>Code 16K (rows of 5 Code 128 characters).</summary>
-    CODE_16K = 268435476
+    CODE_16K = 268435476,
+
+    /// <summary>Code 49 (rows of 4 symbol characters).</summary>
+    CODE_49 = 268435477
 
     );
 

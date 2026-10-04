@@ -60,6 +60,8 @@ uses
   ZXing.OneD.DeutschePostReader,
   ZXing.Stacked.CodablockFReader,
   ZXing.Stacked.Code16KReader,
+  ZXing.Stacked.Code49Reader,
+  ZXing.Stacked.StackedReader,
   ZXing.OneD.PharmacodeReader,
   ZXing.Postal.PostalReader,
 
@@ -242,12 +244,17 @@ begin
   if formats <> nil then
   begin
 
-    // the stacked Codablock F before Code 128 (its rows are Code 128 rows)
+    // the stacked barcodes with one scan; Codablock F before Code 128 (its
+    // rows are Code 128 rows)
+    var stacked: TArray<TStackedRowReader> := [];
     if formats.Contains(TBarcodeFormat.CODABLOCK_F) then
-      readers.Add(TCodablockFReader.Create);
-
+      stacked := stacked + [TCodablockFReader.Create];
     if formats.Contains(TBarcodeFormat.CODE_16K) then
-      readers.Add(TCode16KReader.Create);
+      stacked := stacked + [TCode16KReader.Create];
+    if formats.Contains(TBarcodeFormat.CODE_49) then
+      stacked := stacked + [TCode49Reader.Create];
+    if (Length(stacked) > 0) then
+      readers.Add(TStackedReader.Create(stacked));
 
     // 1D readers
 
@@ -386,9 +393,10 @@ begin
   if (readers.Count = 0) then // must be auto, add them all
   begin
 
-    // the stacked Codablock F before Code 128 (its rows are Code 128 rows)
-    readers.Add(TCodablockFReader.Create);
-    readers.Add(TCode16KReader.Create);
+    // the stacked barcodes with one scan; Codablock F before Code 128 (its
+    // rows are Code 128 rows)
+    readers.Add(TStackedReader.Create([TCodablockFReader.Create,
+      TCode16KReader.Create, TCode49Reader.Create]));
 
     // 1D readers
     readers.Add(TCode128Reader.Create());

@@ -28,7 +28,9 @@ uses
   ZXing.Reader,
   ZXing.DecodeHintType,
   ZXing.BinaryBitmap,
-  ZXing.Common.BitMatrix;
+  ZXing.Common.BitMatrix,
+  ZXing.Common.Pattern,
+  ZXing.Stacked.StackedReader;
 
 type
   /// <summary>
@@ -37,15 +39,29 @@ type
   /// rows, the last one with the check characters K1 and K2 of the whole
   /// message. Horizontal or vertical, also upside down.
   /// </summary>
-  TCodablockFReader = class(TInterfacedObject, IReader, IMultipleReader)
+  TCodablockFReader = class(TStackedRowReader)
+  public type
+    TRow = record
+      // the codes from the start code to the checksum
+      Codes: TArray<Integer>;
+      // the row number (0 the first), and for the first one the number of
+      // rows
+      Index, Count: Integer;
+      // the middle of the start and the stop code, on the row y
+      XStart, XStop: Double;
+      Y: Integer;
+    end;
+  private
+    FRows: TList<TRow>;
+  protected
+    procedure ReadRows(const runs: TPatternRow; y, width: Integer;
+      reversed: Boolean); override;
+    procedure AddSymbols(results: TList<TReadResult>; maxCount: Integer;
+      vertical: Boolean); override;
+    procedure ClearRows; override;
   public
-    function decode(const image: TBinaryBitmap): TReadResult; overload;
-    function decode(const image: TBinaryBitmap;
-      hints: TDictionary<TDecodeHintType, TObject>): TReadResult; overload;
-    procedure decodeMultiple(const image: TBinaryBitmap;
-      hints: TDictionary<TDecodeHintType, TObject>;
-      results: TList<TReadResult>; maxCount: Integer);
-    procedure reset;
+    constructor Create;
+    destructor Destroy; override;
   end;
 
 /// <summary>The text of the codes of the rows of a Codablock F (each from
@@ -57,9 +73,7 @@ implementation
 
 uses
   ZXing.ResultPoint,
-  ZXing.Common.Pattern,
-  ZXing.OneD.Code128Reader,
-  ZXing.Postal.FourStateDetector;
+  ZXing.OneD.Code128Reader;
 
 const
   CODE_SHIFT = 98;
@@ -78,17 +92,6 @@ const
 
 type
   TCodeSet = (csA, csB, csC);
-
-  TRowRead = record
-    // the codes from the start code to the checksum
-    Codes: TArray<Integer>;
-    // the row number (0 the first), and for the first one the number of
-    // rows
-    Index, Count: Integer;
-    // the middle of the start and the stop code, on the row y
-    XStart, XStop: Double;
-    Y: Integer;
-  end;
 
 /// <summary>The value of a row indicator or check character in code set
 /// (Tables D.2, D.3 and F.1 of the specification, as zint); -1 when it is
@@ -224,7 +227,7 @@ end;
 /// A, a code set, a row indicator, data, a checksum and the stop), with
 /// width the width of the row (for x of the reversed runs).</summary>
 procedure ReadRows(const runs: TPatternRow; y, width: Integer;
-  reversed: Boolean; rows: TList<TRowRead>);
+  reversed: Boolean; rows: TList<TCodablockFReader.TRow>);
 begin
   var view := TPatternView.Create(runs);
   while view.IsValid and (view.Size > MIN_CODES * CHAR_LEN) do
@@ -279,7 +282,7 @@ begin
     if not RowCodeSet(codes[1], codeSet) then
       continue;
     var indicator := IndicatorValue(codes[2], codeSet);
-    var row: TRowRead;
+    var row: TCodablockFReader.TRow;
     row.Codes := codes;
     row.Count := 0;
     if (indicator >= 0) and (indicator <= 42) then
@@ -308,157 +311,97 @@ end;
 
 { TCodablockFReader }
 
-function TCodablockFReader.decode(const image: TBinaryBitmap): TReadResult;
+constructor TCodablockFReader.Create;
 begin
-  Result := decode(image, nil);
+  inherited Create;
+  FRows := TList<TRow>.Create;
 end;
 
-function TCodablockFReader.decode(const image: TBinaryBitmap;
-  hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+destructor TCodablockFReader.Destroy;
 begin
-  Result := nil;
-  var results := TList<TReadResult>.Create;
-  try
-    decodeMultiple(image, hints, results, 1);
-    if (results.Count > 0) then
-      Result := results.Extract(results[0]);
-  finally
-    for var r in results do
-      r.Free;
-    results.Free;
-  end;
+  FRows.Free;
+  inherited;
 end;
 
-procedure TCodablockFReader.decodeMultiple(const image: TBinaryBitmap;
-  hints: TDictionary<TDecodeHintType, TObject>; results: TList<TReadResult>;
-  maxCount: Integer);
+procedure TCodablockFReader.ReadRows(const runs: TPatternRow; y, width: Integer;
+  reversed: Boolean);
 begin
-  if (image = nil) or (image.BlackMatrix = nil) or
-    ResultsFull(results, maxCount) then
-    exit;
-  var tryHarder := (hints <> nil) and
-    hints.ContainsKey(TDecodeHintType.TRY_HARDER);
-  // (the rows are at least 8 modules high)
-  var rowStep := 4;
-  if tryHarder then
-    rowStep := 2;
-  // horizontal symbols (the rows of the image as the 1D readers have them),
-  // with TRY_HARDER also vertical ones in the image turned
-  for var vertical in [false, true] do
+  ZXing.Stacked.CodablockFReader.ReadRows(runs, y, width, reversed, FRows);
+end;
+
+procedure TCodablockFReader.ClearRows;
+begin
+  FRows.Clear;
+end;
+
+procedure TCodablockFReader.AddSymbols(results: TList<TReadResult>;
+  maxCount: Integer; vertical: Boolean);
+begin
+  for var first in FRows do
   begin
-    if vertical and not tryHarder then
-      break;
-    var matrix := image.BlackMatrix;
-    if vertical then
-      matrix := Transposed(matrix);
-    var rows := TList<TRowRead>.Create;
-    try
-      var runs: TPatternRow;
-      var y := 0;
-      while (y < matrix.Height) do
+    if (first.Index <> 0) or ResultsFull(results, maxCount) then
+      continue;
+    var n := first.Count;
+    var columns := Length(first.Codes);
+    var symbolRows: TArray<TArray<Integer>>;
+    SetLength(symbolRows, n);
+    symbolRows[0] := first.Codes;
+    var tolerance := Abs(first.XStop - first.XStart) / 20;
+    var minY := first.Y;
+    var maxY := first.Y;
+    var complete := true;
+    for var k := 1 to n - 1 do
+    begin
+      var best := -1;
+      var bestDistance := MaxInt;
+      for var i := 0 to FRows.Count - 1 do
       begin
-        // left to right, and right to left (upside down)
-        for var reversed in [false, true] do
+        var row := FRows[i];
+        if (row.Index = k) and (Length(row.Codes) = columns) and
+          (Abs(row.XStart - first.XStart) <= tolerance) and
+          (Abs(row.XStop - first.XStop) <= tolerance) and
+          (Abs(row.Y - first.Y) < bestDistance) then
         begin
-          if vertical then
-          begin
-            var forward: TPatternRow;
-            GetPatternRow(matrix, y, forward);
-            runs := forward;
-            if reversed then
-            begin
-              runs := nil;
-              SetLength(runs, Length(forward));
-              for var i := 0 to High(forward) do
-                runs[High(forward) - i] := forward[i];
-            end;
-          end
-          else
-            runs := image.getPatternRow(y, reversed);
-          if (runs <> nil) then
-            ReadRows(runs, y, matrix.Width, reversed, rows);
+          best := i;
+          bestDistance := Abs(row.Y - first.Y);
         end;
-        Inc(y, rowStep);
       end;
-
-      // the symbols: from each first row the other rows with the same codes
-      // count and about the same place, the nearest one of each number
-      for var first in rows do
+      if (best < 0) then
       begin
-        if (first.Index <> 0) or ResultsFull(results, maxCount) then
-          continue;
-        var n := first.Count;
-        var columns := Length(first.Codes);
-        var symbolRows: TArray<TArray<Integer>>;
-        SetLength(symbolRows, n);
-        symbolRows[0] := first.Codes;
-        var tolerance := Abs(first.XStop - first.XStart) / 20;
-        var minY := first.Y;
-        var maxY := first.Y;
-        var complete := true;
-        for var k := 1 to n - 1 do
-        begin
-          var best := -1;
-          var bestDistance := MaxInt;
-          for var i := 0 to rows.Count - 1 do
-          begin
-            var row := rows[i];
-            if (row.Index = k) and (Length(row.Codes) = columns) and
-              (Abs(row.XStart - first.XStart) <= tolerance) and
-              (Abs(row.XStop - first.XStop) <= tolerance) and
-              (Abs(row.Y - first.Y) < bestDistance) then
-            begin
-              best := i;
-              bestDistance := Abs(row.Y - first.Y);
-            end;
-          end;
-          if (best < 0) then
-          begin
-            complete := false;
-            break;
-          end;
-          symbolRows[k] := rows[best].Codes;
-          minY := Min(minY, rows[best].Y);
-          maxY := Max(maxY, rows[best].Y);
-        end;
-        if not complete then
-          continue;
-        var text := DecodeCodablockF(symbolRows);
-        if (text = '') then
-          continue;
-        var x1 := Min(first.XStart, first.XStop);
-        var x2 := Max(first.XStart, first.XStop);
-        var points: TArray<IResultPoint>;
-        if vertical then
-          points := [TResultPointHelpers.CreateResultPoint(minY, x1),
-            TResultPointHelpers.CreateResultPoint(maxY, x1),
-            TResultPointHelpers.CreateResultPoint(maxY, x2),
-            TResultPointHelpers.CreateResultPoint(minY, x2)]
-        else
-          points := [TResultPointHelpers.CreateResultPoint(x1, minY),
-            TResultPointHelpers.CreateResultPoint(x2, minY),
-            TResultPointHelpers.CreateResultPoint(x2, maxY),
-            TResultPointHelpers.CreateResultPoint(x1, maxY)];
-        var r := TReadResult.Create(text, nil, points,
-          TBarcodeFormat.CODABLOCK_F);
-        // ISO/IEC 15424: ]O4 Codablock F
-        r.SymbologyIdentifier := ']O4';
-        if ContainsResult(results, r) then
-          r.Free
-        else
-          results.Add(r);
+        complete := false;
+        break;
       end;
-    finally
-      rows.Free;
-      if vertical then
-        matrix.Free;
+      symbolRows[k] := FRows[best].Codes;
+      minY := Min(minY, FRows[best].Y);
+      maxY := Max(maxY, FRows[best].Y);
     end;
+    if not complete then
+      continue;
+    var text := DecodeCodablockF(symbolRows);
+    if (text = '') then
+      continue;
+    var x1 := Min(first.XStart, first.XStop);
+    var x2 := Max(first.XStart, first.XStop);
+    var points: TArray<IResultPoint>;
+    if vertical then
+      points := [TResultPointHelpers.CreateResultPoint(minY, x1),
+        TResultPointHelpers.CreateResultPoint(maxY, x1),
+        TResultPointHelpers.CreateResultPoint(maxY, x2),
+        TResultPointHelpers.CreateResultPoint(minY, x2)]
+    else
+      points := [TResultPointHelpers.CreateResultPoint(x1, minY),
+        TResultPointHelpers.CreateResultPoint(x2, minY),
+        TResultPointHelpers.CreateResultPoint(x2, maxY),
+        TResultPointHelpers.CreateResultPoint(x1, maxY)];
+    var r := TReadResult.Create(text, nil, points,
+      TBarcodeFormat.CODABLOCK_F);
+    // ISO/IEC 15424: ]O4 Codablock F
+    r.SymbologyIdentifier := ']O4';
+    if ContainsResult(results, r) then
+      r.Free
+    else
+      results.Add(r);
   end;
-end;
-
-procedure TCodablockFReader.reset;
-begin
-  // do nothing
 end;
 
 end.

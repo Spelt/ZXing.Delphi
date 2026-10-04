@@ -240,6 +240,8 @@ begin
     format := TBarcodeFormat.CODABLOCK_F
   else if (n = 'code16k') then
     format := TBarcodeFormat.CODE_16K
+  else if (n = 'code49') then
+    format := TBarcodeFormat.CODE_49
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

@@ -28,6 +28,10 @@ type
     procedure Code16KModes;
     [Test]
     procedure Code16KWikipedia;
+    [Test]
+    procedure Code49ZintVectors;
+    [Test]
+    procedure Code49Encoded;
   end;
 
 implementation
@@ -49,7 +53,8 @@ uses
   VCL.Graphics,
 {$ENDIF}
   Benchmark.Images,
-  ZXing.ScanManager;
+  ZXing.ScanManager,
+  ZXing.Stacked.Code49Reader;
 
 const
   // the encode tests of zint (backend/tests/test_codablock.c): the text,
@@ -249,6 +254,50 @@ const
     '10110010111101100101111011001011110110010011;111010010010111' +
     '1011001011110110010111101100101110001001110010010111101'));
 
+  // Code 49: the ASCII characters (Table 7: a shift and a character, or one)
+  C49_ASCII: array [0 .. 127] of string = (
+    '! ', '!A', '!B', '!C', '!D', '!E', '!F', '!G', '!H', '!I', '!J', '!K',
+    '!L', '!M', '!N', '!O', '!P', '!Q', '!R', '!S', '!T', '!U', '!V', '!W',
+    '!X', '!Y', '!Z', '!1', '!2', '!3', '!4', '!5', '  ', '!6', '!7', '!8',
+    '$ ', '% ', '!9', '!0', '!-', '!.', '!$', '+ ', '!/', '- ', '. ', '/ ',
+    '0 ', '1 ', '2 ', '3 ', '4 ', '5 ', '6 ', '7 ', '8 ', '9 ', '!+', '&1',
+    '&2', '&3', '&4', '&5', '&6', 'A ', 'B ', 'C ', 'D ', 'E ', 'F ', 'G ',
+    'H ', 'I ', 'J ', 'K ', 'L ', 'M ', 'N ', 'O ', 'P ', 'Q ', 'R ', 'S ',
+    'T ', 'U ', 'V ', 'W ', 'X ', 'Y ', 'Z ', '&7', '&8', '&9', '&0', '&-',
+    '&.', '&A', '&B', '&C', '&D', '&E', '&F', '&G', '&H', '&I', '&J', '&K',
+    '&L', '&M', '&N', '&O', '&P', '&Q', '&R', '&S', '&T', '&U', '&V', '&W',
+    '&X', '&Y', '&Z', '&$', '&/', '&+', '&%', '& ');
+  // the encode tests of zint (backend/tests/test_code49.c): the text, the
+  // rows (';' between them)
+  CODE49_VECTORS: array [0 .. 3, 0 .. 1] of string = (
+    ('MULTIPLE ROWS IN CODE 49',
+    '101111101100101110101110011000011011110101101111101011110100' +
+    '0100001111;1010100001000010001001111000101110100110001111010' +
+    '010001011100011001111;10110011000001011011011101110000101100' +
+    '10110000111011101011110001101111;101001100110010000111101001' +
+    '0001100101011101111110011010001001111101111;1011001111001011' +
+    '101000000101001110111110111010001011010001101111101111'),
+    ('EXAMPLE 2',
+    '101100011101110010111100100100011011001111001010001000111100' +
+    '0100101111;1011000100110010001100010110010000100001101001111' +
+    '010000001001011101111'),
+    ('EXAMPLE 2',
+    '101100011101110010111100100100011011001111001010001000111100' +
+    '0100101111;1011000100110010001010111011111100110011110010111' +
+    '010111011001111101111;10110011110010111011100111110010101000' +
+    '01000010001010111001111001101111'),
+    ('EXAMPLE 2',
+    '101100011101110010111100100100011011001111001010001000111100' +
+    '0100101111;1011000100110010001010111011111100110011110010111' +
+    '010111011001111101111;10101011101111110010101110111111001100' +
+    '11110010111011001110110001001111;101100111100101110110011110' +
+    '0101110101011101111110010111001000001101111;1010101110111111' +
+    '001100111100101110101011101111110011001110110001001111;10110' +
+    '011110010111010101110111111001010111011111100110011101100010' +
+    '01111;101010111011111100101011101111110010101110111111001011' +
+    '1001000001101111;1011110110100100001010000100010000111010010' +
+    '011111011001000111011001111'));
+
 /// <summary>The rows of a Code 16K of text in mode (0 A, 1 B, 2 C: as zint,
 /// without changes of code set), at least minRows rows.</summary>
 function Code16KRows(const text: string; mode: Integer;
@@ -304,6 +353,192 @@ begin
       modules := modules + StringOfChar(Chr(Ord('0') + Ord(Odd(k))),
         Ord(widths[k]) - Ord('0'));
     Result[r] := modules;
+  end;
+end;
+
+/// <summary>The rows of a Code 49 of text (ASCII; as zint: numeric from 5
+/// digits on), at least minRows rows, the X check plus checkOffset.
+/// </summary>
+function Code49Rows(const text: string; minRows: Integer = 0;
+  checkOffset: Integer = 0): TArray<string>;
+const
+  INSET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%!&*';
+  X_WEIGHTS: array [0 .. 31] of Integer = (1, 9, 31, 26, 2, 12, 17, 23, 37,
+    18, 22, 6, 27, 44, 15, 43, 39, 11, 13, 5, 41, 33, 36, 8, 4, 32, 3, 19,
+    40, 25, 29, 10);
+  Y_WEIGHTS: array [0 .. 31] of Integer = (9, 31, 26, 2, 12, 17, 23, 37, 18,
+    22, 6, 27, 44, 15, 43, 39, 11, 13, 5, 41, 33, 36, 8, 4, 32, 3, 19, 40, 25,
+    29, 10, 24);
+  Z_WEIGHTS: array [0 .. 31] of Integer = (31, 26, 2, 12, 17, 23, 37, 18, 22,
+    6, 27, 44, 15, 43, 39, 11, 13, 5, 41, 33, 36, 8, 4, 32, 3, 19, 40, 25, 29,
+    10, 24, 30);
+  ROW_PARITY: array [0 .. 7] of string = ('OEEO', 'EOEO', 'OOEE', 'EEOO',
+    'OEOE', 'EOOE', 'OOOO', 'EEEE');
+begin
+  // the code characters of the ASCII characters (Table 7)
+  var chars := '';
+  for var c in text do
+    if CharInSet(C49_ASCII[Ord(c)].Chars[0], ['!', '&']) then
+      chars := chars + C49_ASCII[Ord(c)]
+    else
+      chars := chars + C49_ASCII[Ord(c)].Chars[0];
+  // the code characters, numeric from 5 digits on (in base 48)
+  var codes: TArray<Integer> := [];
+  var i := 1;
+  while (i <= Length(chars)) do
+  begin
+    var digits := 0;
+    while (i + digits <= Length(chars)) and
+      CharInSet(chars[i + digits], ['0' .. '9']) do
+      Inc(digits);
+    if (digits < 5) then
+    begin
+      codes := codes + [INSET.IndexOf(chars[i])];
+      Inc(i);
+      continue;
+    end;
+    codes := codes + [48];
+    var blocks := digits div 5;
+    var remain := digits mod 5;
+    for var b := 1 to blocks do
+    begin
+      if (b = blocks) and (remain = 2) then
+      begin
+        // the last block of 5 and 2 more: 4 and 3 digits
+        var v := 100000 + StrToInt(Copy(chars, i, 4));
+        codes := codes + [v div 2304, v mod 2304 div 48, v mod 48];
+        Inc(i, 4);
+        v := StrToInt(Copy(chars, i, 3));
+        codes := codes + [v div 48, v mod 48];
+        Inc(i, 3);
+      end
+      else
+      begin
+        var v := StrToInt(Copy(chars, i, 5));
+        codes := codes + [v div 2304, v mod 2304 div 48, v mod 48];
+        Inc(i, 5);
+      end;
+    end;
+    case remain of
+      1:
+        begin
+          codes := codes + [INSET.IndexOf(chars[i])];
+          Inc(i);
+        end;
+      3:
+        begin
+          var v := StrToInt(Copy(chars, i, 3));
+          codes := codes + [v div 48, v mod 48];
+          Inc(i, 3);
+        end;
+      4:
+        begin
+          var v := 100000 + StrToInt(Copy(chars, i, 4));
+          codes := codes + [v div 2304, v mod 2304 div 48, v mod 48];
+          Inc(i, 4);
+        end;
+    end;
+    if (i <= Length(chars)) then
+      codes := codes + [48];
+  end;
+  // the mode: numeric (2), shift 1 (4) or shift 2 (5) first
+  var mode := 0;
+  case codes[0] of
+    48:
+      mode := 2;
+    43:
+      mode := 4;
+    44:
+      mode := 5;
+  end;
+  if (mode <> 0) then
+    Delete(codes, 0, 1);
+  // 7 a row, padded; a row more when the last one has no room for the
+  // checks
+  var rows := 0;
+  var pads := 0;
+  var grid: TArray<TArray<Integer>> := [];
+  repeat
+    var row: TArray<Integer>;
+    SetLength(row, 8);
+    for var k := 0 to 6 do
+      if (rows * 7 + k < Length(codes)) then
+        row[k] := codes[rows * 7 + k]
+      else
+      begin
+        row[k] := 48;
+        Inc(pads);
+      end;
+    grid := grid + [row];
+    Inc(rows);
+  until (rows * 7 >= Length(codes));
+  var extra := ((rows <= 6) and (pads < 5)) or (rows > 6) or (rows = 1);
+  while extra or (rows < minRows) do
+  begin
+    var row: TArray<Integer> := [48, 48, 48, 48, 48, 48, 48, 0];
+    grid := grid + [row];
+    Inc(rows);
+    extra := false;
+  end;
+  var last := rows - 1;
+  grid[last][6] := 7 * (rows - 2) + mode;
+  for var r := 0 to rows - 2 do
+  begin
+    var sum := 0;
+    for var k := 0 to 6 do
+      Inc(sum, grid[r][k]);
+    grid[r][7] := sum mod 49;
+  end;
+  var x := grid[last][6] * 20;
+  var y := grid[last][6] * 16;
+  var z := grid[last][6] * 38;
+  var position := 0;
+  for var r := 0 to rows - 2 do
+    for var j := 0 to 3 do
+    begin
+      var v := grid[r][2 * j] * 49 + grid[r][2 * j + 1];
+      Inc(x, X_WEIGHTS[position] * v);
+      Inc(y, Y_WEIGHTS[position] * v);
+      Inc(z, Z_WEIGHTS[position] * v);
+      Inc(position);
+    end;
+  if (rows > 6) then
+  begin
+    z := z mod 2401;
+    grid[last][0] := z div 49;
+    grid[last][1] := z mod 49;
+  end;
+  var v := grid[last][0] * 49 + grid[last][1];
+  Inc(x, X_WEIGHTS[position] * v);
+  Inc(y, Y_WEIGHTS[position] * v);
+  Inc(position);
+  y := y mod 2401;
+  grid[last][2] := y div 49;
+  grid[last][3] := y mod 49;
+  Inc(x, X_WEIGHTS[position] * y);
+  x := (x + checkOffset) mod 2401;
+  grid[last][4] := x div 49;
+  grid[last][5] := x mod 49;
+  var sum := 0;
+  for var k := 0 to 6 do
+    Inc(sum, grid[last][k]);
+  grid[last][7] := sum mod 49;
+
+  SetLength(Result, rows);
+  for var r := 0 to rows - 1 do
+  begin
+    var modules := '10';
+    for var j := 0 to 3 do
+    begin
+      var parity := ROW_PARITY[r].Chars[j];
+      if (r = last) then
+        parity := 'E';
+      var pattern := Code49CharacterPattern(grid[r][2 * j] * 49 +
+        grid[r][2 * j + 1], parity = 'E');
+      for var b := 15 downto 0 do
+        modules := modules + Chr(Ord('0') + (pattern shr b) and 1);
+    end;
+    Result[r] := modules + '1111';
   end;
 end;
 
@@ -561,6 +796,69 @@ begin
     end;
   finally
     bmp.Free;
+  end;
+end;
+
+procedure TStackedTest.Code49ZintVectors;
+begin
+  // asked for and in Auto
+  for var v := 0 to High(CODE49_VECTORS) do
+    for var auto in [false, true] do
+    begin
+      var rows := CODE49_VECTORS[v, 1].Split([';']);
+      var r: TReadResult;
+      if auto then
+        r := ReadStacked(rows, [])
+      else
+        r := ReadStacked(rows, [TBarcodeFormat.CODE_49]);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + CODE49_VECTORS[v, 0]);
+        Assert.AreEqual(Ord(TBarcodeFormat.CODE_49), Ord(r.BarcodeFormat),
+          CODE49_VECTORS[v, 0]);
+        Assert.AreEqual(CODE49_VECTORS[v, 0], r.Text);
+        Assert.AreEqual(']T0', r.SymbologyIdentifier);
+      finally
+        r.Free;
+      end;
+    end;
+end;
+
+procedure TStackedTest.Code49Encoded;
+const
+  // shifts (lower case, control characters), the numeric rules (5 digits a
+  // block, 1, 3 or 4 more, 5 and 2 more as 4 and 3), 8 rows (Z check)
+  TEXTS: array [0 .. 9] of string = ('Code 49 test', '12345', '123456',
+    '1234567', '12345678', '123456789', 'AB1234567890CD', 'a'#9'b',
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%ABCDEFGHIJKLMN', '99999123456789');
+begin
+  for var t := 0 to High(TEXTS) do
+  begin
+    var r := ReadStacked(Code49Rows(TEXTS[t]), [TBarcodeFormat.CODE_49]);
+    try
+      Assert.IsNotNull(r, ' Nil result ' + TEXTS[t]);
+      Assert.AreEqual(TEXTS[t], r.Text);
+    finally
+      r.Free;
+    end;
+  end;
+  // upside down and vertical
+  for var turn := 1 to 2 do
+  begin
+    var r := ReadStacked(Code49Rows('Code 49 test', 4),
+      [TBarcodeFormat.CODE_49], turn = 1, turn = 2);
+    try
+      Assert.IsNotNull(r, ' Nil result turn ' + IntToStr(turn));
+      Assert.AreEqual('Code 49 test', r.Text);
+    finally
+      r.Free;
+    end;
+  end;
+  // a wrong check character: nothing
+  var r := ReadStacked(Code49Rows('CODE 49', 0, 1), [TBarcodeFormat.CODE_49]);
+  try
+    Assert.IsNull(r, 'Code 49 with a wrong check character');
+  finally
+    r.Free;
   end;
 end;
 
