@@ -28,7 +28,9 @@ interface
 
 uses
   ZXing.Common.BitMatrix,
-  ZXing.ResultPoint;
+  ZXing.ResultPoint,
+  ZXing.Common.Geometry,
+  ZXing.Common.ConcentricFinder;
 
 type
   /// <summary>Gets every candidate grid: the sampled bits (freed by the
@@ -56,6 +58,14 @@ function DetectQRCodesByFinderPatterns(image: TBitMatrix; tryHarder: Boolean;
 function DetectPureQRCode(image: TBitMatrix;
   out points: TArray<IResultPoint>): TBitMatrix;
 
+/// <summary>The finder patterns of the image (zxing-cpp's
+/// FindFinderPatterns), also for Micro QR Codes and rMQR Codes.</summary>
+function FindQRFinderPatterns(image: TBitMatrix; tryHarder: Boolean)
+  : TArray<TConcentricPattern>;
+/// <summary>The center of an alignment pattern near estimate.</summary>
+function LocateQRAlignmentPattern(image: TBitMatrix; moduleSize: Double;
+  const estimate: TPointD; out res: TPointD): Boolean;
+
 implementation
 
 uses
@@ -64,10 +74,8 @@ uses
   System.Math,
   System.Generics.Collections,
   System.Generics.Defaults,
-  ZXing.Common.Geometry,
   ZXing.Common.BitMatrixCursor,
   ZXing.Common.Pattern,
-  ZXing.Common.ConcentricFinder,
   ZXing.Common.LocalGrid,
   ZXing.QrCode.Internal.Version,
   ZXing.QrCode.Internal.BitMatrixParser;
@@ -1052,6 +1060,22 @@ begin
   finally
     usedFPs.Free;
   end;
+end;
+
+function FindQRFinderPatterns(image: TBitMatrix; tryHarder: Boolean)
+  : TArray<TConcentricPattern>;
+var
+  floatMask: TFloatExceptionsMasked; // masked until this function returns
+begin
+  Result := FindFinderPatterns(image, tryHarder);
+end;
+
+function LocateQRAlignmentPattern(image: TBitMatrix; moduleSize: Double;
+  const estimate: TPointD; out res: TPointD): Boolean;
+var
+  floatMask: TFloatExceptionsMasked; // masked until this function returns
+begin
+  Result := LocateAlignmentPattern(image, moduleSize, estimate, res);
 end;
 
 function DetectPureQRCode(image: TBitMatrix;

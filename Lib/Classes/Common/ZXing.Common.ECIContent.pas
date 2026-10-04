@@ -40,6 +40,10 @@ type
     procedure Append(b: Byte); overload;
     procedure Append(const s: string); overload;
     procedure SwitchEncoding(eci: Integer);
+    /// <summary>The character set (as ECI value; -1 the default) of the
+    /// next part, without an ECI in the symbol (like a Kanji segment).
+    /// </summary>
+    procedure SwitchCharset(eci: Integer);
     procedure Erase(index, count: Integer);
     function IsEmpty: Boolean;
     /// <summary>The bytes as text, each part in its character set.
@@ -79,6 +83,17 @@ end;
 procedure TECIContent.SwitchEncoding(eci: Integer);
 begin
   HasECI := true;
+  Starts := Starts + [Length(Bytes)];
+  ECIs := ECIs + [eci];
+end;
+
+procedure TECIContent.SwitchCharset(eci: Integer);
+begin
+  // (the same as the last part: nothing to do)
+  if (Length(ECIs) > 0) and (ECIs[High(ECIs)] = eci) then
+    exit;
+  if (Length(ECIs) = 0) and (eci = -1) then
+    exit;
   Starts := Starts + [Length(Bytes)];
   ECIs := ECIs + [eci];
 end;

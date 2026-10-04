@@ -87,7 +87,11 @@ type
     Text: string;
   end;
 const
-  SAMPLES: array [0 .. 8] of TSample = (
+  SAMPLES: array [0 .. 10] of TSample = (
+    (FileName: 'microqrcode-1\M2-Alpha.png';
+    Format: TBarcodeFormat.MICRO_QR_CODE; Text: 'ABC'),
+    (FileName: 'rmqrcode-1\R7x43-H.png'; Format: TBarcodeFormat.RMQR_CODE;
+    Text: ',,'),
     (FileName: 'codabar-1\01.webp'; Format: TBarcodeFormat.CODABAR;
     Text: '1234567890'),
     (FileName: 'telepen-1\telepen-alpha-2.png'; Format: TBarcodeFormat.TELEPEN;

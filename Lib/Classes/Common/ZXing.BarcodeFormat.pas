@@ -92,7 +92,13 @@ type
     RSS_LIMITED = 1048576,
 
     /// <summary>MicroPDF417 2D format.</summary>
-    MICRO_PDF417 = 2097152
+    MICRO_PDF417 = 2097152,
+
+    /// <summary>Micro QR Code 2D format.</summary>
+    MICRO_QR_CODE = 4194304,
+
+    /// <summary>rMQR Code (rectangular Micro QR Code) 2D format.</summary>
+    RMQR_CODE = 8388608
 
     );
 

@@ -37,7 +37,7 @@ const
   // slow, fast, pure. Results after the 1D decoders of zxing-cpp (phase 7).
   // The wrong results in upce-2 are a misread of 509689-3!.webp, an image
   // that zxing-cpp can not read either.
-  FOLDER_LIMITS: array [0 .. 44] of TFolderLimits = (
+  FOLDER_LIMITS: array [0 .. 46] of TFolderLimits = (
     (Folder: 'aztec-1'; Limits: ((MinRead: 132; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'aztec-2'; Limits: ((MinRead: 62; MaxWrong: 0; MaxErrors: 0), (MinRead: 61; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'codabar-1'; Limits: ((MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0))),
@@ -67,6 +67,7 @@ const
     (Folder: 'itf-1'; Limits: ((MinRead: 28; MaxWrong: 0; MaxErrors: 0), (MinRead: 26; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'itf-2'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'micropdf417-1'; Limits: ((MinRead: 21; MaxWrong: 0; MaxErrors: 0), (MinRead: 20; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'microqrcode-1'; Limits: ((MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 32; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'multi-1'; Limits: ((MinRead: 20; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'none-1'; Limits: ((MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'none-2'; Limits: ((MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
@@ -77,6 +78,7 @@ const
     (Folder: 'qrcode-2'; Limits: ((MinRead: 141; MaxWrong: 0; MaxErrors: 0), (MinRead: 64; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'qrcode-3'; Limits: ((MinRead: 207; MaxWrong: 0; MaxErrors: 0), (MinRead: 104; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'qrcode-4'; Limits: ((MinRead: 71; MaxWrong: 0; MaxErrors: 0), (MinRead: 35; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'rmqrcode-1'; Limits: ((MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 4; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'telepen-1'; Limits: ((MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 8; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'upca-1'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'upca-2'; Limits: ((MinRead: 84; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
@@ -119,6 +121,7 @@ type
     [TestCase('itf-1', 'itf-1')]
     [TestCase('itf-2', 'itf-2')]
     [TestCase('micropdf417-1', 'micropdf417-1')]
+    [TestCase('microqrcode-1', 'microqrcode-1')]
     [TestCase('multi-1', 'multi-1')]
     [TestCase('none-1', 'none-1')]
     [TestCase('none-2', 'none-2')]
@@ -129,6 +132,7 @@ type
     [TestCase('qrcode-2', 'qrcode-2')]
     [TestCase('qrcode-3', 'qrcode-3')]
     [TestCase('qrcode-4', 'qrcode-4')]
+    [TestCase('rmqrcode-1', 'rmqrcode-1')]
     [TestCase('telepen-1', 'telepen-1')]
     [TestCase('upca-1', 'upca-1')]
     [TestCase('upca-2', 'upca-2')]

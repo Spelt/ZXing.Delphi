@@ -97,6 +97,15 @@ type
     /// </summary>
     function FindTimingPatternCross(isBlack: Boolean; radius: Integer;
       out position: TPointD): Boolean;
+    /// <summary>
+    /// Looks in a spiral around the grid center for the corner of a symbol:
+    /// no black modules in the quiet zone in the direction out (diagonal,
+    /// like (1, 1) for the bottom right corner) and black modules of the
+    /// symbol along both edges, up to radius modules; true and its pixel
+    /// position when found.
+    /// </summary>
+    function FindCorner(radius: Integer; const outDir: TPoint;
+      out position: TPointD): Boolean;
   end;
 
   /// <summary>A region of interest of the grid (x0 to x1 and y0 to y1,
@@ -469,6 +478,36 @@ begin
       position := FOrigin;
       exit(true);
     end;
+  Result := false;
+end;
+
+function TLocalGrid.FindCorner(radius: Integer; const outDir: TPoint;
+  out position: TPointD): Boolean;
+begin
+  var dx := Point(outDir.X, 0);
+  var dy := Point(0, outDir.Y);
+  for var p in Spiral3 do
+  begin
+    var quietZone := 0;
+    var symbolX := 0;
+    var symbolY := 0;
+    var q := Point(p.X + outDir.X, p.Y + outDir.Y);
+    for var r := 0 to radius do
+    begin
+      Inc(quietZone, Ord(Get(PointOf(Point(q.X - r * dx.X, q.Y - r * dx.Y)))
+        = VALUE_BLACK) + Ord(Get(PointOf(Point(q.X - r * dy.X,
+        q.Y - r * dy.Y))) = VALUE_BLACK));
+      Inc(symbolX, Ord(FindValue(Point(p.X - r * dx.X, p.Y - r * dx.Y), dx,
+        VALUE_BLACK)));
+      Inc(symbolY, Ord(FindValue(Point(p.X - r * dy.X, p.Y - r * dy.Y), dy,
+        VALUE_BLACK)));
+    end;
+    if (quietZone = 0) and (symbolX > 0) and (symbolY > 0) then
+    begin
+      position := GetPos(p);
+      exit(true);
+    end;
+  end;
   Result := false;
 end;
 

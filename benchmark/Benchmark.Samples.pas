@@ -183,6 +183,10 @@ begin
     format := TBarcodeFormat.RSS_EXPANDED
   else if (n = 'databarltd') or (n = 'databarlimited') then
     format := TBarcodeFormat.RSS_LIMITED
+  else if (n = 'microqrcode') then
+    format := TBarcodeFormat.MICRO_QR_CODE
+  else if (n = 'rmqrcode') then
+    format := TBarcodeFormat.RMQR_CODE
   else if (n = 'pdf417') then
     format := TBarcodeFormat.PDF_417
   else if (n = 'micropdf417') then

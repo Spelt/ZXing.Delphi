@@ -411,6 +411,9 @@ begin
   end;
 
   provisionalVersion := TMathUtils.Asr((dimension - 17), 2);
+  // smaller than version 1 (like a Micro QR Code): no QR Code
+  if (provisionalVersion < 1) then
+    exit(nil);
   if (provisionalVersion <= 6) then
   begin
     Result := TVersion.getVersionForNumber(provisionalVersion);

@@ -27,6 +27,7 @@ uses
   ReedSolomonTest in 'ReedSolomonTest.pas',
   DataBarTest in 'DataBarTest.pas',
   PDF417Test in 'PDF417Test.pas',
+  MicroQRTest in 'MicroQRTest.pas',
   Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
   Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
   Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';
