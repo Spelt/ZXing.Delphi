@@ -38,6 +38,8 @@ type
     procedure GS1HRIFromElementStrings;
     [Test]
     procedure GS1HRIOfDataMatrix;
+    [Test]
+    procedure MetadataInterfacesDistinct;
   end;
 
 implementation
@@ -56,7 +58,9 @@ uses
   ZXing.BarcodeFormat,
   ZXing.DecodeHintType,
   ZXing.ReadResult,
-  ZXing.GS1;
+  ZXing.GS1,
+  ZXing.ByteSegments,
+  ZXing.ResultMetadataType;
 
 function ImagePath(const fileName: string): string;
 begin
@@ -300,6 +304,23 @@ begin
   finally
     r.Free;
   end;
+end;
+
+procedure TReadResultTest.MetadataInterfacesDistinct;
+begin
+  // byte segments and integer metadata had the same GUID: Supports found
+  // the wrong interface
+  var byteSegments := TResultMetaData.CreateByteSegmentsMetadata
+    (ByteSegmentsCreate);
+  var integer := TResultMetaData.CreateIntegerMetadata(42);
+  var asInteger: IIntegerMetadata;
+  var asByteSegments: IByteSegmentsMetadata;
+  Assert.IsFalse(Supports(byteSegments, IIntegerMetadata, asInteger),
+    'byte segments as integer');
+  Assert.IsFalse(Supports(integer, IByteSegmentsMetadata, asByteSegments),
+    'integer as byte segments');
+  Assert.IsTrue(Supports(integer, IIntegerMetadata, asInteger));
+  Assert.AreEqual(42, asInteger.Value);
 end;
 
 initialization

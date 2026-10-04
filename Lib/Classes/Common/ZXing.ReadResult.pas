@@ -45,7 +45,7 @@ type
   end;
 
   IByteSegmentsMetadata = interface(IMetaData)
-     ['{CA60A23A-57ED-4C8E-9886-4F23B832A90C}']
+     ['{3E8D1F6B-92A4-4B7C-A5D0-6C2E9F41B873}']
      function Value:IByteSegments;
   end;
 
