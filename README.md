@@ -30,6 +30,7 @@ From Delphi 11 the standard camera component seems much improved.
 | GS1 DataBar Expanded (also stacked) | Telepen | Micro QR Code
 | GS1 DataBar Limited |  | rMQR Code
 | DX Film Edge |               | MaxiCode (with detector)
+|            | Code 32, PZN (when asked for) |
 
 
 ### Features
@@ -57,6 +58,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- New formats: Micro QR Code (new: MICRO_QR_CODE, M1 to M4) and rMQR Code (new: RMQR_CODE, the rectangular Micro QR Code of ISO/IEC 23941), port of the readers of zxing-cpp: found by their finder pattern (also several in an image) or as pure symbol, numeric, alphanumeric, byte and Kanji segments, and ECI and FNC1 (GS1) for rMQR. The QR Code reader no longer raises an exception on a pure symbol smaller than a QR Code.
 	- New format: MaxiCode (TBarcodeFormat.MAXICODE), port of the reader of zxing-cpp: all modes (2 to 6), the Structured Carrier Message, ECI and Structured Append (STRUCTURED_APPEND_SEQUENCE). zxing-cpp only reads symbols that fill the image (a "pure" image); ZXing.Delphi also has a detector of its own that finds the symbol anywhere in the image by its bullseye, so it works with the camera too: rotated, skewed and in perspective (the grid is fitted to the edges between the modules), also several symbols with ScanAll. It reads all 4 photos of shipping labels of the zxing-cpp samples (zxing-cpp none of them).
 	- New format: DX Film Edge (new: DX_FILM_EDGE), the DX code on the edge of 35 mm film, port of the reader of zxing-cpp: the text is the product and generation number and, when there, the frame number, like 115-10/11A.
+	- New formats: Code 32 (new: CODE_32, the Italian pharmacy code, text 'A' and 9 digits) and PZN (new: PZN, the German Pharmazentralnummer), both Code 39 codes, port of zxing-cpp. Only when asked for (TScanManager format or POSSIBLE_FORMATS): Auto returns them as CODE_39 like before, so nothing changes for applications that read them as Code 39.
 	- Auto (TBarcodeFormat.Auto) reads all formats, also the new ones (Codabar, Telepen, Aztec, GS1 DataBar, PDF417, MicroPDF417, Micro QR Code, rMQR Code, MaxiCode, DX Film Edge), as users expect. On images without a barcode this costs more time than before: about 60% with TRY_HARDER and about 2 times without (a few milliseconds per camera image): choose the formats you need for the best speed.
 	- TScanManager.ScanAll: a result whose position was the same array as its result points (Aztec, and the symbols found but not read) got its position scaled twice in the downscaled layers.
 	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39, Code 93 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode.

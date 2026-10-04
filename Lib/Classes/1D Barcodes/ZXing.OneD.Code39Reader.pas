@@ -42,6 +42,9 @@ type
     decodeRowResult: TStringBuilder;
     usingCheckDigit: boolean;
     extendedMode: boolean;
+    FCode32: Boolean;
+    FPZN: Boolean;
+    FCode39: Boolean;
 
     function decodeExtended(encoded: string): string;
 
@@ -68,6 +71,11 @@ type
     /// mode), from the characters between the start and stop characters;
     /// '' when not valid.</summary>
     function MakeText(const chars: string): string;
+    /// <summary>The text of a PZN or Code 32 (when asked for) from the
+    /// characters between the start and stop characters, and its format;
+    /// '' when it is none.</summary>
+    function VariantText(const chars: string;
+      var format: TBarcodeFormat): string;
   protected
     /// <summary>The decoder of zxing-cpp: the start character from its
     /// narrow bars and spaces with a quiet zone, thresholds between narrow
@@ -86,6 +94,17 @@ type
     constructor Create(AUsingCheckDigit, AExtendedMode: boolean);
     destructor Destroy(); override;
 
+    /// <summary>Codes of the Italian pharmacy code Code 32 are returned as
+    /// CODE_32: the text 'A' and 9 digits (port of zxing-cpp).</summary>
+    property Code32: Boolean read FCode32 write FCode32;
+    /// <summary>Codes of the German pharmacy code PZN (Pharmazentralnummer:
+    /// '-' and 8 digits with a check digit) are returned as PZN (port of
+    /// zxing-cpp).</summary>
+    property PZN: Boolean read FPZN write FPZN;
+    /// <summary>Other Code 39 codes are returned (default true): false
+    /// when only Code 32 or PZN is asked for.</summary>
+    property Code39: Boolean read FCode39 write FCode39;
+
   end;
 
 implementation
@@ -99,6 +118,7 @@ begin
   decodeRowResult := TStringBuilder.Create();
   usingCheckDigit := AUsingCheckDigit;
   extendedMode := AExtendedMode;
+  FCode39 := true;
 
 end;
 
@@ -155,6 +175,60 @@ begin
     Result := decodeExtended(s)
   else
     Result := s;
+end;
+
+function TCode39Reader.VariantText(const chars: string;
+  var format: TBarcodeFormat): string;
+const
+  // Code 32: 6 characters base 32, 0-9 and A-Z without A, E, I and O
+  TABELLA = '0123456789BCDFGHJKLMNPQRSTUVWXYZ';
+begin
+  Result := '';
+  // PZN: '-', 7 digits and a check digit (the digits weighted 1 to 7,
+  // modulo 11)
+  if FPZN and (Length(chars) = 9) and (chars.Chars[0] = '-') then
+  begin
+    var checksum := 0;
+    var digits := true;
+    for var i := 1 to 8 do
+      if not CharInSet(chars.Chars[i], ['0' .. '9']) then
+        digits := false
+      else if (i < 8) then
+        Inc(checksum, (Ord(chars.Chars[i]) - Ord('0')) * i);
+    if digits and (checksum mod 11 = Ord(chars.Chars[8]) - Ord('0')) then
+    begin
+      format := TBarcodeFormat.PZN;
+      exit(chars);
+    end;
+  end;
+
+  // Code 32: the value as 9 digits, the last one a check digit
+  if FCode32 and (Length(chars) = 6) then
+  begin
+    var value: Int64 := 0;
+    for var c in chars do
+    begin
+      var i := TABELLA.IndexOf(c);
+      if (i < 0) then
+        exit;
+      value := value * 32 + i;
+    end;
+    if (value >= 1000000000) then
+      exit;
+    var digits := System.SysUtils.Format('%.9d', [value]);
+    var checksum := 0;
+    for var i := 0 to 3 do
+    begin
+      var j := 2 * (Ord(digits.Chars[2 * i + 1]) - Ord('0'));
+      Inc(checksum, Ord(digits.Chars[2 * i]) - Ord('0') + j mod 10 +
+        Ord(j >= 10));
+    end;
+    if (checksum mod 10 = Ord(digits.Chars[8]) - Ord('0')) then
+    begin
+      format := TBarcodeFormat.CODE_32;
+      Result := 'A' + digits;
+    end;
+  end;
 end;
 
 function TCode39Reader.decodePattern(rowNumber: Integer;
@@ -216,7 +290,10 @@ begin
     not next.HasQuietZoneAfter(QUIET_ZONE_SCALE) then
     exit;
 
-  var text := MakeText(chars);
+  var format := TBarcodeFormat.CODE_39;
+  var text := VariantText(chars, format);
+  if (text = '') and FCode39 then
+    text := MakeText(chars);
   if (text = '') then
     exit;
 
@@ -224,13 +301,17 @@ begin
   Result := TReadResult.Create(text, nil,
     [TResultPointHelpers.CreateResultPoint(startView.PixelsInFront +
     startView.Sum / 2, rowNumber), TResultPointHelpers.CreateResultPoint
-    (next.PixelsInFront + next.Sum / 2, rowNumber)], TBarcodeFormat.CODE_39);
+    (next.PixelsInFront + next.Sum / 2, rowNumber)], format);
   // ISO/IEC 15424: +3 check digit validated and stripped, +4 full ASCII
+  // (not for PZN and Code 32, like zxing-cpp)
   var modifier := 0;
-  if usingCheckDigit then
-    Inc(modifier, 3);
-  if extendedMode then
-    Inc(modifier, 4);
+  if (format = TBarcodeFormat.CODE_39) then
+  begin
+    if usingCheckDigit then
+      Inc(modifier, 3);
+    if extendedMode then
+      Inc(modifier, 4);
+  end;
   Result.SymbologyIdentifier := ']A' + IntToStr(modifier);
 end;
 
@@ -350,7 +431,6 @@ var
   resultPoints: TArray<IResultPoint>;
   resultPointLeft, resultPointRight: IResultPoint;
   whiteSpaceAfterEnd: Integer;
-  i, max, total: Integer;
 begin
   for index := 0 to length(counters) - 1 do
   begin
@@ -416,38 +496,12 @@ begin
     exit
   end;
 
-  if (usingCheckDigit) then
-  begin
-    // The check digit is the sum of the character values modulo 43, with the
-    // values of CHECK_DIGIT_STRING (ALPHABET_STRING also holds the '*').
-    max := self.decodeRowResult.length - 1;
-    total := 0;
-    for i := 0 to max - 1 do
-    begin
-      Inc(total, CHECK_DIGIT_STRING.indexOf(decodeRowResult.Chars[i]));
-    end;
-
-    if (self.decodeRowResult.Chars[max] <> CHECK_DIGIT_STRING.Chars[total mod 43]) then
-    begin
-      Result := nil;
-      exit
-    end;
-
-    // drop the check digit (the last character)
-    self.decodeRowResult.Length := max;
-  end;
-
-  if (self.decodeRowResult.length = 0) then
-  begin
-    Result := nil;
-    exit
-  end;
-
-  if extendedMode then
-    resultString := decodeExtended(self.decodeRowResult.ToString())
-  else
-    resultString := decodeRowResult.ToString();
-
+  // PZN or Code 32 (when asked for), else the check digit and the extended
+  // mode (MakeText)
+  var format := TBarcodeFormat.CODE_39;
+  resultString := VariantText(decodeRowResult.ToString, format);
+  if (resultString = '') and FCode39 then
+    resultString := MakeText(decodeRowResult.ToString);
   if (resultString = '') then
   begin
     Result := nil;
@@ -461,16 +515,18 @@ begin
   resultPointRight := TResultPointHelpers.CreateResultPoint(Right, rowNumber);
   resultPoints := [resultPointLeft, resultPointRight];
 
-  Result := TReadResult.Create(resultString, nil, resultPoints,
-    TBarcodeFormat.CODE_39);
+  Result := TReadResult.Create(resultString, nil, resultPoints, format);
   // ISO/IEC 15424: +3 check digit validated and stripped, +4 full ASCII
+  // (not for PZN and Code 32, like zxing-cpp)
   var modifier := 0;
-  if usingCheckDigit then
-    Inc(modifier, 3);
-  if extendedMode then
-    Inc(modifier, 4);
+  if (format = TBarcodeFormat.CODE_39) then
+  begin
+    if usingCheckDigit then
+      Inc(modifier, 3);
+    if extendedMode then
+      Inc(modifier, 4);
+  end;
   Result.SymbologyIdentifier := ']A' + IntToStr(modifier);
-
 end;
 
 function TCode39Reader.findAsteriskPattern(row: IBitArray): TOneDPattern;

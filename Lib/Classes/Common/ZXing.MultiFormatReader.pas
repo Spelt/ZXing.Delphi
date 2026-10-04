@@ -289,9 +289,18 @@ begin
     if (formats.Contains(TBarcodeFormat.UPC_E)) then
       readers.Add(TUPCEReader.Create());
 
-    if (formats.Contains(TBarcodeFormat.CODE_39)) then
-      readers.Add(TCode39Reader.Create(useCode39CheckDigit,
-        useCode39ExtendedMode));
+    // Code 32 and PZN are Code 39 codes
+    if formats.Contains(TBarcodeFormat.CODE_39) or
+      formats.Contains(TBarcodeFormat.CODE_32) or
+      formats.Contains(TBarcodeFormat.PZN) then
+    begin
+      var code39 := TCode39Reader.Create(useCode39CheckDigit,
+        useCode39ExtendedMode);
+      code39.Code32 := formats.Contains(TBarcodeFormat.CODE_32);
+      code39.PZN := formats.Contains(TBarcodeFormat.PZN);
+      code39.Code39 := formats.Contains(TBarcodeFormat.CODE_39);
+      readers.Add(code39);
+    end;
 
     if formats.Contains(TBarcodeFormat.CODABAR) then
       readers.Add(TCodabarReader.Create);

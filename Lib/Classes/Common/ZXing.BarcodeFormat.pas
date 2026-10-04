@@ -101,7 +101,15 @@ type
     RMQR_CODE = 8388608,
 
     /// <summary>DX film edge code of 35 mm film (1D).</summary>
-    DX_FILM_EDGE = 16777216
+    DX_FILM_EDGE = 16777216,
+
+    /// <summary>Code 32 (Italian pharmacy code, a Code 39): only when asked
+    /// for, Auto returns it as CODE_39.</summary>
+    CODE_32 = 33554432,
+
+    /// <summary>PZN (German Pharmazentralnummer, a Code 39): only when asked
+    /// for, Auto returns it as CODE_39.</summary>
+    PZN = 67108864
 
     );
 

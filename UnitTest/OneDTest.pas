@@ -36,6 +36,10 @@ type
     procedure DXFilmEdge;
     [Test]
     procedure DXFilmEdgeWithFrameNumber;
+    [Test]
+    procedure Code32;
+    [Test]
+    procedure PZN;
   end;
 
 implementation
@@ -57,7 +61,11 @@ uses
   ZXing.ResultMetadataType,
   ZXing.Common.BitArray,
   ZXing.Common.Pattern,
-  ZXing.OneD.Code128Reader;
+  ZXing.OneD.Code128Reader,
+  ZXing.RGBLuminanceSource,
+  ZXing.HybridBinarizer,
+  ZXing.BinaryBitmap,
+  ZXing.MultiFormatReader;
 
 type
   // access to the protected decodePattern
@@ -315,6 +323,164 @@ begin
   try
     Assert.IsNotNull(r, ' Nil result ');
     Assert.AreEqual('80-11/23', r.Text);
+  finally
+    r.Free;
+  end;
+end;
+
+/// <summary>Reads a Code 39 of chars (without the start and stop
+/// characters), drawn in an image, with the formats; the caller frees the
+/// result.</summary>
+function ReadCode39(const chars: string;
+  const formats: array of TBarcodeFormat): TReadResult;
+const
+  ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%*';
+  ENCODINGS: array [0 .. 43] of Integer = ($034, $121, $061, $160, $031, $130,
+    $070, $025, $124, $064, $109, $049, $148, $019, $118, $058, $00D, $10C,
+    $04C, $01C, $103, $043, $142, $013, $112, $052, $007, $106, $046, $016,
+    $181, $0C1, $1C0, $091, $190, $0D0, $085, $184, $0C4, $0A8, $0A2, $08A,
+    $02A, $094);
+  MODULE = 2;
+  QUIET = 20;
+  HEIGHT = 40;
+begin
+  // the widths of the bars and spaces: narrow 1, wide 3, a narrow space
+  // between the characters
+  var widths: TArray<Integer> := [];
+  for var c in '*' + chars + '*' do
+  begin
+    if (Length(widths) > 0) then
+      widths := widths + [1];
+    var pattern := ENCODINGS[ALPHABET.IndexOf(c)];
+    for var j := 8 downto 0 do
+      if (pattern shr j) and 1 = 1 then
+        widths := widths + [3]
+      else
+        widths := widths + [1];
+  end;
+  var width := 2 * QUIET * MODULE;
+  for var w in widths do
+    Inc(width, w * MODULE);
+  var row: TArray<Byte>;
+  SetLength(row, width);
+  FillChar(row[0], width, 255);
+  var x := QUIET * MODULE;
+  for var i := 0 to High(widths) do
+  begin
+    if not Odd(i) then
+      FillChar(row[x], widths[i] * MODULE, 0);
+    Inc(x, widths[i] * MODULE);
+  end;
+  var pixels: TArray<Byte>;
+  SetLength(pixels, width * HEIGHT);
+  for var y := 0 to HEIGHT - 1 do
+    Move(row[0], pixels[y * width], width);
+
+  var source := TRGBLuminanceSource.Create(pixels, width, HEIGHT,
+    TBitmapFormat.Gray8);
+  var binarizer := THybridBinarizer.Create(source);
+  var image := TBinaryBitmap.Create(binarizer);
+  var hints := TDictionary<TDecodeHintType, TObject>.Create;
+  var list := TList<TBarcodeFormat>.Create;
+  var reader := TMultiFormatReader.Create;
+  try
+    list.AddRange(formats);
+    if (list.Count > 0) then
+      hints.Add(TDecodeHintType.POSSIBLE_FORMATS, list);
+    reader.Hints := hints;
+    Result := reader.decode(image, true);
+  finally
+    reader.Free;
+    list.Free;
+    hints.Free;
+    image.Free;
+    binarizer.Free;
+    source.Free;
+  end;
+end;
+
+procedure TOneDTest.Code32;
+const
+  // 6 characters base 32 of 012345676 (the last digit the check digit)
+  TABELLA = '0123456789BCDFGHJKLMNPQRSTUVWXYZ';
+begin
+  var value := 12345676;
+  var chars := '';
+  for var i := 1 to 6 do
+  begin
+    chars := TABELLA.Chars[value mod 32] + chars;
+    value := value div 32;
+  end;
+
+  var r := ReadCode39(chars, [TBarcodeFormat.CODE_32]);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual(Ord(TBarcodeFormat.CODE_32), Ord(r.BarcodeFormat));
+    Assert.AreEqual('A012345676', r.Text);
+  finally
+    r.Free;
+  end;
+
+  // in Auto as before: Code 39
+  r := ReadCode39(chars, []);
+  try
+    Assert.IsNotNull(r, ' Nil result (Auto) ');
+    Assert.AreEqual(Ord(TBarcodeFormat.CODE_39), Ord(r.BarcodeFormat));
+    Assert.AreEqual(chars, r.Text);
+  finally
+    r.Free;
+  end;
+
+  // a wrong check digit (012345675): Code 39, not Code 32
+  value := 12345675;
+  chars := '';
+  for var i := 1 to 6 do
+  begin
+    chars := TABELLA.Chars[value mod 32] + chars;
+    value := value div 32;
+  end;
+  r := ReadCode39(chars, [TBarcodeFormat.CODE_32, TBarcodeFormat.CODE_39]);
+  try
+    Assert.IsNotNull(r, ' Nil result (wrong check digit) ');
+    Assert.AreEqual(Ord(TBarcodeFormat.CODE_39), Ord(r.BarcodeFormat));
+  finally
+    r.Free;
+  end;
+
+  // only Code 32 asked for: no other Code 39
+  r := ReadCode39('HELLO', [TBarcodeFormat.CODE_32]);
+  try
+    Assert.IsNull(r, 'Code 39 when only Code 32 is asked for');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.PZN;
+begin
+  // 1 * 1 + 2 * 2 + ... + 7 * 7 = 140, modulo 11: 8
+  var r := ReadCode39('-12345678', [TBarcodeFormat.PZN]);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual(Ord(TBarcodeFormat.PZN), Ord(r.BarcodeFormat));
+    Assert.AreEqual('-12345678', r.Text);
+  finally
+    r.Free;
+  end;
+
+  // a wrong check digit
+  r := ReadCode39('-12345679', [TBarcodeFormat.PZN]);
+  try
+    Assert.IsNull(r, 'PZN with a wrong check digit');
+  finally
+    r.Free;
+  end;
+
+  // in Auto as before: Code 39
+  r := ReadCode39('-12345678', []);
+  try
+    Assert.IsNotNull(r, ' Nil result (Auto) ');
+    Assert.AreEqual(Ord(TBarcodeFormat.CODE_39), Ord(r.BarcodeFormat));
   finally
     r.Free;
   end;
