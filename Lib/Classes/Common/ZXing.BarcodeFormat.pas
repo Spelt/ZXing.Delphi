@@ -114,7 +114,19 @@ type
 
     /// <summary>Pharmacode (Laetus, one track): only when asked for, not in
     /// Auto.</summary>
-    PHARMA_CODE = 134217728
+    PHARMA_CODE = 134217728,
+
+    // the postal barcodes (from here on numbered, not bits): only when asked
+    // for, not in Auto
+
+    /// <summary>KIX (PostNL, 4-state).</summary>
+    KIX = 268435456,
+
+    /// <summary>RM4SCC (Royal Mail 4-State Customer Code).</summary>
+    RM4SCC = 268435457,
+
+    /// <summary>USPS Intelligent Mail Barcode (4-state).</summary>
+    IMB = 268435458
 
     );
 

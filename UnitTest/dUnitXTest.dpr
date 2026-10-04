@@ -29,6 +29,7 @@ uses
   PDF417Test in 'PDF417Test.pas',
   MicroQRTest in 'MicroQRTest.pas',
   MaxiCodeTest in 'MaxiCodeTest.pas',
+  PostalTest in 'PostalTest.pas',
   Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
   Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
   Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';

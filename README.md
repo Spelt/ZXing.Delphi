@@ -59,6 +59,16 @@ All formats are read with TBarcodeFormat.Auto, except the ones marked "only when
 | MicroPDF417 | MICRO_PDF417 | Macro PDF417, ECI |
 | MaxiCode | MAXICODE | modes 2 to 6, ECI, Structured Append | with detector: anywhere in the image, rotated and in perspective (camera)
 
+### Postal (4-state)
+
+Only when asked for, not in Auto. Horizontal and vertical, upside down, slanted and in perspective.
+
+| Format | TBarcodeFormat | Notes
+| ------ | -------------- | -----
+| KIX (PostNL) | KIX | starting with a Dutch postcode (it has no start or stop: that tells the direction)
+| RM4SCC (Royal Mail 4-State Customer Code) | RM4SCC | check character checked, not in the text
+| USPS Intelligent Mail Barcode | IMB | CRC checked; text: tracking code (20 digits) and routing code (ZIP, 0, 5, 9 or 11 digits)
+
 ### Features
 - Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
 - 100% free. No license fees. Just free.
@@ -86,6 +96,7 @@ All formats are read with TBarcodeFormat.Auto, except the ones marked "only when
 	- New format: DX Film Edge (new: DX_FILM_EDGE), the DX code on the edge of 35 mm film, port of the reader of zxing-cpp: the text is the product and generation number and, when there, the frame number, like 115-10/11A.
 	- New formats: Code 32 (new: CODE_32, the Italian pharmacy code, text 'A' and 9 digits) and PZN (new: PZN, the German Pharmazentralnummer), both Code 39 codes, port of zxing-cpp. Only when asked for (TScanManager format or POSSIBLE_FORMATS): Auto returns them as CODE_39 like before, so nothing changes for applications that read them as Code 39.
 	- New formats: MSI (MSI), Plessey (PLESSEY) and Pharmacode (new: PHARMA_CODE). zxing-cpp and ZXing Java have none of them: MSI and Pharmacode after the readers of ZXing.Net, Plessey new (with its CRC checked), the patterns as in zint. MSI with the hint ASSUME_MSI_CHECK_DIGIT checks the modulo 10 check digit (it stays in the text). MSI reads 5 of the 6 MSI test images of ZXing.Net (like ZXing.Net), also upside down. Only when asked for, not in Auto: MSI and Pharmacode have no check against false positives. Pharmacode is read left to right; upside down it is a different value.
+	- New formats, the postal barcodes: KIX (new: KIX), RM4SCC (new: RM4SCC) and USPS Intelligent Mail Barcode (new: IMB). zxing-cpp and ZXing Java have none of them: a detector of its own finds the rows of bars (also vertical, upside down, slanted, curved and in perspective) and the heights of the bars, the encodings as in zint. IMb reads 8 of the 10 test images of ZXing.Net (ZXing.Net 1, with TRY_HARDER 7); with a strong check (IMb) the least certain bars are tried the other way too. Only when asked for, not in Auto.
 	- Auto (TBarcodeFormat.Auto) reads all formats, also the new ones (Codabar, Telepen, Aztec, GS1 DataBar, PDF417, MicroPDF417, Micro QR Code, rMQR Code, MaxiCode, DX Film Edge), as users expect. On images without a barcode this costs more time than before: about 60% with TRY_HARDER and about 2 times without (a few milliseconds per camera image): choose the formats you need for the best speed.
 	- TScanManager.ScanAll: a result whose position was the same array as its result points (Aztec, and the symbols found but not read) got its position scaled twice in the downscaled layers.
 	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39, Code 93 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode.

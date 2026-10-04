@@ -53,6 +53,7 @@ uses
   ZXing.OneD.MSIReader,
   ZXing.OneD.PlesseyReader,
   ZXing.OneD.PharmacodeReader,
+  ZXing.Postal.PostalReader,
 
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
@@ -333,6 +334,14 @@ begin
 
     if formats.Contains(TBarcodeFormat.PHARMA_CODE) then
       readers.Add(TPharmacodeReader.Create);
+
+    // the postal barcodes, also only when asked for
+    var postal: TArray<TBarcodeFormat> := [];
+    for var f in formats do
+      if IsPostalFormat(f) then
+        postal := postal + [f];
+    if (Length(postal) > 0) then
+      readers.Add(TPostalReader.Create(postal));
   end;
 
   if (readers.Count = 0) then // must be auto, add them all

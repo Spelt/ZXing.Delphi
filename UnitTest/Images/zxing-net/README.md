@@ -7,3 +7,10 @@ ZXing.Delphi. Its MSI test requires 5 of the 6 images, also turned 180 degrees;
 `06.png` has no standard MSI stop pattern.
 
 They are used by `OneDTest.MSISamples`.
+
+The images and texts in `imb-1` are a copy of `Source/test/data/blackbox/imb-1`
+of ZXing.Net (2026-10-04); its IMb test requires 1 of them (7 with TRY_HARDER).
+`05.txt` is corrected: the image holds `0004000015800000004075201313699`
+(valid CRC and characters, ZIP 75201-3136-99), not the text of `01.txt`. The
+texts of `08.txt` and `10.txt` are the same as `01.txt` too and probably wrong
+as well; those photos are not read. Used by `PostalTest.IMbSamples`.

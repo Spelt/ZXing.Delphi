@@ -198,6 +198,12 @@ begin
     format := TBarcodeFormat.PLESSEY
   else if (n = 'pharmacode') then
     format := TBarcodeFormat.PHARMA_CODE
+  else if (n = 'kix') or (n = 'kixcode') then
+    format := TBarcodeFormat.KIX
+  else if (n = 'rm4scc') then
+    format := TBarcodeFormat.RM4SCC
+  else if (n = 'imb') or (n = 'uspsimail') then
+    format := TBarcodeFormat.IMB
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then
