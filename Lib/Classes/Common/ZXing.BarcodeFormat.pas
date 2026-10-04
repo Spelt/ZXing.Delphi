@@ -141,7 +141,31 @@ type
     AUSTRALIA_POST = 268435462,
 
     /// <summary>Royal Mail Mailmark 4-state barcode (C and L).</summary>
-    MAILMARK_4STATE = 268435463
+    MAILMARK_4STATE = 268435463,
+
+    // more 1D formats, also only when asked for, not in Auto
+
+    /// <summary>Code 11 (USD-8, telecom), with 1 or 2 check digits.</summary>
+    CODE_11 = 268435464,
+
+    /// <summary>Industrial 2 of 5 (Code 2 of 5, digits in the bars).
+    /// </summary>
+    INDUSTRIAL_2_OF_5 = 268435465,
+
+    /// <summary>IATA 2 of 5 (Industrial 2 of 5 with the IATA start and stop).
+    /// </summary>
+    IATA_2_OF_5 = 268435466,
+
+    /// <summary>Matrix 2 of 5 (Standard 2 of 5, digits in the bars and
+    /// spaces).</summary>
+    MATRIX_2_OF_5 = 268435467,
+
+    /// <summary>Datalogic 2 of 5 (Matrix 2 of 5 with the IATA start and
+    /// stop).</summary>
+    DATALOGIC_2_OF_5 = 268435468,
+
+    /// <summary>Pharmacode two-track (Laetus).</summary>
+    PHARMA_CODE_TWO_TRACK = 268435469
 
     );
 

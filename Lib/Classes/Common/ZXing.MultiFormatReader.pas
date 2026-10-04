@@ -52,6 +52,9 @@ uses
   ZXing.OneD.DXFilmEdgeReader,
   ZXing.OneD.MSIReader,
   ZXing.OneD.PlesseyReader,
+  ZXing.OneD.Code11Reader,
+  ZXing.OneD.Code2of5Reader,
+  ZXing.OneD.PharmacodeTwoTrackReader,
   ZXing.OneD.PharmacodeReader,
   ZXing.Postal.PostalReader,
 
@@ -334,6 +337,17 @@ begin
 
     if formats.Contains(TBarcodeFormat.PHARMA_CODE) then
       readers.Add(TPharmacodeReader.Create);
+
+    if formats.Contains(TBarcodeFormat.PHARMA_CODE_TWO_TRACK) then
+      readers.Add(TPharmacodeTwoTrackReader.Create);
+
+    if formats.Contains(TBarcodeFormat.CODE_11) then
+      readers.Add(TCode11Reader.Create);
+
+    for var f in [TBarcodeFormat.INDUSTRIAL_2_OF_5, TBarcodeFormat.IATA_2_OF_5,
+      TBarcodeFormat.MATRIX_2_OF_5, TBarcodeFormat.DATALOGIC_2_OF_5] do
+      if formats.Contains(f) then
+        readers.Add(TCode2of5Reader.Create(f));
 
     // the postal barcodes, also only when asked for
     var postal: TArray<TBarcodeFormat> := [];

@@ -214,6 +214,18 @@ begin
     format := TBarcodeFormat.AUSTRALIA_POST
   else if (n = 'mailmark') or (n = 'mailmark4s') then
     format := TBarcodeFormat.MAILMARK_4STATE
+  else if (n = 'code11') then
+    format := TBarcodeFormat.CODE_11
+  else if (n = 'industrial2of5') or (n = 'c25ind') then
+    format := TBarcodeFormat.INDUSTRIAL_2_OF_5
+  else if (n = 'iata2of5') or (n = 'c25iata') then
+    format := TBarcodeFormat.IATA_2_OF_5
+  else if (n = 'matrix2of5') or (n = 'c25standard') or (n = 'c25matrix') then
+    format := TBarcodeFormat.MATRIX_2_OF_5
+  else if (n = 'datalogic2of5') or (n = 'c25logic') then
+    format := TBarcodeFormat.DATALOGIC_2_OF_5
+  else if (n = 'pharmacodetwotrack') or (n = 'pharma2') then
+    format := TBarcodeFormat.PHARMA_CODE_TWO_TRACK
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

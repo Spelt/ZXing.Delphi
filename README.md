@@ -45,6 +45,12 @@ All formats are read with TBarcodeFormat.Auto, except the ones marked "only when
 | MSI | MSI | modulo 10 check digit (ASSUME_MSI_CHECK_DIGIT) | only when asked for
 | Plessey | PLESSEY | | CRC checked; only when asked for
 | Pharmacode | PHARMA_CODE | | Laetus one track; only when asked for
+| Pharmacode two-track | PHARMA_CODE_TWO_TRACK | | Laetus two track, horizontal and vertical; at least 3 bars, of at least 2 kinds (bars of one kind do not tell where the other track is); only when asked for
+| Code 11 | CODE_11 | 1 or 2 check digits (C, K) | check digit(s) checked, in the text; only when asked for
+| Industrial 2 of 5 | INDUSTRIAL_2_OF_5 | check digit in the text | only when asked for
+| IATA 2 of 5 | IATA_2_OF_5 | check digit in the text | only when asked for
+| Matrix 2 of 5 | MATRIX_2_OF_5 | check digit in the text | also called Standard 2 of 5; only when asked for
+| Datalogic 2 of 5 | DATALOGIC_2_OF_5 | check digit in the text | only when asked for
 
 ### 2D
 
@@ -101,6 +107,7 @@ Only when asked for, not in Auto. Horizontal and vertical, upside down, slanted 
 	- New format: DX Film Edge (new: DX_FILM_EDGE), the DX code on the edge of 35 mm film, port of the reader of zxing-cpp: the text is the product and generation number and, when there, the frame number, like 115-10/11A.
 	- New formats: Code 32 (new: CODE_32, the Italian pharmacy code, text 'A' and 9 digits) and PZN (new: PZN, the German Pharmazentralnummer), both Code 39 codes, port of zxing-cpp. Only when asked for (TScanManager format or POSSIBLE_FORMATS): Auto returns them as CODE_39 like before, so nothing changes for applications that read them as Code 39.
 	- New formats: MSI (MSI), Plessey (PLESSEY) and Pharmacode (new: PHARMA_CODE). zxing-cpp and ZXing Java have none of them: MSI and Pharmacode after the readers of ZXing.Net, Plessey new (with its CRC checked), the patterns as in zint. MSI with the hint ASSUME_MSI_CHECK_DIGIT checks the modulo 10 check digit (it stays in the text). MSI reads 5 of the 6 MSI test images of ZXing.Net (like ZXing.Net), also upside down. Only when asked for, not in Auto: MSI and Pharmacode have no check against false positives. Pharmacode is read left to right; upside down it is a different value.
+	- New formats: Code 11 (new: CODE_11), Industrial, IATA, Matrix and Datalogic 2 of 5 (new: INDUSTRIAL_2_OF_5, IATA_2_OF_5, MATRIX_2_OF_5, DATALOGIC_2_OF_5) and Pharmacode two-track (new: PHARMA_CODE_TWO_TRACK). zxing-cpp, ZXing Java and ZXing.Net have none of them: the patterns as in zint, verified against its test vectors. Code 11 requires its check digit C (or C and K); they stay in the text. The 2 of 5 variants have no check digit of their own: an optional one stays in the text. Pharmacode two-track: the two tracks of the bars are combined, horizontal and vertical; upside down it is a different value. Only when asked for, not in Auto.
 	- New formats, the postal barcodes: KIX (new: KIX), RM4SCC (new: RM4SCC), USPS Intelligent Mail Barcode (new: IMB), POSTNET and PLANET (new: POSTNET, PLANET), Japan Post (new: JAPAN_POST), Australia Post (new: AUSTRALIA_POST) and Royal Mail Mailmark 4-state (new: MAILMARK_4STATE). zxing-cpp and ZXing Java have none of them: a detector of its own finds the rows of bars (also vertical, upside down, slanted, curved and in perspective) and the heights of the bars, the encodings as in zint. IMb reads 9 of the 10 test images of ZXing.Net (ZXing.Net 1, with TRY_HARDER 7); with a strong check (IMb) the least certain bars are tried the other way too. Only when asked for, not in Auto.
 	- Auto (TBarcodeFormat.Auto) reads all formats, also the new ones (Codabar, Telepen, Aztec, GS1 DataBar, PDF417, MicroPDF417, Micro QR Code, rMQR Code, MaxiCode, DX Film Edge), as users expect. On images without a barcode this costs more time than before: about 60% with TRY_HARDER and about 2 times without (a few milliseconds per camera image): choose the formats you need for the best speed.
 	- TScanManager.ScanAll: a result whose position was the same array as its result points (Aztec, and the symbols found but not read) got its position scaled twice in the downscaled layers.

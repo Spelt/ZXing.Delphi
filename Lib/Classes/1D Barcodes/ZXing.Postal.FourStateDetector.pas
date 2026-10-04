@@ -69,6 +69,10 @@ type
 
 /// <summary>The postal barcodes in the image: rows of at least minBars
 /// equally spaced bars, found on every rowStep-th row.</summary>
+/// <summary>The image turned: rows become columns (the caller frees it).
+/// </summary>
+function Transposed(image: TBitMatrix): TBitMatrix;
+
 function DetectPostalBars(image: TBitMatrix; rowStep, minBars: Integer)
   : TArray<TPostalBars>;
 
@@ -80,6 +84,15 @@ type
     X, Y: Double;
     TopX, Top, BottomX, Bottom: Double;
   end;
+
+function Transposed(image: TBitMatrix): TBitMatrix;
+begin
+  Result := TBitMatrix.Create(image.Height, image.Width);
+  for var y := 0 to image.Height - 1 do
+    for var x := 0 to image.Width - 1 do
+      if image[x, y] then
+        Result[y, x] := true;
+end;
 
 { TPostalNumber }
 

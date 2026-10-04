@@ -50,6 +50,14 @@ type
     procedure NotInAuto;
     [Test]
     procedure MSISamples;
+    [Test]
+    procedure Code11;
+    [Test]
+    procedure Code2of5;
+    [Test]
+    procedure PharmacodeTwoTrack;
+    [Test]
+    procedure ZintVectors;
   end;
 
 implementation
@@ -649,11 +657,247 @@ begin
   end;
 end;
 
+/// <summary>The bars and spaces of modules ('1' bar, '0' space, starting
+/// with a bar), as the encode tests of zint write them.</summary>
+function ModuleWidths(const modules: string): TArray<Integer>;
+begin
+  Result := [];
+  var i := 1;
+  while (i <= Length(modules)) do
+  begin
+    var j := i;
+    while (j < Length(modules)) and (modules[j + 1] = modules[i]) do
+      Inc(j);
+    Result := Result + [j - i + 1];
+    i := j + 1;
+  end;
+end;
+
+/// <summary>The widths reversed (the barcode turned 180 degrees).</summary>
+function Reversed(const widths: TArray<Integer>): TArray<Integer>;
+begin
+  SetLength(Result, Length(widths));
+  for var i := 0 to High(widths) do
+    Result[High(widths) - i] := widths[i];
+end;
+
+const
+  CODE11_CHARS = '0123456789-';
+
+/// <summary>The modulo 11 check digit of Code 11 data, the weights from the
+/// right 1 up to maxWeight (as zint).</summary>
+function Code11Check(const data: string; maxWeight: Integer): Char;
+begin
+  var sum := 0;
+  var weight := 1;
+  for var i := Length(data) downto 1 do
+  begin
+    Inc(sum, weight * CODE11_CHARS.IndexOf(data[i]));
+    Inc(weight);
+    if (weight > maxWeight) then
+      weight := 1;
+  end;
+  Result := CODE11_CHARS.Chars[sum mod 11];
+end;
+
+/// <summary>The bars and spaces of a Code 11 of data with checks check
+/// digits (C, K) as zint, the wide ones wide modules.</summary>
+function Code11Widths(const data: string; checks: Integer;
+  wide: Integer = 2): TArray<Integer>;
+const
+  // wide 1, the last one the start and stop
+  PATTERNS: array [0 .. 11] of string = ('00001', '10001', '01001', '11000',
+    '00101', '10100', '01100', '00011', '10010', '10000', '00100', '00110');
+begin
+  var text := data;
+  if (checks >= 1) then
+    text := text + Code11Check(text, 10);
+  if (checks = 2) then
+    text := text + Code11Check(text, 9);
+  var chars: TArray<Integer> := [11];
+  for var c in text do
+    chars := chars + [CODE11_CHARS.IndexOf(c)];
+  chars := chars + [11];
+  Result := [];
+  for var k := 0 to High(chars) do
+  begin
+    for var e := 1 to 5 do
+      if (PATTERNS[chars[k]][e] = '1') then
+        Result := Result + [wide]
+      else
+        Result := Result + [1];
+    // the narrow space between the characters
+    if (k < High(chars)) then
+      Result := Result + [1];
+  end;
+end;
+
+/// <summary>The GS1 (modulo 10) check digit of digits.</summary>
+function GS1Check(const digits: string): Char;
+begin
+  var sum := 0;
+  var weight := 3;
+  for var i := Length(digits) downto 1 do
+  begin
+    Inc(sum, weight * (Ord(digits[i]) - Ord('0')));
+    weight := 4 - weight;
+  end;
+  Result := Chr(Ord('0') + (10 - sum mod 10) mod 10);
+end;
+
+/// <summary>The bars and spaces of a Code 2 of 5 variant (format) of
+/// digits as zint, the wide ones wide modules (the Matrix start and stop
+/// bar one more).</summary>
+function C25Widths(format: TBarcodeFormat; const digits: string;
+  wide: Integer = 3): TArray<Integer>;
+const
+  DIGIT_PATTERNS: array [0 .. 9] of string = ('00110', '10001', '01001',
+    '11000', '00101', '10100', '01100', '00011', '10010', '01010');
+begin
+  var inBars := (format = TBarcodeFormat.INDUSTRIAL_2_OF_5) or
+    (format = TBarcodeFormat.IATA_2_OF_5);
+  if (format = TBarcodeFormat.INDUSTRIAL_2_OF_5) then
+    Result := [wide, 1, wide, 1, 1, 1]
+  else if (format = TBarcodeFormat.MATRIX_2_OF_5) then
+    Result := [wide + 1, 1, 1, 1, 1, 1]
+  else
+    Result := [1, 1, 1, 1];
+  for var c in digits do
+  begin
+    var pattern := DIGIT_PATTERNS[Ord(c) - Ord('0')];
+    for var e := 1 to 5 do
+    begin
+      var w := 1;
+      if (pattern[e] = '1') then
+        w := wide;
+      Result := Result + [w];
+      // the digits in the bars: a narrow space after each bar
+      if inBars then
+        Result := Result + [1];
+    end;
+    if not inBars then
+      Result := Result + [1];
+  end;
+  if (format = TBarcodeFormat.INDUSTRIAL_2_OF_5) then
+    Result := Result + [wide, 1, 1, 1, wide]
+  else if (format = TBarcodeFormat.MATRIX_2_OF_5) then
+    Result := Result + [wide + 1, 1, 1, 1, 1]
+  else
+    Result := Result + [wide, 1, 1];
+end;
+
+/// <summary>The two tracks of a Pharmacode two-track of value (as zint):
+/// the top track and the bottom track, '1' a bar module.</summary>
+function TwoTrackModules(value: Integer): TArray<string>;
+begin
+  var digits := '';
+  repeat
+    var d := value mod 3;
+    if (d = 0) then
+      d := 3;
+    digits := Chr(Ord('0') + d) + digits;
+    value := (value - d) div 3;
+  until (value = 0);
+  var top := '';
+  var bottom := '';
+  for var i := 1 to Length(digits) do
+  begin
+    if (i > 1) then
+    begin
+      top := top + '0';
+      bottom := bottom + '0';
+    end;
+    if (digits[i] = '2') or (digits[i] = '3') then
+      top := top + '1'
+    else
+      top := top + '0';
+    if (digits[i] = '1') or (digits[i] = '3') then
+      bottom := bottom + '1'
+    else
+      bottom := bottom + '0';
+  end;
+  Result := [top, bottom];
+end;
+
+/// <summary>Reads a Pharmacode two-track of the tracks (top, bottom; 3
+/// pixels per module, 12 pixels per track) with the formats, turned 180
+/// degrees (upsideDown) or 90 (vertical, the top track on the left); the
+/// caller frees the result.</summary>
+function ReadTwoTrack(const tracks: TArray<string>;
+  const formats: array of TBarcodeFormat; upsideDown: Boolean = false;
+  vertical: Boolean = false): TReadResult;
+const
+  MODULE = 3;
+  TRACK = 12;
+  QUIET = 15;
+begin
+  var modules := Length(tracks[0]);
+  var w := (modules + 2 * QUIET) * MODULE;
+  var h := 2 * TRACK + 2 * QUIET * MODULE;
+  var pixels: TArray<Byte>;
+  SetLength(pixels, w * h);
+  FillChar(pixels[0], w * h, 255);
+  for var t := 0 to 1 do
+    for var m := 0 to modules - 1 do
+      if (tracks[t].Chars[m] = '1') then
+        for var y := 0 to TRACK - 1 do
+          for var x := 0 to MODULE - 1 do
+          begin
+            var px := (QUIET + m) * MODULE + x;
+            var py := QUIET * MODULE + t * TRACK + y;
+            if upsideDown then
+            begin
+              px := w - 1 - px;
+              py := h - 1 - py;
+            end;
+            pixels[py * w + px] := 0;
+          end;
+  if vertical then
+  begin
+    // transposed: the top track on the left, read top to bottom
+    var turned: TArray<Byte>;
+    SetLength(turned, w * h);
+    for var y := 0 to h - 1 do
+      for var x := 0 to w - 1 do
+        turned[x * h + y] := pixels[y * w + x];
+    pixels := turned;
+    var t := w;
+    w := h;
+    h := t;
+  end;
+
+  var source := TRGBLuminanceSource.Create(pixels, w, h, TBitmapFormat.Gray8);
+  var binarizer := THybridBinarizer.Create(source);
+  var image := TBinaryBitmap.Create(binarizer);
+  var hints := TDictionary<TDecodeHintType, TObject>.Create;
+  var list := TList<TBarcodeFormat>.Create;
+  var reader := TMultiFormatReader.Create;
+  try
+    list.AddRange(formats);
+    if (list.Count > 0) then
+      hints.Add(TDecodeHintType.POSSIBLE_FORMATS, list);
+    reader.Hints := hints;
+    Result := reader.decode(image, true);
+  finally
+    reader.Free;
+    list.Free;
+    hints.Free;
+    image.Free;
+    binarizer.Free;
+    source.Free;
+  end;
+end;
+
 procedure TOneDTest.NotInAuto;
 begin
-  // MSI, Plessey and Pharmacode are only read when asked for
+  // MSI, Plessey, Pharmacode, Code 11 and the 2 of 5 variants are only
+  // read when asked for
   for var widths in [MSIWidths('1234567'), PlesseyWidths('12AB09F'),
-    PharmacodeWidths(1234)] do
+    PharmacodeWidths(1234), Code11Widths('123-45', 2),
+    C25Widths(TBarcodeFormat.INDUSTRIAL_2_OF_5, '87654321'),
+    C25Widths(TBarcodeFormat.IATA_2_OF_5, '87654321'),
+    C25Widths(TBarcodeFormat.MATRIX_2_OF_5, '87654321'),
+    C25Widths(TBarcodeFormat.DATALOGIC_2_OF_5, '87654321')] do
   begin
     var r := ReadBars(widths, []);
     try
@@ -661,6 +905,12 @@ begin
     finally
       r.Free;
     end;
+  end;
+  var r := ReadTwoTrack(TwoTrackModules(29876543), []);
+  try
+    Assert.IsNull(r, 'Pharmacode two-track read in Auto');
+  finally
+    r.Free;
   end;
 end;
 
@@ -704,6 +954,239 @@ begin
     end;
     Assert.IsTrue(read >= 5, Format('%d of 6 read, turned %d', [read,
       90 * turns]));
+  end;
+end;
+
+/// <summary>Reads widths with format and checks the text (expected '':
+/// nothing read).</summary>
+procedure CheckRead(const widths: TArray<Integer>; format: TBarcodeFormat;
+  const expected, what: string);
+begin
+  var r := ReadBars(widths, [format]);
+  try
+    if (expected = '') then
+      Assert.IsNull(r, what)
+    else
+    begin
+      Assert.IsNotNull(r, ' Nil result ' + what);
+      Assert.AreEqual(Ord(format), Ord(r.BarcodeFormat), what);
+      Assert.AreEqual(expected, r.Text, what);
+    end;
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.Code11;
+begin
+  // all characters, 2 and 1 check digits, wide 2 and 3 times narrow, also
+  // upside down
+  for var wide in [2, 3] do
+    for var upsideDown in [false, true] do
+    begin
+      var widths := Code11Widths('0123456789-', 2, wide);
+      if upsideDown then
+        widths := Reversed(widths);
+      CheckRead(widths, TBarcodeFormat.CODE_11, '0123456789-' +
+        Code11Check('0123456789-', 10) + Code11Check('0123456789-' +
+        Code11Check('0123456789-', 10), 9), 'Code 11 wide ' + IntToStr(wide));
+    end;
+  var r := ReadBars(Code11Widths('123-45', 1), [TBarcodeFormat.CODE_11]);
+  try
+    Assert.IsNotNull(r, ' Nil result (1 check digit) ');
+    Assert.AreEqual('123-455', r.Text);
+    Assert.AreEqual(']H0', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+  r := ReadBars(Code11Widths('123-45', 2), [TBarcodeFormat.CODE_11]);
+  try
+    Assert.IsNotNull(r, ' Nil result (2 check digits) ');
+    Assert.AreEqual('123-4552', r.Text);
+    Assert.AreEqual(']H1', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+  // without (or with a wrong) check digit: nothing
+  CheckRead(Code11Widths('123-45', 0), TBarcodeFormat.CODE_11, '',
+    'Code 11 without check digit');
+  CheckRead(Code11Widths('123-456', 0), TBarcodeFormat.CODE_11, '',
+    'Code 11 with a wrong check digit');
+end;
+
+procedure TOneDTest.Code2of5;
+begin
+  // the variants, wide 2 and 3 times narrow, also upside down; another
+  // variant does not read them
+  var formats: TArray<TBarcodeFormat> := [TBarcodeFormat.INDUSTRIAL_2_OF_5,
+    TBarcodeFormat.IATA_2_OF_5, TBarcodeFormat.MATRIX_2_OF_5,
+    TBarcodeFormat.DATALOGIC_2_OF_5];
+  for var f := 0 to High(formats) do
+    for var wide in [2, 3] do
+      for var upsideDown in [false, true] do
+      begin
+        var widths := C25Widths(formats[f], '01234567890', wide);
+        if upsideDown then
+          widths := Reversed(widths);
+        CheckRead(widths, formats[f], '01234567890', 'variant ' +
+          IntToStr(f) + ' wide ' + IntToStr(wide));
+        CheckRead(widths, formats[(f + 1) mod 4], '', 'variant ' +
+          IntToStr(f) + ' read as ' + IntToStr((f + 1) mod 4));
+      end;
+end;
+
+procedure TOneDTest.PharmacodeTwoTrack;
+begin
+  for var value in [14, 16, 1234, 29876543] do
+    for var vertical in [false, true] do
+    begin
+      var r := ReadTwoTrack(TwoTrackModules(value),
+        [TBarcodeFormat.PHARMA_CODE_TWO_TRACK], false, vertical);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + IntToStr(value));
+        Assert.AreEqual(Ord(TBarcodeFormat.PHARMA_CODE_TWO_TRACK),
+          Ord(r.BarcodeFormat));
+        Assert.AreEqual(IntToStr(value), r.Text);
+      finally
+        r.Free;
+      end;
+    end;
+  // turned 180 degrees: read in the other direction with the tracks
+  // swapped (1 bottom becomes 2 top), a different value
+  var tracks := TwoTrackModules(29876543);
+  var value: Int64 := 0;
+  var m := Length(tracks[0]) - 1;
+  while (m >= 0) do
+  begin
+    var digit := Ord(tracks[0].Chars[m] = '1') + 2 * Ord(tracks[1].Chars[m] =
+      '1');
+    value := 3 * value + digit;
+    Dec(m, 2);
+  end;
+  var r := ReadTwoTrack(tracks, [TBarcodeFormat.PHARMA_CODE_TWO_TRACK], true);
+  try
+    Assert.IsNotNull(r, ' Nil result (upside down) ');
+    Assert.AreEqual(IntToStr(value), r.Text);
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.ZintVectors;
+const
+  // the top track, the bottom track, the value
+  TWO_TRACK_VECTORS: array [0 .. 1, 0 .. 2] of string =
+    (('1010101010101010101010101010101', '1010101010101010101010101010101',
+    '64570080'), ('0010100010001010001010001000101',
+    '1000101010100000100000101010000', '29876543'));
+begin
+  // the encode tests of zint (backend/tests, verified against TEC-IT)
+  CheckRead(ModuleWidths(
+    '101100101101011010010110110010101011010101101101101101011011' +
+    '010100101101011001'),
+    TBarcodeFormat.CODE_11, '123-4552', 'Code 11 123-45 1');
+  CheckRead(ModuleWidths(
+    '10110010110101011001010101101010110101011001'),
+    TBarcodeFormat.CODE_11, '93--', 'Code 11 93 2');
+  CheckRead(ModuleWidths(
+    '101100101101011010010110110010101011010101101101101101011011' +
+    '010100101101011001'),
+    TBarcodeFormat.CODE_11, '123-4552', 'Code 11 123-455 3');
+  CheckRead(ModuleWidths(
+    '101100101101011010010110110010101011010101101101101101011011' +
+    '010100101101011001'),
+    TBarcodeFormat.CODE_11, '123-4552', 'Code 11 123-4552 4');
+  CheckRead(ModuleWidths(
+    '101100101101011010010110110010101011010101101101101101011011' +
+    '0101011001'),
+    TBarcodeFormat.CODE_11, '123-455', 'Code 11 123-45 5');
+  CheckRead(ModuleWidths(
+    '101100101101011010010110110010101011010101101101101101010110' +
+    '01'),
+    TBarcodeFormat.CODE_11, '', 'Code 11 123-45 6');
+  CheckRead(ModuleWidths(
+    '111101010111010001010100011101000111010111011101010111011101' +
+    '1100010101000101110111010111011110101'),
+    TBarcodeFormat.MATRIX_2_OF_5,
+    '87654321',
+    'C25STANDARD 87654321');
+  CheckRead(ModuleWidths(
+    '111101010111010001010100011101000111010111011101010111011101' +
+    '11000101010001011101110101110100010111011110101'),
+    TBarcodeFormat.MATRIX_2_OF_5,
+    '87654321' + GS1Check('87654321'),
+    'C25STANDARD 87654321 check digit');
+  CheckRead(ModuleWidths(
+    '111101010111010111010001011101110001010101110111011101110101' +
+    '000111010101000111011101000101000100010101110001011110101'),
+    TBarcodeFormat.MATRIX_2_OF_5,
+    '1234567890',
+    'C25STANDARD 1234567890');
+  CheckRead(ModuleWidths(
+    '101011101010111010101010111011101011101110101011101011101010' +
+    '101011101011101110111010101010111010101110111010101011101110' +
+    '1'),
+    TBarcodeFormat.IATA_2_OF_5,
+    '87654321',
+    'C25IATA 87654321');
+  CheckRead(ModuleWidths(
+    '101011101010111010101010111011101011101110101011101011101010' +
+    '101011101011101110111010101010111010101110111010101011101011' +
+    '101010111011101'),
+    TBarcodeFormat.IATA_2_OF_5,
+    '87654321' + GS1Check('87654321'),
+    'C25IATA 87654321 check digit');
+  CheckRead(ModuleWidths(
+    '101011101000101010001110100011101011101110101011101110111000' +
+    '10101000101110111010111011101'),
+    TBarcodeFormat.DATALOGIC_2_OF_5,
+    '87654321',
+    'C25LOGIC 87654321');
+  CheckRead(ModuleWidths(
+    '101011101000101010001110100011101011101110101011101110111000' +
+    '101010001011101110101110100010111011101'),
+    TBarcodeFormat.DATALOGIC_2_OF_5,
+    '87654321' + GS1Check('87654321'),
+    'C25LOGIC 87654321 check digit');
+  CheckRead(ModuleWidths(
+    '111011101011101010111010101010111011101011101110101011101011' +
+    '101010101011101011101110111010101010111010101110111010101011' +
+    '10111010111'),
+    TBarcodeFormat.INDUSTRIAL_2_OF_5,
+    '87654321',
+    'C25IND 87654321');
+  CheckRead(ModuleWidths(
+    '111011101011101010111010101010111011101011101110101011101011' +
+    '101010101011101011101110111010101010111010101110111010101011' +
+    '1010111010101110111010111'),
+    TBarcodeFormat.INDUSTRIAL_2_OF_5,
+    '87654321' + GS1Check('87654321'),
+    'C25IND 87654321 check digit');
+  CheckRead(ModuleWidths(
+    '111011101011101010101110101110101011101110111010101010101110' +
+    '101110111010111010101011101110101010101011101110111010101110' +
+    '101011101011101010101110111010111010111'),
+    TBarcodeFormat.INDUSTRIAL_2_OF_5,
+    '1234567890',
+    'C25IND 1234567890');
+
+  // Pharmacode two-track (the top track first)
+  for var t := 0 to High(TWO_TRACK_VECTORS) do
+  begin
+    var r := ReadTwoTrack([TWO_TRACK_VECTORS[t, 0], TWO_TRACK_VECTORS[t, 1]],
+      [TBarcodeFormat.PHARMA_CODE_TWO_TRACK]);
+    try
+      // (64570080: full bars only, they can be 12 as well)
+      if (TWO_TRACK_VECTORS[t, 2] = '64570080') then
+        Assert.IsNull(r, '64570080')
+      else
+      begin
+        Assert.IsNotNull(r, ' Nil result ' + TWO_TRACK_VECTORS[t, 2]);
+        Assert.AreEqual(TWO_TRACK_VECTORS[t, 2], r.Text);
+      end;
+    finally
+      r.Free;
+    end;
   end;
 end;
 
