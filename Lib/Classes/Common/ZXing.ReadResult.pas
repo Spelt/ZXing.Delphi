@@ -314,7 +314,8 @@ begin
   var is2D := (FFormat = TBarcodeFormat.QR_CODE) or
     (FFormat = TBarcodeFormat.DATA_MATRIX) or (FFormat = TBarcodeFormat.AZTEC)
     or (FFormat = TBarcodeFormat.PDF_417) or
-    (FFormat = TBarcodeFormat.MAXICODE);
+    (FFormat = TBarcodeFormat.MAXICODE) or
+    (FFormat = TBarcodeFormat.MICRO_PDF417);
   // a stacked GS1 DataBar: 4 corners like a Data Matrix
   var isStacked := ((FFormat = TBarcodeFormat.RSS_14) or
     (FFormat = TBarcodeFormat.RSS_EXPANDED)) and (System.Length(p) = 4);

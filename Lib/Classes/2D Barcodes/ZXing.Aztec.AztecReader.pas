@@ -65,7 +65,8 @@ function TAztecReader.createResult(decoderResult: TDecoderResult;
 begin
   Result := TReadResult.Create(decoderResult.Text, decoderResult.RawBytes,
     detected.Position, TBarcodeFormat.AZTEC);
-  Result.Position := detected.Position;
+  // (a copy: the points and the position are mapped separately)
+  Result.Position := Copy(detected.Position);
   Result.SymbologyIdentifier := decoderResult.SymbologyIdentifier;
   Result.IsMirrored := detected.IsMirrored;
   if (Length(decoderResult.ECLevel) <> 0) then

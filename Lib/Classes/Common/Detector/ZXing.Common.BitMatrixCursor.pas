@@ -115,6 +115,23 @@ type
     function Step(s: Double = 1): Boolean;
     function StepToEdge(nth: Integer = 1; range: Integer = 0;
       backup: Boolean = false): Integer;
+    function Left: TPointD;
+    function Right: TPointD;
+    procedure TurnRight;
+    function MovedBy(const o: TPointD): TBitMatrixCursorF;
+    /// <summary>The value of the pixel when the next one in front of it has
+    /// another value, else CURSOR_INVALID.</summary>
+    function EdgeAtFront: Integer;
+    /// <summary>The widths of the next count runs, at most max pixels in
+    /// total (0: no limit); with min the result is empty when they are
+    /// less than min pixels and the cursor skips on (in steps of 2 edges)
+    /// to min pixels (zxing-cpp's readPattern).</summary>
+    function ReadPattern(count: Integer; max: Integer = 0;
+      min: Integer = 0): TArray<Integer>;
+    /// <summary>ReadPattern from the next black pixel, at most
+    /// maxWhitePrefix pixels away.</summary>
+    function ReadPatternFromBlack(count, maxWhitePrefix: Integer;
+      max: Integer = 0; min: Integer = 0): TArray<Integer>;
   end;
 
   /// <summary>Counts the steps of a TBitMatrixCursorI to the next pixel with
@@ -449,6 +466,79 @@ begin
     Result := steps
   else
     Result := 0;
+end;
+
+function TBitMatrixCursorF.Left: TPointD;
+begin
+  Result := LeftOf(d);
+end;
+
+function TBitMatrixCursorF.Right: TPointD;
+begin
+  Result := RightOf(d);
+end;
+
+procedure TBitMatrixCursorF.TurnRight;
+begin
+  d := RightOf(d);
+end;
+
+function TBitMatrixCursorF.MovedBy(const o: TPointD): TBitMatrixCursorF;
+begin
+  Result := Self;
+  Result.p := p + o;
+end;
+
+function TBitMatrixCursorF.EdgeAtFront: Integer;
+begin
+  Result := TestAt(p);
+  if (TestAt(p + d) = Result) then
+    Result := CURSOR_INVALID;
+end;
+
+function TBitMatrixCursorF.ReadPattern(count, max, min: Integer)
+  : TArray<Integer>;
+begin
+  SetLength(Result, count);
+  for var i := 0 to count - 1 do
+    Result[i] := 0;
+  for var i := 0 to count - 1 do
+  begin
+    Result[i] := StepToEdge(1, max);
+    if (Result[i] = 0) then
+      exit;
+    if (max <> 0) then
+      Dec(max, Result[i]);
+  end;
+  if (min <> 0) and (max <> 0) then
+  begin
+    for var w in Result do
+      Dec(min, w);
+    if (min > 0) then
+      for var i := 0 to count - 1 do
+        Result[i] := 0;
+    var steps := -1;
+    while (min > 0) and (max <> 0) and (steps <> 0) do
+    begin
+      steps := StepToEdge(2, max);
+      Dec(max, steps);
+      Dec(min, steps);
+    end;
+  end;
+end;
+
+function TBitMatrixCursorF.ReadPatternFromBlack(count, maxWhitePrefix, max,
+  min: Integer): TArray<Integer>;
+begin
+  if (maxWhitePrefix <> 0) and IsWhite and (StepToEdge(1, maxWhitePrefix) = 0)
+  then
+  begin
+    SetLength(Result, count);
+    for var i := 0 to count - 1 do
+      Result[i] := 0;
+    exit;
+  end;
+  Result := ReadPattern(count, max, min);
 end;
 
 { TFastEdgeToEdgeCounter }

@@ -25,8 +25,8 @@ From Delphi 11 the standard camera component seems much improved.
 | UPC-A      | Code 39       | QR Code
 | UPC-E      | Code 93       | Data Matrix
 | EAN-8      | Code 128      | Aztec
-| EAN-13     | ITF           | 
-| GS1 DataBar (also stacked) | Codabar | 
+| EAN-13     | ITF           | PDF417
+| GS1 DataBar (also stacked) | Codabar | MicroPDF417
 | GS1 DataBar Expanded (also stacked) | Telepen | 
 | GS1 DataBar Limited |  | 
 
@@ -52,6 +52,8 @@ From Delphi 11 the standard camera component seems much improved.
 	- New formats: Codabar (without the start and stop characters A-D, unless RETURN_CODABAR_START_END) and Telepen (full ASCII and compressed numeric, TBarcodeFormat.TELEPEN). Not in Auto: choose them as format.
 	- New format: Aztec (TBarcodeFormat.AZTEC), port of the Aztec reader of zxing-cpp: compact and full range symbols (with the reference grid for large ones), Aztec Runes (the text is the value as 3 digits), mirrored symbols, ECI, GS1 (FNC1) and Structured Append (STRUCTURED_APPEND_SEQUENCE like QR Code: index in the high nibble, count - 1 in the low one). Not in Auto: choose it as format.
 	- New formats: GS1 DataBar, port of the DataBar readers of zxing-cpp: DataBar Omnidirectional, Truncated and Stacked (TBarcodeFormat.RSS_14), DataBar Expanded and Expanded Stacked (RSS_EXPANDED) and DataBar Limited (new: RSS_LIMITED). The text is the GS1 data without parentheses (GS between variable length fields), SymbologyIdentifier ]e0; IsGS1 and GS1HRI give the readable form like (01)04412345678909. Stacked symbols have a Position with 4 corners. Not in Auto: choose them as format.
+	- New formats: PDF417 (TBarcodeFormat.PDF_417) and MicroPDF417 (new: MICRO_PDF417), port of the readers of zxing-cpp: the PDF417 detector of start and stop patterns (also several symbols, 90/180/270 degrees with TRY_HARDER) and its pure detector, the MicroPDF417 detector of row address patterns, Reed-Solomon in GF(929) with erasures, text, byte and numeric compaction, ECI (]L1), Reader Initialisation, Macro PDF417 / Structured Append and the Macro 05/06 headers of MicroPDF417. The Macro PDF417 data (segment index and count, file id, file name, ...) is in the metadata PDF417_EXTRA_METADATA (IPDF417ResultMetadata). Not in Auto: choose them as format.
+	- TScanManager.ScanAll: a result whose position was the same array as its result points (Aztec, and the symbols found but not read) got its position scaled twice in the downscaled layers.
 	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39, Code 93 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode.
 	- Hints ALLOWED_EAN_EXTENSIONS and ALLOWED_LENGTHS: use TIntegerArrayHint.Create([2, 5]) as value; TScanManager frees it. Before, these hints made TScanManager crash when it freed them (an array cast to TObject still works, but is not freed). ALLOWED_EAN_EXTENSIONS now really requires an add-on: the search goes on until a code with add-on is found.
 	- Code 128: extended characters (FNC4) in code set A were all returned as character 160.
@@ -61,7 +63,7 @@ From Delphi 11 the standard camera component seems much improved.
 	- Reed-Solomon (QR Code, Data Matrix, Aztec): more errors than can be corrected no longer give a wrongly "corrected" codeword. The result is checked again, and with an odd number of error correction codewords one error too many was accepted (like zxing-cpp).
 	- TScanManager.ScanAll: all barcodes in an image (QR Code, Data Matrix and 1D on different rows, also vertical ones with TRY_HARDER).
 	- TReadResult: Position (4 corners), Orientation, IsInverted, IsMirrored, SymbologyIdentifier (like ]Q1, ]d2, ]C1), IsGS1 and GS1HRI (the human readable form of GS1 data, like (01)...(17)...(10)...).
-	- TScanManager.ReturnErrors (off by default): also QR Codes, Data Matrix and Aztec codes that were found but could not be read, with TReadResult.Error ('Checksum' or 'Format') and their position, e.g. to tell the user to hold the camera still or closer. Scan returns one only when nothing could be read.
+	- TScanManager.ReturnErrors (off by default): also QR Codes, Data Matrix, Aztec, PDF417 and MicroPDF417 codes that were found but could not be read, with TReadResult.Error ('Checksum' or 'Format') and their position, e.g. to tell the user to hold the camera still or closer. Scan returns one only when nothing could be read.
 	- On the black box test images of zxing-cpp (benchmark\, compared with zxing-cpp): Data Matrix 365 of 366, QR Code 515 of 525, 1D 368 of 362 (with TRY_HARDER and inversion); without hints Data Matrix 93 of 92, QR Code 299 of 304, 1D 234 of 226.
 - v3.13.0
 	- Fixes thanks to Robert Jędrzejczyk. https://github.com/Spelt/ZXing.Delphi/issues/170, https://github.com/Spelt/ZXing.Delphi/issues/171, https://github.com/Spelt/ZXing.Delphi/issues/172 

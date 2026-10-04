@@ -100,6 +100,9 @@ begin
     Result := 'Aztec'
   else if folderName.StartsWith('databar') then
     Result := 'DataBar'
+  else if folderName.StartsWith('pdf417') or
+    folderName.StartsWith('micropdf417') then
+    Result := 'PDF417'
   else if folderName.StartsWith('multi') or folderName.StartsWith('none') then
     Result := 'mixed / none'
   else

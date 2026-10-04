@@ -89,7 +89,10 @@ type
     TELEPEN = 524288,
 
     /// <summary>GS1 DataBar Limited (formerly RSS Limited).</summary>
-    RSS_LIMITED = 1048576
+    RSS_LIMITED = 1048576,
+
+    /// <summary>MicroPDF417 2D format.</summary>
+    MICRO_PDF417 = 2097152
 
     );
 

@@ -289,7 +289,7 @@ begin
   var failed := TList<TReadResult>(o);
   var r := TReadResult.CreateFailed(points, format, error);
   if (position <> nil) then
-    r.Position := position;
+    r.Position := Copy(position);
   if OverlapsResult(failed, r) then
     r.Free
   else

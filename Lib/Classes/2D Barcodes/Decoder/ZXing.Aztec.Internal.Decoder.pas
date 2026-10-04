@@ -42,7 +42,7 @@ uses
   System.Math,
   System.Generics.Collections,
   ZXing.Common.BitMatrix,
-  ZXing.CharacterSetECI,
+  ZXing.Common.ECIContent,
   ZXing.Common.ReedSolomon.GenericGF,
   ZXing.Common.ReedSolomon.ReedSolomonDecoder;
 
@@ -58,22 +58,6 @@ type
     Pos: Integer;
     function Available: Integer;
     function ReadBits(n: Integer): Integer;
-  end;
-
-  /// <summary>The bytes of the text with the character set (ECI) of each
-  /// part.</summary>
-  TContent = record
-    Bytes: TBytes;
-    // the start of each part and its character set (ECI value, -1 for the
-    // default)
-    Starts: TArray<Integer>;
-    ECIs: TArray<Integer>;
-    HasECI: Boolean;
-    procedure Append(b: Byte); overload;
-    procedure Append(const s: string); overload;
-    procedure SwitchEncoding(eci: Integer);
-    procedure Erase(index, count: Integer);
-    function Text: string;
   end;
 
 const
@@ -112,76 +96,6 @@ begin
   begin
     Result := (Result shl 1) or Ord(Bits[Pos]);
     Inc(Pos);
-  end;
-end;
-
-{ TContent }
-
-procedure TContent.Append(b: Byte);
-begin
-  Bytes := Bytes + [b];
-end;
-
-procedure TContent.Append(const s: string);
-begin
-  for var c in s do
-    Append(Byte(Ord(c)));
-end;
-
-procedure TContent.SwitchEncoding(eci: Integer);
-begin
-  HasECI := true;
-  Starts := Starts + [Length(Bytes)];
-  ECIs := ECIs + [eci];
-end;
-
-procedure TContent.Erase(index, count: Integer);
-begin
-  Delete(Bytes, index, count);
-  // (only used at the start, before any ECI part)
-  for var i := 0 to High(Starts) do
-    if (Starts[i] > index) then
-      Starts[i] := Max(index, Starts[i] - count);
-end;
-
-function TContent.Text: string;
-begin
-  Result := '';
-  // the parts: the default character set (ISO-8859-1) up to the first ECI
-  var allStarts: TArray<Integer> := [0] + Starts;
-  var allECIs: TArray<Integer> := [-1] + ECIs;
-  for var i := 0 to High(allStarts) do
-  begin
-    var from := allStarts[i];
-    var till := Length(Bytes);
-    if (i < High(allStarts)) then
-      till := allStarts[i + 1];
-    if (till <= from) then
-      continue;
-    var part := Copy(Bytes, from, till - from);
-    var encodingName := 'ISO-8859-1';
-    if (allECIs[i] >= 0) then
-    begin
-      var charset := TCharacterSetECI.getCharacterSetECIByValue(allECIs[i]);
-      if (charset <> nil) then
-        encodingName := charset.EncodingName;
-    end;
-    var encoding: TEncoding := nil;
-    try
-      try
-        encoding := TEncoding.GetEncoding(encodingName);
-      except
-        encoding := nil;
-      end;
-      if (encoding <> nil) then
-        Result := Result + encoding.GetString(part)
-      else
-        // the bytes as Latin-1 characters
-        for var b in part do
-          Result := Result + Char(b);
-    finally
-      encoding.Free;
-    end;
   end;
 end;
 
@@ -394,7 +308,7 @@ end;
 
 /// <summary>ISO/IEC 24778:2008 section 7: the bytes of the text, the
 /// character set changes (ECI) and whether there is an FNC1.</summary>
-procedure DecodeContent(const bits: TArray<Boolean>; var res: TContent;
+procedure DecodeContent(const bits: TArray<Boolean>; var res: TECIContent;
   out haveFNC1: Boolean);
 begin
   var latchTable := tUpper; // the table most recently latched to
@@ -490,8 +404,7 @@ function DecodeBits(const bits: TArray<Boolean>; ecLevel: Integer;
   out error: string): TDecoderResult;
 begin
   Result := nil;
-  var res: TContent;
-  res.HasECI := false;
+  var res := TECIContent.Create('ISO-8859-1');
   var haveFNC1: Boolean;
   try
     DecodeContent(bits, res, haveFNC1);

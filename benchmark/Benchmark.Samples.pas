@@ -183,6 +183,10 @@ begin
     format := TBarcodeFormat.RSS_EXPANDED
   else if (n = 'databarltd') or (n = 'databarlimited') then
     format := TBarcodeFormat.RSS_LIMITED
+  else if (n = 'pdf417') then
+    format := TBarcodeFormat.PDF_417
+  else if (n = 'micropdf417') then
+    format := TBarcodeFormat.MICRO_PDF417
   else if (n = 'codabar') then
     format := TBarcodeFormat.CODABAR
   else if (n = 'telepen') or (n = 'telepenalpha') or (n = 'telepennumeric') then
