@@ -173,6 +173,17 @@ type
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       virtual;
     function HasPatternDecoder: Boolean; virtual;
+    /// <summary>For readers that collect parts of a symbol over several
+    /// rows (zxing-cpp's DecodingState, the DataBar readers): starts a new
+    /// scan of an image (or of the image rotated).</summary>
+    procedure ResetDecodingState; virtual;
+    /// <summary>Whether the reader keeps a state over rows: then both
+    /// directions of a row are always scanned.</summary>
+    function UsesDecodingState: Boolean; virtual;
+  protected
+    /// <summary>The number of rows the result of decodePattern counts for
+    /// (set to 1 before each call): 2 or more confirms it.</summary>
+    FLineCount: Integer;
 
     /// <summary>
     /// The thresholds between narrow and wide bars and between narrow and
@@ -568,6 +579,8 @@ begin
   else if FUsePattern then
     rowStep := Min(rowStep, Max(1, height div 32));
   maxLines := height; // Look at the whole image, not just the center
+  if FUsePattern then
+    ResetDecodingState;
 
   // rows close to a row with a new barcode, to confirm it quickly (like
   // zxing-cpp); the last one is next
@@ -728,6 +741,16 @@ begin
   Result := false;
 end;
 
+procedure TOneDReader.ResetDecodingState;
+begin
+  // no state
+end;
+
+function TOneDReader.UsesDecodingState: Boolean;
+begin
+  Result := false;
+end;
+
 function TOneDReader.ReadSameByDecodeRow(const image: TBinaryBitmap;
   rowNumber: Integer; reversed: Boolean; r: TReadResult;
   const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
@@ -778,6 +801,7 @@ begin
     var found := false;
     var r: TReadResult;
     repeat
+      FLineCount := 1;
       r := decodePattern(rowNumber, view, hints);
       if (r <> nil) then
       begin
@@ -793,7 +817,7 @@ begin
         if (collector = nil) then
           exit(r);
         found := true;
-        if CollectResult(r, collector, pending, maxCount,
+        if CollectResult(r, collector, pending, maxCount, (FLineCount >= 2) or
           ReadSameByDecodeRow(image, rowNumber, attempt = 1, r, hints)) then
           exit;
       end;
@@ -803,8 +827,9 @@ begin
       // without TRY_HARDER only behind a barcode found
     until (not FTryHarder and (r = nil)) or (view.Size = 0);
 
-    // found in this direction: not the other one, like decodeRow
-    if found then
+    // found in this direction: not the other one, like decodeRow (but a
+    // reader with a state over rows needs both, like zxing-cpp)
+    if found and not UsesDecodingState then
       break;
   end;
 

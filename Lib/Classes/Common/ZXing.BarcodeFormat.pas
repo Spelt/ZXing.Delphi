@@ -61,10 +61,12 @@ type
     /// <summary>QR Code 2D barcode format.</summary>
     QR_CODE = 2048,
 
-    /// <summary>RSS 14</summary>
+    /// <summary>GS1 DataBar (formerly RSS-14): Omnidirectional, Truncated,
+    /// Stacked and Stacked Omnidirectional.</summary>
     RSS_14 = 4096,
 
-    /// <summary>RSS EXPANDED</summary>
+    /// <summary>GS1 DataBar Expanded (formerly RSS Expanded), also stacked.
+    /// </summary>
     RSS_EXPANDED = 8192,
 
     /// <summary>UPC-A 1D format.</summary>
@@ -84,7 +86,10 @@ type
 
     /// <summary>Telepen 1D format (full ASCII and compressed numeric).
     /// </summary>
-    TELEPEN = 524288
+    TELEPEN = 524288,
+
+    /// <summary>GS1 DataBar Limited (formerly RSS Limited).</summary>
+    RSS_LIMITED = 1048576
 
     );
 

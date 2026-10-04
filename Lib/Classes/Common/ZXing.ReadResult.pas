@@ -315,7 +315,10 @@ begin
     (FFormat = TBarcodeFormat.DATA_MATRIX) or (FFormat = TBarcodeFormat.AZTEC)
     or (FFormat = TBarcodeFormat.PDF_417) or
     (FFormat = TBarcodeFormat.MAXICODE);
-  if not is2D and (System.Length(p) >= 2) then
+  // a stacked GS1 DataBar: 4 corners like a Data Matrix
+  var isStacked := ((FFormat = TBarcodeFormat.RSS_14) or
+    (FFormat = TBarcodeFormat.RSS_EXPANDED)) and (System.Length(p) = 4);
+  if not is2D and not isStacked and (System.Length(p) >= 2) then
   begin
     // a 1D code: the ends of the scanned line (an add-on adds points behind)
     Result := [p[0], p[High(p)], p[High(p)], p[0]];

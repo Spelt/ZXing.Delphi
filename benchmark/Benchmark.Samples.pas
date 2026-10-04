@@ -173,6 +173,16 @@ begin
     format := TBarcodeFormat.ITF
   else if (n = 'aztec') or (n = 'azteccode') or (n = 'aztecrune') then
     format := TBarcodeFormat.AZTEC
+  else if (n = 'databar') or (n = 'databaromni') or (n = 'databarstk') or
+    (n = 'databarstacked') or (n = 'databarstkomni') or
+    (n = 'databarstackedomni') or (n = 'rss14') then
+    format := TBarcodeFormat.RSS_14
+  else if (n = 'databarexp') or (n = 'databarexpanded') or
+    (n = 'databarexpstk') or (n = 'databarexpandedstacked') or
+    (n = 'rssexpanded') then
+    format := TBarcodeFormat.RSS_EXPANDED
+  else if (n = 'databarltd') or (n = 'databarlimited') then
+    format := TBarcodeFormat.RSS_LIMITED
   else if (n = 'codabar') then
     format := TBarcodeFormat.CODABAR
   else if (n = 'telepen') or (n = 'telepenalpha') or (n = 'telepennumeric') then

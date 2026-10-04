@@ -46,6 +46,9 @@ uses
   ZXing.OneD.Code39Reader,
   ZXing.OneD.CodabarReader,
   ZXing.OneD.TelepenReader,
+  ZXing.OneD.DataBarReader,
+  ZXing.OneD.DataBarExpandedReader,
+  ZXing.OneD.DataBarLimitedReader,
 
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
@@ -275,6 +278,15 @@ begin
 
     if formats.Contains(TBarcodeFormat.TELEPEN) then
       readers.Add(TTelepenReader.Create);
+
+    if formats.Contains(TBarcodeFormat.RSS_14) then
+      readers.Add(TDataBarReader.Create);
+
+    if formats.Contains(TBarcodeFormat.RSS_EXPANDED) then
+      readers.Add(TDataBarExpandedReader.Create);
+
+    if formats.Contains(TBarcodeFormat.RSS_LIMITED) then
+      readers.Add(TDataBarLimitedReader.Create);
   end;
 
   if (readers.Count = 0) then // must be auto, add them all

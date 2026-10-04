@@ -37,7 +37,7 @@ const
   // slow, fast, pure. Results after the 1D decoders of zxing-cpp (phase 7).
   // The wrong results in upce-2 are a misread of 509689-3!.webp, an image
   // that zxing-cpp can not read either.
-  FOLDER_LIMITS: array [0 .. 33] of TFolderLimits = (
+  FOLDER_LIMITS: array [0 .. 40] of TFolderLimits = (
     (Folder: 'aztec-1'; Limits: ((MinRead: 132; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0), (MinRead: 128; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'aztec-2'; Limits: ((MinRead: 62; MaxWrong: 0; MaxErrors: 0), (MinRead: 61; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'codabar-1'; Limits: ((MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 22; MaxWrong: 0; MaxErrors: 0))),
@@ -48,6 +48,13 @@ const
     (Folder: 'code39-2'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'code39ext-1'; Limits: ((MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 6; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'code93-1'; Limits: ((MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 6; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'databarExp-1'; Limits: ((MinRead: 74; MaxWrong: 0; MaxErrors: 0), (MinRead: 74; MaxWrong: 0; MaxErrors: 0), (MinRead: 74; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'databarExp-2'; Limits: ((MinRead: 14; MaxWrong: 0; MaxErrors: 0), (MinRead: 14; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'databarExp-3'; Limits: ((MinRead: 236; MaxWrong: 0; MaxErrors: 0), (MinRead: 236; MaxWrong: 0; MaxErrors: 0), (MinRead: 236; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'databarExpStk-1'; Limits: ((MinRead: 128; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'databarLtd-1'; Limits: ((MinRead: 4; MaxWrong: 0; MaxErrors: 0), (MinRead: 4; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'databarOmni-1'; Limits: ((MinRead: 22; MaxWrong: 0; MaxErrors: 0), (MinRead: 20; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
+    (Folder: 'databarStk-1'; Limits: ((MinRead: 12; MaxWrong: 0; MaxErrors: 0), (MinRead: 10; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'datamatrix-1'; Limits: ((MinRead: 110; MaxWrong: 0; MaxErrors: 0), (MinRead: 29; MaxWrong: 0; MaxErrors: 0), (MinRead: 28; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'datamatrix-2'; Limits: ((MinRead: 52; MaxWrong: 0; MaxErrors: 0), (MinRead: 13; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
     (Folder: 'datamatrix-3'; Limits: ((MinRead: 111; MaxWrong: 0; MaxErrors: 0), (MinRead: 28; MaxWrong: 0; MaxErrors: 0), (MinRead: 0; MaxWrong: 0; MaxErrors: 0))),
@@ -89,6 +96,13 @@ type
     [TestCase('code39-2', 'code39-2')]
     [TestCase('code39ext-1', 'code39ext-1')]
     [TestCase('code93-1', 'code93-1')]
+    [TestCase('databarExp-1', 'databarExp-1')]
+    [TestCase('databarExp-2', 'databarExp-2')]
+    [TestCase('databarExp-3', 'databarExp-3')]
+    [TestCase('databarExpStk-1', 'databarExpStk-1')]
+    [TestCase('databarLtd-1', 'databarLtd-1')]
+    [TestCase('databarOmni-1', 'databarOmni-1')]
+    [TestCase('databarStk-1', 'databarStk-1')]
     [TestCase('datamatrix-1', 'datamatrix-1')]
     [TestCase('datamatrix-2', 'datamatrix-2')]
     [TestCase('datamatrix-3', 'datamatrix-3')]
