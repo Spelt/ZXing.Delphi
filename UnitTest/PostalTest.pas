@@ -32,6 +32,8 @@ type
     [Test]
     procedure JapanPost;
     [Test]
+    procedure AustraliaPost;
+    [Test]
     procedure IMbSamples;
     [Test]
     procedure NotInAuto;
@@ -166,6 +168,97 @@ begin
     Result := Result + [BARS[k, 0], BARS[k, 1], BARS[k, 2]];
   end;
   Result := Result + [2, 0];
+end;
+
+/// <summary>The bars of an Australia Post barcode of the format control code
+/// and the data (DPID and customer information, as zint: digits with the N
+/// table, else characters with the C table).</summary>
+function AustraliaBars(const fcc, data: string; n: Integer): TArray<Byte>;
+const
+  N_TABLE: array [0 .. 9, 0 .. 1] of Byte = ((0, 0), (0, 1), (0, 2), (1, 0),
+    (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0));
+  GDSET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz #';
+  C_TABLE: array [0 .. 63, 0 .. 2] of Byte = ((2, 2, 2), (3, 0, 0), (3, 0, 1),
+    (3, 0, 2), (3, 1, 0), (3, 1, 1), (3, 1, 2), (3, 2, 0), (3, 2, 1),
+    (3, 2, 2), (0, 0, 0), (0, 0, 1), (0, 0, 2), (0, 1, 0), (0, 1, 1),
+    (0, 1, 2), (0, 2, 0), (0, 2, 1), (0, 2, 2), (1, 0, 0), (1, 0, 1),
+    (1, 0, 2), (1, 1, 0), (1, 1, 1), (1, 1, 2), (1, 2, 0), (1, 2, 1),
+    (1, 2, 2), (2, 0, 0), (2, 0, 1), (2, 0, 2), (2, 1, 0), (2, 1, 1),
+    (2, 1, 2), (2, 2, 0), (2, 2, 1), (0, 2, 3), (0, 3, 0), (0, 3, 1),
+    (0, 3, 2), (0, 3, 3), (1, 0, 3), (1, 1, 3), (1, 2, 3), (1, 3, 0),
+    (1, 3, 1), (1, 3, 2), (1, 3, 3), (2, 0, 3), (2, 1, 3), (2, 2, 3),
+    (2, 3, 0), (2, 3, 1), (2, 3, 2), (2, 3, 3), (3, 0, 3), (3, 1, 3),
+    (3, 2, 3), (3, 3, 0), (3, 3, 1), (3, 3, 2), (3, 3, 3), (0, 0, 3),
+    (0, 1, 3));
+begin
+  var bars: TArray<Byte> := [1, 3];
+  for var c in fcc + Copy(data, 1, 8) do
+    bars := bars + [N_TABLE[Ord(c) - Ord('0'), 0],
+      N_TABLE[Ord(c) - Ord('0'), 1]];
+  var info := Copy(data, 9, MaxInt);
+  var digits := true;
+  for var c in info do
+    digits := digits and CharInSet(c, ['0' .. '9']);
+  for var c in info do
+    if digits then
+      bars := bars + [N_TABLE[Ord(c) - Ord('0'), 0],
+        N_TABLE[Ord(c) - Ord('0'), 1]]
+    else
+    begin
+      var k := GDSET.IndexOf(c);
+      bars := bars + [C_TABLE[k, 0], C_TABLE[k, 1], C_TABLE[k, 2]];
+    end;
+  while (Length(bars) < n - 14) do
+    bars := bars + [3];
+
+  // Reed-Solomon in GF(64) (x^6 + x + 1), the generator (x - a)..(x - a^4)
+  var exp: array [0 .. 127] of Integer;
+  var log: array [0 .. 63] of Integer;
+  var v := 1;
+  for var i := 0 to 62 do
+  begin
+    exp[i] := v;
+    exp[i + 63] := v;
+    log[v] := i;
+    v := v shl 1;
+    if (v and 64 <> 0) then
+      v := v xor $43;
+  end;
+  var generator: TArray<Integer> := [1];
+  for var i := 1 to 4 do
+  begin
+    // times (x + a^i)
+    var next: TArray<Integer>;
+    SetLength(next, Length(generator) + 1);
+    for var k := 0 to High(generator) do
+    begin
+      next[k] := next[k] xor generator[k];
+      if (generator[k] <> 0) then
+        next[k + 1] := next[k + 1] xor exp[log[generator[k]] + i];
+    end;
+    generator := next;
+  end;
+  // the remainder of data * x^4 (the highest coefficient first)
+  var count := (Length(bars) - 2) div 3;
+  var remainder: TArray<Integer>;
+  SetLength(remainder, count + 4);
+  for var i := 0 to count - 1 do
+    remainder[i] := 16 * bars[2 + 3 * i] + 4 * bars[3 + 3 * i] +
+      bars[4 + 3 * i];
+  for var i := 0 to count - 1 do
+  begin
+    var c := remainder[i];
+    if (c <> 0) then
+      for var k := 1 to 4 do
+        if (generator[k] <> 0) then
+          remainder[i + k] := remainder[i + k] xor
+            exp[log[c] + log[generator[k]]];
+  end;
+  // as zint: the lowest one first
+  for var k := count + 3 downto count do
+    bars := bars + [remainder[k] shr 4, (remainder[k] shr 2) and 3,
+      remainder[k] and 3];
+  Result := bars + [1, 3];
 end;
 
 /// <summary>Reads the bars drawn in an image (a bar and a space of 3 pixels,
@@ -385,6 +478,47 @@ begin
     TBarcodeFormat.JAPAN_POST);
   try
     Assert.IsNull(r, 'Japan Post with a wrong check character');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TPostalTest.AustraliaPost;
+const
+  // Standard Customer Barcode, Customer Barcode 2 (digits) and 3
+  // (characters): FCC, DPID, customer information, bars
+  TESTS: array [0 .. 2, 0 .. 3] of string = (('11', '39987520', '', '37'),
+    ('59', '32211324', '12345678', '52'),
+    ('62', '39987520', 'AB12 #cd', '67'));
+begin
+  for var t := 0 to 2 do
+  begin
+    var test := TESTS[t];
+    var bars := AustraliaBars(test[0], test[1] + test[2], StrToInt(test[3]));
+    Assert.AreEqual(StrToInt(test[3]), Length(bars), 'bars');
+    for var upsideDown in [false, true] do
+    begin
+      var r := ReadBars(bars, TBarcodeFormat.AUSTRALIA_POST, upsideDown,
+        upsideDown);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + test[0]);
+        Assert.AreEqual(Ord(TBarcodeFormat.AUSTRALIA_POST),
+          Ord(r.BarcodeFormat));
+        Assert.AreEqual(test[0] + test[1] + test[2], r.Text);
+      finally
+        r.Free;
+      end;
+    end;
+  end;
+
+  // 2 symbols wrong are corrected
+  var bars := AustraliaBars('11', '39987520', 37);
+  bars[5] := (bars[5] + 1) mod 4;
+  bars[20] := (bars[20] + 2) mod 4;
+  var r := ReadBars(bars, TBarcodeFormat.AUSTRALIA_POST);
+  try
+    Assert.IsNotNull(r, ' Nil result (corrected) ');
+    Assert.AreEqual('1139987520', r.Text);
   finally
     r.Free;
   end;

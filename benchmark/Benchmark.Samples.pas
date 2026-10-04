@@ -210,6 +210,8 @@ begin
     format := TBarcodeFormat.PLANET
   else if (n = 'japanpost') then
     format := TBarcodeFormat.JAPAN_POST
+  else if (n = 'auspost') or (n = 'australiapost') then
+    format := TBarcodeFormat.AUSTRALIA_POST
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

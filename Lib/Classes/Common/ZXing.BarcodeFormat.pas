@@ -135,7 +135,10 @@ type
     PLANET = 268435460,
 
     /// <summary>Japan Post (Kasutama barcode, 4-state).</summary>
-    JAPAN_POST = 268435461
+    JAPAN_POST = 268435461,
+
+    /// <summary>Australia Post 4-State Customer Barcode.</summary>
+    AUSTRALIA_POST = 268435462
 
     );
 
