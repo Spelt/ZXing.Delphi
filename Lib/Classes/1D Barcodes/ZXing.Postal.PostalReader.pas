@@ -30,14 +30,15 @@ uses
   ZXing.Common.BitMatrix,
   ZXing.Postal.FourStateDetector,
   ZXing.Postal.IMb,
-  ZXing.Postal.AustraliaPost;
+  ZXing.Postal.AustraliaPost,
+  ZXing.Postal.Mailmark;
 
 type
   /// <summary>
   /// Reads the postal barcodes of formats (KIX, RM4SCC, IMB, POSTNET,
-  /// PLANET, JAPAN_POST, AUSTRALIA_POST): rows of bars that differ in
-  /// height, horizontal or vertical, also upside down, slanted and in
-  /// perspective.
+  /// PLANET, JAPAN_POST, AUSTRALIA_POST, MAILMARK_4STATE): rows of bars that
+  /// differ in height, horizontal or vertical, also upside down, slanted and
+  /// in perspective.
   /// </summary>
   TPostalReader = class(TInterfacedObject, IReader, IMultipleReader)
   private
@@ -105,7 +106,8 @@ begin
     or (format = TBarcodeFormat.IMB) or (format = TBarcodeFormat.POSTNET) or
     (format = TBarcodeFormat.PLANET) or
     (format = TBarcodeFormat.JAPAN_POST) or
-    (format = TBarcodeFormat.AUSTRALIA_POST);
+    (format = TBarcodeFormat.AUSTRALIA_POST) or
+    (format = TBarcodeFormat.MAILMARK_4STATE);
 end;
 
 /// <summary>The index of the RM4SCC/KIX character of the 4 bars from
@@ -337,6 +339,11 @@ begin
   begin
     Result := DecodeRM4SCC(states);
     format := TBarcodeFormat.RM4SCC;
+  end;
+  if (Result = '') and Wants(TBarcodeFormat.MAILMARK_4STATE) then
+  begin
+    Result := DecodeMailmark(states);
+    format := TBarcodeFormat.MAILMARK_4STATE;
   end;
   if (Result = '') and Wants(TBarcodeFormat.AUSTRALIA_POST) then
   begin

@@ -212,6 +212,8 @@ begin
     format := TBarcodeFormat.JAPAN_POST
   else if (n = 'auspost') or (n = 'australiapost') then
     format := TBarcodeFormat.AUSTRALIA_POST
+  else if (n = 'mailmark') or (n = 'mailmark4s') then
+    format := TBarcodeFormat.MAILMARK_4STATE
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

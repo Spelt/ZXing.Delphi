@@ -121,7 +121,7 @@ begin
     exit;
 
   // the symbols of 3 bars from the third bar on: the data, then 4 error
-  // correction symbols (zint: the lowest one first)
+  // correction symbols
   var count := (n - 4) div 3;
   var dataCount := count - ECC_SYMBOLS;
   var symbols: TArray<Integer>;
@@ -130,10 +130,7 @@ begin
   begin
     var s := 16 * states[2 + 3 * i] + 4 * states[3 + 3 * i] +
       states[4 + 3 * i];
-    if (i < dataCount) then
-      symbols[i] := s
-    else
-      symbols[count - 1 - (i - dataCount)] := s;
+    symbols[i] := s;
   end;
   var rs := TReedSolomonDecoder.Create(TGenericGF.MAXICODE_FIELD_64);
   try
@@ -159,11 +156,14 @@ begin
   if (Length(fcc) <> 2) or (Length(dpid) <> 8) then
     exit;
   // the customer information of Customer Barcode 2 and 3: digits (N) or
-  // characters (C); the rest filler
+  // characters (C); the rest filler. The bars do not tell which table: when
+  // they are digits they are taken as digits, like zint encodes digits
   var info := '';
   if (n > 37) then
   begin
-    if ((fcc <> '59') or (n <> 52)) and ((fcc <> '62') or (n <> 67)) then
+    // (a DPID of zeros: FCC 00, also with customer information)
+    if ((fcc <> '59') or (n <> 52)) and ((fcc <> '62') or (n <> 67)) and
+      (fcc <> '00') then
       exit;
     info := NDigits(bars, 20, High(bars));
     if (info = '') then

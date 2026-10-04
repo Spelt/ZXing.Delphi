@@ -34,6 +34,10 @@ type
     [Test]
     procedure AustraliaPost;
     [Test]
+    procedure Mailmark;
+    [Test]
+    procedure ZintVectors;
+    [Test]
     procedure IMbSamples;
     [Test]
     procedure NotInAuto;
@@ -44,6 +48,7 @@ implementation
 uses
   System.SysUtils,
   System.IOUtils,
+  System.Math,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -59,7 +64,10 @@ uses
   ZXing.RGBLuminanceSource,
   ZXing.HybridBinarizer,
   ZXing.BinaryBitmap,
-  ZXing.MultiFormatReader;
+  ZXing.MultiFormatReader,
+  ZXing.Postal.FourStateDetector,
+  ZXing.Postal.Mailmark,
+  ZXing.Postal.AustraliaPost;
 
 const
   RM4_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -254,11 +262,168 @@ begin
           remainder[i + k] := remainder[i + k] xor
             exp[log[c] + log[generator[k]]];
   end;
-  // as zint: the lowest one first
-  for var k := count + 3 downto count do
+  // the error correction symbols, the highest first
+  for var k := count to count + 3 do
     bars := bars + [remainder[k] shr 4, (remainder[k] shr 2) and 3,
       remainder[k] and 3];
   Result := bars + [1, 3];
+end;
+
+/// <summary>The bars of a Mailmark 4-state barcode of text (22 characters
+/// barcode C, 26 barcode L; as zint).</summary>
+function MailmarkBars(const text: string): TArray<Byte>;
+const
+  SET_A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  SET_L = 'ABDEFGHJLNPQRSTUWXYZ';
+  FORMATS: array [1 .. 6] of string = ('ANANLLNLS', 'AANNLLNLS', 'AANNNLLNL',
+    'AANANLLNL', 'ANNLLNLSS', 'ANNNLLNLS');
+  STARTS: array [1 .. 6] of UInt64 = (1, 5408000001, 10816000001,
+    64896000001, 205504000001, 205712000001);
+  SYMBOLS_ODD: array [0 .. 31] of Byte = ($01, $02, $04, $07, $08, $0B,
+    $0D, $0E, $10, $13, $15, $16, $19, $1A, $1C, $1F, $20, $23, $25, $26,
+    $29, $2A, $2C, $2F, $31, $32, $34, $37, $38, $3B, $3D, $3E);
+  SYMBOLS_EVEN: array [0 .. 29] of Byte = ($03, $05, $06, $09, $0A, $0C,
+    $0F, $11, $12, $14, $17, $18, $1B, $1D, $1E, $21, $22, $24, $27, $28,
+    $2B, $2D, $2E, $30, $33, $35, $36, $39, $3A, $3C);
+  GROUPS_C: array [0 .. 21] of Byte = (3, 5, 7, 11, 13, 14, 16, 17, 19, 0, 1,
+    2, 4, 6, 8, 9, 10, 12, 15, 18, 20, 21);
+  GROUPS_L: array [0 .. 25] of Byte = (2, 5, 7, 8, 13, 14, 15, 16, 21, 22, 23,
+    0, 1, 3, 4, 6, 9, 10, 11, 12, 17, 18, 19, 20, 24, 25);
+begin
+  var n := Length(text);
+  var barcodeC := (n = 22);
+  var postcode := Copy(text, n - 8, 9);
+  // the value of the postcode
+  var value: UInt64 := 0;
+  if (postcode <> 'XY11     ') then
+    for var t := 1 to 6 do
+    begin
+      var fits := true;
+      var v: UInt64 := 0;
+      for var i := 0 to 8 do
+        case FORMATS[t].Chars[i] of
+          'A':
+            begin
+              fits := fits and (SET_A.IndexOf(postcode.Chars[i]) >= 0);
+              v := v * 26 + UInt64(Max(SET_A.IndexOf(postcode.Chars[i]), 0));
+            end;
+          'L':
+            begin
+              fits := fits and (SET_L.IndexOf(postcode.Chars[i]) >= 0);
+              v := v * 20 + UInt64(Max(SET_L.IndexOf(postcode.Chars[i]), 0));
+            end;
+          'N':
+            begin
+              fits := fits and CharInSet(postcode.Chars[i], ['0' .. '9']);
+              v := v * 10 + UInt64(Max(Ord(postcode.Chars[i]) - Ord('0'), 0));
+            end;
+        else
+          fits := fits and (postcode.Chars[i] = ' ');
+        end;
+      if fits then
+      begin
+        value := v + STARTS[t];
+        break;
+      end;
+    end;
+
+  // the consolidated data value (128 bits)
+  var cdv: TPostalNumber;
+  FillChar(cdv, SizeOf(cdv), 0);
+  cdv.W[1] := Cardinal(value shr 32);
+  cdv.W[0] := Cardinal(value);
+  cdv.MulAdd(100000000, StrToInt(Copy(text, n - 16, 8)));
+  if barcodeC then
+    cdv.MulAdd(100, StrToInt(Copy(text, 4, 2)))
+  else
+    cdv.MulAdd(1000000, StrToInt(Copy(text, 4, 6)));
+  cdv.MulAdd(15, '0123456789ABCDE'.IndexOf(text[3]));
+  cdv.MulAdd(5, Ord(text[1]) - Ord('0'));
+  cdv.MulAdd(4, Ord(text[2]) - Ord('1'));
+
+  var step := 10;
+  var count := 19;
+  var checkCount := 7;
+  if barcodeC then
+  begin
+    step := 8;
+    count := 16;
+    checkCount := 6;
+  end;
+  var numbers: TArray<Integer>;
+  SetLength(numbers, count + checkCount);
+  for var j := count - 1 downto step + 1 do
+    numbers[j] := cdv.DivMod(32);
+  for var j := step downto 0 do
+    numbers[j] := cdv.DivMod(30);
+
+  // Reed-Solomon in GF(32) (x^5 + x^2 + 1), generator (x - a)..(x - a^k)
+  var exp: array [0 .. 61] of Integer;
+  var log: array [0 .. 31] of Integer;
+  var e := 1;
+  for var i := 0 to 30 do
+  begin
+    exp[i] := e;
+    exp[i + 31] := e;
+    log[e] := i;
+    e := e shl 1;
+    if (e and 32 <> 0) then
+      e := e xor $25;
+  end;
+  var generator: TArray<Integer> := [1];
+  for var i := 1 to checkCount do
+  begin
+    var next: TArray<Integer>;
+    SetLength(next, Length(generator) + 1);
+    for var k := 0 to High(generator) do
+    begin
+      next[k] := next[k] xor generator[k];
+      if (generator[k] <> 0) then
+        next[k + 1] := next[k + 1] xor exp[log[generator[k]] + i];
+    end;
+    generator := next;
+  end;
+  var remainder := Copy(numbers);
+  for var i := 0 to count - 1 do
+    if (remainder[i] <> 0) then
+      for var k := 1 to checkCount do
+        if (generator[k] <> 0) then
+          remainder[i + k] := remainder[i + k] xor
+            exp[log[remainder[i]] + log[generator[k]]];
+  // the check numbers, the highest first
+  for var k := 0 to checkCount - 1 do
+    numbers[count + k] := remainder[count + k];
+
+  // the symbols in their extender groups, then the bars
+  var extender: TArray<Integer>;
+  SetLength(extender, n);
+  for var i := 0 to n - 1 do
+  begin
+    var symbol: Integer;
+    if (i <= step) then
+      symbol := SYMBOLS_EVEN[numbers[i]]
+    else
+      symbol := SYMBOLS_ODD[numbers[i]];
+    if barcodeC then
+      extender[GROUPS_C[i]] := symbol
+    else
+      extender[GROUPS_L[i]] := symbol;
+  end;
+  Result := [];
+  for var i := 0 to n - 1 do
+    for var j := 0 to 2 do
+    begin
+      var bits := (extender[i] shl j) and $24;
+      var state: Byte := 3;
+      // which side is the ascender alternates
+      if (bits = $24) then
+        state := 0
+      else if (bits = $20) and Odd(i) or (bits = $04) and not Odd(i) then
+        state := 2
+      else if (bits <> 0) then
+        state := 1;
+      Result := Result + [state];
+    end;
 end;
 
 /// <summary>Reads the bars drawn in an image (a bar and a space of 3 pixels,
@@ -522,6 +687,68 @@ begin
   finally
     r.Free;
   end;
+end;
+
+procedure TPostalTest.Mailmark;
+begin
+  // barcode C and L, postcodes of type 2 and 1 and international
+  for var text in ['1100123456789BS12AB3D ', '21B12345698765432B1A2DE3F ',
+    '41E9900000001XY11     '] do
+    for var upsideDown in [false, true] do
+    begin
+      var r := ReadBars(MailmarkBars(text), TBarcodeFormat.MAILMARK_4STATE,
+        upsideDown, upsideDown);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + text);
+        Assert.AreEqual(Ord(TBarcodeFormat.MAILMARK_4STATE),
+          Ord(r.BarcodeFormat));
+        Assert.AreEqual(text, r.Text);
+      finally
+        r.Free;
+      end;
+    end;
+
+  // 3 bars wrong are corrected
+  var bars := MailmarkBars('1100123456789BS12AB3D ');
+  bars[4] := (bars[4] + 1) mod 4;
+  bars[30] := (bars[30] + 2) mod 4;
+  bars[60] := (bars[60] + 3) mod 4;
+  var r := ReadBars(bars, TBarcodeFormat.MAILMARK_4STATE);
+  try
+    Assert.IsNotNull(r, ' Nil result (corrected) ');
+    Assert.AreEqual('1100123456789BS12AB3D ', r.Text);
+  finally
+    r.Free;
+  end;
+end;
+
+/// <summary>The states of bars written as F, A, D and T.</summary>
+function States(const bars: string): TArray<Byte>;
+begin
+  SetLength(Result, Length(bars));
+  for var i := 1 to Length(bars) do
+    Result[i - 1] := Pos(bars[i], 'FADT') - 1;
+end;
+
+procedure TPostalTest.ZintVectors;
+begin
+  // test vectors of zint (backend/tests): Mailmark barcode C and L
+  Assert.AreEqual('1100000000000XY11     ', DecodeMailmark(States(
+    'TTDTTATTDTAATTDTAATTDTAATTDTTDDAATAADDATAATDDFAFTDDTAADDDTAAFDFAFF')));
+  Assert.AreEqual('21B2254800659JW5O9QA6Y', DecodeMailmark(States(
+    'DAATATTTADTAATTFADDDDTTFTFDDDDFFDFDAFTADDTFFTDDATADTTFATTDAFDTFDDA')));
+  Assert.AreEqual('41038422416563762EF61AH8T ', DecodeMailmark(States(
+    'DTTFATTDDTATTTATFTDFFFTFDFDAFTTTADTTFDTFDDDTDFDDFTFAADTFDTDTDTFAATAFDD' +
+    'TAATTDTT')));
+  // Australia Post (the first two verified by zint against TEC-IT)
+  Assert.AreEqual('1196184209', DecodeAustraliaPost(States(
+    'ATFAFATFDFFADDAAFDFFTFTDFFTDADADTADAT')));
+  Assert.AreEqual('1139549554', DecodeAustraliaPost(States(
+    'ATFAFAAFTFADAATFADADAATTADAFATAATDDAT')));
+  Assert.AreEqual('5956439111ABA 9', DecodeAustraliaPost(States(
+    'ATADTFADDFAAAFTFFAFAFAFFFFFAFFFFFTTDDTTAFADAFFFTTAAT')));
+  Assert.AreEqual('6232211324123456789012345', DecodeAustraliaPost(States(
+    'ATDFFDAFFDFDFAFAAFFDAAFAFDAFAAADDFDADDTFFFFAFDAFAAADTADDATFAFFFTFAT')));
 end;
 
 procedure TPostalTest.IMbSamples;

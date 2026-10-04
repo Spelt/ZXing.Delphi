@@ -54,6 +54,19 @@ type
       flips: Cardinal = 0): TArray<Byte>;
   end;
 
+  /// <summary>An unsigned number of 128 bits (4 words, the lowest first),
+  /// for the data of the postal barcodes.</summary>
+  TPostalNumber = record
+    W: array [0 .. 3] of Cardinal;
+    /// <summary>Self * m + a.</summary>
+    procedure MulAdd(m, a: Cardinal);
+    /// <summary>Self div d; returns Self mod d.</summary>
+    function DivMod(d: Cardinal): Cardinal;
+    function IsZero: Boolean;
+    /// <summary>The value when it fits in 64 bits; false when not.</summary>
+    function ToUInt64(out value: UInt64): Boolean;
+  end;
+
 /// <summary>The postal barcodes in the image: rows of at least minBars
 /// equally spaced bars, found on every rowStep-th row.</summary>
 function DetectPostalBars(image: TBitMatrix; rowStep, minBars: Integer)
@@ -67,6 +80,42 @@ type
     X, Y: Double;
     TopX, Top, BottomX, Bottom: Double;
   end;
+
+{ TPostalNumber }
+
+procedure TPostalNumber.MulAdd(m, a: Cardinal);
+begin
+  var carry: UInt64 := a;
+  for var i := 0 to 3 do
+  begin
+    var v := UInt64(W[i]) * m + carry;
+    W[i] := Cardinal(v);
+    carry := v shr 32;
+  end;
+end;
+
+function TPostalNumber.DivMod(d: Cardinal): Cardinal;
+begin
+  var remainder: UInt64 := 0;
+  for var i := 3 downto 0 do
+  begin
+    var v := (remainder shl 32) or W[i];
+    W[i] := Cardinal(v div d);
+    remainder := v mod d;
+  end;
+  Result := Cardinal(remainder);
+end;
+
+function TPostalNumber.IsZero: Boolean;
+begin
+  Result := (W[0] = 0) and (W[1] = 0) and (W[2] = 0) and (W[3] = 0);
+end;
+
+function TPostalNumber.ToUInt64(out value: UInt64): Boolean;
+begin
+  Result := (W[2] = 0) and (W[3] = 0);
+  value := UInt64(W[1]) shl 32 or W[0];
+end;
 
 { TPostalBars }
 

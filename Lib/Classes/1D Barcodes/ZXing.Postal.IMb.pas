@@ -186,49 +186,9 @@ const
     110, 92, 111, 130, 59, 31, 12, 81, 43, 55, 5, 74, 22, 101, 128, 58, 118,
     48, 108, 38, 98, 93, 23, 83, 13, 73, 3);
 
-type
-  /// <summary>An unsigned number of 128 bits (4 words, the lowest first).
-  /// </summary>
-  TUInt128 = record
-    W: array [0 .. 3] of Cardinal;
-    /// <summary>Self * m + a.</summary>
-    procedure MulAdd(m, a: Cardinal);
-    /// <summary>Self div d; returns Self mod d.</summary>
-    function DivMod(d: Cardinal): Cardinal;
-    function IsZero: Boolean;
-  end;
-
-procedure TUInt128.MulAdd(m, a: Cardinal);
-begin
-  var carry: UInt64 := a;
-  for var i := 0 to 3 do
-  begin
-    var v := UInt64(W[i]) * m + carry;
-    W[i] := Cardinal(v);
-    carry := v shr 32;
-  end;
-end;
-
-function TUInt128.DivMod(d: Cardinal): Cardinal;
-begin
-  var remainder: UInt64 := 0;
-  for var i := 3 downto 0 do
-  begin
-    var v := (remainder shl 32) or W[i];
-    W[i] := Cardinal(v div d);
-    remainder := v mod d;
-  end;
-  Result := Cardinal(remainder);
-end;
-
-function TUInt128.IsZero: Boolean;
-begin
-  Result := (W[0] = 0) and (W[1] = 0) and (W[2] = 0) and (W[3] = 0);
-end;
-
 /// <summary>The CRC of the 102 bits of value (USPS-B-3200 Appendix C).
 /// </summary>
-function CRC11(const value: TUInt128): Word;
+function CRC11(const value: TPostalNumber): Word;
 const
   POLYNOMIAL = $0F35;
 begin
@@ -331,7 +291,7 @@ begin
       exit;
 
   // the binary data: A, B to I base 1365, J base 636
-  var value: TUInt128;
+  var value: TPostalNumber;
   FillChar(value, SizeOf(value), 0);
   value.MulAdd(0, codeword[0]);
   for var i := 1 to 8 do
@@ -351,8 +311,8 @@ begin
   var routing := '';
   if not value.IsZero then
   begin
-    var number: UInt64 := UInt64(value.W[1]) shl 32 or value.W[0];
-    if (value.W[2] <> 0) or (value.W[3] <> 0) then
+    var number: UInt64;
+    if not value.ToUInt64(number) then
       exit;
     if (number <= 100000) then
       routing := Format('%.5d', [number - 1])

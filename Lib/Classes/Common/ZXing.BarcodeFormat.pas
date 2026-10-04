@@ -138,7 +138,10 @@ type
     JAPAN_POST = 268435461,
 
     /// <summary>Australia Post 4-State Customer Barcode.</summary>
-    AUSTRALIA_POST = 268435462
+    AUSTRALIA_POST = 268435462,
+
+    /// <summary>Royal Mail Mailmark 4-state barcode (C and L).</summary>
+    MAILMARK_4STATE = 268435463
 
     );
 
