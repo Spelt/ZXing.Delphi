@@ -119,6 +119,14 @@ begin
     hints.Add(TDecodeHintType.ALLOWED_EAN_EXTENSIONS,
       TIntegerArrayHint.Create([2, 5]));
 
+  // the other formats of the folder too (the scan manager adds its own)
+  if (Length(folder.OtherFormats) > 0) then
+  begin
+    var formats := TList<TBarcodeFormat>.Create;
+    formats.AddRange(folder.OtherFormats);
+    hints.Add(TDecodeHintType.POSSIBLE_FORMATS, formats);
+  end;
+
   // the scan manager owns and frees the hints
   Result := TScanManager.Create(folder.ScanFormat, hints);
   Result.ReturnErrors := UseReturnErrors;

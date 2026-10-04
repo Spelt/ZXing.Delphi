@@ -78,6 +78,9 @@ type
     Path: string;
     /// <summary>Format to scan for; Auto for mixed folders like multi-1.</summary>
     ScanFormat: TBarcodeFormat;
+    /// <summary>The other formats of the symbols in the folder, like Code 32
+    /// and PZN in code39-1 (only read when asked for).</summary>
+    OtherFormats: TArray<TBarcodeFormat>;
     constructor Create;
     destructor Destroy; override;
     /// <summary>Returns nil when ZXing.Delphi does not support the folder's
@@ -185,6 +188,16 @@ begin
     format := TBarcodeFormat.RSS_LIMITED
   else if (n = 'dxfilmedge') then
     format := TBarcodeFormat.DX_FILM_EDGE
+  else if (n = 'code32') then
+    format := TBarcodeFormat.CODE_32
+  else if (n = 'pzn') then
+    format := TBarcodeFormat.PZN
+  else if (n = 'msi') then
+    format := TBarcodeFormat.MSI
+  else if (n = 'plessey') then
+    format := TBarcodeFormat.PLESSEY
+  else if (n = 'pharmacode') then
+    format := TBarcodeFormat.PHARMA_CODE
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then
@@ -575,6 +588,15 @@ begin
           symbol.FormatName := GetProp(props, 'Format');
           symbol.Supported := FormatFromName(symbol.FormatName, symbolFormat);
           symbol.Format := symbolFormat;
+          if symbol.Supported and not isMixed and
+            (symbolFormat <> folderFormat) then
+          begin
+            var known := false;
+            for var f in Result.OtherFormats do
+              known := known or (f = symbolFormat);
+            if not known then
+              Result.OtherFormats := Result.OtherFormats + [symbolFormat];
+          end;
           symbol.TextPlain := GetProp(props, 'TextPlain');
           symbol.TextEscaped := GetProp(props, 'TextEscaped');
           symbol.HasText := props.ContainsKey('TextPlain') or
