@@ -556,8 +556,21 @@ begin
     cx := cx + runs[i + 2 * k] + runs[i + 2 * k + 1];
   end;
 
+  // (to the right again at the end: with the slope of the symbol, not yet
+  // known when the seed was at the right end)
   var slope := 0.0;
-  for var direction in [1, -1] do
+  for var pass := 0 to 2 do
+  begin
+    var direction := 1;
+    if (pass = 1) then
+      direction := -1
+    else if (pass = 2) then
+    begin
+      var maxBar := 0.0;
+      for var b in Result do
+        maxBar := Max(maxBar, b.Bottom - b.Top);
+      slope := EstimateSlope(Result, 0.15 * maxBar);
+    end;
     repeat
       var bar: TBar;
       if not NextBar(image, Result, direction, barWidth, pitch, slope, bar)
@@ -576,6 +589,7 @@ begin
         slope := EstimateSlope(Result, 0.15 * maxBar);
       end;
     until false;
+  end;
 
   // on the part the bars have in common (the tracker) no bar between them
   // (else the seed row ran through ascenders or descenders only and every

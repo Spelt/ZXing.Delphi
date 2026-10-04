@@ -160,6 +160,8 @@ begin
   var checkCount := groups - dataCount;
   var numbers: TArray<Integer>;
   SetLength(numbers, groups);
+  var invalid: TArray<Boolean>;
+  SetLength(invalid, groups);
   for var i := 0 to groups - 1 do
   begin
     var symbol: Integer;
@@ -173,10 +175,12 @@ begin
     else
       number := SymbolNumber(symbol, SYMBOLS_ODD);
     // (a symbol that is none: 0, for the error correction)
-    if (number < 0) then
+    invalid[i] := (number < 0);
+    if invalid[i] then
       number := 0;
     numbers[i] := number;
   end;
+  var received := Copy(numbers);
   var rs := TReedSolomonDecoder.Create(Field32);
   try
     if not rs.decode(numbers, checkCount) then
@@ -184,6 +188,15 @@ begin
   finally
     rs.Free;
   end;
+  // the symbols that were none are errors too, also when the correction
+  // left them 0 (else bars that are no symbols at all read as zeros): at most
+  // as many errors as the error correction can correct
+  var errors := 0;
+  for var i := 0 to groups - 1 do
+    if invalid[i] or (numbers[i] <> received[i]) then
+      Inc(errors);
+  if (errors > checkCount div 2) then
+    exit;
   // the corrected data numbers of the even symbols must fit their table
   for var i := 0 to dataStep do
     if (numbers[i] >= Length(SYMBOLS_EVEN)) then

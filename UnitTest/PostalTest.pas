@@ -756,7 +756,7 @@ end;
 procedure TPostalTest.IMbSamples;
 begin
   // the Intelligent Mail Barcode images of ZXing.Net (it reads 1 of them
-  // without TRY_HARDER): at least 8, the texts as expected
+  // without TRY_HARDER): at least 9, the texts as expected
   var read := 0;
   for var name in ['01.png', '02.png', '03.png', '04.png', '05.gif', '06.png',
     '07.png', '08.jpg', '09.png', '10.jpg'] do
@@ -783,13 +783,14 @@ begin
       bmp.Free;
     end;
   end;
-  Assert.IsTrue(read >= 8, IntToStr(read) + ' of 10 read');
+  Assert.IsTrue(read >= 9, IntToStr(read) + ' of 10 read');
 end;
 
 procedure TPostalTest.PostalSamples;
 const
   // the folders of the formats (images named format_number_text, '-' in the
-  // text written as '_')
+  // text written as '_'): png the barcode alone, jpg on a photo, turned up
+  // to 10 degrees
   FOLDERS: array [0 .. 7] of string = ('AustraliaPost', 'IMb', 'JapanPost',
     'KIX', 'Mailmark', 'PLANET', 'POSTNET', 'RM4SCC');
   FORMATS: array [0 .. 7] of TBarcodeFormat = (TBarcodeFormat.AUSTRALIA_POST,
@@ -799,7 +800,7 @@ const
 begin
   for var f := 0 to High(FOLDERS) do
     for var name in TDirectory.GetFiles(ExtractFileDir(ParamStr(0)) +
-      '\..\..\images\postal\' + FOLDERS[f], '*.png') do
+      '\..\..\images\postal\' + FOLDERS[f], '*.*') do
     begin
       var base := TPath.GetFileNameWithoutExtension(name);
       // (the text: after the second _)
