@@ -58,6 +58,12 @@ type
     procedure PharmacodeTwoTrack;
     [Test]
     procedure ZintVectors;
+    [Test]
+    procedure KoreaPost;
+    [Test]
+    procedure FIM;
+    [Test]
+    procedure DeutschePost;
   end;
 
 implementation
@@ -657,10 +663,11 @@ begin
   end;
 end;
 
-/// <summary>The bars and spaces of modules ('1' bar, '0' space, starting
-/// with a bar), as the encode tests of zint write them.</summary>
-function ModuleWidths(const modules: string): TArray<Integer>;
+/// <summary>The bars and spaces of modules ('1' bar, '0' space; the spaces
+/// at the ends are left out), as the encode tests of zint write them.</summary>
+function ModuleWidths(const symbol: string): TArray<Integer>;
 begin
+  var modules := symbol.Trim(['0']);
   Result := [];
   var i := 1;
   while (i <= Length(modules)) do
@@ -820,15 +827,14 @@ begin
 end;
 
 /// <summary>Reads a Pharmacode two-track of the tracks (top, bottom; 3
-/// pixels per module, 12 pixels per track) with the formats, turned 180
+/// pixels per module, track pixels per track) with the formats, turned 180
 /// degrees (upsideDown) or 90 (vertical, the top track on the left); the
 /// caller frees the result.</summary>
 function ReadTwoTrack(const tracks: TArray<string>;
   const formats: array of TBarcodeFormat; upsideDown: Boolean = false;
-  vertical: Boolean = false): TReadResult;
+  vertical: Boolean = false; track: Integer = 12): TReadResult;
 const
   MODULE = 3;
-  TRACK = 12;
   QUIET = 15;
 begin
   var modules := Length(tracks[0]);
@@ -888,6 +894,72 @@ begin
   end;
 end;
 
+/// <summary>The bars and spaces of a Korea Post of a postal code of 6
+/// digits (as zint: the last digit first, then the check digit, plus
+/// checkOffset).</summary>
+function KoreaPostWidths(const code: string; checkOffset: Integer = 0)
+  : TArray<Integer>;
+const
+  // bar, space, ... of the digits (0: no bar)
+  TABLE: array [0 .. 9] of string = ('1313150613', '0713131313', '0417131313',
+    '1506131313', '0413171313', '17171313', '1315061313', '0413131713',
+    '17131713', '13171713');
+begin
+  var sum := 0;
+  for var c in code do
+    Inc(sum, Ord(c) - Ord('0'));
+  var check := ((10 - sum mod 10) mod 10 + checkOffset) mod 10;
+  var digits := '';
+  for var i := 6 downto 1 do
+    digits := digits + code[i];
+  digits := digits + Chr(Ord('0') + check);
+  var modules := '';
+  for var d in digits do
+  begin
+    var entry := TABLE[Ord(d) - Ord('0')];
+    for var k := 1 to Length(entry) do
+      modules := modules + StringOfChar(Chr(Ord('0') + Ord(Odd(k))),
+        Ord(entry[k]) - Ord('0'));
+  end;
+  // (the spaces at the ends are the quiet zones)
+  Result := ModuleWidths(modules.Trim(['0']));
+end;
+
+/// <summary>The bars and spaces of an ITF of digits (an even number, wide 3
+/// times narrow).</summary>
+function ITFWidths(const digits: string): TArray<Integer>;
+const
+  DIGIT_PATTERNS: array [0 .. 9] of string = ('00110', '10001', '01001',
+    '11000', '00101', '10100', '01100', '00011', '10010', '01010');
+begin
+  Result := [1, 1, 1, 1];
+  var i := 1;
+  while (i < Length(digits)) do
+  begin
+    var bars := DIGIT_PATTERNS[Ord(digits[i]) - Ord('0')];
+    var spaces := DIGIT_PATTERNS[Ord(digits[i + 1]) - Ord('0')];
+    for var k := 1 to 5 do
+      Result := Result + [1 + 2 * Ord(bars[k] = '1'),
+        1 + 2 * Ord(spaces[k] = '1')];
+    Inc(i, 2);
+  end;
+  Result := Result + [3, 1, 1];
+end;
+
+/// <summary>The Deutsche Post check digit of digits (the weights from the
+/// right 4, 9, 4, ...).</summary>
+function DPCheck(const digits: string): Char;
+begin
+  var sum := 0;
+  var weight := 4;
+  for var i := Length(digits) downto 1 do
+  begin
+    Inc(sum, weight * (Ord(digits[i]) - Ord('0')));
+    weight := 13 - weight;
+  end;
+  Result := Chr(Ord('0') + (10 - sum mod 10) mod 10);
+end;
+
 procedure TOneDTest.NotInAuto;
 begin
   // MSI, Plessey, Pharmacode, Code 11 and the 2 of 5 variants are only
@@ -909,6 +981,19 @@ begin
   var r := ReadTwoTrack(TwoTrackModules(29876543), []);
   try
     Assert.IsNull(r, 'Pharmacode two-track read in Auto');
+  finally
+    r.Free;
+  end;
+  r := ReadBars(KoreaPostWidths('123456'), []);
+  try
+    Assert.IsNull(r, 'Korea Post read in Auto');
+  finally
+    r.Free;
+  end;
+  r := ReadTwoTrack(['10100010001000101', '10100010001000101'], [],
+    false, false, 20);
+  try
+    Assert.IsNull(r, 'FIM read in Auto');
   finally
     r.Free;
   end;
@@ -1187,6 +1272,123 @@ begin
     finally
       r.Free;
     end;
+  end;
+end;
+
+procedure TOneDTest.KoreaPost;
+begin
+  // the check digit is checked, not in the text; also upside down
+  for var code in ['123456', '000000', '111111', '999999', '505050'] do
+    for var upsideDown in [false, true] do
+    begin
+      var widths := KoreaPostWidths(code);
+      if upsideDown then
+        widths := Reversed(widths);
+      CheckRead(widths, TBarcodeFormat.KOREA_POST, code, 'Korea Post ' + code);
+    end;
+  CheckRead(KoreaPostWidths('123456', 1), TBarcodeFormat.KOREA_POST, '',
+    'Korea Post with a wrong check digit');
+  // the encode tests of zint (verified against TEC-IT)
+  CheckRead(ModuleWidths(
+    '100010001000000000001000100000000000100010001000000010000000' +
+    '100010001000100010001000000000001000000000010001000100010001' +
+    '00010001000000000001000000010001000000010001000'),
+    TBarcodeFormat.KOREA_POST, '010230',
+    'Korea Post 010230 (zint)');
+  CheckRead(ModuleWidths(
+    '000010001000100000001000100000001000000010001000000010001000' +
+    '000010001000100000000000100010001000000010000000100010001000' +
+    '100010000000100000001000100010001000000000001000'),
+    TBarcodeFormat.KOREA_POST, '923457',
+    'Korea Post 923457 (zint)');
+end;
+
+procedure TOneDTest.FIM;
+const
+  // the modules of FIM A to E (as zint; C and E its encode tests)
+  MODULES: array [0 .. 4] of string = ('10100000100000101',
+    '10001010001010001', '10100010001000101', '10101000100010101',
+    '10001000000010001');
+begin
+  // bars of 40 pixels, 3 per module: horizontal and vertical
+  for var i := 0 to 4 do
+    for var vertical in [false, true] do
+    begin
+      var r := ReadTwoTrack([MODULES[i], MODULES[i]], [TBarcodeFormat.FIM],
+        false, vertical, 20);
+      try
+        Assert.IsNotNull(r, ' Nil result FIM ' + Chr(Ord('A') + i));
+        Assert.AreEqual(Ord(TBarcodeFormat.FIM), Ord(r.BarcodeFormat));
+        Assert.AreEqual(string(Chr(Ord('A') + i)), r.Text);
+      finally
+        r.Free;
+      end;
+    end;
+  // bars not 10 times as high as wide (8 pixels): not
+  var r := ReadTwoTrack([MODULES[2], MODULES[2]], [TBarcodeFormat.FIM],
+    false, false, 4);
+  try
+    Assert.IsNull(r, 'FIM of low bars');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.DeutschePost;
+begin
+  // Leitcode and Identcode, also the examples of the DIALOGPOST SCHWER
+  // brochure and of de.wikipedia.org
+  for var code in ['0000087654321', '2045703000360', '5082300702800'] do
+    CheckRead(ITFWidths(code + DPCheck(code)), TBarcodeFormat.DP_LEITCODE,
+      code + DPCheck(code), 'Leitcode ' + code);
+  for var code in ['00087654321', '80420000001', '39601313414'] do
+    CheckRead(ITFWidths(code + DPCheck(code)), TBarcodeFormat.DP_IDENTCODE,
+      code + DPCheck(code), 'Identcode ' + code);
+  // the encode tests of zint (verified against TEC-IT)
+  CheckRead(ModuleWidths(
+    '101010101110001110001010101110001110001010001011101110001010' +
+    '100010001110111011101011100010100011101110001010100011101000' +
+    '100010111011101'),
+    TBarcodeFormat.DP_LEITCODE, '0000087654321' + DPCheck('0000087654321'),
+    'Leitcode 0000087654321 (zint)');
+  CheckRead(ModuleWidths(
+    '101010111010001000111010001011100010111010101000111000111011' +
+    '101110100010001010101110001110001011101110001000101010001011' +
+    '100011101011101'),
+    TBarcodeFormat.DP_LEITCODE, '2045703000360' + DPCheck('2045703000360'),
+    'Leitcode 2045703000360 (zint)');
+  CheckRead(ModuleWidths(
+    '101011101011100010001011101000101110100011101110100010001010' +
+    '101110111000100010100011101110100011101010001110001010001011' +
+    '100011101011101'),
+    TBarcodeFormat.DP_LEITCODE, '5082300702800' + DPCheck('5082300702800'),
+    'Leitcode 5082300702800 (zint)');
+  CheckRead(ModuleWidths(
+    '101010101110001110001010001011101110001010100010001110111011' +
+    '101011100010100011101110001010100011101000100010111011101'),
+    TBarcodeFormat.DP_IDENTCODE, '00087654321' + DPCheck('00087654321'),
+    'Identcode 00087654321 (zint)');
+  CheckRead(ModuleWidths(
+    '101011101010001110001010100011101011100010101110001110001010' +
+    '101110001110001010101110001110001011101010001000111011101'),
+    TBarcodeFormat.DP_IDENTCODE, '80420000001' + DPCheck('80420000001'),
+    'Identcode 80420000001 (zint)');
+  CheckRead(ModuleWidths(
+    '101011101110001010001010111011100010001011100010001010111011' +
+    '100010001010111010001011101011100010101110001000111011101'),
+    TBarcodeFormat.DP_IDENTCODE, '39601313414' + DPCheck('39601313414'),
+    'Identcode 39601313414 (zint)');
+  // a wrong check digit, another length: not; Auto: ITF
+  CheckRead(ITFWidths('20457030003601'), TBarcodeFormat.DP_LEITCODE, '',
+    'Leitcode with a wrong check digit');
+  CheckRead(ITFWidths('20457030003606'), TBarcodeFormat.DP_IDENTCODE, '',
+    'Leitcode as Identcode');
+  var r := ReadBars(ITFWidths('20457030003606'), []);
+  try
+    Assert.IsNotNull(r, ' Nil result (Auto) ');
+    Assert.AreEqual(Ord(TBarcodeFormat.ITF), Ord(r.BarcodeFormat));
+  finally
+    r.Free;
   end;
 end;
 

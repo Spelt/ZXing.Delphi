@@ -226,6 +226,16 @@ begin
     format := TBarcodeFormat.DATALOGIC_2_OF_5
   else if (n = 'pharmacodetwotrack') or (n = 'pharma2') then
     format := TBarcodeFormat.PHARMA_CODE_TWO_TRACK
+  else if (n = 'cepnet') then
+    format := TBarcodeFormat.CEPNET
+  else if (n = 'koreapost') then
+    format := TBarcodeFormat.KOREA_POST
+  else if (n = 'fim') then
+    format := TBarcodeFormat.FIM
+  else if (n = 'leitcode') or (n = 'dpleit') then
+    format := TBarcodeFormat.DP_LEITCODE
+  else if (n = 'identcode') or (n = 'dpident') then
+    format := TBarcodeFormat.DP_IDENTCODE
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

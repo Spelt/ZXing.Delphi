@@ -165,7 +165,26 @@ type
     DATALOGIC_2_OF_5 = 268435468,
 
     /// <summary>Pharmacode two-track (Laetus).</summary>
-    PHARMA_CODE_TWO_TRACK = 268435469
+    PHARMA_CODE_TWO_TRACK = 268435469,
+
+    // more postal barcodes, also only when asked for, not in Auto
+
+    /// <summary>CEPNet (Correios, Brazil: POSTNET of 8 digits).</summary>
+    CEPNET = 268435470,
+
+    /// <summary>Korea Post barcode (6 digit postal code).</summary>
+    KOREA_POST = 268435471,
+
+    /// <summary>USPS FIM (Facing Identification Mark, A to E).</summary>
+    FIM = 268435472,
+
+    /// <summary>Deutsche Post Leitcode (ITF of 14 digits): only when asked
+    /// for, Auto returns it as ITF.</summary>
+    DP_LEITCODE = 268435473,
+
+    /// <summary>Deutsche Post Identcode (ITF of 12 digits): only when asked
+    /// for, Auto returns it as ITF.</summary>
+    DP_IDENTCODE = 268435474
 
     );
 

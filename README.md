@@ -65,9 +65,9 @@ All formats are read with TBarcodeFormat.Auto, except the ones marked "only when
 | MicroPDF417 | MICRO_PDF417 | Macro PDF417, ECI |
 | MaxiCode | MAXICODE | modes 2 to 6, ECI, Structured Append | with detector: anywhere in the image, rotated and in perspective (camera)
 
-### Postal (4-state)
+### Postal
 
-Only when asked for, not in Auto. Horizontal and vertical, upside down, slanted and in perspective.
+Only when asked for, not in Auto. The ones of bars that differ in height (4-state, and POSTNET, PLANET and CEPNet): horizontal and vertical, upside down, slanted and in perspective.
 
 | Format | TBarcodeFormat | Notes
 | ------ | -------------- | -----
@@ -79,6 +79,11 @@ Only when asked for, not in Auto. Horizontal and vertical, upside down, slanted 
 | Japan Post (Kasutama) | JAPAN_POST | postal code and address (with letters), check character checked
 | Australia Post 4-State Customer Barcode | AUSTRALIA_POST | Standard, Customer Barcode 2 and 3, reply, routing and redirection; Reed-Solomon (errors corrected); text: format control code, DPID and customer information
 | Royal Mail Mailmark 4-state (barcode C and L) | MAILMARK_4STATE | Reed-Solomon (errors corrected); text: format, version, class, supply chain ID, item ID and destination postcode plus DPS, as zint
+| CEPNet (Correios, Brazil) | CEPNET | POSTNET of 8 digits (CEP), check digit checked, not in the text
+| Korea Post | KOREA_POST | postal code of 6 digits, check digit checked, not in the text; read as a 1D code
+| USPS FIM (Facing Identification Mark) | FIM | A to E; no check: tall straight bars (at least 10 times their width) in a clear zone, horizontal and vertical
+| Deutsche Post Leitcode | DP_LEITCODE | ITF of 14 digits, check digit (weights 4 and 9) checked, in the text; Auto: ITF
+| Deutsche Post Identcode | DP_IDENTCODE | ITF of 12 digits, check digit (weights 4 and 9) checked, in the text; Auto: ITF
 
 ### Features
 - Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
@@ -108,6 +113,7 @@ Only when asked for, not in Auto. Horizontal and vertical, upside down, slanted 
 	- New formats: Code 32 (new: CODE_32, the Italian pharmacy code, text 'A' and 9 digits) and PZN (new: PZN, the German Pharmazentralnummer), both Code 39 codes, port of zxing-cpp. Only when asked for (TScanManager format or POSSIBLE_FORMATS): Auto returns them as CODE_39 like before, so nothing changes for applications that read them as Code 39.
 	- New formats: MSI (MSI), Plessey (PLESSEY) and Pharmacode (new: PHARMA_CODE). zxing-cpp and ZXing Java have none of them: MSI and Pharmacode after the readers of ZXing.Net, Plessey new (with its CRC checked), the patterns as in zint. MSI with the hint ASSUME_MSI_CHECK_DIGIT checks the modulo 10 check digit (it stays in the text). MSI reads 5 of the 6 MSI test images of ZXing.Net (like ZXing.Net), also upside down. Only when asked for, not in Auto: MSI and Pharmacode have no check against false positives. Pharmacode is read left to right; upside down it is a different value.
 	- New formats: Code 11 (new: CODE_11), Industrial, IATA, Matrix and Datalogic 2 of 5 (new: INDUSTRIAL_2_OF_5, IATA_2_OF_5, MATRIX_2_OF_5, DATALOGIC_2_OF_5) and Pharmacode two-track (new: PHARMA_CODE_TWO_TRACK). zxing-cpp, ZXing Java and ZXing.Net have none of them: the patterns as in zint, verified against its test vectors. Code 11 requires its check digit C (or C and K); they stay in the text. The 2 of 5 variants have no check digit of their own: an optional one stays in the text. Pharmacode two-track: the two tracks of the bars are combined, horizontal and vertical; upside down it is a different value. Only when asked for, not in Auto.
+	- New postal formats: CEPNet (new: CEPNET, Brazil: POSTNET of 8 digits), Korea Post (new: KOREA_POST), USPS FIM (new: FIM, Facing Identification Mark) and Deutsche Post Leitcode and Identcode (new: DP_LEITCODE, DP_IDENTCODE: ITF of 14 and 12 digits with their own check digit). zxing-cpp, ZXing Java and ZXing.Net have none of them (they read Leitcode and Identcode as ITF, like Auto); the encodings as in zint, tested with its encode vectors. Only when asked for, not in Auto.
 	- New formats, the postal barcodes: KIX (new: KIX), RM4SCC (new: RM4SCC), USPS Intelligent Mail Barcode (new: IMB), POSTNET and PLANET (new: POSTNET, PLANET), Japan Post (new: JAPAN_POST), Australia Post (new: AUSTRALIA_POST) and Royal Mail Mailmark 4-state (new: MAILMARK_4STATE). zxing-cpp and ZXing Java have none of them: a detector of its own finds the rows of bars (also vertical, upside down, slanted, curved and in perspective) and the heights of the bars, the encodings as in zint. IMb reads 9 of the 10 test images of ZXing.Net (ZXing.Net 1, with TRY_HARDER 7); with a strong check (IMb) the least certain bars are tried the other way too. Only when asked for, not in Auto.
 	- Auto (TBarcodeFormat.Auto) reads all formats, also the new ones (Codabar, Telepen, Aztec, GS1 DataBar, PDF417, MicroPDF417, Micro QR Code, rMQR Code, MaxiCode, DX Film Edge), as users expect. On images without a barcode this costs more time than before: about 60% with TRY_HARDER and about 2 times without (a few milliseconds per camera image): choose the formats you need for the best speed.
 	- TScanManager.ScanAll: a result whose position was the same array as its result points (Aztec, and the symbols found but not read) got its position scaled twice in the downscaled layers.

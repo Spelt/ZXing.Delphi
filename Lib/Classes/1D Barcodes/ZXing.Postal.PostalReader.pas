@@ -36,9 +36,9 @@ uses
 type
   /// <summary>
   /// Reads the postal barcodes of formats (KIX, RM4SCC, IMB, POSTNET,
-  /// PLANET, JAPAN_POST, AUSTRALIA_POST, MAILMARK_4STATE): rows of bars that
-  /// differ in height, horizontal or vertical, also upside down, slanted and
-  /// in perspective.
+  /// PLANET, CEPNET, JAPAN_POST, AUSTRALIA_POST, MAILMARK_4STATE): rows of bars
+  /// that differ in height, horizontal or vertical, also upside down,
+  /// slanted and in perspective.
   /// </summary>
   TPostalReader = class(TInterfacedObject, IReader, IMultipleReader)
   private
@@ -70,9 +70,11 @@ function DecodeKIX(const states: TArray<Byte>): string;
 /// between the start and the stop bar, the check character checked and
 /// removed; '' when they are none.</summary>
 function DecodeRM4SCC(const states: TArray<Byte>): string;
-/// <summary>POSTNET or PLANET (USPS, tall and short bars): the digits, the
-/// check digit checked and removed; '' when they are none.</summary>
-function DecodePostnet(const states: TArray<Byte>; planet: Boolean): string;
+/// <summary>POSTNET or PLANET (USPS, tall and short bars), or CEPNet (Brazil,
+/// POSTNET of 8 digits): the digits, the check digit checked and removed;
+/// '' when they are none.</summary>
+function DecodePostnet(const states: TArray<Byte>; planet: Boolean;
+  cepnet: Boolean = false): string;
 /// <summary>Japan Post (Kasutama): the postal code and the address, the check
 /// character checked; '' when the bars are none.</summary>
 function DecodeJapanPost(const states: TArray<Byte>): string;
@@ -107,7 +109,8 @@ begin
     (format = TBarcodeFormat.PLANET) or
     (format = TBarcodeFormat.JAPAN_POST) or
     (format = TBarcodeFormat.AUSTRALIA_POST) or
-    (format = TBarcodeFormat.MAILMARK_4STATE);
+    (format = TBarcodeFormat.MAILMARK_4STATE) or
+    (format = TBarcodeFormat.CEPNET);
 end;
 
 /// <summary>The index of the RM4SCC/KIX character of the 4 bars from
@@ -182,7 +185,8 @@ begin
   end;
 end;
 
-function DecodePostnet(const states: TArray<Byte>; planet: Boolean): string;
+function DecodePostnet(const states: TArray<Byte>; planet: Boolean;
+  cepnet: Boolean = false): string;
 const
   // the tall bars of the digits (POSTNET; PLANET the other way around)
   DIGITS: array [0 .. 9, 0 .. 4] of Byte = ((1, 1, 0, 0, 0), (0, 0, 0, 1, 1),
@@ -202,8 +206,13 @@ begin
     exit;
   var count := (n - 2) div 5;
   // the lengths of the standard (5, 9 or 11 digits POSTNET, 11 or 13
-  // PLANET) with the check digit
-  if planet and (count <> 12) and (count <> 14) or not planet and
+  // PLANET, 8 CEPNet) with the check digit
+  if cepnet then
+  begin
+    if (count <> 9) then
+      exit;
+  end
+  else if planet and (count <> 12) and (count <> 14) or not planet and
     (count <> 6) and (count <> 10) and (count <> 12) then
     exit;
   var sum := 0;
@@ -350,6 +359,11 @@ begin
   begin
     Result := DecodePostnet(states, false);
     format := TBarcodeFormat.POSTNET;
+  end;
+  if not strongOnly and (Result = '') and Wants(TBarcodeFormat.CEPNET) then
+  begin
+    Result := DecodePostnet(states, false, true);
+    format := TBarcodeFormat.CEPNET;
   end;
   if not strongOnly and (Result = '') and Wants(TBarcodeFormat.PLANET) then
   begin

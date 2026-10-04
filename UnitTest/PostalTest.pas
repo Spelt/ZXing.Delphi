@@ -42,6 +42,8 @@ type
     [Test]
     procedure PostalSamples;
     [Test]
+    procedure CEPNet;
+    [Test]
     procedure NotInAuto;
   end;
 
@@ -69,7 +71,8 @@ uses
   ZXing.MultiFormatReader,
   ZXing.Postal.FourStateDetector,
   ZXing.Postal.Mailmark,
-  ZXing.Postal.AustraliaPost;
+  ZXing.Postal.AustraliaPost,
+  ZXing.Postal.PostalReader;
 
 const
   RM4_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -751,6 +754,40 @@ begin
     'ATADTFADDFAAAFTFFAFAFAFFFFFAFFFFFTTDDTTAFADAFFFTTAAT')));
   Assert.AreEqual('6232211324123456789012345', DecodeAustraliaPost(States(
     'ATDFFDAFFDFDFAFAAFFDAAFAFDAFAAADDFDADDTFFFFAFDAFAAADTADDATFAFFFTFAT')));
+end;
+
+procedure TPostalTest.CEPNet;
+begin
+  // POSTNET of 8 digits; not as POSTNET, and a POSTNET not as CEPNet
+  for var upsideDown in [false, true] do
+  begin
+    var r := ReadBars(PostnetBars('12345678', false), TBarcodeFormat.CEPNET,
+      upsideDown, upsideDown);
+    try
+      Assert.IsNotNull(r, ' Nil result ');
+      Assert.AreEqual(Ord(TBarcodeFormat.CEPNET), Ord(r.BarcodeFormat));
+      Assert.AreEqual('12345678', r.Text);
+    finally
+      r.Free;
+    end;
+  end;
+  var r := ReadBars(PostnetBars('12345678', false), TBarcodeFormat.POSTNET);
+  try
+    Assert.IsNull(r, 'CEPNet read as POSTNET');
+  finally
+    r.Free;
+  end;
+  r := ReadBars(PostnetBars('123456789', false), TBarcodeFormat.CEPNET);
+  try
+    Assert.IsNull(r, 'POSTNET read as CEPNet');
+  finally
+    r.Free;
+  end;
+  // the encode tests of zint (the figures 8 and 10 of the guide of Correios)
+  Assert.AreEqual('12345678', DecodePostnet(States(
+    'ATTTAATTATATTAATTATTATATATTAATTATTTAATTATTATTAA'), false, true));
+  Assert.AreEqual('36400000', DecodePostnet(States(
+    'ATTAATTAATTTATTAAATTTAATTTAATTTAATTTAATTTATTTAA'), false, true));
 end;
 
 procedure TPostalTest.IMbSamples;

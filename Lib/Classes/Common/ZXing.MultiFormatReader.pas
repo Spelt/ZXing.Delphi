@@ -55,6 +55,9 @@ uses
   ZXing.OneD.Code11Reader,
   ZXing.OneD.Code2of5Reader,
   ZXing.OneD.PharmacodeTwoTrackReader,
+  ZXing.OneD.KoreaPostReader,
+  ZXing.OneD.FIMReader,
+  ZXing.OneD.DeutschePostReader,
   ZXing.OneD.PharmacodeReader,
   ZXing.Postal.PostalReader,
 
@@ -348,6 +351,19 @@ begin
       TBarcodeFormat.MATRIX_2_OF_5, TBarcodeFormat.DATALOGIC_2_OF_5] do
       if formats.Contains(f) then
         readers.Add(TCode2of5Reader.Create(f));
+
+    if formats.Contains(TBarcodeFormat.KOREA_POST) then
+      readers.Add(TKoreaPostReader.Create);
+
+    if formats.Contains(TBarcodeFormat.FIM) then
+      readers.Add(TFIMReader.Create);
+
+    // Leitcode and Identcode are ITF codes
+    if formats.Contains(TBarcodeFormat.DP_LEITCODE) or
+      formats.Contains(TBarcodeFormat.DP_IDENTCODE) then
+      readers.Add(TDeutschePostReader.Create
+        (formats.Contains(TBarcodeFormat.DP_LEITCODE),
+        formats.Contains(TBarcodeFormat.DP_IDENTCODE)));
 
     // the postal barcodes, also only when asked for
     var postal: TArray<TBarcodeFormat> := [];
