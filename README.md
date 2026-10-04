@@ -29,7 +29,7 @@ From Delphi 11 the standard camera component seems much improved.
 | GS1 DataBar (also stacked) | Codabar | MicroPDF417
 | GS1 DataBar Expanded (also stacked) | Telepen | Micro QR Code
 | GS1 DataBar Limited |  | rMQR Code
-| DX Film Edge |               | MaxiCode
+| DX Film Edge |               | MaxiCode (with detector)
 
 
 ### Features
