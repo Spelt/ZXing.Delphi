@@ -40,6 +40,14 @@ type
     procedure Code32;
     [Test]
     procedure PZN;
+    [Test]
+    procedure MSI;
+    [Test]
+    procedure Plessey;
+    [Test]
+    procedure Pharmacode;
+    [Test]
+    procedure NotInAuto;
   end;
 
 implementation
@@ -328,36 +336,17 @@ begin
   end;
 end;
 
-/// <summary>Reads a Code 39 of chars (without the start and stop
-/// characters), drawn in an image, with the formats; the caller frees the
-/// result.</summary>
-function ReadCode39(const chars: string;
-  const formats: array of TBarcodeFormat): TReadResult;
+/// <summary>Reads the bars and spaces of widths (in modules, starting with a
+/// bar), drawn in an image with quiet zones, with the formats (and the hint
+/// ASSUME_MSI_CHECK_DIGIT); the caller frees the result.</summary>
+function ReadBars(const widths: TArray<Integer>;
+  const formats: array of TBarcodeFormat; msiCheckDigit: Boolean = false)
+  : TReadResult;
 const
-  ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%*';
-  ENCODINGS: array [0 .. 43] of Integer = ($034, $121, $061, $160, $031, $130,
-    $070, $025, $124, $064, $109, $049, $148, $019, $118, $058, $00D, $10C,
-    $04C, $01C, $103, $043, $142, $013, $112, $052, $007, $106, $046, $016,
-    $181, $0C1, $1C0, $091, $190, $0D0, $085, $184, $0C4, $0A8, $0A2, $08A,
-    $02A, $094);
   MODULE = 2;
   QUIET = 20;
   HEIGHT = 40;
 begin
-  // the widths of the bars and spaces: narrow 1, wide 3, a narrow space
-  // between the characters
-  var widths: TArray<Integer> := [];
-  for var c in '*' + chars + '*' do
-  begin
-    if (Length(widths) > 0) then
-      widths := widths + [1];
-    var pattern := ENCODINGS[ALPHABET.IndexOf(c)];
-    for var j := 8 downto 0 do
-      if (pattern shr j) and 1 = 1 then
-        widths := widths + [3]
-      else
-        widths := widths + [1];
-  end;
   var width := 2 * QUIET * MODULE;
   for var w in widths do
     Inc(width, w * MODULE);
@@ -387,6 +376,8 @@ begin
     list.AddRange(formats);
     if (list.Count > 0) then
       hints.Add(TDecodeHintType.POSSIBLE_FORMATS, list);
+    if msiCheckDigit then
+      hints.Add(TDecodeHintType.ASSUME_MSI_CHECK_DIGIT, nil);
     reader.Hints := hints;
     Result := reader.decode(image, true);
   finally
@@ -397,6 +388,34 @@ begin
     binarizer.Free;
     source.Free;
   end;
+end;
+
+/// <summary>Reads a Code 39 of chars (without the start and stop
+/// characters) with the formats; the caller frees the result.</summary>
+function ReadCode39(const chars: string;
+  const formats: array of TBarcodeFormat): TReadResult;
+const
+  ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%*';
+  ENCODINGS: array [0 .. 43] of Integer = ($034, $121, $061, $160, $031, $130,
+    $070, $025, $124, $064, $109, $049, $148, $019, $118, $058, $00D, $10C,
+    $04C, $01C, $103, $043, $142, $013, $112, $052, $007, $106, $046, $016,
+    $181, $0C1, $1C0, $091, $190, $0D0, $085, $184, $0C4, $0A8, $0A2, $08A,
+    $02A, $094);
+begin
+  // narrow 1, wide 3, a narrow space between the characters
+  var widths: TArray<Integer> := [];
+  for var c in '*' + chars + '*' do
+  begin
+    if (Length(widths) > 0) then
+      widths := widths + [1];
+    var pattern := ENCODINGS[ALPHABET.IndexOf(c)];
+    for var j := 8 downto 0 do
+      if (pattern shr j) and 1 = 1 then
+        widths := widths + [3]
+      else
+        widths := widths + [1];
+  end;
+  Result := ReadBars(widths, formats);
 end;
 
 procedure TOneDTest.Code32;
@@ -483,6 +502,162 @@ begin
     Assert.AreEqual(Ord(TBarcodeFormat.CODE_39), Ord(r.BarcodeFormat));
   finally
     r.Free;
+  end;
+end;
+
+/// <summary>The bars and spaces of an MSI of digits (as zint): start wide
+/// bar, narrow space; a bit 1 wide bar, narrow space, a bit 0 narrow bar,
+/// wide space (1:2), the highest bit first; stop narrow, wide, narrow.
+/// </summary>
+function MSIWidths(const digits: string): TArray<Integer>;
+begin
+  Result := [2, 1];
+  for var c in digits do
+    for var b := 3 downto 0 do
+      if ((Ord(c) - Ord('0')) shr b) and 1 = 1 then
+        Result := Result + [2, 1]
+      else
+        Result := Result + [1, 2];
+  Result := Result + [1, 2, 1];
+end;
+
+/// <summary>The bars and spaces of a Plessey of hexadecimal digits (as
+/// zint), with its CRC (or a wrong one).</summary>
+function PlesseyWidths(const digits: string; wrongCRC: Boolean = false)
+  : TArray<Integer>;
+const
+  POLYNOMIAL: array [0 .. 8] of Integer = (1, 1, 1, 1, 0, 1, 0, 0, 1);
+begin
+  var bits: TArray<Integer>;
+  SetLength(bits, 4 * Length(digits) + 8);
+  for var i := 0 to Length(digits) - 1 do
+  begin
+    var value := StrToInt('$' + digits.Chars[i]);
+    for var b := 0 to 3 do
+      bits[4 * i + b] := (value shr b) and 1;
+  end;
+  // the CRC: the remainder of the polynomial division
+  var check := Copy(bits);
+  for var i := 0 to 4 * Length(digits) - 1 do
+    if (check[i] = 1) then
+      for var j := 0 to 8 do
+        check[i + j] := check[i + j] xor POLYNOMIAL[j];
+  for var i := 0 to 7 do
+    bits[4 * Length(digits) + i] := check[4 * Length(digits) + i];
+  if wrongCRC then
+    bits[High(bits)] := 1 - bits[High(bits)];
+
+  Result := [3, 1, 3, 1, 1, 3, 3, 1];
+  for var bit in bits do
+    if (bit = 1) then
+      Result := Result + [3, 1]
+    else
+      Result := Result + [1, 3];
+  Result := Result + [3, 3, 1, 3, 1, 1, 3, 1, 3];
+end;
+
+/// <summary>The bars and spaces of a Pharmacode of value (as zint): narrow
+/// bars 1, wide bars 3, spaces 2.</summary>
+function PharmacodeWidths(value: Integer): TArray<Integer>;
+begin
+  // the bars from right to left
+  var bars: TArray<Integer> := [];
+  repeat
+    if Odd(value) then
+    begin
+      bars := [1] + bars;
+      value := (value - 1) div 2;
+    end
+    else
+    begin
+      bars := [3] + bars;
+      value := (value - 2) div 2;
+    end;
+  until (value = 0);
+  Result := [];
+  for var i := 0 to High(bars) do
+  begin
+    if (i > 0) then
+      Result := Result + [2];
+    Result := Result + [bars[i]];
+  end;
+end;
+
+procedure TOneDTest.MSI;
+begin
+  var r := ReadBars(MSIWidths('1234567'), [TBarcodeFormat.MSI]);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual(Ord(TBarcodeFormat.MSI), Ord(r.BarcodeFormat));
+    Assert.AreEqual('1234567', r.Text);
+    Assert.AreEqual(']M0', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+
+  // with the modulo 10 check digit: 1234 has 4
+  r := ReadBars(MSIWidths('12344'), [TBarcodeFormat.MSI], true);
+  try
+    Assert.IsNotNull(r, ' Nil result (check digit) ');
+    Assert.AreEqual('12344', r.Text);
+    Assert.AreEqual(']M1', r.SymbologyIdentifier);
+  finally
+    r.Free;
+  end;
+  r := ReadBars(MSIWidths('12345'), [TBarcodeFormat.MSI], true);
+  try
+    Assert.IsNull(r, 'MSI with a wrong check digit');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.Plessey;
+begin
+  var r := ReadBars(PlesseyWidths('12AB09F'), [TBarcodeFormat.PLESSEY]);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual(Ord(TBarcodeFormat.PLESSEY), Ord(r.BarcodeFormat));
+    Assert.AreEqual('12AB09F', r.Text);
+  finally
+    r.Free;
+  end;
+
+  r := ReadBars(PlesseyWidths('12AB09F', true), [TBarcodeFormat.PLESSEY]);
+  try
+    Assert.IsNull(r, 'Plessey with a wrong CRC');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TOneDTest.Pharmacode;
+begin
+  for var value in [3, 4, 1234, 131070] do
+  begin
+    var r := ReadBars(PharmacodeWidths(value), [TBarcodeFormat.PHARMA_CODE]);
+    try
+      Assert.IsNotNull(r, ' Nil result ' + IntToStr(value));
+      Assert.AreEqual(Ord(TBarcodeFormat.PHARMA_CODE), Ord(r.BarcodeFormat));
+      Assert.AreEqual(IntToStr(value), r.Text);
+    finally
+      r.Free;
+    end;
+  end;
+end;
+
+procedure TOneDTest.NotInAuto;
+begin
+  // MSI, Plessey and Pharmacode are only read when asked for
+  for var widths in [MSIWidths('1234567'), PlesseyWidths('12AB09F'),
+    PharmacodeWidths(1234)] do
+  begin
+    var r := ReadBars(widths, []);
+    try
+      Assert.IsNull(r, 'read in Auto');
+    finally
+      r.Free;
+    end;
   end;
 end;
 

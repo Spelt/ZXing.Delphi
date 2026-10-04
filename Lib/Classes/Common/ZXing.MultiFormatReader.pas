@@ -50,6 +50,9 @@ uses
   ZXing.OneD.DataBarExpandedReader,
   ZXing.OneD.DataBarLimitedReader,
   ZXing.OneD.DXFilmEdgeReader,
+  ZXing.OneD.MSIReader,
+  ZXing.OneD.PlesseyReader,
+  ZXing.OneD.PharmacodeReader,
 
   // 2D Codes
   ZXing.QrCode.QRCodeReader,
@@ -319,6 +322,17 @@ begin
 
     if formats.Contains(TBarcodeFormat.DX_FILM_EDGE) then
       readers.Add(TDXFilmEdgeReader.Create);
+
+    // only when asked for: without check (MSI, Pharmacode) they give false
+    // positives
+    if formats.Contains(TBarcodeFormat.MSI) then
+      readers.Add(TMSIReader.Create);
+
+    if formats.Contains(TBarcodeFormat.PLESSEY) then
+      readers.Add(TPlesseyReader.Create);
+
+    if formats.Contains(TBarcodeFormat.PHARMA_CODE) then
+      readers.Add(TPharmacodeReader.Create);
   end;
 
   if (readers.Count = 0) then // must be auto, add them all

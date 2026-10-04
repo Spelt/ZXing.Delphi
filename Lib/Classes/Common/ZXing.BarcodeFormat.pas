@@ -78,10 +78,11 @@ type
     /// <summary>UPC/EAN extension format. Not a stand-alone format.</summary>
     UPC_EAN_EXTENSION = 65536,
 
-    /// <summary>MSI</summary>
+    /// <summary>MSI (Modified Plessey): only when asked for, not in Auto.
+    /// </summary>
     MSI = 131072,
 
-    /// <summary>Plessey</summary>
+    /// <summary>Plessey: only when asked for, not in Auto.</summary>
     PLESSEY = 262144,
 
     /// <summary>Telepen 1D format (full ASCII and compressed numeric).
@@ -109,7 +110,11 @@ type
 
     /// <summary>PZN (German Pharmazentralnummer, a Code 39): only when asked
     /// for, Auto returns it as CODE_39.</summary>
-    PZN = 67108864
+    PZN = 67108864,
+
+    /// <summary>Pharmacode (Laetus, one track): only when asked for, not in
+    /// Auto.</summary>
+    PHARMA_CODE = 134217728
 
     );
 
