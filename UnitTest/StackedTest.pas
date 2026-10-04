@@ -22,6 +22,12 @@ type
     procedure CodablockFIncomplete;
     [Test]
     procedure CodablockFWikipedia;
+    [Test]
+    procedure Code16KZintVectors;
+    [Test]
+    procedure Code16KModes;
+    [Test]
+    procedure Code16KWikipedia;
   end;
 
 implementation
@@ -170,6 +176,136 @@ const
     '011101011;11010000100101111011101101101100010100011110100010' +
     '111101011101111010111101110101110111101011110111010111011110' +
     '1011100011011101101110101001100001100011101011'));
+
+  // the Code 128 characters (6 widths)
+  C128_PATTERNS: array [0 .. 105] of string = (
+    '212222', '222122', '222221', '121223', '121322', '131222', '122213',
+    '122312', '132212', '221213', '221312', '231212', '112232', '122132',
+    '122231', '113222', '123122', '123221', '223211', '221132', '221231',
+    '213212', '223112', '312131', '311222', '321122', '321221', '312212',
+    '322112', '322211', '212123', '212321', '232121', '111323', '131123',
+    '131321', '112313', '132113', '132311', '211313', '231113', '231311',
+    '112133', '112331', '132131', '113123', '113321', '133121', '313121',
+    '211331', '231131', '213113', '213311', '213131', '311123', '311321',
+    '331121', '312113', '312311', '332111', '314111', '221411', '431111',
+    '111224', '111422', '121124', '121421', '141122', '141221', '112214',
+    '112412', '122114', '122411', '142112', '142211', '241211', '221114',
+    '413111', '241112', '134111', '111242', '121142', '121241', '114212',
+    '124112', '124211', '411212', '421112', '421211', '212141', '214121',
+    '412121', '111143', '111341', '131141', '114113', '114311', '411113',
+    '411311', '113141', '114131', '311141', '411131', '211412', '211214',
+    '211232');
+  // the Code 16K start and stop patterns, and the ones of the rows
+  C16K_START_STOP: array [0 .. 7] of string = ('3211', '2221', '2122',
+    '1411', '1132', '1231', '1114', '3112');
+  C16K_START_OF_ROW: array [0 .. 15] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 0,
+    1, 2, 3, 4, 5, 6, 7);
+  C16K_STOP_OF_ROW: array [0 .. 15] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 4,
+    5, 6, 7, 0, 1, 2, 3);
+  // the encode tests of zint (backend/tests/test_code16k.c): the text, the
+  // rows (';' between them)
+  CODE16K_VECTORS: array [0 .. 4, 0 .. 1] of string = (
+    ('ab0123456789',
+    '111001010110011011101101001111011011110010011001001100010010' +
+    '0010001101;1100110101000100111011110100110010010000100110100' +
+    '011010010001110011001'),
+    ('www.wikipedia.de',
+    '111001010100011001100001101011000011010110000110101101100110' +
+    '0010001101;1100110100001101011011110010110011110110101111001' +
+    '011010110000110011001;11011001010011011110111101100101111001' +
+    '01101101001111011001100010010011;100001010111101100101001101' +
+    '1110010111101101100001011010001001110111101'),
+    ('12345678901234567890123456789012',
+    '111001010110001001101001100011011101001110001110100100111101' +
+    '0110001101;1100110100100001001010011000110111010011100011101' +
+    '001001111010110011001;11011001001000010010100110001101110100' +
+    '11100011101001001111010110010011;100001010010000100101001100' +
+    '0110010111101100001011101000111010010111101'),
+    ('12345678901234567890123456789012',
+    '111001010001001000101001100011011101001110001110100100111101' +
+    '0110001101;1100110100100001001010011000110111010011100011101' +
+    '001001111010110011001;11011001001000010010100110001101110100' +
+    '11100011101001001111010110010011;100001010010000100101001100' +
+    '0110010111101100101111011001011110110111101;1011100100101111' +
+    '011001011110110010111101101000010001011110011010100011'),
+    ('12345678901234567890123456789012',
+    '111001010100001000101001100011011101001110001110100100111101' +
+    '0110001101;1100110100100001001010011000110111010011100011101' +
+    '001001111010110011001;11011001001000010010100110001101110100' +
+    '11100011101001001111010110010011;100001010010000100101001100' +
+    '0110010111101100101111011001011110110111101;1011100100101111' +
+    '011001011110110010111101100101111011001011110110100011;10011' +
+    '101001011110110010111101100101111011001011110110010111101101' +
+    '10001;101000010010111101100101111011001011110110010111101100' +
+    '1011110110101111;1110100100101111011001011110110010111101100' +
+    '101111011001011110110001011;11100101001011110110010111101100' +
+    '10111101100101111011001011110110100011;110011010010111101100' +
+    '1011110110010111101100101111011001011110110110001;1101100100' +
+    '101111011001011110110010111101100101111011001011110110101111' +
+    ';10000101001011110110010111101100101111011001011110110010111' +
+    '10110001011;101110010010111101100101111011001011110110010111' +
+    '1011001011110110001101;1001110100101111011001011110110010111' +
+    '101100101111011001011110110011001;10100001001011110110010111' +
+    '10110010111101100101111011001011110110010011;111010010010111' +
+    '1011001011110110010111101100101110001001110010010111101'));
+
+/// <summary>The rows of a Code 16K of text in mode (0 A, 1 B, 2 C: as zint,
+/// without changes of code set), at least minRows rows.</summary>
+function Code16KRows(const text: string; mode: Integer;
+  minRows: Integer = 2; checkOffset: Integer = 0): TArray<string>;
+begin
+  var values: TArray<Integer> := [0];
+  var i := 1;
+  while (i <= Length(text)) do
+  begin
+    var c := Ord(text[i]);
+    case mode of
+      0:
+        if (c < 32) then
+          values := values + [c + 64]
+        else
+          values := values + [c - 32];
+      1:
+        values := values + [c - 32];
+      2:
+        begin
+          values := values + [10 * (c - Ord('0')) + Ord(text[i + 1]) -
+            Ord('0')];
+          Inc(i);
+        end;
+    end;
+    Inc(i);
+  end;
+  // pads (103) to whole rows of 5 with the 2 check characters
+  while ((Length(values) + 2) mod 5 <> 0) or (Length(values) + 2 < 5 * minRows)
+  do
+    values := values + [103];
+  var rows := (Length(values) + 2) div 5;
+  values[0] := 7 * (rows - 2) + mode;
+  var first := 0;
+  var second := 0;
+  for var k := 0 to High(values) do
+  begin
+    Inc(first, (k + 2) * values[k]);
+    Inc(second, (k + 1) * values[k]);
+  end;
+  first := first mod 107;
+  second := (second + first * (Length(values) + 1) + checkOffset) mod 107;
+  values := values + [first, second];
+  SetLength(Result, rows);
+  for var r := 0 to rows - 1 do
+  begin
+    var widths := C16K_START_STOP[C16K_START_OF_ROW[r]] + '1';
+    for var c := 0 to 4 do
+      widths := widths + C128_PATTERNS[values[5 * r + c]];
+    widths := widths + C16K_START_STOP[C16K_STOP_OF_ROW[r]];
+    var modules := '';
+    for var k := 1 to Length(widths) do
+      modules := modules + StringOfChar(Chr(Ord('0') + Ord(Odd(k))),
+        Ord(widths[k]) - Ord('0'));
+    Result[r] := modules;
+  end;
+end;
 
 /// <summary>Reads the rows of a stacked symbol ('1' a dark module; 2 pixels
 /// per module, 10 modules per row, a line of 1 module between the rows and
@@ -328,6 +464,94 @@ begin
           Assert.AreEqual(Ord(TBarcodeFormat.CODABLOCK_F),
             Ord(r.BarcodeFormat));
           Assert.AreEqual('Codablock-F Example', r.Text);
+        finally
+          r.Free;
+        end;
+      finally
+        scanManager.Free;
+      end;
+    end;
+  finally
+    bmp.Free;
+  end;
+end;
+
+procedure TStackedTest.Code16KZintVectors;
+begin
+  // asked for and in Auto
+  for var v := 0 to High(CODE16K_VECTORS) do
+    for var auto in [false, true] do
+    begin
+      var rows := CODE16K_VECTORS[v, 1].Split([';']);
+      var r: TReadResult;
+      if auto then
+        r := ReadStacked(rows, [])
+      else
+        r := ReadStacked(rows, [TBarcodeFormat.CODE_16K]);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + CODE16K_VECTORS[v, 0]);
+        Assert.AreEqual(Ord(TBarcodeFormat.CODE_16K), Ord(r.BarcodeFormat),
+          CODE16K_VECTORS[v, 0]);
+        Assert.AreEqual(CODE16K_VECTORS[v, 0], r.Text);
+        Assert.AreEqual(']K0', r.SymbologyIdentifier);
+      finally
+        r.Free;
+      end;
+    end;
+end;
+
+procedure TStackedTest.Code16KModes;
+const
+  // mode, turn (0 upside down, 1 no, 2 vertical), rows
+  TESTS: array [0 .. 3, 0 .. 2] of Integer = ((0, 0, 2), (1, 1, 2), (2, 2, 2),
+    (1, 1, 16));
+begin
+  // the modes A (control characters), B and C, also upside down and
+  // vertical, and 16 rows
+  for var t := 0 to High(TESTS) do
+  begin
+    var mode := TESTS[t, 0];
+    var text := 'Code 16K, ZXing.Delphi!';
+    if (mode = 0) then
+      text := 'TAB'#9'LINE'#10'END'
+    else if (mode = 2) then
+      text := '0123456789012345678901234567890123456789';
+    var rows := Code16KRows(text, mode, TESTS[t, 2]);
+    var r := ReadStacked(rows, [TBarcodeFormat.CODE_16K], TESTS[t, 1] = 0,
+      TESTS[t, 1] = 2);
+    try
+      Assert.IsNotNull(r, ' Nil result mode ' + IntToStr(mode));
+      Assert.AreEqual(text, r.Text);
+    finally
+      r.Free;
+    end;
+  end;
+  // a wrong check character: nothing
+  var r := ReadStacked(Code16KRows('Code 16K', 1, 2, 1),
+    [TBarcodeFormat.CODE_16K]);
+  try
+    Assert.IsNull(r, 'Code 16K with a wrong check character');
+  finally
+    r.Free;
+  end;
+end;
+
+procedure TStackedTest.Code16KWikipedia;
+begin
+  // the example of Wikipedia (Wikimedia Commons, Barcodat GmbH, copyrighted
+  // free use), asked for and in Auto
+  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
+    '\..\..\images\stacked\code16k-wikipedia.png');
+  try
+    for var format in [TBarcodeFormat.CODE_16K, TBarcodeFormat.Auto] do
+    begin
+      var scanManager := TScanManager.Create(format, nil);
+      try
+        var r := scanManager.Scan(bmp);
+        try
+          Assert.IsNotNull(r, ' Nil result ');
+          Assert.AreEqual(Ord(TBarcodeFormat.CODE_16K), Ord(r.BarcodeFormat));
+          Assert.AreEqual('www.wikipedia.de', r.Text);
         finally
           r.Free;
         end;

@@ -238,6 +238,8 @@ begin
     format := TBarcodeFormat.DP_IDENTCODE
   else if (n = 'codablockf') or (n = 'codablock') then
     format := TBarcodeFormat.CODABLOCK_F
+  else if (n = 'code16k') then
+    format := TBarcodeFormat.CODE_16K
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

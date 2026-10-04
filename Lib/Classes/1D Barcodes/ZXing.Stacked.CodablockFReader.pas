@@ -341,7 +341,7 @@ begin
   // (the rows are at least 8 modules high)
   var rowStep := 4;
   if tryHarder then
-    rowStep := 1;
+    rowStep := 2;
   // horizontal symbols (the rows of the image as the 1D readers have them),
   // with TRY_HARDER also vertical ones in the image turned
   for var vertical in [false, true] do

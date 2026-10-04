@@ -189,7 +189,10 @@ type
     // stacked formats, in Auto
 
     /// <summary>Codablock F (rows of Code 128 characters).</summary>
-    CODABLOCK_F = 268435475
+    CODABLOCK_F = 268435475,
+
+    /// <summary>Code 16K (rows of 5 Code 128 characters).</summary>
+    CODE_16K = 268435476
 
     );
 
