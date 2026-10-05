@@ -78,7 +78,8 @@ type
 implementation
 
 uses
-  ZXing.CharacterSetECI;
+  ZXing.CharacterSetECI,
+  ZXing.StringUtils;
 
 { TDecodedBitStreamParser }
 
@@ -129,7 +130,6 @@ var
   part: string;
   bytes: TBytes;
   characterSet: TCharacterSetECI;
-  encoding: TEncoding;
   isBytes: boolean;
 begin
   if (ecis.Count = 0) then
@@ -161,16 +161,11 @@ begin
 
     if isBytes and (characterSet <> nil) and (Length(bytes) > 0) then
     begin
-      try
-        encoding := TEncoding.GetEncoding(characterSet.encodingName);
-        try
-          part := encoding.GetString(bytes);
-        finally
-          encoding.Free;
-        end;
-      except
-        // character set not available on this platform: keep the part
-      end;
+      // (a character set the platform does not have: the part kept)
+      var decoded: string;
+      if TStringUtils.DecodeBytes(bytes, characterSet.encodingName, decoded)
+      then
+        part := decoded;
     end;
     result := result + part;
   end;

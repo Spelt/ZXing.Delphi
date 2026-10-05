@@ -29,6 +29,8 @@ type
     procedure Wikimedia;
     [Test]
     procedure NoHanXin;
+    [Test]
+    procedure CharacterSets;
   end;
 
 implementation
@@ -53,7 +55,8 @@ uses
 {$ENDIF}
   Benchmark.Images,
   ZXing.ScanManager,
-  ZXing.HanXin.Decoder;
+  ZXing.HanXin.Decoder,
+  ZXing.StringUtils;
 
 type
   THanXinVector = record
@@ -103,14 +106,6 @@ begin
     end;
   end;
   Result := Vectors;
-end;
-
-/// <summary>Whether the text of the vector can be compared: not in a
-/// character set that Windows does not have (ISO-8859-10, -14 and -16).
-/// </summary>
-function Comparable(const v: THanXinVector): Boolean;
-begin
-  Result := (v.ECI <> 12) and (v.ECI <> 16) and (v.ECI <> 18);
 end;
 
 /// <summary>Reads the symbol drawn (pitch pixels per module, turned angle
@@ -213,8 +208,7 @@ begin
     Assert.IsTrue(DecodeHanXin(symbols[i].Modules, symbols[i].Size, decoded),
       'vector ' + IntToStr(i));
     Assert.AreEqual(0, decoded.Errors, 'errors vector ' + IntToStr(i));
-    if Comparable(symbols[i]) then
-      Assert.AreEqual(symbols[i].Text, decoded.Text, 'vector ' + IntToStr(i));
+    Assert.AreEqual(symbols[i].Text, decoded.Text, 'vector ' + IntToStr(i));
   end;
 end;
 
@@ -223,36 +217,32 @@ begin
   var symbols := ZintSymbols;
   // all vectors, turned
   for var i := 0 to High(symbols) do
-    if Comparable(symbols[i]) then
-      for var angle in [0, 30, 135, 250] do
-        CheckDrawn(i, ReadDrawn(symbols[i], angle, 3),
-          'angle ' + IntToStr(angle));
+    for var angle in [0, 30, 135, 250] do
+      CheckDrawn(i, ReadDrawn(symbols[i], angle, 3),
+        'angle ' + IntToStr(angle));
   // small and larger modules
   for var i := 0 to High(symbols) do
-    if Comparable(symbols[i]) then
-      for var pitch in [2, 6] do
-        CheckDrawn(i, ReadDrawn(symbols[i], 17, pitch),
-          'pitch ' + IntToStr(pitch));
+    for var pitch in [2, 6] do
+      CheckDrawn(i, ReadDrawn(symbols[i], 17, pitch),
+        'pitch ' + IntToStr(pitch));
 end;
 
 procedure THanXinTest.Perspective;
 begin
   var symbols := ZintSymbols;
   for var i := 0 to High(symbols) do
-    if Comparable(symbols[i]) then
-      for var tilt in [-0.15, 0.1, 0.15] do
-        CheckDrawn(i, ReadDrawn(symbols[i], 20, 3, tilt),
-          'tilt ' + FloatToStr(tilt));
+    for var tilt in [-0.15, 0.1, 0.15] do
+      CheckDrawn(i, ReadDrawn(symbols[i], 20, 3, tilt),
+        'tilt ' + FloatToStr(tilt));
 end;
 
 procedure THanXinTest.Mirrored;
 begin
   var symbols := ZintSymbols;
   for var i := 0 to High(symbols) do
-    if Comparable(symbols[i]) then
-      for var angle in [0, 37] do
-        CheckDrawn(i, ReadDrawn(symbols[i], angle, 3, 0.1, true),
-          'mirrored angle ' + IntToStr(angle));
+    for var angle in [0, 37] do
+      CheckDrawn(i, ReadDrawn(symbols[i], angle, 3, 0.1, true),
+        'mirrored angle ' + IntToStr(angle));
 end;
 
 procedure THanXinTest.Damaged;
@@ -261,7 +251,7 @@ begin
   // x 29) on
   var symbols := ZintSymbols;
   for var i := 0 to High(symbols) do
-    if (symbols[i].Size >= 29) and Comparable(symbols[i]) then
+    if (symbols[i].Size >= 29) then
     begin
       var size := symbols[i].Size;
       var modules := Copy(symbols[i].Modules);
@@ -333,6 +323,36 @@ begin
       r.Free;
     end;
   end;
+end;
+
+procedure THanXinTest.CharacterSets;
+const
+  // a byte and its character in the character sets of the own tables
+  SAMPLES: array [0 .. 4] of record
+    Name: string;
+    Code: Byte;
+    Character: Word;
+  end = ((Name: 'ISO-8859-10'; Code: $A1; Character: $0104),
+    (Name: 'ISO-8859-11'; Code: $A1; Character: $0E01),
+    (Name: 'ISO-8859-14'; Code: $A1; Character: $1E02),
+    (Name: 'ISO-8859-16'; Code: $A4; Character: $20AC),
+    (Name: 'ISO-8859-16'; Code: $41; Character: $0041));
+begin
+  for var sample in SAMPLES do
+  begin
+    var text: string;
+    Assert.IsTrue(TStringUtils.DecodeBytes([sample.Code], sample.Name, text),
+      sample.Name);
+    Assert.AreEqual(string(Char(sample.Character)), text, sample.Name);
+  end;
+  // UTF-32 (a surrogate pair too)
+  var text: string;
+  Assert.IsTrue(TStringUtils.DecodeBytes([0, 0, 0, $41, 0, 1, $F6, 0],
+    'UTF-32BE', text));
+  Assert.AreEqual('A'#$D83D#$DE00, text);
+  Assert.IsTrue(TStringUtils.DecodeBytes([$41, 0, 0, 0], 'UTF-32LE', text));
+  Assert.AreEqual('A', text);
+  Assert.IsFalse(TStringUtils.DecodeBytes([$41], 'NO-SUCH-CHARSET', text));
 end;
 
 initialization

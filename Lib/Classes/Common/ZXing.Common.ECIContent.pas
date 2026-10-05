@@ -154,53 +154,13 @@ begin
       else
         encodingName := 'ISO-8859-1';
     end;
-    // (UTF-32, which TEncoding does not have)
-    if SameText(encodingName, 'UTF-32BE') or
-      SameText(encodingName, 'UTF-32LE') then
-    begin
-      var bigEndian := SameText(encodingName, 'UTF-32BE');
-      for var p := 0 to Length(part) div 4 - 1 do
-      begin
-        var c: Cardinal;
-        if bigEndian then
-          c := Cardinal(part[4 * p]) shl 24 or Cardinal(part[4 * p + 1]) shl 16
-            or Cardinal(part[4 * p + 2]) shl 8 or part[4 * p + 3]
-        else
-          c := Cardinal(part[4 * p + 3]) shl 24 or
-            Cardinal(part[4 * p + 2]) shl 16 or Cardinal(part[4 * p + 1]) shl 8
-            or part[4 * p];
-        if (c < $10000) then
-          Result := Result + Char(c)
-        else if (c <= $10FFFF) then
-          // a surrogate pair
-          Result := Result + Char($D800 + (c - $10000) shr 10) +
-            Char($DC00 + (c - $10000) and $3FF);
-      end;
-      continue;
-    end;
-    var encoding: TEncoding := nil;
-    try
-      try
-        encoding := TEncoding.GetEncoding(encodingName);
-      except
-        encoding := nil;
-      end;
-      // (Thai: Windows has the superset Windows-874 of ISO-8859-11)
-      if (encoding = nil) and SameText(encodingName, 'ISO-8859-11') then
-        try
-          encoding := TEncoding.GetEncoding(874);
-        except
-          encoding := nil;
-        end;
-      if (encoding <> nil) then
-        Result := Result + encoding.GetString(part)
-      else
-        // the bytes as Latin-1 characters
-        for var b in part do
-          Result := Result + Char(b);
-    finally
-      encoding.Free;
-    end;
+    var text: string;
+    if TStringUtils.DecodeBytes(part, encodingName, text) then
+      Result := Result + text
+    else
+      // the bytes as Latin-1 characters
+      for var b in part do
+        Result := Result + Char(b);
   end;
 end;
 

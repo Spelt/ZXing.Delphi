@@ -48,6 +48,9 @@ function DotCodeCodewords(const dots: TArray<Boolean>;
 
 implementation
 
+uses
+  ZXing.Common.ECIContent;
+
 const
   GF = 113;
   // Annex C: the dot patterns of the codewords (9 dots, the first the
@@ -416,6 +419,10 @@ type
 var
   text: string;
   i: Integer;
+  // the ECIs: the place in the text, the value
+  eciPlaces, eciValues: TArray<Integer>;
+  // the binary codewords not decoded yet
+  binary: TArray<Integer>;
 
   function Next: Integer;
   begin
@@ -471,19 +478,76 @@ var
     end;
   end;
 
+  // an ECI from here on in the text
+  procedure AddECI(value: Integer);
+  begin
+    eciPlaces := eciPlaces + [Length(text)];
+    eciValues := eciValues + [value];
+  end;
+
+  // the ECI after FNC2: below 40 the value, else 3 codewords
   procedure ECI;
   begin
-    // (the value is read but not used: the text as bytes)
     var c := Next;
-    if (c >= 40) then
+    if (c < 40) then
+      AddECI(c)
+    else
     begin
-      Next;
-      Next;
+      var high := c - 40;
+      var middle := Next;
+      AddECI(high * 12769 + middle * 113 + Next + 40);
     end;
   end;
 
+  // the text of the binary codewords so far
+  procedure FlushBinary;
+  begin
+    // the bytes of the binary codewords: 6 in base 103 are 5 in base
+    // 259 (fewer: one less)
+    var bytes: TArray<Integer> := [];
+    var k := 0;
+    while (k < Length(binary)) do
+    begin
+      var count := Min(6, Length(binary) - k);
+      var value: UInt64 := 0;
+      for var j := 0 to count - 1 do
+        value := value * 103 + UInt64(binary[k + j]);
+      var part: TArray<Integer>;
+      SetLength(part, count - 1);
+      for var j := count - 2 downto 0 do
+      begin
+        part[j] := value mod 259;
+        value := value div 259;
+      end;
+      bytes := bytes + part;
+      Inc(k, count);
+    end;
+    var j := 0;
+    while (j < Length(bytes)) do
+    begin
+      // 256 to 258: an ECI of 1 to 3 bytes (the highest first)
+      if (bytes[j] >= 256) then
+      begin
+        var n := bytes[j] - 255;
+        var value := 0;
+        for var b := 1 to n do
+          if (j + b <= High(bytes)) then
+            value := 256 * value + bytes[j + b];
+        AddECI(value);
+        Inc(j, n);
+      end
+      else
+        text := text + Chr(bytes[j]);
+      Inc(j);
+    end;
+    binary := [];
+  end;
+
+
 begin
   text := '';
+  eciPlaces := [];
+  eciValues := [];
   fnc1First := false;
   i := 0;
   var mode := mdC;
@@ -517,7 +581,7 @@ begin
     end;
   end;
 
-  var binary: TArray<Integer> := [];
+  binary := [];
   while (i <= High(cws)) do
   begin
     var c := Next;
@@ -621,35 +685,7 @@ begin
           binary := binary + [c]
         else
         begin
-          // the bytes of the binary codewords: 6 in base 103 are 5 in base
-          // 259 (fewer: one less)
-          var k := 0;
-          while (k < Length(binary)) do
-          begin
-            var count := Min(6, Length(binary) - k);
-            var value: UInt64 := 0;
-            for var j := 0 to count - 1 do
-              value := value * 103 + UInt64(binary[k + j]);
-            var bytes: TArray<Integer>;
-            SetLength(bytes, count - 1);
-            for var j := count - 2 downto 0 do
-            begin
-              bytes[j] := value mod 259;
-              value := value div 259;
-            end;
-            var j := 0;
-            while (j < Length(bytes)) do
-            begin
-              // 256 to 258: an ECI of 1 to 3 bytes
-              if (bytes[j] >= 256) then
-                Inc(j, bytes[j] - 255)
-              else
-                text := text + Chr(bytes[j]);
-              Inc(j);
-            end;
-            Inc(k, count);
-          end;
-          binary := [];
+          FlushBinary;
           case c of
             103 .. 108:
               // shift C for pairs, back to binary
@@ -666,34 +702,27 @@ begin
         end;
     end;
   end;
-  if (Length(binary) > 0) then
-  begin
-    var k := 0;
-    while (k < Length(binary)) do
-    begin
-      var count := Min(6, Length(binary) - k);
-      var value: UInt64 := 0;
-      for var j := 0 to count - 1 do
-        value := value * 103 + UInt64(binary[k + j]);
-      var bytes: TArray<Integer>;
-      SetLength(bytes, count - 1);
-      for var j := count - 2 downto 0 do
-      begin
-        bytes[j] := value mod 259;
-        value := value div 259;
-      end;
-      for var b in bytes do
-        if (b < 256) then
-          text := text + Chr(b);
-      Inc(k, count);
-    end;
-  end;
+  FlushBinary;
   // the macros 05, 06 and 12 end with RS EOT
   if (macro >= 97) and (macro <= 99) then
     text := text + #30#4
   else if (macro = 100) then
     text := text + #4;
-  Result := text;
+  // with ECIs: the text (bytes) in their character sets
+  if (Length(eciPlaces) = 0) then
+    exit(text);
+  var content := TECIContent.Create('ISO-8859-1');
+  var e := 0;
+  for var p := 1 to Length(text) do
+  begin
+    while (e < Length(eciPlaces)) and (eciPlaces[e] < p) do
+    begin
+      content.SwitchEncoding(eciValues[e]);
+      Inc(e);
+    end;
+    content.Append(Byte(Ord(text[p])));
+  end;
+  Result := content.Text;
 end;
 
 function DecodeDotCode(const dots: TArray<Boolean>; width, height: Integer;

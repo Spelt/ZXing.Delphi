@@ -308,7 +308,6 @@ class function TDecodedBitStreamParser.decodeByteSegment(const bits: TBitSource;
   const byteSegments: IByteSegments;
   const hints: TDictionary<TDecodeHintType, TObject>): Boolean;
 var
-  Enc:TEncoding;
   encodingS, s: string;
   readBytes: TArray<Byte>;
   i: Integer;
@@ -333,18 +332,9 @@ begin
   end else
      encodingS := currentCharacterSetECI.EncodingName;
 
-  try
-    enc := TEncoding.GetEncoding(encodingS);
-    try
-      s := enc.GetString(readBytes, 0, Length(readBytes));
-      res.Append(s);
-    finally
-      FreeAndNil(enc);
-    end;
-  except
-    on E: Exception do
-      exit;
-  end;
+  if not TStringUtils.DecodeBytes(readBytes, encodingS, s) then
+    exit;
+  res.Append(s);
 
   byteSegments.Add(readBytes);
   result := true;

@@ -126,12 +126,12 @@ begin
   TCharacterSetECI.addCharacterSet(  9, ['ISO-8859-7', 'ISO8859_7']);
   TCharacterSetECI.addCharacterSet( 10, ['ISO-8859-8', 'ISO8859_8']);
   TCharacterSetECI.addCharacterSet( 11, ['ISO-8859-9', 'ISO8859_9']);
-  TCharacterSetECI.addCharacterSet( 12, ['ISO-8859-4', 'ISO-8859-10', 'ISO8859_10']);
+  TCharacterSetECI.addCharacterSet( 12, ['ISO-8859-10', 'ISO8859_10']);
   TCharacterSetECI.addCharacterSet( 13, ['ISO-8859-11', 'ISO8859_11']);
   TCharacterSetECI.addCharacterSet( 15, ['ISO-8859-13', 'ISO8859_13']);
-  TCharacterSetECI.addCharacterSet($10, ['ISO-8859-1', 'ISO-8859-14', 'ISO8859_14']);
+  TCharacterSetECI.addCharacterSet($10, ['ISO-8859-14', 'ISO8859_14']);
   TCharacterSetECI.addCharacterSet($11, ['ISO-8859-15', 'ISO8859_15']);
-  TCharacterSetECI.addCharacterSet($12, ['ISO-8859-3', 'ISO-8859-16', 'ISO8859_16']);
+  TCharacterSetECI.addCharacterSet($12, ['ISO-8859-16', 'ISO8859_16']);
   TCharacterSetECI.addCharacterSet( 20, ['SJIS', 'Shift_JIS']);
   TCharacterSetECI.addCharacterSet($15, ['WINDOWS-1250','CP1250']);
   TCharacterSetECI.addCharacterSet($16, ['WINDOWS-1251','CP1251']);
