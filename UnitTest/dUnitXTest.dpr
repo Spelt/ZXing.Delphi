@@ -32,6 +32,7 @@ uses
   PostalTest in 'PostalTest.pas',
   StackedTest in 'StackedTest.pas',
   CompositeTest in 'CompositeTest.pas',
+  DotCodeTest in 'DotCodeTest.pas',
   Benchmark.Samples in '..\benchmark\Benchmark.Samples.pas',
   Benchmark.Images in '..\benchmark\Benchmark.Images.pas',
   Benchmark.Runner in '..\benchmark\Benchmark.Runner.pas';

@@ -242,6 +242,8 @@ begin
     format := TBarcodeFormat.CODE_16K
   else if (n = 'code49') then
     format := TBarcodeFormat.CODE_49
+  else if (n = 'dotcode') then
+    format := TBarcodeFormat.DOTCODE
   else if (n = 'maxicode') then
     format := TBarcodeFormat.MAXICODE
   else if (n = 'microqrcode') then

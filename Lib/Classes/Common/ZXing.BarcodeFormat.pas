@@ -202,7 +202,10 @@ type
     /// <summary>GS1 Composite: a linear component (EAN/UPC, GS1 DataBar,
     /// GS1-128) with a 2D component (CC-A, CC-B, CC-C) above it; the text of
     /// both with '|' between them.</summary>
-    GS1_COMPOSITE = 268435478
+    GS1_COMPOSITE = 268435478,
+
+    /// <summary>DotCode (dots on a checkerboard grid).</summary>
+    DOTCODE = 268435479
 
     );
 

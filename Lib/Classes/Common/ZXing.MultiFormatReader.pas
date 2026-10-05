@@ -63,6 +63,7 @@ uses
   ZXing.Stacked.Code49Reader,
   ZXing.Stacked.StackedReader,
   ZXing.Composite.Linker,
+  ZXing.DotCode.DotCodeReader,
   ZXing.OneD.PharmacodeReader,
   ZXing.Postal.PostalReader,
 
@@ -330,6 +331,9 @@ begin
       readers.Add(TMicroQRCodeReader.Create
         (formats.Contains(TBarcodeFormat.MICRO_QR_CODE),
         formats.Contains(TBarcodeFormat.RMQR_CODE)));
+
+    if formats.Contains(TBarcodeFormat.DOTCODE) then
+      readers.Add(TDotCodeReader.Create);
 
     if formats.Contains(TBarcodeFormat.MAXICODE) then
       readers.Add(TMaxiCodeReader.Create);
