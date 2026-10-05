@@ -144,6 +144,11 @@ begin
   TCharacterSetECI.addCharacterSet($1C, ['BIG5']);
   TCharacterSetECI.addCharacterSet($1D, ['GB18030', 'GB2312', 'EUC_CN', 'GBK'] );
   TCharacterSetECI.addCharacterSet( 30, ['EUC-KR', 'EUC_KR']);
+  TCharacterSetECI.addCharacterSet( 31, ['GBK']);
+  TCharacterSetECI.addCharacterSet( 32, ['GB18030']);
+  TCharacterSetECI.addCharacterSet( 33, ['UTF-16LE']);
+  TCharacterSetECI.addCharacterSet( 34, ['UTF-32BE']);
+  TCharacterSetECI.addCharacterSet( 35, ['UTF-32LE']);
 
 end;
 

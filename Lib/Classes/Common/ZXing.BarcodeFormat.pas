@@ -205,7 +205,10 @@ type
     GS1_COMPOSITE = 268435478,
 
     /// <summary>DotCode (dots on a checkerboard grid).</summary>
-    DOTCODE = 268435479
+    DOTCODE = 268435479,
+
+    /// <summary>Han Xin Code (Chinese Sensible Code).</summary>
+    HAN_XIN = 268435480
 
     );
 

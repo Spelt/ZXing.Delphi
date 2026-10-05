@@ -64,6 +64,7 @@ uses
   ZXing.Stacked.StackedReader,
   ZXing.Composite.Linker,
   ZXing.DotCode.DotCodeReader,
+  ZXing.HanXin.HanXinReader,
   ZXing.OneD.PharmacodeReader,
   ZXing.Postal.PostalReader,
 
@@ -334,6 +335,9 @@ begin
 
     if formats.Contains(TBarcodeFormat.DOTCODE) then
       readers.Add(TDotCodeReader.Create);
+
+    if formats.Contains(TBarcodeFormat.HAN_XIN) then
+      readers.Add(THanXinReader.Create);
 
     if formats.Contains(TBarcodeFormat.MAXICODE) then
       readers.Add(TMaxiCodeReader.Create);
