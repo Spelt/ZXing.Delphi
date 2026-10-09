@@ -254,6 +254,11 @@ begin
       as TList<TBarcodeFormat>
   end;
 
+  // All: the readers of Auto and the ones only used when asked for
+  var all := (formats <> nil) and formats.Contains(TBarcodeFormat.All);
+  if all then
+    formats := nil;
+
   // GS1 Composite: its 2D component linked to the linear components; asked
   // for: their readers too
   FComposite := (formats = nil) or
@@ -451,9 +456,16 @@ begin
     readers.Add(TUPCEReader.Create());
     readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());
+    // (All: Leitcode and Identcode before the ITF codes they are)
+    if all then
+      readers.Add(TDeutschePostReader.Create(true, true));
     readers.Add(TITFReader.Create());
-    readers.Add(TCode39Reader.Create(useCode39CheckDigit,
-      useCode39ExtendedMode));
+    // (All: also Code 32 and PZN)
+    var code39 := TCode39Reader.Create(useCode39CheckDigit,
+      useCode39ExtendedMode);
+    code39.Code32 := all;
+    code39.PZN := all;
+    readers.Add(code39);
     readers.Add(TCodabarReader.Create);
     readers.Add(TTelepenReader.Create);
     readers.Add(TDataBarReader.Create);
@@ -469,6 +481,31 @@ begin
     readers.Add(TMicroPDF417Reader.Create);
     readers.Add(TMicroQRCodeReader.Create);
     readers.Add(TMaxiCodeReader.Create);
+
+    // All: then the formats only read when asked for (after the others:
+    // most of them have no check)
+    if all then
+    begin
+      readers.Add(TDotCodeReader.Create);
+      readers.Add(THanXinReader.Create);
+      readers.Add(TCode11Reader.Create);
+      for var f in [TBarcodeFormat.INDUSTRIAL_2_OF_5,
+        TBarcodeFormat.IATA_2_OF_5, TBarcodeFormat.MATRIX_2_OF_5,
+        TBarcodeFormat.DATALOGIC_2_OF_5] do
+        readers.Add(TCode2of5Reader.Create(f));
+      readers.Add(TMSIReader.Create);
+      readers.Add(TPlesseyReader.Create);
+      readers.Add(TKoreaPostReader.Create);
+      readers.Add(TPostalReader.Create([TBarcodeFormat.KIX,
+        TBarcodeFormat.RM4SCC, TBarcodeFormat.IMB, TBarcodeFormat.POSTNET,
+        TBarcodeFormat.PLANET, TBarcodeFormat.JAPAN_POST,
+        TBarcodeFormat.AUSTRALIA_POST, TBarcodeFormat.MAILMARK_4STATE,
+        TBarcodeFormat.CEPNET]));
+      readers.Add(TFIMReader.Create);
+      readers.Add(TPharmacodeTwoTrackReader.Create);
+      // (not the Pharmacode of one track: without a check it reads almost
+      // any bars; only when asked for)
+    end;
   end;
 
 end;

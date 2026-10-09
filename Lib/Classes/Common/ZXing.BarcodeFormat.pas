@@ -208,7 +208,17 @@ type
     DOTCODE = 268435479,
 
     /// <summary>Han Xin Code (Chinese Sensible Code).</summary>
-    HAN_XIN = 268435480
+    HAN_XIN = 268435480,
+
+    /// <summary>All formats: those of Auto and those only read when asked
+    /// for (MSI, Plessey, Pharmacode two-track, Code 11, the 2 of 5 codes, the
+    /// postal barcodes, DotCode, Han Xin Code and more; not Pharmacode, which
+    /// without a check reads almost any bars). Slower than Auto, above all
+    /// on images without a barcode, and the formats without a check give
+    /// more false positives: for testing, or when anything can come. Of the
+    /// codes that are a kind of another one, the specific format is returned
+    /// (Code 32 and PZN of Code 39, Leitcode and Identcode of ITF).</summary>
+    All = 268435481
 
     );
 

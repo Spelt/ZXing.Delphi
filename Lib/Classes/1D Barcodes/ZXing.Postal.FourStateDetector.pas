@@ -476,21 +476,44 @@ end;
 /// spaced bars: their median width and pitch.</summary>
 function IsBarSeed(const runs: TPatternRow; i, count: Integer;
   out barWidth, pitch: Double): Boolean;
+const
+  MAX_COUNT = 8;
 begin
   Result := false;
-  if (i + 2 * count - 1 > High(runs)) then
+  if (count > MAX_COUNT) or (i + 2 * count - 1 > High(runs)) then
     exit;
-  var widths, pitches: TArray<Double>;
-  SetLength(widths, count);
-  SetLength(pitches, count - 1);
+  // (no arrays: this runs for every run of the rows)
+  var widths: array [0 .. MAX_COUNT - 1] of Integer;
+  var pitches: array [0 .. MAX_COUNT - 1] of Integer;
   for var k := 0 to count - 1 do
   begin
     widths[k] := runs[i + 2 * k];
     if (k < count - 1) then
       pitches[k] := runs[i + 2 * k] + runs[i + 2 * k + 1];
   end;
-  TArray.Sort<Double>(widths);
-  TArray.Sort<Double>(pitches);
+  // the medians (insertion sort)
+  for var a := 1 to count - 1 do
+  begin
+    var v := widths[a];
+    var b := a - 1;
+    while (b >= 0) and (widths[b] > v) do
+    begin
+      widths[b + 1] := widths[b];
+      Dec(b);
+    end;
+    widths[b + 1] := v;
+  end;
+  for var a := 1 to count - 2 do
+  begin
+    var v := pitches[a];
+    var b := a - 1;
+    while (b >= 0) and (pitches[b] > v) do
+    begin
+      pitches[b + 1] := pitches[b];
+      Dec(b);
+    end;
+    pitches[b + 1] := v;
+  end;
   barWidth := widths[count div 2];
   pitch := pitches[(count - 1) div 2];
   // the spaces about as wide as the bars or a few times wider
