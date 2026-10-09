@@ -51,6 +51,8 @@ type
     [Test]
     procedure MSISamples;
     [Test]
+    procedure LinearPosition;
+    [Test]
     procedure Code11;
     [Test]
     procedure Code2of5;
@@ -71,6 +73,7 @@ implementation
 uses
   System.SysUtils,
   System.IOUtils,
+  System.Math,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -996,6 +999,54 @@ begin
     Assert.IsNull(r, 'FIM read in Auto');
   finally
     r.Free;
+  end;
+end;
+
+procedure TOneDTest.LinearPosition;
+begin
+  // the position of a 1D code: the scan line widened to the height of the
+  // bars (EAN13.png: bars from about y 4 to 143), also turned 180 degrees
+  for var turns in [0, 2] do
+  begin
+    var bmp := LoadImage(ImagePath('EAN13.png'));
+    if (turns <> 0) then
+    begin
+      var rotated := RotateImage(bmp, turns);
+      if (rotated <> bmp) then
+      begin
+        bmp.Free;
+        bmp := rotated;
+      end;
+    end;
+    var scanManager := TScanManager.Create(TBarcodeFormat.EAN_13, nil);
+    try
+      var r := scanManager.Scan(bmp);
+      try
+        Assert.IsNotNull(r, ' Nil result');
+        Assert.AreEqual(2, Length(r.ResultPoints));
+        var position := r.Position;
+        Assert.AreEqual(4, Length(position));
+        // the corners at the ends of the scan line, above and below it
+        var top := Min(position[0].Y, position[3].Y);
+        var bottom := Max(position[0].Y, position[3].Y);
+        // (turned: 185 - y)
+        if (turns <> 0) then
+        begin
+          var t := top;
+          top := bmp.Height - bottom;
+          bottom := bmp.Height - t;
+        end;
+        Assert.IsTrue((top <= 10) and (bottom >= 135) and (bottom <= 150),
+          Format('turns %d: %.0f to %.0f', [turns, top, bottom]));
+        Assert.AreEqual(Double(r.ResultPoints[0].X), Double(position[0].X), 1);
+        Assert.AreEqual(Double(r.ResultPoints[1].X), Double(position[1].X), 1);
+      finally
+        r.Free;
+      end;
+    finally
+      scanManager.Free;
+      bmp.Free;
+    end;
   end;
 end;
 

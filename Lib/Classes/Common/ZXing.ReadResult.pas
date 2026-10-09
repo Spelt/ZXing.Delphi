@@ -155,11 +155,14 @@ type
     /// <summary>
     /// The 4 corners of the symbol in the image, clockwise from its own top
     /// left: top left, top right, bottom right, bottom left. For a 1D code
-    /// the 2 ends of the scanned line (twice). When the reader did not set
-    /// the corners, they are estimated from the resultPoints (for a QR Code
-    /// from the centers of the finder patterns).
+    /// the scanned line widened to the height of the bars (where that could
+    /// not be measured: the 2 ends of the scanned line, twice). When the
+    /// reader did not set the corners, they are estimated from the
+    /// resultPoints (for a QR Code from the centers of the finder patterns).
     /// </summary>
     property Position: TArray<IResultPoint> read GetPosition write FPosition;
+    /// <summary>Whether the reader set Position (not estimated).</summary>
+    function HasPosition: Boolean;
     /// <summary>The rotation of the symbol in degrees (0 to 359, clockwise),
     /// from the direction of its top edge in Position.</summary>
     property Orientation: Integer read GetOrientation;
@@ -297,6 +300,11 @@ end;
 
 
 { TReadResult }
+
+function TReadResult.HasPosition: Boolean;
+begin
+  Result := (FPosition <> nil);
+end;
 
 function TReadResult.GetPosition: TArray<IResultPoint>;
 

@@ -497,6 +497,9 @@ begin
   finally
     if FComposite then
       LinkComposites(image, results, first);
+    // the position of a 1D code: the height of its bars too
+    for var i := first to results.Count - 1 do
+      SetLinearPosition(results[i], image);
   end;
 end;
 
@@ -596,6 +599,8 @@ begin
     end;
     if result <> nil then
     begin
+      // the position of a 1D code: the height of its bars too
+      SetLinearPosition(result, image);
 
       // found a barcode, pushing the successful reader up front
       // I assume that the same type of barcode is read multiple times

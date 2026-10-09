@@ -245,6 +245,13 @@ type
       var checkRows: TArray<Integer>): TReadResult;
   end;
 
+/// <summary>Sets the position of the 1D code r when its reader did not: the
+/// scan line from its first to its last result point, widened to the height
+/// of the bars, as far as the rows above and below it are like the scan line
+/// (the bars followed when slanted). Nothing for other codes (result points
+/// not on a line).</summary>
+procedure SetLinearPosition(r: TReadResult; image: TBinaryBitmap);
+
 implementation
 
 procedure MapFromRotated(r: TReadResult; rotatedHeight: Integer); forward;
@@ -273,6 +280,130 @@ begin
       r.Free;
     results.Free;
   end;
+end;
+
+procedure SetLinearPosition(r: TReadResult; image: TBinaryBitmap);
+const
+  // the share of the pixels like on the scan line; the rows (in a row) that
+  // may be less (damage, a line through the bars)
+  ALIKE = 0.75;
+  GAP = 3;
+var
+  // the start of the scan line (pixel), a pixel along it (u) and square to
+  // it (n: down for a code read from left to right): the scan lines of the
+  // 1D readers are rows or columns
+  x0, y0, ux, uy, nx, ny: Integer;
+  // the luminances of the image, dark below the threshold (the middle of
+  // the darkest and the lightest of the scan line)
+  luminances: TArray<Byte>;
+  width, height, threshold: Integer;
+
+  function Luminance(k, t: Integer): Integer;
+  begin
+    var x := x0 + k * ux + t * nx;
+    var y := y0 + k * uy + t * ny;
+    if (x < 0) or (y < 0) or (x >= width) or (y >= height) then
+      Result := 255
+    else
+      Result := luminances[y * width + x];
+  end;
+
+  function Dark(k, t: Integer): Boolean;
+  begin
+    Result := Luminance(k, t) < threshold;
+  end;
+
+begin
+  var points := r.ResultPoints;
+  if (image = nil) or r.HasPosition or (Length(points) < 2) or
+    (points[0] = nil) or (points[High(points)] = nil) then
+    exit;
+  var px := points[0].X;
+  var py := points[0].Y;
+  var dx := points[High(points)].X - px;
+  var dy := points[High(points)].Y - py;
+  var span := Sqrt(Sqr(dx) + Sqr(dy));
+  if (span < 4) then
+    exit;
+  // (only for the points on a line, a row or a column: not for a stacked
+  // code)
+  for var p in points do
+    if (p <> nil) and (Abs((p.X - px) * dy - (p.Y - py) * dx) > 3 * span) then
+      exit;
+  if (Abs(dx) > 0.01 * span) and (Abs(dy) > 0.01 * span) then
+    exit;
+  x0 := Floor(px);
+  y0 := Floor(py);
+  ux := Round(dx / span);
+  uy := Round(dy / span);
+  nx := -uy;
+  ny := ux;
+  luminances := image.Luminances;
+  width := image.Width;
+  height := image.Height;
+  if (Length(luminances) < width * height) then
+    exit;
+  var n := Floor(span) + 1;
+  // (at most about 200 places along the line)
+  var stride := (n + 199) div 200;
+  var count := (n + stride - 1) div stride;
+  var darkest := 255;
+  var lightest := 0;
+  for var j := 0 to count - 1 do
+  begin
+    var l := Luminance(j * stride, 0);
+    darkest := Min(darkest, l);
+    lightest := Max(lightest, l);
+  end;
+  if (lightest - darkest < 16) then
+    exit;
+  threshold := (darkest + lightest + 1) div 2;
+  var line: TArray<Boolean>;
+  SetLength(line, count);
+  for var j := 0 to count - 1 do
+    line[j] := Dark(j * stride, 0);
+  // the rows like the scan line up (-1) and down (+1), each shifted along
+  // the line by up to 2 pixels from the one before (slanted bars)
+  var extent: array [0 .. 1] of Integer;
+  var shift: array [0 .. 1] of Integer;
+  for var side := 0 to 1 do
+  begin
+    var sign := 2 * side - 1;
+    extent[side] := 0;
+    shift[side] := 0;
+    var t := 1;
+    while (t <= n) and (t - extent[side] <= GAP) do
+    begin
+      // (the shift of the row before first)
+      for var s in [0, -1, 1, -2, 2] do
+      begin
+        var same := 0;
+        for var j := 0 to count - 1 do
+          if (Dark(j * stride + shift[side] + s, sign * t) = line[j]) then
+            Inc(same);
+        if (same >= ALIKE * count) then
+        begin
+          extent[side] := t;
+          Inc(shift[side], s);
+          break;
+        end;
+      end;
+      Inc(t);
+    end;
+  end;
+  // the corners: top left, top right, bottom right, bottom left
+  var x1 := points[High(points)].X;
+  var y1 := points[High(points)].Y;
+  var up := extent[0] + 0.5;
+  var down := extent[1] + 0.5;
+  var topX := shift[0] * ux - up * nx;
+  var topY := shift[0] * uy - up * ny;
+  var bottomX := shift[1] * ux + down * nx;
+  var bottomY := shift[1] * uy + down * ny;
+  r.Position := [TResultPointHelpers.CreateResultPoint(px + topX,
+    py + topY), TResultPointHelpers.CreateResultPoint(x1 + topX, y1 + topY),
+    TResultPointHelpers.CreateResultPoint(x1 + bottomX, y1 + bottomY),
+    TResultPointHelpers.CreateResultPoint(px + bottomX, py + bottomY)];
 end;
 
 /// <summary>For a result found in the image rotated by 90 degrees counter

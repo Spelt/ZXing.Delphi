@@ -77,6 +77,10 @@ type
     property Width: Integer read GetWidth;
     property Height: Integer read GetHeight;
     property BlackMatrix: TBitMatrix read GetBlackMatrix;
+    /// <summary>The luminances of the image (row major, 0 black, the array
+    /// of the luminance source: do not change it); nil without a source.
+    /// </summary>
+    function Luminances: TArray<Byte>;
   end;
 
 implementation
@@ -215,6 +219,13 @@ begin
   newSource := Binarizer.LuminanceSource.rotateCounterClockwise();
   result := TBinaryBitmap.Create(Binarizer.createBinarizer(newSource));
   result.FOwnsBinarizer := true;
+end;
+
+function TBinaryBitmap.Luminances: TArray<Byte>;
+begin
+  Result := nil;
+  if (Binarizer <> nil) and (Binarizer.LuminanceSource <> nil) then
+    Result := Binarizer.LuminanceSource.Matrix;
 end;
 
 function TBinaryBitmap.RotateSupported: Boolean;
