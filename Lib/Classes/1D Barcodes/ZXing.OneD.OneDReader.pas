@@ -645,7 +645,8 @@ begin
     if rotate and image.RotateSupported and not ResultsFull(results, maxCount)
     then
     begin
-      rotated := image.rotateCounterClockwise;
+      // (shared by all readers: rotated and binarized once per image)
+      rotated := image.RotatedCounterClockwise;
       var rotatedResults := TList<TReadResult>.Create;
       try
         // stop as soon as the rest is found (the results are not in
@@ -685,7 +686,6 @@ begin
       r.Free;
     pending.Free;
     rotatedPending.Free;
-    rotated.Free;
   end;
 end;
 

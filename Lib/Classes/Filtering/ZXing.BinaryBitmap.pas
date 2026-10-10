@@ -47,6 +47,9 @@ type
     FPatternRowsReversed: TArray<TPatternRow>;
     FPatternState: TArray<Byte>; // 0 not calculated, 1 nil, 2 cached
     FPatternBits: IBitArray;
+    // the image rotated by 90 degrees, made once for all readers that scan
+    // it (the 1D readers with TRY_HARDER), owned by this bitmap
+    FRotated: TBinaryBitmap;
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetBlackMatrix: TBitMatrix;
@@ -72,7 +75,15 @@ type
     function getPatternRow(y: Integer; reversed: Boolean = false)
       : TPatternRow;
     function RotateSupported: Boolean;
+    /// <summary>A new bitmap of the image rotated by 90 degrees counter
+    /// clockwise; the caller frees it.</summary>
     function rotateCounterClockwise(): TBinaryBitmap;
+    /// <summary>The image rotated by 90 degrees counter clockwise, made on
+    /// the first call and shared afterwards (with its black rows and
+    /// pattern rows): the readers that scan the rotated image do not each
+    /// rotate and binarize it again. Owned by this bitmap: do not free.
+    /// </summary>
+    function RotatedCounterClockwise: TBinaryBitmap;
 
     property Width: Integer read GetWidth;
     property Height: Integer read GetHeight;
@@ -101,6 +112,7 @@ end;
 
 destructor TBinaryBitmap.Destroy;
 begin
+  FRotated.Free;
   if Assigned(Matrix) then
     FreeAndNil(Matrix);
 
@@ -219,6 +231,13 @@ begin
   newSource := Binarizer.LuminanceSource.rotateCounterClockwise();
   result := TBinaryBitmap.Create(Binarizer.createBinarizer(newSource));
   result.FOwnsBinarizer := true;
+end;
+
+function TBinaryBitmap.RotatedCounterClockwise: TBinaryBitmap;
+begin
+  if (FRotated = nil) then
+    FRotated := rotateCounterClockwise;
+  Result := FRotated;
 end;
 
 function TBinaryBitmap.Luminances: TArray<Byte>;

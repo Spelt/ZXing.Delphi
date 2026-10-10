@@ -91,8 +91,8 @@ begin
     for var delta in [0.0, 1E-9, -1E-9, 0.1, -0.1, 0.49999, 0.5, 0.50001] do
     begin
       var v := x + delta;
-      Assert.AreEqual(Floor(v), FloorInt(v), 'floor ' + FloatToStr(v));
-      Assert.AreEqual(Trunc(v), TruncInt(v), 'trunc ' + FloatToStr(v));
+      Assert.AreEqual<Integer>(Floor(v), FloorInt(v), 'floor ' + FloatToStr(v));
+      Assert.AreEqual<Integer>(Trunc(v), TruncInt(v), 'trunc ' + FloatToStr(v));
     end;
   end;
   var c := Centered(PointD(3.99, -0.5));
