@@ -914,6 +914,29 @@ function ScanCandidate(image: TBitMatrix; lraps: TCluster;
   hints: TDictionary<TDecodeHintType, TObject>;
   out position: TArray<IResultPoint>; out error: string;
   out extra: IPDF417ResultMetadata): TDecoderResult;
+var
+  nCols: Integer;
+  cwMat: TCodewordMatrix;
+  si: TSymbolInfo;
+
+  // (nested functions, not anonymous methods: an anonymous method held in
+  // a captured variable keeps its own activation record alive, a leak)
+  function CellAt(x, y: Integer): TMCodeword;
+  begin
+    if (x < 0) or (x >= nCols) or (y < 0) or (y >= 53) then
+      exit(TMCodeword.None);
+    Result := cwMat[y * nCols + x];
+  end;
+
+  function ClosestCorner(cx, cy, dx, dy: Integer): TPoint;
+  begin
+    for var x := 0 to si.NCols div 2 do
+      for var y := 0 to si.NRows div 2 - 1 do
+        if (CellAt(cx + x * dx, cy + y * dy).Count > 1) then
+          exit(Point(x * dx, y * dy));
+    Result := Point(0, 0);
+  end;
+
 begin
   Result := nil;
   error := '';
@@ -945,7 +968,7 @@ begin
     startCur.Ms := startCur.Ms * 1 / (1 + Min(Sqr(startCur.Cur.d.X),
       Sqr(startCur.Cur.d.Y)));
 
-    var nCols := DetermineNumCols(startCur, lraps);
+    nCols := DetermineNumCols(startCur, lraps);
     if (nCols = 0) then
       exit;
 
@@ -1077,7 +1100,6 @@ begin
     end;
 
     // the codeword of each cell: the one seen most often (when unique)
-    var cwMat: TCodewordMatrix;
     SetLength(cwMat, nCols * 53);
     for var i := 0 to High(cwMat) do
     begin
@@ -1100,7 +1122,7 @@ begin
       end;
     end;
 
-    var si := DetermineSymbolInfo(cwMat, nCols, rotFamHist);
+    si := DetermineSymbolInfo(cwMat, nCols, rotFamHist);
     if not si.IsValid then
       exit;
 
@@ -1130,34 +1152,20 @@ begin
 
     // the corners from a perspective transform of codewords seen near the
     // corners
-    var cellAt: TFunc<Integer, Integer, TMCodeword> := function(x, y: Integer): TMCodeword
-      begin
-        if (x < 0) or (x >= nCols) or (y < 0) or (y >= 53) then
-          exit(TMCodeword.None);
-        Result := cwMat[y * nCols + x];
-      end;
-    var closestCorner: TFunc<Integer, Integer, Integer, Integer, TPoint> := function(cx, cy, dx, dy: Integer): TPoint
-      begin
-        for var x := 0 to si.NCols div 2 do
-          for var y := 0 to si.NRows div 2 - 1 do
-            if (cellAt(cx + x * dx, cy + y * dy).Count > 1) then
-              exit(Point(x * dx, y * dy));
-        Result := Point(0, 0);
-      end;
-    var tlI := closestCorner(0, si.StartRow, 1, 1);
-    var trI := closestCorner(si.NCols - 1, si.StartRow, -1, 1);
-    var brI := closestCorner(si.NCols - 1, si.LastRow, -1, -1);
-    var blI := closestCorner(0, si.LastRow, 1, -1);
+    var tlI := ClosestCorner(0, si.StartRow, 1, 1);
+    var trI := ClosestCorner(si.NCols - 1, si.StartRow, -1, 1);
+    var brI := ClosestCorner(si.NCols - 1, si.LastRow, -1, -1);
+    var blI := ClosestCorner(0, si.LastRow, 1, -1);
 
     var src, dst: TQuadrilateralF;
     src[0] := PointD(10 + tlI.X * 17, 1 + tlI.Y * 2);
     src[1] := PointD(si.Width - 11 + trI.X * 17, 1 + trI.Y * 2);
     src[2] := PointD(si.Width - 11 + brI.X * 17, si.Height - 1 + brI.Y * 2);
     src[3] := PointD(10 + blI.X * 17, si.Height - 1 + blI.Y * 2);
-    var cTL := cellAt(tlI.X, si.StartRow + tlI.Y);
-    var cTR := cellAt(si.NCols - 1 + trI.X, si.StartRow + trI.Y);
-    var cBR := cellAt(si.NCols - 1 + brI.X, si.LastRow + brI.Y);
-    var cBL := cellAt(blI.X, si.LastRow + blI.Y);
+    var cTL := CellAt(tlI.X, si.StartRow + tlI.Y);
+    var cTR := CellAt(si.NCols - 1 + trI.X, si.StartRow + trI.Y);
+    var cBR := CellAt(si.NCols - 1 + brI.X, si.LastRow + brI.Y);
+    var cBL := CellAt(blI.X, si.LastRow + blI.Y);
     var transformed := false;
     if (cTL.Count > 0) and (cTR.Count > 0) and (cBR.Count > 0) and
       (cBL.Count > 0) then

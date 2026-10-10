@@ -129,6 +129,45 @@ end;
 procedure DoDecode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>; multiple, tryRotate: Boolean;
   results: TList<TReadResult>; maxCount: Integer);
+var
+  bits: TBitMatrix;
+  rotation: Integer;
+  points: TPDF417Vertices;
+  approxSymbolWidth: Integer;
+
+  // a point of the rotated image in the image
+  // (nested functions, not anonymous methods: an anonymous method held in
+  // a captured variable keeps its own activation record alive, a leak)
+  function Rotate(x, y: Integer): TResultPoint;
+  begin
+    case rotation of
+      90:
+        Result := TResultPoint.Create(bits.Height - y - 1, x);
+      180:
+        Result := TResultPoint.Create(bits.Width - x - 1, bits.Height - y - 1);
+      270:
+        Result := TResultPoint.Create(y, bits.Width - x - 1);
+    else
+      Result := TResultPoint.Create(x, y);
+    end;
+  end;
+
+  // the corners: estimated from the width when the stop pattern was not
+  // found
+  function PointAt(i: Integer): TResultPoint;
+  begin
+    if points[i].HasValue or (i < 2) or (approxSymbolWidth < 0) then
+    begin
+      if points[i].IsNone then
+        exit(TResultPoint.None);
+      exit(Rotate(Trunc(points[i].X), Trunc(points[i].Y)));
+    end;
+    var p := Rotate(Trunc(points[i - 2].X) + approxSymbolWidth,
+      Trunc(points[i - 2].Y));
+    Result := TResultPoint.Create(EnsureRange(Trunc(p.X), 0, image.Width - 1),
+      EnsureRange(Trunc(p.Y), 0, image.Height - 1));
+  end;
+
 begin
   var detectorResult := DetectPDF417(image.BlackMatrix, multiple, tryRotate,
     function: TBitMatrix
@@ -138,53 +177,20 @@ begin
   if (detectorResult = nil) then
     exit;
   try
-    var bits := detectorResult.Bits;
-    var rotation := detectorResult.Rotation;
-
-    // a point of the rotated image in the image
-    var rotate := function(x, y: Integer): IResultPoint
-      begin
-        case rotation of
-          90:
-            Result := TResultPointHelpers.CreateResultPoint(bits.Height - y - 1, x);
-          180:
-            Result := TResultPointHelpers.CreateResultPoint(bits.Width - x - 1,
-              bits.Height - y - 1);
-          270:
-            Result := TResultPointHelpers.CreateResultPoint(y, bits.Width - x - 1);
-        else
-          Result := TResultPointHelpers.CreateResultPoint(x, y);
-        end;
-      end;
+    bits := detectorResult.Bits;
+    rotation := detectorResult.Rotation;
 
     for var vertices in detectorResult.Points do
     begin
-      var points := vertices;
+      points := vertices;
       var error: string;
       var extra: IPDF417ResultMetadata;
-      var approxSymbolWidth: Integer;
       var decoded := DecodePDF417Scanning(bits, points[4], points[5],
         points[6], points[7], GetMinCodewordWidth(points),
         GetMaxCodewordWidth(points), error, extra, approxSymbolWidth);
 
-      // the corners: estimated from the width when the stop pattern was
-      // not found
-      var point := function(i: Integer): IResultPoint
-        begin
-          if points[i].HasValue or (i < 2) or (approxSymbolWidth < 0) then
-          begin
-            if points[i].IsNone then
-              exit(TResultPoint.None);
-            exit(rotate(Trunc(points[i].X), Trunc(points[i].Y)));
-          end;
-          var p := rotate(Trunc(points[i - 2].X) + approxSymbolWidth,
-            Trunc(points[i - 2].Y));
-          Result := TResultPointHelpers.CreateResultPoint
-            (EnsureRange(Trunc(p.X), 0, image.Width - 1),
-            EnsureRange(Trunc(p.Y), 0, image.Height - 1));
-        end;
-      var position: TArray<IResultPoint> := [point(0), point(2), point(3),
-        point(1)];
+      var position: TArray<TResultPoint> := [PointAt(0), PointAt(2),
+        PointAt(3), PointAt(1)];
 
       if (decoded = nil) then
       begin

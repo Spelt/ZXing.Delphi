@@ -1023,4 +1023,10 @@ begin
   end;
 end;
 
+
+initialization
+
+finalization
+  Characters.Free;
+
 end.
