@@ -28,6 +28,8 @@ type
     [Test]
     procedure BitArrayRanges;
     [Test]
+    procedure BitArrayRecord;
+    [Test]
     procedure BitMatrixFlipAndOutside;
     [Test]
     procedure BitMatrixSetRegion;
@@ -375,7 +377,7 @@ begin
         var fromMatrix: TPatternRow;
         GetPatternRow(m, y, fromMatrix);
         var fromBits: TPatternRow;
-        GetPatternRow(m.getRow(y, nil), width, fromBits);
+        GetPatternRow(m.getRow(y, TBitArray.Empty), width, fromBits);
         var name := Format('width %d row %d', [width, y]);
         Assert.AreEqual(Length(expected), Length(fromMatrix), name + ' length');
         Assert.AreEqual(Length(expected), Length(fromBits), name + ' length (bits)');
@@ -599,6 +601,61 @@ begin
   Assert.IsTrue(patterns[1].AsResultPoint = TResultPoint.Create(10, 10), 'top left');
   Assert.IsTrue(patterns[2].AsResultPoint = TResultPoint.Create(50, 10), 'top right');
   Assert.AreEqual<Single>(3, patterns[2].estimatedModuleSize);
+end;
+
+procedure TCommonTest.BitArrayRecord;
+var
+  empty, bits, same: TBitArray;
+begin
+  // an empty record is no row (nil before): nothing to read, nothing to find
+  empty := Default(TBitArray);
+  Assert.IsTrue(empty.IsEmpty);
+  Assert.IsTrue(TBitArray.Empty.IsEmpty);
+  Assert.IsTrue(TBitArrayHelpers.CreateBitArray.IsEmpty);
+  Assert.AreEqual(0, empty.Size);
+  Assert.IsFalse(empty[0]);
+  Assert.AreEqual(0, empty.getNextSet(0));
+  Assert.AreEqual(0, empty.getNextUnset(0));
+  Assert.IsTrue(empty.isRange(0, 0, true));
+  Assert.IsFalse(empty.isRange(0, 1, false));
+  empty.clear;
+  empty.Reverse;
+  empty[3] := true; // ignored, no bits
+  Assert.IsTrue(empty.IsEmpty);
+
+  // bits outside the array read as false and are not written
+  bits := TBitArray.Create(40);
+  Assert.IsFalse(bits.IsEmpty);
+  Assert.AreEqual(40, bits.Size);
+  Assert.AreEqual(2, Length(bits.Bits));
+  bits[-1] := true;
+  bits[40] := true;
+  bits[70] := true;
+  Assert.AreEqual(0, bits.Bits[0]);
+  Assert.AreEqual(0, bits.Bits[1]);
+  Assert.IsFalse(bits[-1]);
+  Assert.IsFalse(bits[40]);
+  Assert.IsFalse(bits[-33]);
+  bits.setRange(35, 45); // only up to the size
+  Assert.IsTrue(bits.isRange(35, 40, true));
+  Assert.IsFalse(bits.isRange(35, 45, true));
+  Assert.AreEqual(Integer($F8), bits.Bits[1]);
+  Assert.AreEqual(35, bits.getNextSet(-5));
+  Assert.AreEqual(40, bits.getNextSet(40));
+  Assert.AreEqual(40, bits.getNextSet(100));
+
+  // a copy of the record refers to the same bits, like a copy of the
+  // interface reference did: a reversal is seen through both
+  same := bits;
+  same[0] := true;
+  Assert.IsTrue(bits[0]);
+  bits.Reverse;
+  Assert.IsTrue(same[39]);
+  Assert.IsTrue(same.isRange(0, 5, true));
+  Assert.IsFalse(same[5]);
+  Assert.IsTrue(bits[0] and same[0]); // (the same bits)
+  same.clear;
+  Assert.AreEqual(40, bits.getNextSet(0));
 end;
 
 initialization

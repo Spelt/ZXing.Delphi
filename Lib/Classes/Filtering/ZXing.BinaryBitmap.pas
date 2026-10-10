@@ -177,7 +177,7 @@ begin
     if ReaderTimingsEnabled then
       AddNestedReaderTiming(READER_TIMING_BLACK_ROWS,
         TStopwatch.GetTimeStamp - start);
-    if (result = nil) then
+    if result.IsEmpty then
       FRowState[y] := 1
     else
     begin
@@ -189,12 +189,12 @@ begin
 
   // from the cache, in the row the caller passed, like the binarizer does
   var w := Width;
-  if (row = nil) or (row.Size < w) then
+  if row.IsEmpty or (row.Size < w) then
     row := TBitArrayHelpers.CreateBitArray(w)
   else
     row.clear();
   if (FRowState[y] = 1) then
-    exit(nil);
+    exit(TBitArray.Empty);
   var words := FRowCache[y];
   for var i := 0 to High(words) do
     if (words[i] <> 0) then
@@ -215,7 +215,7 @@ begin
   if (FPatternState[y] = 0) then
   begin
     FPatternBits := getBlackRow(y, FPatternBits);
-    if (FPatternBits = nil) then
+    if FPatternBits.IsEmpty then
       FPatternState[y] := 1
     else
     begin

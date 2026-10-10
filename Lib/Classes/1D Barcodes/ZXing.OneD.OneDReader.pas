@@ -781,7 +781,7 @@ begin
 
     // Estimate black point for this row and load it:
     row := image.getBlackRow(rowNumber, row);
-    if (row = nil) then
+    if row.IsEmpty then
     begin
       continue;
     end;
@@ -914,7 +914,7 @@ function TOneDReader.ReadSameByDecodeRow(const image: TBinaryBitmap;
 begin
   Result := false;
   FCheckRow := image.getBlackRow(rowNumber, FCheckRow);
-  if (FCheckRow = nil) then
+  if FCheckRow.IsEmpty then
     exit;
   if reversed then
     FCheckRow.Reverse;

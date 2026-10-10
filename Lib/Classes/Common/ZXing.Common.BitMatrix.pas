@@ -599,7 +599,7 @@ function TBitMatrix.getRow(const y: Integer; row: IBitArray): IBitArray;
 var
   x, offset: Integer;
 begin
-  if ((row = nil) or (row.Size < Self.Fwidth)) then
+  if (row.IsEmpty or (row.Size < Self.Fwidth)) then
     row := TBitArrayHelpers.CreateBitArray(Self.Fwidth)
   else
     row.clear;

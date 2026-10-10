@@ -49,7 +49,7 @@ type
     function GetBlackRow(y: Integer; row: IBitArray): IBitArray; override;
     /// <summary>
     /// Does not sharpen the data, as this call is intended to only be used by
-    /// 2D Readers. Returns nil when the image has too little contrast; the
+    /// 2D Readers. Returns an empty row when the image has too little contrast; the
     /// caller frees the result.
     /// </summary>
     function BlackMatrix: TBitMatrix; override;
@@ -74,7 +74,7 @@ var
   w, blackPoint, x, left, right, center, luminance: Integer;
 begin
   w := width;
-  if ((row = nil) or (row.Size < w)) then
+  if (row.IsEmpty or (row.Size < w)) then
     row := TBitArrayHelpers.CreateBitArray(w)
   else
     row.Clear();
@@ -93,7 +93,7 @@ begin
 
   if (not estimateBlackPoint(localBuckets, blackPoint)) then
   begin
-    result := nil;
+    result := TBitArray.Empty;
     exit;
   end;
 
