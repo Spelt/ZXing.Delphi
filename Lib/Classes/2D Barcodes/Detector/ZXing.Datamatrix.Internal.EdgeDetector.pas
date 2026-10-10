@@ -415,7 +415,7 @@ begin
           // centered position and the history)
           var px := FloorInt(pEdge.X);
           var py := FloorInt(pEdge.Y);
-          if not img[px, py] then
+          if not img.GetUnchecked(px, py) then
           begin
             p := PointD(px + 0.5, py + 0.5);
 
@@ -606,13 +606,14 @@ var
   begin
     if (stepsToBorder < 0) then
       exit(0);
-    var v := img[px, py];
+    // (inside the image up to the border: no bounds check per pixel)
+    var v := img.GetUnchecked(px, py);
     var n := 0;
     repeat
       Inc(n);
       if (n > stepsToBorder) then
         break;
-    until img[px + n * dx, py + n * dy] <> v;
+    until img.GetUnchecked(px + n * dx, py + n * dy) <> v;
     px := px + n * dx;
     py := py + n * dy;
     stepsToBorder := stepsToBorder - n;
