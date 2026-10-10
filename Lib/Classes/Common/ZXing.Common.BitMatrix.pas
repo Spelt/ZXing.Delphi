@@ -90,6 +90,13 @@ type
     /// lie close together, like those of dot-peen codes. radius 1 to 31.
     /// </summary>
     function closed(radius: Integer): TBitMatrix;
+    /// <summary>A new matrix, this one rotated by 90 degrees counter
+    /// clockwise (zxing-cpp's rotate90): pixel (x, y) goes to
+    /// (y, width - 1 - x). The caller frees it.</summary>
+    function Rotated90: TBitMatrix;
+    /// <summary>A new matrix, this one transposed: pixel (x, y) goes to
+    /// (y, x). The caller frees it.</summary>
+    function Transposed: TBitMatrix;
     /// <summary>The smallest rectangle containing all black pixels (as in
     /// zxing-cpp); false when there are none or it is smaller than minSize
     /// in width or height.</summary>
@@ -279,6 +286,53 @@ begin
 
   for var i := 0 to High(src) do
     Result.Fbits[i] := Integer(src[i]);
+end;
+
+/// <summary>Every black pixel (x, y) of source set in dest at (y, f(x)) with
+/// f(x) = x for a transposition and width - 1 - x for a rotation: word by
+/// word of the source, only the set bits (TrailingZeros), with the
+/// destination word of a source row fixed in its column.</summary>
+procedure TurnBits(source, dest: TBitMatrix; rotate: Boolean);
+begin
+  var width := source.Fwidth;
+  var destRowSize := dest.FrowSize;
+  for var y := 0 to source.Fheight - 1 do
+  begin
+    var srcOffset := y * source.FrowSize;
+    // the destination: column y, word y shr 5, bit y and 31
+    var destWord := y shr 5;
+    var destMask := Cardinal(1) shl (y and 31);
+    for var w := 0 to source.FrowSize - 1 do
+    begin
+      var bits := Cardinal(source.Fbits[srcOffset + w]);
+      var x0 := w shl 5;
+      while (bits <> 0) do
+      begin
+        var bit := TMathUtils.TrailingZeros(bits);
+        bits := bits and (bits - 1); // the lowest set bit cleared
+        var x := x0 + bit;
+        if (x >= width) then
+          break; // padding bits beyond the width
+        var destY := x;
+        if rotate then
+          destY := width - 1 - x;
+        var offset := destY * destRowSize + destWord;
+        dest.Fbits[offset] := Integer(Cardinal(dest.Fbits[offset]) or destMask);
+      end;
+    end;
+  end;
+end;
+
+function TBitMatrix.Rotated90: TBitMatrix;
+begin
+  Result := TBitMatrix.Create(Fheight, Fwidth);
+  TurnBits(Self, Result, true);
+end;
+
+function TBitMatrix.Transposed: TBitMatrix;
+begin
+  Result := TBitMatrix.Create(Fheight, Fwidth);
+  TurnBits(Self, Result, false);
 end;
 
 function TBitMatrix.findBoundingBox(out left, top, width, height: Integer;

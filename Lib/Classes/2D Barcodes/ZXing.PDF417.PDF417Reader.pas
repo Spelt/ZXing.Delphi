@@ -130,7 +130,11 @@ procedure DoDecode(const image: TBinaryBitmap;
   hints: TDictionary<TDecodeHintType, TObject>; multiple, tryRotate: Boolean;
   results: TList<TReadResult>; maxCount: Integer);
 begin
-  var detectorResult := DetectPDF417(image.BlackMatrix, multiple, tryRotate);
+  var detectorResult := DetectPDF417(image.BlackMatrix, multiple, tryRotate,
+    function: TBitMatrix
+    begin
+      Result := image.BlackMatrixRotated90;
+    end);
   if (detectorResult = nil) then
     exit;
   try

@@ -32,6 +32,8 @@ type
     [Test]
     procedure BitMatrixSetRegion;
     [Test]
+    procedure BitMatrixRotatedAndTransposed;
+    [Test]
     procedure PatternRowFromMatrix;
     [Test]
     procedure GaloisFieldMultiply;
@@ -271,6 +273,45 @@ begin
       m.Free;
     end;
   end;
+end;
+
+procedure TCommonTest.BitMatrixRotatedAndTransposed;
+begin
+  var seed: Cardinal := 5;
+  // sizes around the word boundaries, random pixels
+  for var width in [1, 7, 31, 32, 33, 70] do
+    for var height in [1, 5, 32, 33, 64] do
+    begin
+      var m := TBitMatrix.Create(width, height);
+      var rotated: TBitMatrix := nil;
+      var transposed: TBitMatrix := nil;
+      try
+        for var y := 0 to height - 1 do
+          for var x := 0 to width - 1 do
+            if ((NextRandom(seed) and 3) = 0) then
+              m[x, y] := true;
+        rotated := m.Rotated90;
+        transposed := m.Transposed;
+        Assert.AreEqual(height, rotated.width);
+        Assert.AreEqual(width, rotated.height);
+        Assert.AreEqual(height, transposed.width);
+        Assert.AreEqual(width, transposed.height);
+        for var y := 0 to height - 1 do
+          for var x := 0 to width - 1 do
+          begin
+            var name := Format('%dx%d pixel %d,%d', [width, height, x, y]);
+            Assert.AreEqual(m[x, y], rotated[y, width - 1 - x], name + ' rotated');
+            Assert.AreEqual(m[x, y], transposed[y, x], name + ' transposed');
+          end;
+        // no bits beyond the width of the rows (the padding stays clear)
+        for var y := 0 to rotated.height - 1 do
+          Assert.IsFalse(rotated[rotated.width, y]);
+      finally
+        transposed.Free;
+        rotated.Free;
+        m.Free;
+      end;
+    end;
 end;
 
 procedure TCommonTest.PatternRowFromMatrix;

@@ -50,6 +50,11 @@ type
     // the image rotated by 90 degrees, made once for all readers that scan
     // it (the 1D readers with TRY_HARDER), owned by this bitmap
     FRotated: TBinaryBitmap;
+    // the black matrix rotated by 90 degrees and transposed, made once for
+    // the readers that scan them (PDF417, MicroPDF417, the stacked and the
+    // postal codes), owned by this bitmap
+    FMatrixRotated90: TBitMatrix;
+    FMatrixTransposed: TBitMatrix;
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetBlackMatrix: TBitMatrix;
@@ -84,6 +89,15 @@ type
     /// rotate and binarize it again. Owned by this bitmap: do not free.
     /// </summary>
     function RotatedCounterClockwise: TBinaryBitmap;
+    /// <summary>The black matrix rotated by 90 degrees counter clockwise
+    /// (TBitMatrix.Rotated90), made on the first call and shared afterwards;
+    /// nil when there is no black matrix. Owned by this bitmap: do not free
+    /// or change.</summary>
+    function BlackMatrixRotated90: TBitMatrix;
+    /// <summary>The black matrix transposed (TBitMatrix.Transposed), made on
+    /// the first call and shared afterwards; nil when there is no black
+    /// matrix. Owned by this bitmap: do not free or change.</summary>
+    function BlackMatrixTransposed: TBitMatrix;
 
     property Width: Integer read GetWidth;
     property Height: Integer read GetHeight;
@@ -113,6 +127,8 @@ end;
 destructor TBinaryBitmap.Destroy;
 begin
   FRotated.Free;
+  FMatrixRotated90.Free;
+  FMatrixTransposed.Free;
   if Assigned(Matrix) then
     FreeAndNil(Matrix);
 
@@ -238,6 +254,20 @@ begin
   if (FRotated = nil) then
     FRotated := rotateCounterClockwise;
   Result := FRotated;
+end;
+
+function TBinaryBitmap.BlackMatrixRotated90: TBitMatrix;
+begin
+  if (FMatrixRotated90 = nil) and (BlackMatrix <> nil) then
+    FMatrixRotated90 := BlackMatrix.Rotated90;
+  Result := FMatrixRotated90;
+end;
+
+function TBinaryBitmap.BlackMatrixTransposed: TBitMatrix;
+begin
+  if (FMatrixTransposed = nil) and (BlackMatrix <> nil) then
+    FMatrixTransposed := BlackMatrix.Transposed;
+  Result := FMatrixTransposed;
 end;
 
 function TBinaryBitmap.Luminances: TArray<Byte>;

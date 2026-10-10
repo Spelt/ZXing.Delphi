@@ -24,6 +24,7 @@ unit ZXing.PDF417.Internal.Detector;
 interface
 
 uses
+  System.SysUtils,
   System.Generics.Collections,
   ZXing.Common.BitMatrix,
   ZXing.ResultPoint;
@@ -48,8 +49,11 @@ type
 
 /// <summary>The PDF417 symbols in image (also only one, when not multiple);
 /// nil when there are none.</summary>
-function DetectPDF417(image: TBitMatrix; multiple, tryRotate: Boolean)
-  : TPDF417DetectorResult;
+/// <param name="rotated90">Optional: gives the image rotated by 90
+/// degrees (TBitMatrix.Rotated90), shared with other readers; called only
+/// when needed. The result does not own it.</param>
+function DetectPDF417(image: TBitMatrix; multiple, tryRotate: Boolean;
+  const rotated90: TFunc<TBitMatrix> = nil): TPDF417DetectorResult;
 
 /// <summary>A copy of image rotated by 90 degrees counter clockwise (like
 /// zxing-cpp's BitMatrix.rotate90).</summary>
@@ -60,7 +64,6 @@ function RotatedBitMatrix180(image: TBitMatrix): TBitMatrix;
 implementation
 
 uses
-  System.SysUtils,
   System.Math,
   ZXing.Common.Pattern;
 
@@ -103,11 +106,7 @@ end;
 
 function RotatedBitMatrix90(image: TBitMatrix): TBitMatrix;
 begin
-  Result := TBitMatrix.Create(image.Height, image.Width);
-  for var x := 0 to image.Width - 1 do
-    for var y := 0 to image.Height - 1 do
-      if image[x, y] then
-        Result[y, image.Width - x - 1] := true;
+  Result := image.Rotated90;
 end;
 
 function RotatedBitMatrix180(image: TBitMatrix): TBitMatrix;
@@ -408,8 +407,8 @@ begin
   Result := false;
 end;
 
-function DetectPDF417(image: TBitMatrix; multiple, tryRotate: Boolean)
-  : TPDF417DetectorResult;
+function DetectPDF417(image: TBitMatrix; multiple, tryRotate: Boolean;
+  const rotated90: TFunc<TBitMatrix>): TPDF417DetectorResult;
 begin
   Result := nil;
   if (image = nil) then
@@ -422,7 +421,13 @@ begin
     var res := TPDF417DetectorResult.Create;
     try
       res.Rotation := 90 * rotate90;
-      if (rotate90 = 1) then
+      if (rotate90 = 1) and Assigned(rotated90) then
+      begin
+        // the shared rotated matrix (also used by MicroPDF417)
+        res.Bits := rotated90();
+        res.OwnsBits := false;
+      end
+      else if (rotate90 = 1) then
       begin
         res.Bits := RotatedBitMatrix90(image);
         res.OwnsBits := true;

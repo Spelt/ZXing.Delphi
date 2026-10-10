@@ -1229,7 +1229,8 @@ begin
   begin
     var binImg := image.BlackMatrix;
     if (rotate90 = 1) then
-      binImg := RotatedBitMatrix90(binImg);
+      // (made once, shared with the PDF417 reader, owned by the image)
+      binImg := image.BlackMatrixRotated90;
     try
       for var reversed in [false, true] do
       begin
@@ -1282,8 +1283,6 @@ begin
         end;
       end;
     finally
-      if (rotate90 = 1) then
-        binImg.Free;
     end;
   end;
 end;
