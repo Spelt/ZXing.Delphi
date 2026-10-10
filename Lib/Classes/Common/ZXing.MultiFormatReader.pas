@@ -507,7 +507,7 @@ begin
       readers.Add(TFIMReader.Create);
       readers.Add(TPharmacodeTwoTrackReader.Create);
       // (the Pharmacode of one track last: without a check, only a symbol
-      // like one, see PlausibleInAll)
+      // like one, see Plausible)
       readers.Add(TPharmacodeReader.Create);
     end;
   end;
@@ -527,18 +527,19 @@ begin
   end
 end;
 
-/// <summary>Whether a result of All is plausible: a Pharmacode (without a
-/// check) only with 5 bars or more (the value 31 or more), at least 30
-/// pixels long and like one (PlausiblePharmacode; else it is noise
-/// mostly).</summary>
-function PlausibleInAll(r: TReadResult; image: TBinaryBitmap): Boolean;
+/// <summary>Whether a result is plausible: a Pharmacode (without a check)
+/// only when it looks like one (PlausiblePharmacode), in All also only with
+/// 5 bars or more (the value 31 or more) and at least 30 pixels long (else
+/// it is noise mostly).</summary>
+function Plausible(r: TReadResult; image: TBinaryBitmap;
+  all: Boolean): Boolean;
 begin
   Result := true;
   if (r.BarcodeFormat <> TBarcodeFormat.PHARMA_CODE) then
     exit;
   var p := r.Position;
-  if (StrToIntDef(r.Text, 0) < 31) or (Length(p) < 4) or
-    (Sqrt(Sqr(p[1].X - p[0].X) + Sqr(p[1].Y - p[0].Y)) < 30) then
+  if all and ((StrToIntDef(r.Text, 0) < 31) or (Length(p) < 4) or
+    (Sqrt(Sqr(p[1].X - p[0].X) + Sqr(p[1].Y - p[0].Y)) < 30)) then
     exit(false);
   Result := PlausiblePharmacode(r, image);
 end;
@@ -557,14 +558,13 @@ begin
     // the position of a 1D code: the height of its bars too
     for var i := first to results.Count - 1 do
       SetLinearPosition(results[i], image);
-    // All: not the results that are not plausible
-    if FAll then
-      for var i := results.Count - 1 downto first do
-        if not PlausibleInAll(results[i], image) then
-        begin
-          results[i].Free;
-          results.Delete(i);
-        end;
+    // not the results that are not plausible (Pharmacode)
+    for var i := results.Count - 1 downto first do
+      if not Plausible(results[i], image, FAll) then
+      begin
+        results[i].Free;
+        results.Delete(i);
+      end;
   end;
 end;
 
@@ -666,7 +666,7 @@ begin
     begin
       // the position of a 1D code: the height of its bars too
       SetLinearPosition(result, image);
-      if FAll and not PlausibleInAll(result, image) then
+      if not Plausible(result, image, FAll) then
       begin
         FreeAndNil(result);
         continue;

@@ -674,6 +674,17 @@ begin
   finally
     r.Free;
   end;
+  // slanted (a row runs out of the bars: once read as the first 13 bars,
+  // 15431): the whole symbol or nothing
+  for var format in [TBarcodeFormat.PHARMA_CODE, TBarcodeFormat.All] do
+  begin
+    r := Scan('pharmacode 123456 slanted.png', format, nil);
+    try
+      Assert.IsTrue((r = nil) or (r.Text = '123456'), r.Text);
+    finally
+      r.Free;
+    end;
+  end;
 end;
 
 /// <summary>The bars and spaces of modules ('1' bar, '0' space; the spaces

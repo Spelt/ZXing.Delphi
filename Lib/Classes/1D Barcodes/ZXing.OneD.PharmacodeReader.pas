@@ -55,8 +55,9 @@ type
 
 
 /// <summary>Whether the Pharmacode r (Position set) looks like one: bars
-/// as tall as the symbol, the rows from the top to the bottom alike (else
-/// noise mostly: Pharmacode has no check).</summary>
+/// as tall as the symbol, the rows from the top to the bottom alike, the
+/// quiet zones light over that height (else
+/// noise or a part of a slanted symbol: Pharmacode has no check).</summary>
 function PlausiblePharmacode(r: TReadResult; image: TBinaryBitmap): Boolean;
 
 implementation
@@ -112,6 +113,54 @@ begin
     worst := Min(worst, same);
   end;
   Result := (worst >= 0.9 * COUNT);
+  if not Result then
+    exit;
+  // the quiet zones light over the whole height (else the scan line ran
+  // out of the bars of a slanted symbol: only a part of it read): from 0.3
+  // to 2 pitches beyond each end, the pitch from the number of bars
+  var bars := 0;
+  var value := StrToIntDef(r.Text, 0) + 1;
+  while (value > 1) do
+  begin
+    Inc(bars);
+    value := value shr 1;
+  end;
+  if (bars < 1) then
+    exit(false);
+  var dx := (p[1].X - p[0].X) / bars;
+  var dy := (p[1].Y - p[0].Y) / bars;
+  var dark := 0;
+  var total := 0;
+  for var k := 0 to 8 do
+  begin
+    var f := 0.1 + 0.1 * k;
+    for var side := 0 to 1 do
+    begin
+      // the end (left: p0 to p3, right: p1 to p2) and outward
+      var ex := p[0].X + f * (p[3].X - p[0].X);
+      var ey := p[0].Y + f * (p[3].Y - p[0].Y);
+      var sign := -1;
+      if (side = 1) then
+      begin
+        ex := p[1].X + f * (p[2].X - p[1].X);
+        ey := p[1].Y + f * (p[2].Y - p[1].Y);
+        sign := 1;
+      end;
+      var t := 0.3;
+      while (t <= 2) do
+      begin
+        var x := Trunc(ex + sign * t * dx);
+        var y := Trunc(ey + sign * t * dy);
+        // (outside the image: light)
+        if (x >= 0) and (y >= 0) and (x < width) and (y < height) and
+          (luminances[y * width + x] < threshold) then
+          Inc(dark);
+        Inc(total);
+        t := t + 0.1;
+      end;
+    end;
+  end;
+  Result := (dark <= 0.05 * total);
 end;
 
 { TPharmacodeReader }
