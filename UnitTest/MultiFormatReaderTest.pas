@@ -173,7 +173,8 @@ const
     Format: TBarcodeFormat.JAPAN_POST; Text: '1000001'; Auto: false),
     (FileName: 'zxing-net\msi-1\01.png'; Format: TBarcodeFormat.MSI;
     Text: '123456782'; Auto: false),
-    (FileName: 'pharmacode 123456.gif'; Format: TBarcodeFormat.PHARMA_CODE;
+    (FileName: 'pharmacode 123456 margin.png';
+    Format: TBarcodeFormat.PHARMA_CODE;
     Text: '123456'; Auto: false),
     (FileName: 'pharmacode 123459.png'; Format: TBarcodeFormat.PHARMA_CODE;
     Text: '123459'; Auto: false));

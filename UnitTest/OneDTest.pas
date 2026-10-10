@@ -666,21 +666,37 @@ begin
       r.Free;
     end;
   end;
-  // an image cut close: the bars up to its edges (not the digits below them)
-  var r := Scan('pharmacode 123456.gif', TBarcodeFormat.PHARMA_CODE, nil);
+  // with a margin (not the digits below the bars)
+  var r := Scan('pharmacode 123456 margin.png', TBarcodeFormat.PHARMA_CODE,
+    nil);
   try
     Assert.IsNotNull(r, ' Nil result ');
     Assert.AreEqual('123456', r.Text);
   finally
     r.Free;
   end;
+  // without a quiet zone: the bars up to the edge of the image (cut close,
+  // or half of the symbol in the image, once read as its first bars): not
+  // read, it can be a part of a symbol
+  for var name in ['pharmacode 123456.gif', 'pharmacode 123456 half.png'] do
+    for var format in [TBarcodeFormat.PHARMA_CODE, TBarcodeFormat.All] do
+    begin
+      r := Scan(name, format, nil);
+      try
+        if (r <> nil) then
+          Assert.Fail(name + ': ' + r.Text);
+      finally
+        r.Free;
+      end;
+    end;
   // slanted (a row runs out of the bars: once read as the first 13 bars,
   // 15431): the whole symbol or nothing
   for var format in [TBarcodeFormat.PHARMA_CODE, TBarcodeFormat.All] do
   begin
     r := Scan('pharmacode 123456 slanted.png', format, nil);
     try
-      Assert.IsTrue((r = nil) or (r.Text = '123456'), r.Text);
+      if (r <> nil) then
+        Assert.AreEqual('123456', r.Text);
     finally
       r.Free;
     end;
