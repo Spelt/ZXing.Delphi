@@ -45,6 +45,8 @@ type
     FCode32: Boolean;
     FPZN: Boolean;
     FCode39: Boolean;
+    // whether MakeText made full ASCII of the text
+    FFullASCII: Boolean;
 
     function decodeExtended(encoded: string): string;
 
@@ -171,10 +173,27 @@ begin
   end;
   if (s = '') then
     exit('');
+  FFullASCII := false;
   if extendedMode then
-    Result := decodeExtended(s)
+  begin
+    Result := decodeExtended(s);
+    FFullASCII := (Result <> '');
+  end
   else
+  begin
     Result := s;
+    // like zxing-cpp: full ASCII when the text has its shift characters and
+    // they make valid full ASCII, else the text as it is
+    if (s.IndexOfAny(['$', '%', '/', '+']) >= 0) then
+    begin
+      var fullASCII := decodeExtended(s);
+      if (fullASCII <> '') then
+      begin
+        Result := fullASCII;
+        FFullASCII := true;
+      end;
+    end;
+  end;
 end;
 
 function TCode39Reader.VariantText(const chars: string;
@@ -309,7 +328,7 @@ begin
   begin
     if usingCheckDigit then
       Inc(modifier, 3);
-    if extendedMode then
+    if extendedMode or FFullASCII then
       Inc(modifier, 4);
   end;
   Result.SymbologyIdentifier := ']A' + IntToStr(modifier);
@@ -523,7 +542,7 @@ begin
   begin
     if usingCheckDigit then
       Inc(modifier, 3);
-    if extendedMode then
+    if extendedMode or FFullASCII then
       Inc(modifier, 4);
   end;
   Result.SymbologyIdentifier := ']A' + IntToStr(modifier);

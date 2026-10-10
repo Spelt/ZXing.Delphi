@@ -53,6 +53,8 @@ type
     [Test]
     procedure LinearPosition;
     [Test]
+    procedure Code39FullASCII;
+    [Test]
     procedure Code11;
     [Test]
     procedure Code2of5;
@@ -999,6 +1001,47 @@ begin
     Assert.IsNull(r, 'FIM read in Auto');
   finally
     r.Free;
+  end;
+end;
+
+procedure TOneDTest.Code39FullASCII;
+begin
+  // Code 39 with the shift characters of full ASCII ('+A' is 'a') is read as
+  // full ASCII without the hint (like zxing-cpp), also in Auto and All
+  for var format in [TBarcodeFormat.CODE_39, TBarcodeFormat.Auto,
+    TBarcodeFormat.All] do
+  begin
+    var bmp := LoadImage(ImagePath('code39 full ascii Aa-1234.gif'));
+    var scanManager := TScanManager.Create(format, nil);
+    try
+      var r := scanManager.Scan(bmp);
+      try
+        Assert.IsNotNull(r, ' Nil result');
+        Assert.AreEqual('Aa-1234', r.Text);
+        Assert.AreEqual(']A4', r.SymbologyIdentifier);
+      finally
+        r.Free;
+      end;
+    finally
+      scanManager.Free;
+      bmp.Free;
+    end;
+  end;
+  // without valid shift characters the text as it is
+  var bmp := LoadImage(ImagePath('code39 Hello World.png'));
+  var scanManager := TScanManager.Create(TBarcodeFormat.CODE_39, nil);
+  try
+    var r := scanManager.Scan(bmp);
+    try
+      Assert.IsNotNull(r, ' Nil result');
+      Assert.AreEqual('HELLO $WORLD$', r.Text);
+      Assert.AreEqual(']A0', r.SymbologyIdentifier);
+    finally
+      r.Free;
+    end;
+  finally
+    scanManager.Free;
+    bmp.Free;
   end;
 end;
 
