@@ -195,10 +195,10 @@ var
   z, t, x, y: IResultPoint;
   maxSize: Integer;
 begin
-  z := nil;
-  t := nil;
-  x := nil;
-  y := nil;
+  z := TResultPoint.None;
+  t := TResultPoint.None;
+  x := TResultPoint.None;
+  y := TResultPoint.None;
 
   left := Self.leftInit;
   right := Self.rightInit;
@@ -313,12 +313,12 @@ begin
   while ((i < maxSize)) do
   begin
     z := Self.getBlackPointOnSegment(left, (down - i), (left + i), down);
-    if (z <> nil) then
+    if z.HasValue then
       break;
     Inc(i);
   end;
 
-  if (z = nil) then
+  if z.IsNone then
   begin
     Result := nil;
     exit;
@@ -328,12 +328,12 @@ begin
   while ((i < maxSize)) do
   begin
     t := Self.getBlackPointOnSegment(left, (up + i), (left + i), up);
-    if (t <> nil) then
+    if t.HasValue then
       break;
     Inc(i);
   end;
 
-  if (t = nil) then
+  if t.IsNone then
   begin
     Result := nil;
     exit;
@@ -343,28 +343,28 @@ begin
   while ((i < maxSize)) do
   begin
     x := Self.getBlackPointOnSegment(right, (up + i), (right - i), up);
-    if (x <> nil) then
+    if x.HasValue then
       break;
     Inc(i);
   end;
 
-  if (x = nil) then
+  if x.IsNone then
   begin
     Result := nil;
     exit;
   end;
 
-  y := nil;
+  y := TResultPoint.None;
   i := 1;
   while ((i < maxSize)) do
   begin
     y := Self.getBlackPointOnSegment(right, (down - i), (right - i), down);
-    if (y <> nil) then
+    if y.HasValue then
       break;
     Inc(i);
   end;
 
-  if (y = nil) then
+  if y.IsNone then
   begin
     Result := nil;
     exit;
@@ -394,7 +394,7 @@ begin
     end;
     Inc(i);
   end;
-  Result := nil;
+  Result := TResultPoint.None;
 end;
 
 end.

@@ -322,7 +322,7 @@ var
 begin
   var points := r.ResultPoints;
   if (image = nil) or r.HasPosition or (Length(points) < 2) or
-    (points[0] = nil) or (points[High(points)] = nil) then
+    points[0].IsNone or points[High(points)].IsNone then
     exit;
   var px := points[0].X;
   var py := points[0].Y;
@@ -334,7 +334,7 @@ begin
   // (only for the points on a line, a row or a column: not for a stacked
   // code)
   for var p in points do
-    if (p <> nil) and (Abs((p.X - px) * dy - (p.Y - py) * dx) > 3 * span) then
+    if p.HasValue and (Abs((p.X - px) * dy - (p.Y - py) * dx) > 3 * span) then
       exit;
   if (Abs(dx) > 0.01 * span) and (Abs(dy) > 0.01 * span) then
     exit;
@@ -451,7 +451,7 @@ begin
   // Update result points
   points := r.ResultPoints;
   for var i := 0 to High(points) do
-    if (points[i] <> nil) then
+    if points[i].HasValue then
       points[i] := TResultPointHelpers.CreateResultPoint
         (rotatedHeight - points[i].Y - 1, points[i].X);
 end;
@@ -461,7 +461,7 @@ function RightEdgeOf(r: TReadResult): Single;
 begin
   Result := 0;
   for var p in r.ResultPoints do
-    if (p <> nil) and (p.X > Result) then
+    if p.HasValue and (p.X > Result) then
       Result := p.X;
 end;
 
@@ -496,8 +496,8 @@ function IsCloseLine(a, b: TReadResult): Boolean;
 begin
   var pa := a.ResultPoints;
   var pb := b.ResultPoints;
-  if (Length(pa) < 2) or (Length(pb) < 2) or (pa[0] = nil) or
-    (pa[High(pa)] = nil) or (pb[0] = nil) or (pb[High(pb)] = nil) then
+  if (Length(pa) < 2) or (Length(pb) < 2) or pa[0].IsNone or
+    pa[High(pa)].IsNone or pb[0].IsNone or pb[High(pb)].IsNone then
     exit(true);
   var a0 := pa[0];
   var a1 := pa[High(pa)];
@@ -835,7 +835,7 @@ begin
         // (all of them, also those of an add-on)
         points := ReadResult.ResultPoints;
         for var i := 0 to High(points) do
-          if (points[i] <> nil) then
+          if points[i].HasValue then
             points[i] := TResultPointHelpers.CreateResultPoint
               (width - points[i].X - 1, points[i].Y);
 
@@ -967,7 +967,7 @@ begin
         begin
           var points := r.ResultPoints;
           for var i := 0 to High(points) do
-            if (points[i] <> nil) then
+            if points[i].HasValue then
               points[i] := TResultPointHelpers.CreateResultPoint
                 (width - points[i].X - 1, points[i].Y);
         end;

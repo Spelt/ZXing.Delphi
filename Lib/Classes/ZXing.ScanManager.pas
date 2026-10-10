@@ -332,13 +332,13 @@ procedure ScaleResult(r: TReadResult; scale: Single);
 begin
   var position := r.Position;
   for var i := 0 to High(position) do
-    if (position[i] <> nil) then
+    if position[i].HasValue then
       position[i] := TResultPointHelpers.CreateResultPoint(position[i].x *
         scale, position[i].y * scale);
   r.Position := position;
   var points := r.resultPoints;
   for var i := 0 to High(points) do
-    if (points[i] <> nil) then
+    if points[i].HasValue then
       points[i] := TResultPointHelpers.CreateResultPoint(points[i].x * scale,
         points[i].y * scale);
   r.resultPoints := points;

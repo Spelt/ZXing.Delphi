@@ -96,7 +96,7 @@ end;
 function GetMinWidth(const p1, p2: IResultPoint): Integer;
 begin
   // (divided to prevent an integer overflow)
-  if (p1 = nil) or (p2 = nil) then
+  if p1.IsNone or p2.IsNone then
     exit(MaxInt div MODULES_IN_CODEWORD);
   Result := Abs(Trunc(p1.X) - Trunc(p2.X));
 end;
@@ -111,7 +111,7 @@ end;
 
 function GetMaxWidth(const p1, p2: IResultPoint): Integer;
 begin
-  if (p1 = nil) or (p2 = nil) then
+  if p1.IsNone or p2.IsNone then
     exit(0);
   Result := Abs(Trunc(p1.X) - Trunc(p2.X));
 end;
@@ -171,10 +171,10 @@ begin
       // not found
       var point := function(i: Integer): IResultPoint
         begin
-          if (points[i] <> nil) or (i < 2) or (approxSymbolWidth < 0) then
+          if points[i].HasValue or (i < 2) or (approxSymbolWidth < 0) then
           begin
-            if (points[i] = nil) then
-              exit(nil);
+            if points[i].IsNone then
+              exit(TResultPoint.None);
             exit(rotate(Trunc(points[i].X), Trunc(points[i].Y)));
           end;
           var p := rotate(Trunc(points[i - 2].X) + approxSymbolWidth,
@@ -188,13 +188,13 @@ begin
 
       if (decoded = nil) then
       begin
-        if (error <> '') and (position[0] <> nil) and (position[3] <> nil) then
+        if (error <> '') and position[0].HasValue and position[3].HasValue then
         begin
           // (the corners of the start pattern when the right ones are
           // missing)
           var failed := position;
           for var k := 0 to 3 do
-            if (failed[k] = nil) then
+            if failed[k].IsNone then
               failed[k] := failed[ORIGINS[k]];
           AddFailedResult(hints, error, TBarcodeFormat.PDF_417, failed, failed);
         end;
@@ -202,7 +202,7 @@ begin
       end;
       try
         for var k := 0 to 3 do
-          if (position[k] = nil) then
+          if position[k].IsNone then
             position[k] := position[ORIGINS[k]];
         var r := CreatePDF417Result(decoded, extra, position,
           TBarcodeFormat.PDF_417);

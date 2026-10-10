@@ -27,73 +27,62 @@ uses
 
 type
   /// <summary>
-  /// To mimic "garbage collection" (or ARC) with old-gen compilers we have to use
-  /// interfaces. IResultPoint is the interface that maps TResultPoint which is now
-  /// implemented as a TInterfacedObject descendant which supports automatic deallocation
-  /// based on reference counting of interface variables.
-  /// See ZXing.ResultPointImplementation to see the actual implementation of this interface.
-  /// since we are using automatic reference counting, we don't need the Clone method any more.
+  /// A point of interest in the image containing a barcode: the location of
+  /// a finder pattern, a corner of the symbol, the ends of a 1D code. A
+  /// record (a value): nothing to free, no reference counting. A default
+  /// (zeroed) record is "no point", IsNone, where nil was used before; the
+  /// points of a result that are not known are such points.
   /// </summary>
+  TResultPoint = record
+  private
+    FX, FY: Single;
+    // 0 no point, 1 a point; an Integer so that the record has no padding
+    // bytes (a TDictionary with points as keys compares the bytes)
+    FState: Integer;
+  public
+    class function Create(const x, y: Single): TResultPoint; static; inline;
+    /// <summary>No point (nil before).</summary>
+    class function None: TResultPoint; static; inline;
+    function IsNone: Boolean; inline;
+    function HasValue: Boolean; inline;
+    /// <summary>The same point (or both no point).</summary>
+    function Equals(const other: TResultPoint): Boolean;
+    function ToString: string;
+    class operator Equal(const a, b: TResultPoint): Boolean;
+    class operator NotEqual(const a, b: TResultPoint): Boolean;
 
-  IResultPoint = interface
-     ['{1E60EDAB-0387-440C-9D8E-4E0CC772C820}']
-    // property accessors, for interfaces, MUST be functions or procedures (interfaces cannot contain data)
-    procedure SetX(const AValue: Single);
-    procedure SetY(const AValue: Single);
-    function GetX: Single;
-    function GetY: Single;
-
-    function Equals(other: TObject): Boolean;
-    function GetHashCode(): Integer;
-    function ToString(): String;
-
-    property x: Single read GetX write SetX;
-    property y: Single read GetY write SetY;
+    property x: Single read FX write FX;
+    property y: Single read FY write FY;
   end;
 
+  /// <summary>The name of the interface of before, for existing code: a
+  /// result point is a record now.</summary>
+  IResultPoint = TResultPoint;
+
   /// <summary>
-  /// in order to implement TResultPoint as an interface all static methods
-  /// have been moved in this static class.
-  /// this class contains also the CreateResultPoint method that must be used
-  /// in place of the actual class constructor
+  /// The static methods for result points, and the constructor of before.
   /// </summary>
   TResultPointHelpers = class
-    protected
+    public
        /// <summary>
        /// Returns the z component of the cross product between vectors BC and BA.
        /// </summary>
-       class function crossProductZ(const pointA, pointB, pointC: IResultPoint): Single; static;
-    public
-       /// <summary>
-       /// Initializes a new instance of <see cref="TResultPoint"/> and returns
-       /// its <see cref="IResultPoint"/> interface
-       /// </summary>
-       class function CreateResultPoint:IResultPoint; overload;
-       /// <summary>
-       /// Initializes a new instance of  <see cref="TResultPoint"/> and returns
-       /// its <see cref="IResultPoint"/> interface
-       /// </summary>
-       /// <param name="x">The x.</param>
-       /// <param name="y">The y.</param>
-       class function CreateResultPoint(const pX, pY: Single):IResultPoint; overload;
+       class function crossProductZ(const pointA, pointB, pointC: TResultPoint): Single; static;
+       /// <summary>The point 0, 0 (as before).</summary>
+       class function CreateResultPoint: TResultPoint; overload;
+       /// <summary>The point x, y.</summary>
+       class function CreateResultPoint(const pX, pY: Single): TResultPoint; overload;
        /// <summary>
        /// Orders an array of three ResultPoints in an order [A,B,C] such that AB is less than AC and
        /// BC is less than AC and the angle between BC and BA is less than 180 degrees.
        /// </summary>
-       /// <param name="patterns">array of three <see cref="IResultPoint" /> to order</param>
-       class procedure orderBestPatterns(const patterns : TArray<IResultPoint>); static;
+       /// <param name="patterns">array of three points to order</param>
+       class procedure orderBestPatterns(const patterns: TArray<TResultPoint>); static;
        /// <summary>
        /// calculates the distance between two points
        /// </summary>
-       /// <param name="pattern1">first pattern</param>
-       /// <param name="pattern2">second pattern</param>
-       /// <returns>
-       /// distance between two points
-       /// </returns>
-       class function distance(const pattern1, pattern2: IResultPoint) : Single; static;
+       class function distance(const pattern1, pattern2: TResultPoint): Single; static;
   end;
-
-
 
   /// <summary> Callback which is invoked when a possible result point (significant
   /// point in the barcode image such as a corner) is found.
@@ -101,7 +90,7 @@ type
   /// </summary>
   /// <seealso cref="TDecodeHintType.NEED_RESULT_POINT_CALLBACK">
   /// </seealso>
-  TResultPointCallback = procedure(const point: IResultPoint) of object;
+  TResultPointCallback = procedure(const point: TResultPoint) of object;
 
   TResultPointEventObject = class(TObject)
   private
@@ -113,21 +102,73 @@ type
   end;
 
 implementation
-uses ZXing.ResultPointImplementation;
 
-class function TResultPointHelpers.CreateResultPoint:IResultPoint;
+{ TResultPoint }
+
+class function TResultPoint.Create(const x, y: Single): TResultPoint;
 begin
-   result := ZXing.ResultPointImplementation.NewResultPoint;
+  Result.FX := x;
+  Result.FY := y;
+  Result.FState := 1;
 end;
 
-class function TResultPointHelpers.CreateResultPoint(const pX, pY: Single):IResultPoint;
+class function TResultPoint.None: TResultPoint;
 begin
-   result := ZXing.ResultPointImplementation.NewResultPoint(px,py);
+  Result.FX := 0;
+  Result.FY := 0;
+  Result.FState := 0;
 end;
 
+function TResultPoint.IsNone: Boolean;
+begin
+  Result := (FState = 0);
+end;
+
+function TResultPoint.HasValue: Boolean;
+begin
+  Result := (FState <> 0);
+end;
+
+function TResultPoint.Equals(const other: TResultPoint): Boolean;
+begin
+  if (FState = 0) or (other.FState = 0) then
+    Result := (FState = other.FState)
+  else
+    Result := (FX = other.FX) and (FY = other.FY);
+end;
+
+function TResultPoint.ToString: string;
+begin
+  if (FState = 0) then
+    Result := '(none)'
+  else
+    Result := Format('(%g),(%g)', [FX, FY]);
+end;
+
+class operator TResultPoint.Equal(const a, b: TResultPoint): Boolean;
+begin
+  Result := a.Equals(b);
+end;
+
+class operator TResultPoint.NotEqual(const a, b: TResultPoint): Boolean;
+begin
+  Result := not a.Equals(b);
+end;
+
+{ TResultPointHelpers }
+
+class function TResultPointHelpers.CreateResultPoint: TResultPoint;
+begin
+  Result := TResultPoint.Create(0, 0);
+end;
+
+class function TResultPointHelpers.CreateResultPoint(const pX, pY: Single): TResultPoint;
+begin
+  Result := TResultPoint.Create(pX, pY);
+end;
 
 class function TResultPointHelpers.crossProductZ(const pointA, pointB,
-  pointC: IResultPoint): Single;
+  pointC: TResultPoint): Single;
 var
   bX, bY: Single;
 begin
@@ -137,19 +178,17 @@ begin
     ((pointC.y - bY) * (pointA.x - bX));
 end;
 
-
 class function TResultPointHelpers.distance(const pattern1,
-  pattern2: IResultPoint): Single;
+  pattern2: TResultPoint): Single;
 begin
   Result := TMathUtils.distance(pattern1.x, pattern1.y, pattern2.x, pattern2.y);
 end;
 
-
 class procedure TResultPointHelpers.orderBestPatterns(const patterns
-  : TArray<IResultPoint>);
+  : TArray<TResultPoint>);
 var
   zeroOneDistance, oneTwoDistance, zeroTwoDistance: Single;
-  pointA, pointB, pointC, temp: IResultPoint;
+  pointA, pointB, pointC, temp: TResultPoint;
 begin
   // Find distances between pattern centers
   zeroOneDistance := distance(patterns[0], patterns[1]);
@@ -194,13 +233,11 @@ begin
   patterns[2] := pointC;
 end;
 
-
 { TResultPointEventObject }
 
 constructor TResultPointEventObject.Create(const AEvent: TResultPointCallback);
 begin
   Self.FResultPointCallback := AEvent;
 end;
-
 
 end.

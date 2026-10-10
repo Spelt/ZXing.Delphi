@@ -27,12 +27,15 @@ uses
 type
 
   /// <summary>
-  ///  As we did for ResultPoint, we use an interfaced object to implement automatic deallocation
-  /// of TAligmnentPattern instances
-  /// the actual implementation of this interface is in unit ZXing.QrCode.Internal.FinderPatternImplementation
+  /// A finder pattern of the QR Code detector of the Java original: its
+  /// center, estimated module size and the number of times it was seen. An
+  /// interfaced object, so that the lists of the finder hold and free them.
+  /// The actual implementation is in unit ZXing.QrCode.Internal.FinderPatternImplementation.
   /// </summary>
-  IFinderPattern = interface(IResultPoint)
+  IFinderPattern = interface
     ['{EF95BB2F-8863-4A83-840E-699779592EC0}']
+    function GetX: Single;
+    function GetY: Single;
     function GetCount:integer;
     procedure SetCount(value:integer);
     /// <summary> <p>Determines if this finder pattern "about equals" a finder pattern at the stated
@@ -58,18 +61,24 @@ type
     /// The size of the estimated module.
     /// </value>
     function estimatedModuleSize : Single;
+    /// <summary>The center as a result point.</summary>
+    function AsResultPoint: TResultPoint;
     property count : Integer read GetCount  write SetCount;
+    property X: Single read GetX;
+    property Y: Single read GetY;
   end;
 
 
   /// <summary>
   ///  contains all static methods for using IFinderPattern instances
   /// </summary>
-  TFinderPatternHelpers= class(TResultPointHelpers)
+  TFinderPatternHelpers= class
     class function  CreateFinderPattern(const posX, posY, estimatedModuleSize: Single;
       const count: Integer):IFinderPattern; overload;
     class function CreateFinderPattern(const posX, posY, estimatedModuleSize: Single):IFinderPattern; overload;
 
+    /// <summary>Like TResultPointHelpers.orderBestPatterns, for three finder
+    /// patterns.</summary>
     class procedure orderBestPatterns(const patterns: TArray<IFinderPattern>); static;
 
   end;
@@ -87,61 +96,30 @@ begin
    result :=  ZXing.QrCode.Internal.FinderPatternImplementation.NewFinderPattern(posX, posY, estimatedModuleSize);
 end;
 
-
-
 class procedure TFinderPatternHelpers.orderBestPatterns( const patterns: TArray<IFinderPattern>);
 var
-  zeroOneDistance,
-  oneTwoDistance,
-  zeroTwoDistance: Single;
-  pointA,
-  pointB,
-  pointC,
-  temp: IFinderPattern;
+  points: TArray<TResultPoint>;
+  ordered: TArray<IFinderPattern>;
 begin
-  // Find distances between pattern centers
-  zeroOneDistance := distance(patterns[0], patterns[1]);
-  oneTwoDistance := distance(patterns[1], patterns[2]);
-  zeroTwoDistance := distance(patterns[0], patterns[2]);
-
-  // Assume one closest to other two is B; A and C will just be guesses at first
-  if ((oneTwoDistance >= zeroOneDistance) and
-    (oneTwoDistance >= zeroTwoDistance)) then
-  begin
-    pointB := patterns[0];
-    pointA := patterns[1];
-    pointC := patterns[2];
-  end
-  else if ((zeroTwoDistance >= oneTwoDistance) and
-    (zeroTwoDistance >= zeroOneDistance)) then
-  begin
-    pointB := patterns[1];
-    pointA := patterns[0];
-    pointC := patterns[2];
-  end
-  else
-  begin
-    pointB := patterns[2];
-    pointA := patterns[0];
-    pointC := patterns[1];
-  end;
-
-  // Use cross product to figure out whether A and C are correct or flipped.
-  // This asks whether BC x BA has a positive z component, which is the arrangement
-  // we want for A, B, C. If it's negative, then we've got it flipped around and
-  // should swap A and C.
-  if (TResultPointHelpers.crossProductZ(pointA, pointB, pointC) < 0) then
-  begin
-    temp := pointA;
-    pointA := pointC;
-    pointC := temp;
-  end;
-
-  patterns[0] := pointA;
-  patterns[1] := pointB;
-  patterns[2] := pointC;
+  // the centers ordered as points, then the patterns in that order
+  points := [patterns[0].AsResultPoint, patterns[1].AsResultPoint,
+    patterns[2].AsResultPoint];
+  TResultPointHelpers.orderBestPatterns(points);
+  SetLength(ordered, 3);
+  for var i := 0 to 2 do
+    for var j := 0 to 2 do
+      if (ordered[i] = nil) and (patterns[j].X = points[i].x) and
+        (patterns[j].Y = points[i].y) then
+      begin
+        ordered[i] := patterns[j];
+        break;
+      end;
+  // (the same point twice: keep what is there)
+  for var i := 0 to 2 do
+    if (ordered[i] = nil) then
+      exit;
+  for var i := 0 to 2 do
+    patterns[i] := ordered[i];
 end;
-
-
 
 end.

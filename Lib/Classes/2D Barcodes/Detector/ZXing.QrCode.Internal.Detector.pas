@@ -192,7 +192,7 @@ var
     dimMinusThree: Single;
 begin
   dimMinusThree := (dimension - 3.5);
-  if (AlignmentPattern <> nil) then
+  if AlignmentPattern.HasValue then
   begin
     bottomRightX := AlignmentPattern.X;
     bottomRightY := AlignmentPattern.Y;
@@ -261,6 +261,7 @@ var
   transform: TPerspectiveTransform;
   bits: TBitMatrix;
   AlignmentPattern: IAlignmentPattern;
+  alignmentPoint: TResultPoint;
 begin
   Result := nil;
 
@@ -268,11 +269,13 @@ begin
   topRight := info.topRight;
   bottomLeft := info.bottomLeft;
 
-  moduleSize := calculateModuleSize(topLeft, topRight, bottomLeft);
+  moduleSize := calculateModuleSize(topLeft.AsResultPoint,
+    topRight.AsResultPoint, bottomLeft.AsResultPoint);
   if (moduleSize < 1.0) then
     exit;
 
-  if (not computeDimension(topLeft, topRight, bottomLeft, moduleSize, dimension)) then
+  if (not computeDimension(topLeft.AsResultPoint, topRight.AsResultPoint,
+    bottomLeft.AsResultPoint, moduleSize, dimension)) then
     exit;
 
   provisionalVersion := TVersion.getProvisionalVersionForDimension(dimension);
@@ -308,8 +311,12 @@ begin
     // If we didn't find alignment pattern... well try anyway without it
   end;
 
-  transform := createTransform(topLeft, topRight, bottomLeft,
-    AlignmentPattern, dimension);
+  if (AlignmentPattern <> nil) then
+    alignmentPoint := AlignmentPattern.AsResultPoint
+  else
+    alignmentPoint := TResultPoint.None;
+  transform := createTransform(topLeft.AsResultPoint, topRight.AsResultPoint,
+    bottomLeft.AsResultPoint, alignmentPoint, dimension);
   try
     bits := sampleGrid(FImage, transform, dimension);
   finally
@@ -320,10 +327,11 @@ begin
     exit;
 
   if (AlignmentPattern = nil) then
-    points := TArray<IResultPoint>.Create(bottomLeft, topLeft, topRight)
+    points := [bottomLeft.AsResultPoint, topLeft.AsResultPoint,
+      topRight.AsResultPoint]
   else
-    points := TArray<IResultPoint>.Create(bottomLeft, topLeft, topRight,
-      AlignmentPattern);
+    points := [bottomLeft.AsResultPoint, topLeft.AsResultPoint,
+      topRight.AsResultPoint, AlignmentPattern.AsResultPoint];
 
   Result := TDetectorResult.Create(bits, points);
 end;

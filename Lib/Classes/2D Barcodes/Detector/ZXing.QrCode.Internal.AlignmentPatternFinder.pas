@@ -399,7 +399,7 @@ begin
     Self.possibleCenters.Add(point);
     if Assigned(resultPointCallback)
     then
-       Self.resultPointCallback(point);
+       Self.resultPointCallback(point.AsResultPoint);
   end;
   Result := nil;
 end;

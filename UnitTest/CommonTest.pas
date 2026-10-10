@@ -41,6 +41,10 @@ type
     procedure LuminanceRotateAndCrop;
     [Test]
     procedure PDF417ClosestSymbol;
+    [Test]
+    procedure ResultPointRecord;
+    [Test]
+    procedure FinderPatternOrder;
   end;
 
 implementation
@@ -48,7 +52,10 @@ implementation
 uses
   System.SysUtils,
   System.Math,
+  System.Generics.Collections,
   ZXing.Common.Detector.MathUtils,
+  ZXing.ResultPoint,
+  ZXing.QrCode.Internal.FinderPattern,
   ZXing.Common.Geometry,
   ZXing.Common.BitArray,
   ZXing.Common.BitMatrix,
@@ -525,6 +532,73 @@ begin
       Format('vector %d: %d %d %d %d %d %d %d %d', [n, vectors[n][0],
       vectors[n][1], vectors[n][2], vectors[n][3], vectors[n][4], vectors[n][5],
       vectors[n][6], vectors[n][7]]));
+end;
+
+procedure TCommonTest.ResultPointRecord;
+var
+  points: TArray<TResultPoint>;
+  counts: TDictionary<TResultPoint, Integer>;
+  none: TResultPoint;
+begin
+  // a zeroed record is no point (nil before), a created one has a value
+  none := Default(TResultPoint);
+  Assert.IsTrue(none.IsNone);
+  Assert.IsFalse(none.HasValue);
+  Assert.IsTrue(TResultPoint.None.IsNone);
+  var p := TResultPoint.Create(3, 4);
+  Assert.IsTrue(p.HasValue);
+  Assert.AreEqual<Single>(3, p.x);
+  Assert.AreEqual<Single>(4, p.y);
+  Assert.IsTrue(p = TResultPointHelpers.CreateResultPoint(3, 4));
+  Assert.IsTrue(p <> TResultPoint.Create(4, 3));
+  Assert.IsTrue(TResultPoint.None = none);
+  // the origin is a point, not "no point"
+  Assert.IsTrue(TResultPoint.Create(0, 0) <> TResultPoint.None);
+  Assert.IsTrue(TResultPoint.Create(0, 0).HasValue);
+  Assert.AreEqual<Single>(5, TResultPointHelpers.distance(TResultPoint.Create(0, 0), p));
+  Assert.AreEqual('(3),(4)', p.ToString);
+
+  // the points of a QR Code in any order: bottom left, top left (the corner),
+  // top right afterwards
+  points := [TResultPoint.Create(50, 10), TResultPoint.Create(10, 50),
+    TResultPoint.Create(10, 10)];
+  TResultPointHelpers.orderBestPatterns(points);
+  Assert.IsTrue(points[0] = TResultPoint.Create(10, 50), 'bottom left');
+  Assert.IsTrue(points[1] = TResultPoint.Create(10, 10), 'top left');
+  Assert.IsTrue(points[2] = TResultPoint.Create(50, 10), 'top right');
+
+  // as a dictionary key (the DataMatrix detector counts the end points of
+  // its lines): the same coordinates are the same key
+  counts := TDictionary<TResultPoint, Integer>.Create;
+  try
+    for var q in [TResultPoint.Create(1, 2), TResultPoint.Create(3, 4),
+      TResultPoint.Create(1, 2)] do
+      if counts.ContainsKey(q) then
+        counts[q] := counts[q] + 1
+      else
+        counts.Add(q, 1);
+    Assert.AreEqual(2, counts.Count);
+    Assert.AreEqual(2, counts[TResultPoint.Create(1, 2)]);
+    Assert.AreEqual(1, counts[TResultPoint.Create(3, 4)]);
+  finally
+    counts.Free;
+  end;
+end;
+
+procedure TCommonTest.FinderPatternOrder;
+var
+  patterns: TArray<IFinderPattern>;
+begin
+  // the finder patterns are ordered like their center points
+  patterns := [TFinderPatternHelpers.CreateFinderPattern(50, 10, 3),
+    TFinderPatternHelpers.CreateFinderPattern(10, 50, 3, 2),
+    TFinderPatternHelpers.CreateFinderPattern(10, 10, 3)];
+  TFinderPatternHelpers.orderBestPatterns(patterns);
+  Assert.IsTrue(patterns[0].AsResultPoint = TResultPoint.Create(10, 50), 'bottom left');
+  Assert.AreEqual(2, patterns[0].count);
+  Assert.IsTrue(patterns[1].AsResultPoint = TResultPoint.Create(10, 10), 'top left');
+  Assert.IsTrue(patterns[2].AsResultPoint = TResultPoint.Create(50, 10), 'top right');
+  Assert.AreEqual<Single>(3, patterns[2].estimatedModuleSize);
 end;
 
 initialization

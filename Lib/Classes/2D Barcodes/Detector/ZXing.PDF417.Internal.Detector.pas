@@ -212,7 +212,7 @@ function FindRowsWithPattern(matrix: TBitMatrix; height, width, startRow,
   startColumn: Integer; const pattern: array of Integer): TVertices4;
 begin
   for var i := 0 to 3 do
-    Result[i] := nil;
+    Result[i] := TResultPoint.None;
   var found := false;
   var startPos, endPos: Integer;
   var minStartRow := startRow;
@@ -274,7 +274,7 @@ begin
   end;
   if (stopRow - startRow < BARCODE_MIN_HEIGHT) then
     for var i := 0 to 3 do
-      Result[i] := nil;
+      Result[i] := TResultPoint.None;
 end;
 
 /// <summary>The vertices of a symbol with its start and (when found) stop
@@ -283,14 +283,14 @@ function FindVertices(matrix: TBitMatrix; startRow, startColumn: Integer)
   : TPDF417Vertices;
 begin
   for var i := 0 to 7 do
-    Result[i] := nil;
+    Result[i] := TResultPoint.None;
   var tmp := FindRowsWithPattern(matrix, matrix.Height, matrix.Width, startRow,
     startColumn, START_PATTERN);
   for var i := 0 to 3 do
     Result[INDEXES_START_PATTERN[i]] := tmp[i];
   // only symbols with a start pattern (twice as fast on images without a
   // symbol)
-  if (Result[4] <> nil) then
+  if Result[4].HasValue then
   begin
     startColumn := Trunc(Result[4].X);
     startRow := Trunc(Result[4].Y);
@@ -310,7 +310,7 @@ begin
   while (row < bitMatrix.Height) do
   begin
     var vertices := FindVertices(bitMatrix, row, column);
-    if (vertices[0] = nil) and (vertices[3] = nil) then
+    if vertices[0].IsNone and vertices[3].IsNone then
     begin
       if not foundBarcodeInRow then
         break;
@@ -320,9 +320,9 @@ begin
       column := 0;
       for var c in coordinates do
       begin
-        if (c[1] <> nil) then
+        if c[1].HasValue then
           row := Max(row, Trunc(c[1].Y));
-        if (c[3] <> nil) then
+        if c[3].HasValue then
           row := Max(row, Trunc(c[3].Y));
       end;
       Inc(row, ROW_STEP);
@@ -334,7 +334,7 @@ begin
       break;
     // without a right row indicator column, search on behind the start
     // pattern of this symbol
-    if (vertices[2] <> nil) then
+    if vertices[2].HasValue then
     begin
       column := Trunc(vertices[2].X);
       row := Trunc(vertices[2].Y);

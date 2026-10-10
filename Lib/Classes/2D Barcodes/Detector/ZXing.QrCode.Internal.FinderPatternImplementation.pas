@@ -29,7 +29,7 @@ function NewFinderPattern(const posX, posY, estimatedModuleSize: Single):IFinder
 
 
 implementation
-uses ZXing.ResultPoint,ZXing.ResultPointImplementation;
+uses ZXing.ResultPoint;
 
 { TFinderPattern }
 
@@ -40,11 +40,14 @@ type
   /// the corners of QR Codes. It also encapsulates a count of similar finder patterns,
   /// as a convenience to the finder's bookkeeping.</p>
   /// </summary>
-  TFinderPattern = class(TResultPoint,IResultPoint,IFinderPattern)
+  TFinderPattern = class(TInterfacedObject, IFinderPattern)
   private
+    Fx, Fy: Single;
     Fcount: Integer;
     FestimatedModuleSize: Single;
 
+    function GetX: Single;
+    function GetY: Single;
     function GetCount:integer;
     procedure SetCount(value:integer);
 
@@ -75,14 +78,17 @@ type
     /// The size of the estimated module.
     /// </value>
     function estimatedModuleSize : Single;
+    function AsResultPoint: TResultPoint;
     property count : Integer read GetCount write SetCount;
   end;
 
 constructor TFinderPattern.Create(const posX, posY,
   estimatedModuleSize: Single; const count: Integer);
 begin
-  inherited Create(posX, posY);
+  inherited Create;
 
+  Fx := posX;
+  Fy := posY;
   FestimatedModuleSize := estimatedModuleSize;
   Fcount := count;
 end;
@@ -91,6 +97,21 @@ constructor TFinderPattern.Create(const posX, posY,
   estimatedModuleSize: Single);
 begin
   Self.Create(posX, posY, estimatedModuleSize, 1);
+end;
+
+function TFinderPattern.GetX: Single;
+begin
+  Result := Fx;
+end;
+
+function TFinderPattern.GetY: Single;
+begin
+  Result := Fy;
+end;
+
+function TFinderPattern.AsResultPoint: TResultPoint;
+begin
+  Result := TResultPoint.Create(Fx, Fy);
 end;
 
 function TFinderPattern.estimatedModuleSize: Single;
@@ -109,7 +130,7 @@ var
 begin
   Result := false;
 
-  if ((Abs(i - y) <= moduleSize) and (Abs(j - x) <= moduleSize)) then
+  if ((Abs(i - Fy) <= moduleSize) and (Abs(j - Fx) <= moduleSize)) then
   begin
     moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
 
@@ -130,8 +151,8 @@ var
   combinedX, combinedY: Single;
 begin
   combinedCount := (Self.count + 1);
-  combinedX := ((Self.count * x) + j) / combinedCount;
-  combinedY := ((Self.count * y) + i) / combinedCount;
+  combinedX := ((Self.count * Fx) + j) / combinedCount;
+  combinedY := ((Self.count * Fy) + i) / combinedCount;
   Result := TFinderPattern.Create(combinedX, combinedY,
     (((Self.count * Self.estimatedModuleSize) + newModuleSize) / combinedCount),
     combinedCount)

@@ -77,7 +77,7 @@ begin
     var minX := MaxDouble;
     var maxX := -MaxDouble;
     for var p in r.ResultPoints do
-      if (p <> nil) then
+      if p.HasValue then
       begin
         minX := Min(minX, p.X);
         maxX := Max(maxX, p.X);
@@ -99,7 +99,7 @@ begin
   var minY := MaxDouble;
   var maxY := -MaxDouble;
   for var p in linear.ResultPoints do
-    if (p <> nil) then
+    if p.HasValue then
     begin
       minX := Min(minX, p.X);
       maxX := Max(maxX, p.X);

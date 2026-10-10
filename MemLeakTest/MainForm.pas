@@ -120,7 +120,7 @@ end;
 
 procedure TForm2.OnScanManagerResultPoint(const point: IResultPoint);
 begin
-  if Assigned(point)
+  if point.HasValue
   then
      ShowMessage(point.ToString);
 end;

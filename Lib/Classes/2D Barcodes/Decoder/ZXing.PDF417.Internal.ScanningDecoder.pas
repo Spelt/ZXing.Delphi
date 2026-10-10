@@ -232,10 +232,10 @@ begin
   Result.Valid := false;
   Result.ImgWidth := 0;
   Result.ImgHeight := 0;
-  Result.TopLeft := nil;
-  Result.BottomLeft := nil;
-  Result.TopRight := nil;
-  Result.BottomRight := nil;
+  Result.TopLeft := TResultPoint.None;
+  Result.BottomLeft := TResultPoint.None;
+  Result.TopRight := TResultPoint.None;
+  Result.BottomRight := TResultPoint.None;
   Result.MinX := 0;
   Result.MaxX := 0;
   Result.MinY := 0;
@@ -244,12 +244,12 @@ end;
 
 procedure TBoundingBox.CalculateMinMaxValues;
 begin
-  if (TopLeft = nil) then
+  if TopLeft.IsNone then
   begin
     TopLeft := TResultPointHelpers.CreateResultPoint(0, TopRight.Y);
     BottomLeft := TResultPointHelpers.CreateResultPoint(0, BottomRight.Y);
   end
-  else if (TopRight = nil) then
+  else if TopRight.IsNone then
   begin
     TopRight := TResultPointHelpers.CreateResultPoint(ImgWidth - 1, TopLeft.Y);
     BottomRight := TResultPointHelpers.CreateResultPoint(ImgWidth - 1,
@@ -266,10 +266,10 @@ class function TBoundingBox.Create(imgWidth, imgHeight: Integer;
   out box: TBoundingBox): Boolean;
 begin
   box := None;
-  if ((topLeft = nil) and (topRight = nil)) or
-    ((bottomLeft = nil) and (bottomRight = nil)) or
-    ((topLeft <> nil) and (bottomLeft = nil)) or
-    ((topRight <> nil) and (bottomRight = nil)) then
+  if (topLeft.IsNone and topRight.IsNone) or
+    (bottomLeft.IsNone and bottomRight.IsNone) or
+    (topLeft.HasValue and bottomLeft.IsNone) or
+    (topRight.HasValue and bottomRight.IsNone) then
     exit(false);
   box.Valid := true;
   box.ImgWidth := imgWidth;
@@ -1325,10 +1325,10 @@ begin
     var rightRI: TDetectionResultColumn := nil;
     for var i := 0 to 1 do
     begin
-      if (imageTopLeft <> nil) then
+      if imageTopLeft.HasValue then
         leftRI := GetRowIndicatorColumn(store, image, boundingBox,
           imageTopLeft, true, minCodewordWidth, maxCodewordWidth);
-      if (imageTopRight <> nil) then
+      if imageTopRight.HasValue then
         rightRI := GetRowIndicatorColumn(store, image, boundingBox,
           imageTopRight, false, minCodewordWidth, maxCodewordWidth);
       if not Merge(leftRI, rightRI, detectionResult) then

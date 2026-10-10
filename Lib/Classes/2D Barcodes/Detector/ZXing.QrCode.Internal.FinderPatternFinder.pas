@@ -658,7 +658,7 @@ end;
 function TFinderPatternFinder.findRowSkip: Integer;
 var
   center: IFinderPattern;
-  firstConfirmedCenter: IResultPoint;
+  firstConfirmedCenter: IFinderPattern;
 begin
   Result := 0;
 
@@ -781,7 +781,7 @@ begin
 
       if Assigned(FresultPointCallback)
       then
-         FresultPointCallBack(point);
+         FresultPointCallBack(point.AsResultPoint);
     end;
     Result := true;
   end;

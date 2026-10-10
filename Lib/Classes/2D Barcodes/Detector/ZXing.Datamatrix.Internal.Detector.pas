@@ -212,9 +212,9 @@ begin
     increment(pointCount, lSideTwo.From);
     increment(pointCount, lSideTwo.To_);
 
-    maybeTopLeft := nil;
-    bottomLeft := nil;
-    maybeBottomRight := nil;
+    maybeTopLeft := TResultPoint.None;
+    bottomLeft := TResultPoint.None;
+    maybeBottomRight := TResultPoint.None;
 
     for entry in pointCount do
     begin
@@ -225,14 +225,14 @@ begin
       else
       begin
         // Otherwise it's either top left or bottom right -- just assign the two arbitrarily now
-        if (maybeTopLeft = nil) then
+        if maybeTopLeft.IsNone then
           maybeTopLeft := point
         else
           maybeBottomRight := point;
       end;
     end;
 
-    if ((maybeTopLeft = nil) or (bottomLeft = nil) or (maybeBottomRight = nil))
+    if (maybeTopLeft.IsNone or bottomLeft.IsNone or maybeBottomRight.IsNone)
     then
       exit;
 
@@ -292,7 +292,7 @@ begin
       // The matrix is rectangular
       correctedTopRight := correctTopRightRectangular(bottomLeft, bottomRight,
         topLeft, topRight, dimensionTop, dimensionRight);
-      if (correctedTopRight = nil) then
+      if correctedTopRight.IsNone then
         correctedTopRight := topRight;
 
       transBetween := transitionsBetween(topLeft, correctedTopRight);
@@ -331,7 +331,7 @@ begin
       // correct top right point to match the white module
       correctedTopRight := correctTopRight(bottomLeft, bottomRight, topLeft,
         topRight, dimension);
-      if (correctedTopRight = nil) then
+      if correctedTopRight.IsNone then
         correctedTopRight := topRight;
 
       // Redetermine the dimension using the corrected top right point
@@ -391,7 +391,7 @@ begin
   norm := distance(topLeft, topRight);
   if (norm = 0) then
   begin
-    Result := nil;
+    Result := TResultPoint.None;
     exit
   end;
   cos := ((topRight.X - topLeft.X) / norm);
@@ -404,7 +404,7 @@ begin
   norm := distance(bottomRight, topRight);
   if (norm = 0) then
   begin
-    Result := nil;
+    Result := TResultPoint.None;
     exit;
   end;
   cos := ((topRight.X - bottomRight.X) / norm);
@@ -420,7 +420,7 @@ begin
       exit;
     end;
 
-    Result := nil;
+    Result := TResultPoint.None;
     exit;
   end;
   if (not isValid(c2)) then
@@ -474,7 +474,7 @@ begin
   norm := distance(topLeft, topRight);
   if (norm = 0) then
   begin
-    Result := nil;
+    Result := TResultPoint.None;
     exit;
   end;
   cos := ((topRight.X - topLeft.X) / norm);
@@ -487,7 +487,7 @@ begin
   norm := distance(bottomRight, topRight);
   if (norm = 0) then
   begin
-    Result := nil;
+    Result := TResultPoint.None;
     exit;
   end;
   cos := ((topRight.X - bottomRight.X) / norm);
@@ -504,7 +504,7 @@ begin
       exit;
     end;
 
-    Result := nil;
+    Result := TResultPoint.None;
     exit;
   end;
 

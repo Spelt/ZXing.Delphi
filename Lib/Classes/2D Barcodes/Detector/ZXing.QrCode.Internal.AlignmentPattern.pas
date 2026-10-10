@@ -24,12 +24,15 @@ uses ZXing.ResultPoint;
 
 type
   /// <summary>
-  ///  As we did for ResultPoint, we use an interfaced object to implement automatic deallocation
-  /// of TAligmnentPattern instances
-  /// the actual implementation of this interface is in unit ZXing.QrCode.Internal.AlignmentPatternImplementation
+  /// An alignment pattern of the QR Code detector of the Java original: its
+  /// center and estimated module size. An interfaced object, so that the
+  /// lists of the finder hold and free them.
+  /// The actual implementation is in unit ZXing.QrCode.Internal.AlignmentPatternImplementation.
   /// </summary>
-  IAlignmentPattern = interface(IResultPoint)
+  IAlignmentPattern = interface
      ['{8C0A5D01-9620-42B6-BE3E-9C40717B5B38}']
+    function GetX: Single;
+    function GetY: Single;
     /// <summary> <p>Determines if this alignment pattern "about equals" an alignment pattern at the stated
     /// position and size -- meaning, it is at nearly the same center with nearly the same size.</p>
     /// </summary>
@@ -44,6 +47,10 @@ type
     /// <param name="newModuleSize">New size of the module.</param>
     /// <returns></returns>
     function combineEstimate(const i, j, newModuleSize: Single): IAlignmentPattern;
+    /// <summary>The center as a result point.</summary>
+    function AsResultPoint: TResultPoint;
+    property X: Single read GetX;
+    property Y: Single read GetY;
   end;
 
 

@@ -25,8 +25,7 @@ interface
 
 uses
   ZXing.QrCode.Internal.AlignmentPattern,
-  ZXing.ResultPoint,
-  ZXing.ResultPointImplementation;
+  ZXing.ResultPoint;
 
 // this is the function that actually creates IAlignmentPattern instances.
 // the actual implementation of the interface is totally hidden to all other units,
@@ -44,10 +43,15 @@ type
   /// all but the simplest QR Codes.</p>
   ///
   /// </summary>
-  TAlignmentPattern = class sealed(TResultPoint,IResultPoint,IAlignmentPattern)
+  TAlignmentPattern = class sealed(TInterfacedObject, IAlignmentPattern)
   private
+    Fx, Fy: Single;
     estimatedModuleSize: Single;
     constructor Create(const posX, posY, estimatedModuleSize: Single);
+
+    function GetX: Single;
+    function GetY: Single;
+    function AsResultPoint: TResultPoint;
 
     /// <summary> <p>Determines if this alignment pattern "about equals" an alignment pattern at the stated
     /// position and size -- meaning, it is at nearly the same center with nearly the same size.</p>
@@ -70,17 +74,34 @@ type
 constructor TAlignmentPattern.Create(const posX, posY,
   estimatedModuleSize: Single);
 begin
-  inherited Create(posX, posY);
+  inherited Create;
 
+  Fx := posX;
+  Fy := posY;
   Self.estimatedModuleSize := estimatedModuleSize;
+end;
+
+function TAlignmentPattern.GetX: Single;
+begin
+  Result := Fx;
+end;
+
+function TAlignmentPattern.GetY: Single;
+begin
+  Result := Fy;
+end;
+
+function TAlignmentPattern.AsResultPoint: TResultPoint;
+begin
+  Result := TResultPoint.Create(Fx, Fy);
 end;
 
 function TAlignmentPattern.aboutEquals(const moduleSize, i, j: Single): Boolean;
 var
   moduleSizeDiff: Single;
 begin
-  if ((Abs(i - Self.y) <= moduleSize) and
-      (Abs(j - Self.x) <= moduleSize)) then
+  if ((Abs(i - Fy) <= moduleSize) and
+      (Abs(j - Fx) <= moduleSize)) then
   begin
     moduleSizeDiff := Abs(moduleSize - self.estimatedModuleSize);
     Result := ((moduleSizeDiff <= 1) or
@@ -95,8 +116,8 @@ var
   combinedY,
   combinedModuleSize : Single;
 begin
-  combinedX := (self.x + j) / 2.0;
-  combinedY := (self.y + i) / 2.0;
+  combinedX := (Fx + j) / 2.0;
+  combinedY := (Fy + i) / 2.0;
   combinedModuleSize := (estimatedModuleSize + newModuleSize) / 2.0;
   Result := TAlignmentPattern.Create(combinedX, combinedY, combinedModuleSize);
 end;
