@@ -39,6 +39,8 @@ type
     procedure GaloisFieldMultiply;
     [Test]
     procedure LuminanceRotateAndCrop;
+    [Test]
+    procedure PDF417ClosestSymbol;
   end;
 
 implementation
@@ -53,7 +55,8 @@ uses
   ZXing.Common.Pattern,
   ZXing.Common.ReedSolomon.GenericGF,
   ZXing.LuminanceSource,
-  ZXing.RGBLuminanceSource;
+  ZXing.RGBLuminanceSource,
+  ZXing.PDF417.Internal.CodewordDecoder;
 
 /// <summary>A fixed pseudo random sequence (the same on every run).</summary>
 function NextRandom(var seed: Cardinal): Cardinal;
@@ -495,6 +498,33 @@ begin
   finally
     source.Free;
   end;
+end;
+
+procedure TCommonTest.PDF417ClosestSymbol;
+const
+  COUNT = 20000;
+var
+  vectors: TArray<TModuleBitCount>;
+begin
+  // the fast scan must give the symbol of the plain scan of all symbols,
+  // also for measurements far from every symbol (noise)
+  var seed: Cardinal := 17;
+  SetLength(vectors, COUNT);
+  for var n := 0 to COUNT - 1 do
+    for var k := 0 to BARS_IN_MODULE - 1 do
+    begin
+      var r := NextRandom(seed);
+      if (n < COUNT div 2) then
+        vectors[n][k] := 1 + Integer(r mod 6) // about 1 to 6 pixels per bar
+      else
+        vectors[n][k] := Integer(r mod 40); // noise, also 0
+    end;
+  for var n := 0 to COUNT - 1 do
+    Assert.AreEqual(GetClosestDecodedValueByScan(vectors[n]),
+      GetClosestDecodedValue(vectors[n]),
+      Format('vector %d: %d %d %d %d %d %d %d %d', [n, vectors[n][0],
+      vectors[n][1], vectors[n][2], vectors[n][3], vectors[n][4], vectors[n][5],
+      vectors[n][6], vectors[n][7]]));
 end;
 
 initialization

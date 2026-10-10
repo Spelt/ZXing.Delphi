@@ -20,6 +20,8 @@
 
 unit ZXing.PDF417.Internal.CodewordDecoder;
 
+{$POINTERMATH ON}
+
 interface
 
 const
@@ -41,6 +43,13 @@ function GetCodeword(symbol: Integer): Integer;
 /// <summary>The symbol for the bar and space widths of a codeword (in
 /// pixels): sampled, or else the closest one.</summary>
 function GetDecodedValue(const moduleBitCount: TModuleBitCount): Integer;
+/// <summary>The symbol whose bar widths are closest to moduleBitCount (for
+/// a codeword whose sampled bits are not a valid symbol).</summary>
+function GetClosestDecodedValue(const moduleBitCount: TModuleBitCount): Integer;
+/// <summary>The same by a scan of all symbols: the reference for the tests.
+/// </summary>
+function GetClosestDecodedValueByScan(const moduleBitCount: TModuleBitCount)
+  : Integer;
 /// <summary>The codeword for the normalized edge to similar edge widths of
 /// a codeword; -1 when there is none.</summary>
 function GetCodewordFromE2E(const ne2ep: TCodewordE2E): Integer;
@@ -545,7 +554,7 @@ begin
   end;
 end;
 
-function GetClosestDecodedValue(const moduleBitCount: TModuleBitCount)
+function GetClosestDecodedValueByScan(const moduleBitCount: TModuleBitCount)
   : Integer;
 begin
   // the symbol whose bar width ratios are closest to the measured ones:
@@ -572,6 +581,42 @@ begin
   end;
 end;
 
+function GetClosestDecodedValue(const moduleBitCount: TModuleBitCount)
+  : Integer;
+begin
+  // GetClosestDecodedValueByScan with the bar widths of the symbols in one
+  // array (8 per symbol) walked with a pointer, the measured widths in
+  // locals and the sum of products written out: the same symbol
+  var sum := 0;
+  for var c in moduleBitCount do
+    Inc(sum, c);
+  var m0 := moduleBitCount[0];
+  var m1 := moduleBitCount[1];
+  var m2 := moduleBitCount[2];
+  var m3 := moduleBitCount[3];
+  var m4 := moduleBitCount[4];
+  var m5 := moduleBitCount[5];
+  var m6 := moduleBitCount[6];
+  var m7 := moduleBitCount[7];
+  var bestScore := MaxInt;
+  var best := -1;
+  var p: PShortInt := @BarSizes[0, 0];
+  for var j := 0 to SYMBOL_COUNT - 1 do
+  begin
+    var dot := p[0] * m0 + p[1] * m1 + p[2] * m2 + p[3] * m3 + p[4] * m4 +
+      p[5] * m5 + p[6] * m6 + p[7] * m7;
+    var score := sum * SumOfSquares[j] - 34 * dot;
+    if (score < bestScore) then
+    begin
+      bestScore := score;
+      best := j;
+    end;
+    Inc(p, BARS_IN_MODULE);
+  end;
+  Result := -1;
+  if (best >= 0) then
+    Result := GetSymbol(best);
+end;
 function GetDecodedValue(const moduleBitCount: TModuleBitCount): Integer;
 begin
   Result := GetDecodedCodewordValue(SampleBitCounts(moduleBitCount));
