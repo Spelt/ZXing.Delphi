@@ -131,14 +131,20 @@ end;
 /// equally wide, with at least as much around them.</summary>
 function IsAztecCenterPattern(const view: TPatternView): Boolean;
 begin
-  // the min and max of all pairs of a black and white run, close together
+  // the min and max of all pairs of a black and white run, close together;
+  // out as soon as they are too far apart (the bound only gets tighter as
+  // the minimum gets smaller, so the result is the same)
   var m := view[0] + view[1];
   var mx := m;
   for var i := 1 to view.Size - 2 do
   begin
     var v := view[i] + view[i + 1];
-    m := Min(m, v);
-    mx := Max(mx, v);
+    if (v < m) then
+      m := v
+    else if (v > mx) then
+      mx := v;
+    if (mx > m * 4 div 3 + 1) then
+      exit(false);
   end;
   Result := (mx <= m * 4 div 3 + 1) and
     (view[-1] >= view[view.Size div 2] - 2) and
