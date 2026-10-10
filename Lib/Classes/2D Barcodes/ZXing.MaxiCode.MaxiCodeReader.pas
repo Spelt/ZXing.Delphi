@@ -619,9 +619,30 @@ end;
 /// <summary>Runs[i .. i + 10]: the 3 dark rings and the light center of a
 /// bullseye (about 1:1:1:1:1:1-3:1:1:1:1:1); the outer ring may touch other
 /// modules.</summary>
+/// <summary>Whether the runs a and b (of the same ring at both sides of
+/// the center) are about the same.</summary>
+function SymmetricRuns(a, b: Integer): Boolean; inline;
+begin
+  Result := Abs(a - b) <= 1 + 0.3 * Max(a, b);
+end;
+
 function IsBullseyePattern(const runs: TPatternRow; i: Integer): Boolean;
 begin
   Result := false;
+  // cheapest and strongest first: a row through concentric rings (circles
+  // or ellipses, any row, not only through the center) is symmetric about
+  // the center run, ring by ring; the outer ring may touch other modules
+  if not SymmetricRuns(runs[i + 4], runs[i + 6]) or
+    not SymmetricRuns(runs[i + 3], runs[i + 7]) or
+    not SymmetricRuns(runs[i + 2], runs[i + 8]) or
+    not SymmetricRuns(runs[i + 1], runs[i + 9]) then
+    exit;
+  // and from the center outwards the runs get narrower (equal on the row
+  // through the center, on other rows the inner rings are cut more obliquely)
+  for var k := 1 to 3 do
+    if (runs[i + k] > 1.5 * runs[i + k + 1] + 1) or
+      (runs[i + 10 - k] > 1.5 * runs[i + 9 - k] + 1) then
+      exit;
   // the size of the rings from the inner 4 at both sides
   var left := runs[i + 1] + runs[i + 2] + runs[i + 3] + runs[i + 4];
   var right := runs[i + 6] + runs[i + 7] + runs[i + 8] + runs[i + 9];
