@@ -111,6 +111,9 @@ type
     /// <summary>The number of words per row.</summary>
     property RowSize: Integer read FrowSize;
     property Matrix[x, y: Integer]: Boolean read getBit write setBit; default;
+    /// <summary>The pixel x, y, which must lie inside the matrix (no check):
+    /// for the detectors, after their own bounds check.</summary>
+    function GetUnchecked(x, y: Integer): Boolean; inline;
     // added for debugging
     function ToString: string; override;
   end;
@@ -137,6 +140,12 @@ end;
 function TBitMatrix.RowWords(y: Integer): PInteger;
 begin
   Result := @Fbits[y * FrowSize];
+end;
+
+function TBitMatrix.GetUnchecked(x, y: Integer): Boolean;
+begin
+  Result := ((Cardinal(Fbits[y * FrowSize + (x shr 5)]) shr (x and $1F))
+    and 1) <> 0;
 end;
 
 procedure TBitMatrix.setBit(x, y: Integer; const value: Boolean);

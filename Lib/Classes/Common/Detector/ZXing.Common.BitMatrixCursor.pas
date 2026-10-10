@@ -192,7 +192,7 @@ begin
   if (q.X < 0) or (q.X >= img.Width) or (q.Y < 0) or (q.Y >= img.Height) then
     Result := CURSOR_INVALID
   else
-    Result := Ord(img[q.X, q.Y]);
+    Result := Ord(img.GetUnchecked(q.X, q.Y));
 end;
 
 function TBitMatrixCursorI.BlackAt(const q: TPoint): Boolean;

@@ -314,8 +314,9 @@ end;
 
 function BlackAtPoint(const image: TBitMatrix; const p: TPointD): Boolean;
 begin
-  // (inside the image, so not negative: floor is trunc)
-  Result := image[FloorInt(p.X), FloorInt(p.Y)];
+  // (inside the image, so not negative: floor is trunc, and no second
+  // bounds check)
+  Result := image.GetUnchecked(FloorInt(p.X), FloorInt(p.Y));
 end;
 
 function RectangleF(width, height: Integer; margin: Double): TQuadrilateralF;
