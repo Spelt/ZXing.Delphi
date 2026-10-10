@@ -29,7 +29,8 @@ uses
   ZXing.ReadResult,
   ZXing.DecodeHintType,
   ZXing.ResultPoint,
-  ZXing.BarcodeFormat;
+  ZXing.BarcodeFormat,
+  ZXing.BinaryBitmap;
 
 type
   /// <summary>
@@ -52,7 +53,66 @@ type
       override;
   end;
 
+
+/// <summary>Whether the Pharmacode r (Position set) looks like one: bars
+/// as tall as the symbol, the rows from the top to the bottom alike (else
+/// noise mostly: Pharmacode has no check).</summary>
+function PlausiblePharmacode(r: TReadResult; image: TBinaryBitmap): Boolean;
+
 implementation
+
+uses
+  System.Math;
+
+function PlausiblePharmacode(r: TReadResult; image: TBinaryBitmap): Boolean;
+const
+  // the rows compared (parts of the height), the places along them
+  PARTS: array [0 .. 4] of Double = (0.2, 0.35, 0.5, 0.65, 0.8);
+  COUNT = 200;
+begin
+  Result := false;
+  var p := r.Position;
+  var luminances := image.Luminances;
+  var width := image.Width;
+  var height := image.Height;
+  if (Length(p) < 4) or (Length(luminances) < width * height) then
+    exit;
+  // the luminances of the rows (from the left edge to the right one)
+  var samples: array [0 .. 4, 0 .. COUNT - 1] of Integer;
+  var darkest := 255;
+  var lightest := 0;
+  for var k := 0 to High(PARTS) do
+  begin
+    var f := PARTS[k];
+    var ax := p[0].X + f * (p[3].X - p[0].X);
+    var ay := p[0].Y + f * (p[3].Y - p[0].Y);
+    var bx := p[1].X + f * (p[2].X - p[1].X);
+    var by := p[1].Y + f * (p[2].Y - p[1].Y);
+    for var j := 0 to COUNT - 1 do
+    begin
+      var x := Trunc(ax + (bx - ax) * (j + 0.5) / COUNT);
+      var y := Trunc(ay + (by - ay) * (j + 0.5) / COUNT);
+      var l := 255;
+      if (x >= 0) and (y >= 0) and (x < width) and (y < height) then
+        l := luminances[y * width + x];
+      samples[k, j] := l;
+      darkest := Min(darkest, l);
+      lightest := Max(lightest, l);
+    end;
+  end;
+  var threshold := (darkest + lightest + 1) div 2;
+  // each row like the middle one
+  var worst := COUNT;
+  for var k := 0 to High(PARTS) do
+  begin
+    var same := 0;
+    for var j := 0 to COUNT - 1 do
+      if ((samples[k, j] < threshold) = (samples[2, j] < threshold)) then
+        Inc(same);
+    worst := Min(worst, same);
+  end;
+  Result := (worst >= 0.9 * COUNT);
+end;
 
 { TPharmacodeReader }
 

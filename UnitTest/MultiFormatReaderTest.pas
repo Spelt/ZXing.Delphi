@@ -150,7 +150,7 @@ type
     Auto: Boolean;
   end;
 const
-  SAMPLES: array [0 .. 10] of TSample = (
+  SAMPLES: array [0 .. 12] of TSample = (
     (FileName: 'zxing-cpp\qrcode-1\1.png'; Format: TBarcodeFormat.QR_CODE;
     Text: ''; Auto: true),
     (FileName: 'EAN13.png'; Format: TBarcodeFormat.EAN_13;
@@ -172,7 +172,11 @@ const
     (FileName: 'postal\JapanPost\JapanPost_01_1000001.png';
     Format: TBarcodeFormat.JAPAN_POST; Text: '1000001'; Auto: false),
     (FileName: 'zxing-net\msi-1\01.png'; Format: TBarcodeFormat.MSI;
-    Text: '123456782'; Auto: false));
+    Text: '123456782'; Auto: false),
+    (FileName: 'pharmacode 123456.gif'; Format: TBarcodeFormat.PHARMA_CODE;
+    Text: '123456'; Auto: false),
+    (FileName: 'pharmacode 123459.png'; Format: TBarcodeFormat.PHARMA_CODE;
+    Text: '123459'; Auto: false));
 begin
   for var s in SAMPLES do
   begin
