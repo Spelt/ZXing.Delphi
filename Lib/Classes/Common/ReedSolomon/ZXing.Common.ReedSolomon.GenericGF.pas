@@ -183,10 +183,11 @@ begin
   Fsize := size;
 
   FGeneratorBase := genBase;
-  self.FexpTable := TArray<Integer>.Create();
-  self.FlogTable := TArray<Integer>.Create();
 
-  SetLength(self.FexpTable, size);
+  // the exp table twice as long (the powers repeat with period size - 1),
+  // so that multiply can index it with the sum of two logs directly, without
+  // a modulo (like zxing-cpp)
+  SetLength(self.FexpTable, 2 * size);
   SetLength(self.FlogTable, size);
 
   x := 1;
@@ -203,6 +204,8 @@ begin
     end;
     inc(i)
   end;
+  for i := size to 2 * size - 1 do
+    self.FexpTable[i] := self.FexpTable[i - (size - 1)];
 
   i := 0;
   while ((i < (size - 1))) do
@@ -328,7 +331,7 @@ begin
   end;
 
   Result := self.FexpTable
-    [((self.FlogTable[a] + self.FlogTable[b]) mod (self.Fsize - 1))];
+    [self.FlogTable[a] + self.FlogTable[b]];
 
 end;
 

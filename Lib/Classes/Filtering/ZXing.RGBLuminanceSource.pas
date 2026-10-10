@@ -292,9 +292,9 @@ function TRGBLuminanceSource.CreateLuminanceSource(
   const newLuminances: TArray<Byte>;
   const width, height: Integer): TLuminanceSource;
 begin
-  // the new luminances belong to the new source, not to this one
-  Result := TRGBLuminanceSource.Create(newLuminances, width, height,
-    TBitmapFormat.Gray8);
+  // the new luminances belong to the new source, not to this one: it takes
+  // them over (no second allocation and copy)
+  Result := TRGBLuminanceSource.CreateAdopting(newLuminances, width, height);
 end;
 
 function TRGBLuminanceSource.DetermineBitmapFormat(

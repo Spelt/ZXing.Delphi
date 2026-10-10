@@ -122,7 +122,7 @@ begin
       x := 0;
       while ((x < max)) do
       begin
-        points[x] := TMathUtils.Asr(x, 1) + 0.5;
+        points[x] := (x shr 1) + 0.5;
         points[(x + 1)] := iValue;
         Inc(x, 2);
       end;
@@ -140,7 +140,9 @@ begin
         x := 0;
         while (x < max) do
         begin
-          bits[(TMathUtils.Asr(x, 1)), y] := image[Floor(points[x]), Floor(points[x + 1])];
+          // (only the black modules set: the new matrix is white)
+          if image[Floor(points[x]), Floor(points[x + 1])] then
+            bits[x shr 1, y] := true;
           Inc(x, 2);
         end
       except

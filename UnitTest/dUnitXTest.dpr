@@ -25,6 +25,7 @@ uses
   QRCodeTest in 'QRCodeTest.pas',
   AztecTest in 'AztecTest.pas',
   ReedSolomonTest in 'ReedSolomonTest.pas',
+  CommonTest in 'CommonTest.pas',
   DataBarTest in 'DataBarTest.pas',
   PDF417Test in 'PDF417Test.pas',
   MicroQRTest in 'MicroQRTest.pas',

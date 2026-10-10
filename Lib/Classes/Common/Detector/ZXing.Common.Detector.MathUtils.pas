@@ -20,7 +20,7 @@ unit ZXing.Common.Detector.MathUtils;
 }
 interface
 
-uses 
+uses
   System.SysUtils;
 
 type
@@ -28,9 +28,25 @@ type
   public
     class function distance(const aX, aY, bX, bY: Double): Single; static;
     class function round(d: Single): Integer; static;
-    // class function Asr(x, y: integer): integer; overload; static;
-    class function Asr(Value: Int64; ShiftBits: integer): Int64; static;
+    /// <summary>The arithmetic shift right of Value (Java's >>), for
+    /// ShiftBits 0 to 31. Inline: this is used in the inner loops.
+    /// </summary>
+    class function Asr(Value: Integer; ShiftBits: Integer): Integer; overload;
+      static; inline;
+    class function Asr(Value: Int64; ShiftBits: Integer): Int64; overload;
+      static;
+    /// <summary>The number of trailing zero bits of w, which must not be 0
+    /// (de Bruijn sequence).</summary>
+    class function TrailingZeros(w: Cardinal): Integer; static; inline;
   end;
+
+const
+  // de Bruijn sequence: the number of trailing zero bits of w is
+  // DE_BRUIJN_BITS[((w and -w) * DE_BRUIJN) shr 27]
+  DE_BRUIJN = $077CB531;
+  DE_BRUIJN_BITS: array [0 .. 31] of Byte = (0, 1, 28, 2, 29, 14, 24, 3, 30,
+    22, 20, 15, 25, 17, 4, 8, 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11,
+    5, 10, 9);
 
 implementation
 
@@ -67,17 +83,29 @@ begin
      Result := Trunc(d + 0.5);
 end;
 
-{
-  class function TMathUtils.Asr(x, y: integer): integer;
-  begin
-  result := x div (1 shl y);
-  end;
-}
-class function TMathUtils.Asr(Value: Int64; ShiftBits: integer): Int64;
+class function TMathUtils.Asr(Value: Integer; ShiftBits: Integer): Integer;
+begin
+  // shr is a logical shift: for a negative value shift its complement,
+  // which is not negative, and complement the result (the sign bits come
+  // back as ones)
+  if (Value >= 0) then
+    Result := Value shr ShiftBits
+  else
+    Result := not ((not Value) shr ShiftBits);
+end;
+
+class function TMathUtils.Asr(Value: Int64; ShiftBits: Integer): Int64;
 begin
   result := Value shr ShiftBits;
   if (Value and $8000000000000000) > 0 then
     result := result or ($FFFFFFFFFFFFFFFF shl (64 - ShiftBits));
+end;
+
+class function TMathUtils.TrailingZeros(w: Cardinal): Integer;
+begin
+{$IFOPT Q+}{$DEFINE MATHUTILS_Q}{$Q-}{$ENDIF}
+  Result := DE_BRUIJN_BITS[((w and (not w + 1)) * DE_BRUIJN) shr 27];
+{$IFDEF MATHUTILS_Q}{$Q+}{$UNDEF MATHUTILS_Q}{$ENDIF}
 end;
 
 end.

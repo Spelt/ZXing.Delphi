@@ -99,11 +99,16 @@ type
     property Space: Integer read FValues[1] write FValues[1];
   end;
 
-/// <summary>The runs of row y of matrix.</summary>
+/// <summary>The runs of row y of matrix (read from its words, without a
+/// copy of the row).</summary>
 procedure GetPatternRow(matrix: TBitMatrix; y: Integer;
   var row: TPatternRow); overload;
 /// <summary>The runs of a row of width pixels.</summary>
 procedure GetPatternRow(const bits: IBitArray; width: Integer;
+  var row: TPatternRow); overload;
+/// <summary>The runs of a row of width pixels given as wordCount words of
+/// 32 bits (bit 0 of the first word is x = 0).</summary>
+procedure GetPatternRow(words: PInteger; wordCount, width: Integer;
   var row: TPatternRow); overload;
 
 /// <summary>
@@ -148,7 +153,8 @@ function FindLeftGuard(const view: TPatternView; minSize: Integer;
 implementation
 
 uses
-  System.Math;
+  System.Math,
+  ZXing.Common.Detector.MathUtils;
 
 { TPatternView }
 
@@ -316,26 +322,17 @@ end;
 
 procedure GetPatternRow(matrix: TBitMatrix; y: Integer; var row: TPatternRow);
 begin
-  GetPatternRow(matrix.getRow(y, nil), matrix.Width, row);
-end;
-
-const
-  // de Bruijn sequence: the number of trailing zero bits of w is
-  // DE_BRUIJN_BITS[((w and -w) * DE_BRUIJN) shr 27]
-  DE_BRUIJN = $077CB531;
-  DE_BRUIJN_BITS: array [0 .. 31] of Byte = (0, 1, 28, 2, 29, 14, 24, 3, 30,
-    22, 20, 15, 25, 17, 4, 8, 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11,
-    5, 10, 9);
-
-/// <summary>The number of trailing zero bits of w (not 0).</summary>
-function TrailingZeros(w: Cardinal): Integer; inline;
-begin
-{$IFOPT Q+}{$DEFINE PATTERN_Q}{$Q-}{$ENDIF}
-  Result := DE_BRUIJN_BITS[((w and (not w + 1)) * DE_BRUIJN) shr 27];
-{$IFDEF PATTERN_Q}{$Q+}{$UNDEF PATTERN_Q}{$ENDIF}
+  GetPatternRow(matrix.RowWords(y), matrix.RowSize, matrix.Width, row);
 end;
 
 procedure GetPatternRow(const bits: IBitArray; width: Integer;
+  var row: TPatternRow);
+begin
+  var words := bits.Bits;
+  GetPatternRow(PInteger(words), Length(words), width, row);
+end;
+
+procedure GetPatternRow(words: PInteger; wordCount, width: Integer;
   var row: TPatternRow);
 begin
   SetLength(row, width + 2);
@@ -346,10 +343,9 @@ begin
     exit;
   end;
 
-  // jump from edge to edge through the words of the bit array: the next
-  // edge is the lowest bit (from x on) that differs from the current color
-  var words := bits.Bits;
-  var lastWord := Min(High(words), (width - 1) shr 5);
+  // jump from edge to edge through the words of the row: the next edge is
+  // the lowest bit (from x on) that differs from the current color
+  var lastWord := Min(wordCount - 1, (width - 1) shr 5);
   var count := 0;
   var x := 0;
   // the first value is the number of white pixels, 0 when starting black
@@ -375,7 +371,7 @@ begin
     end;
     var next := width;
     if (w <> 0) then
-      next := Min((i shl 5) + TrailingZeros(w), width);
+      next := Min((i shl 5) + TMathUtils.TrailingZeros(w), width);
     row[count] := next - x;
     Inc(count);
     x := next;

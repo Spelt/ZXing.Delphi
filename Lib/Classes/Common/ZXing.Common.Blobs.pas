@@ -38,7 +38,6 @@ implementation
 
 uses
   System.Math,
-  ZXing.Common.BitArray,
   ZXing.Common.Pattern;
 
 /// <summary>The blobs (connected dark areas) of the image: from the runs of
@@ -65,12 +64,9 @@ begin
   var previousFirst := 0;
   var previousLast := -1;
   var runs: TPatternRow;
-  var rowBits: IBitArray := nil;
   for var y := 0 to image.Height - 1 do
   begin
-    // (the row bits used again)
-    rowBits := image.getRow(y, rowBits);
-    GetPatternRow(rowBits, image.Width, runs);
+    GetPatternRow(image, y, runs);
     var first := count;
     var x := runs[0];
     var i := 1;

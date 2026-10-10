@@ -71,11 +71,13 @@ type
     function getEnclosingRectangle: TArray<Integer>;
     function GetHashCode: Integer; override;
     function getRow(const y: Integer; row: IBitArray): IBitArray;
+    /// <summary>The words of row y (RowSize of them, bit 0 of the first
+    /// one is x = 0), to read a row without copying it. Read only.
+    /// </summary>
+    function RowWords(y: Integer): PInteger; inline;
     function getTopLeftOnBit: TArray<Integer>;
-    procedure Rotate180;
     procedure setRegion(left: Integer; top: Integer; width: Integer;
       height: Integer);
-    procedure setRow(y: Integer; row: IBitArray);
     /// <summary>Sets the 8 bits x to x + 7 of row y to the lowest 8 bits of
     /// bits (bit 0 for x), much faster than 8 times Matrix[x, y]. Ignored
     /// when they do not lie completely inside the matrix.</summary>
@@ -99,6 +101,8 @@ type
 
     property width: Integer read Fwidth;
     property height: Integer read Fheight;
+    /// <summary>The number of words per row.</summary>
+    property RowSize: Integer read FrowSize;
     property Matrix[x, y: Integer]: Boolean read getBit write setBit; default;
     // added for debugging
     function ToString: string; override;
@@ -113,17 +117,19 @@ uses
 
 function TBitMatrix.getBit(x, y: Integer): Boolean;
 begin
-  // the word of x: an arithmetic shift, also for negative x (as before)
-  var col: Integer;
-  if (x >= 0) then
-    col := x shr 5
-  else
-    col := -((-(x + 1)) shr 5) - 1;
-  var offset: NativeInt := NativeInt(y) * FrowSize + col;
-  if (offset >= 0) and (offset < Length(Fbits)) then
-    Result := ((Cardinal(Fbits[offset]) shr (x and $1F)) and 1) <> 0
+  // false outside the matrix (the unsigned compare also catches negative
+  // x and y); this is the pixel accessor of the detectors, so it is inline
+  if (Cardinal(x) < Cardinal(Fwidth)) and (Cardinal(y) < Cardinal(Fheight))
+  then
+    Result := ((Cardinal(Fbits[y * FrowSize + (x shr 5)]) shr (x and $1F))
+      and 1) <> 0
   else
     Result := False;
+end;
+
+function TBitMatrix.RowWords(y: Integer): PInteger;
+begin
+  Result := @Fbits[y * FrowSize];
 end;
 
 procedure TBitMatrix.setBit(x, y: Integer; const value: Boolean);
@@ -135,7 +141,7 @@ begin
   if (x < 0) or (x >= Fwidth) or (y < 0) or (y >= Fheight) then
     exit;
 
-  offset := y * FrowSize + TMathUtils.Asr(x, 5);
+  offset := y * FrowSize + (x shr 5);
   if (value) then
     Fbits[offset] := Fbits[offset] or (1 shl (x and $1F))
   else
@@ -351,9 +357,9 @@ begin
 
   Self.Fwidth := width;
   Self.Fheight := height;
-  Self.FrowSize := TMathUtils.Asr((width + $1F), 5);
+  Self.FrowSize := (width + $1F) shr 5;
+  // (SetLength clears the new array)
   SetLength(Self.Fbits, Self.FrowSize * height);
-  Self.clear;
 end;
 
 constructor TBitMatrix.Create(const dimension: Integer);
@@ -405,11 +411,12 @@ end;
 
 procedure TBitMatrix.flip(x, y: Integer);
 var
-  offset, s: Integer;
+  offset: Integer;
 begin
-  s := TMathUtils.Asr(x, 5);
-  offset := ((y * FrowSize) + s);
-  Fbits[offset] := (Fbits[offset] xor (1 shl x))
+  // (the shift count masked: a shift by 32 or more is not 'mod 32' on
+  // every CPU)
+  offset := (y * FrowSize) + (x shr 5);
+  Fbits[offset] := (Fbits[offset] xor (1 shl (x and $1F)))
 end;
 
 function TBitMatrix.getBottomRightOnBit: TArray<Integer>;
@@ -576,32 +583,10 @@ begin
   Result := TArray<Integer>.Create(x, y);
 end;
 
-procedure TBitMatrix.Rotate180;
-var
-  i, width, height: Integer;
-  topRow, bottomRow: IBitArray;
-begin
-  width := Self.Fwidth;
-  height := Self.Fheight;
-  topRow := TBitArrayHelpers.CreateBitArray(width);
-  bottomRow := TBitArrayHelpers.CreateBitArray(width);
-  i := 0;
-
-  while ((i < ((height + 1) div 2))) do
-  begin
-    topRow := Self.getRow(i, topRow);
-    bottomRow := Self.getRow(((height - 1) - i), bottomRow);
-    topRow.reverse;
-    bottomRow.reverse;
-    Self.setRow(i, bottomRow);
-    Self.setRow(((height - 1) - i), topRow);
-    Inc(i)
-  end;
-end;
-
 procedure TBitMatrix.setRegion(left, top, width, height: Integer);
 var
-  x, y, offset, right, bottom: Integer;
+  y, offset, right, bottom, firstWord, lastWord, w: Integer;
+  mask: Cardinal;
 begin
   if ((top < 0) or (left < 0)) then
     raise EArgumentException.Create('Left and top must be non-negative');
@@ -615,25 +600,22 @@ begin
   if ((bottom > Self.Fheight) or (right > Self.Fwidth)) then
     raise EArgumentException.Create('The region must fit inside the matrix');
 
-  y := top;
-
-  while ((y < bottom)) do
+  // per word: the bits of the region in it at once
+  firstWord := left shr 5;
+  lastWord := (right - 1) shr 5;
+  for y := top to bottom - 1 do
   begin
     offset := (y * Self.FrowSize);
-    x := left;
-    while ((x < right)) do
+    for w := firstWord to lastWord do
     begin
-      Fbits[(offset + TMathUtils.Asr(x, 5))] :=
-        (Fbits[(offset + TMathUtils.Asr(x, 5))] or (1 shl x));
-      Inc(x)
+      mask := $FFFFFFFF;
+      if (w = firstWord) then
+        mask := mask shl (left and $1F);
+      if (w = lastWord) then
+        mask := mask and (Cardinal($FFFFFFFF) shr (31 - ((right - 1) and $1F)));
+      Fbits[offset + w] := Integer(Cardinal(Fbits[offset + w]) or mask);
     end;
-    Inc(y)
   end;
-end;
-
-procedure TBitMatrix.setRow(y: Integer; row: IBitArray);
-begin
-  Fbits := System.Copy(row.bits, (y * FrowSize), FrowSize);
 end;
 
 function TBitMatrix.ToBitmap(format: TBarcodeFormat; content: string): TBitmap;

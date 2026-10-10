@@ -286,6 +286,7 @@
         <DCCReference Include="QRCodeTest.pas"/>
         <DCCReference Include="AztecTest.pas"/>
         <DCCReference Include="ReedSolomonTest.pas"/>
+        <DCCReference Include="CommonTest.pas"/>
         <DCCReference Include="DataBarTest.pas"/>
         <DCCReference Include="PDF417Test.pas"/>
         <DCCReference Include="MicroQRTest.pas"/>

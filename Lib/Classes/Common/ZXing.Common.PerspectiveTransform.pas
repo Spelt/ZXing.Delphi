@@ -175,16 +175,6 @@ var
   denominator: Single;
 begin
 
-
-  a11 := Self.a11;
-  a12 := Self.a12;
-  a13 := Self.a13;
-  a21 := Self.a21;
-  a22 := Self.a22;
-  a23 := Self.a23;
-  a31 := Self.a31;
-  a32 := Self.a32;
-  a33 := Self.a33;
   i := 0;
   max := Length(points) - 1;
   while ((i < max)) do

@@ -53,8 +53,14 @@ type
   public
     
     // added the "reintroduce" keyword to shut off the "method hides another method with the same name in the base class"
-    constructor Create(const width, height: Integer);  reintroduce; overload; 
+    constructor Create(const width, height: Integer);  reintroduce; overload;
     constructor Create(const luminanceArray: TArray<Byte>; const width, height: Integer);  reintroduce; overload;
+    /// <summary>A source that uses luminanceArray itself (no copy): for an
+    /// array made for this source, like the ones of crop, rotate and the
+    /// downscaled layers. The caller must not change it afterwards.
+    /// </summary>
+    constructor CreateAdopting(const luminanceArray: TArray<Byte>;
+      const width, height: Integer);
 
     function getRow(const y: Integer; row: TArray<Byte>): TArray<Byte>; override;
     function rotateCounterClockwise(): TLuminanceSource; override;
@@ -96,6 +102,15 @@ begin
       Length(luminances)));
 end;
 
+constructor TBaseLuminanceSource.CreateAdopting(const luminanceArray
+  : TArray<Byte>; const width, height: Integer);
+begin
+  if (Length(luminanceArray) < width * height) then
+    raise EArgumentException.Create('The luminance array is too small.');
+  inherited Create(width, height);
+  luminances := luminanceArray;
+end;
+
 /// <summary>
 /// Fetches one row of luminance data from the underlying platform's bitmap. Values range from
 /// 0 (black) to 255 (white). It is preferable for implementations of this method
@@ -111,20 +126,16 @@ end;
 function TBaseLuminanceSource.getRow(const y: Integer; 
   row: TArray<Byte>): TArray<Byte>;
 var
-  i, width: Integer;
+  width: Integer;
 begin
   width := Self.Width;
   if ((row = nil) or (Length(row) < width)) then
-  begin
-    row := nil;
-    row := TArray<Byte>.Create();
     SetLength(row, width);
-  end;
 
-  for i := 0 to Pred(width) do
-    row[i] := luminances[y * width + i];
+  if (width > 0) then
+    Move(luminances[y * width], row[0], width);
 
-  Result := row;  
+  Result := row;
 end;
 
 function TBaseLuminanceSource.Matrix: TArray<Byte>;
@@ -145,23 +156,27 @@ var
   newWidth,
   newHeight : Integer;
   localLuminances : TArray<Byte>;
-  yold, ynew,
-  xold, xnew : Integer;
+  ynew, xnew, xold, oldWidth, offset: Integer;
+  src: PByte;
 begin
-  rotatedLuminances := TArray<Byte>.Create();
   SetLength(rotatedLuminances, (Width * Height));
 
   newWidth := Height;
   newHeight := Width;
+  oldWidth := Width;
   localLuminances := Matrix;
-  for yold := 0 to Pred(Height) do
+  // row by row of the new image (sequential writes): new row ynew is old
+  // column xold = newHeight - 1 - ynew, from the top (old row 0) down
+  for ynew := 0 to Pred(newHeight) do
   begin
-     for xold := 0 to Pred(Width) do
-	 begin
-     ynew := newHeight - xold - 1;
-	   xnew := yold;
-     rotatedLuminances[ynew * newWidth + xnew] := localLuminances[yold * Width + xold];
-   end;
+    xold := newHeight - 1 - ynew;
+    offset := ynew * newWidth;
+    src := @localLuminances[xold];
+    for xnew := 0 to Pred(newWidth) do
+    begin
+      rotatedLuminances[offset + xnew] := src^;
+      Inc(src, oldWidth);
+    end;
   end;
   Result := CreateLuminanceSource(rotatedLuminances, newWidth, newHeight);
 end;
@@ -203,29 +218,25 @@ var
   croppedLuminances,
   oldLuminances : TArray<Byte>;
   oldWidth,
-  oldRightBound,
   oldBottomBound : Integer;
-  yold, ynew,
-  xold, xnew : Integer;
+  yold, ynew : Integer;
 begin
   if ((left + width > Self.Width) or (top + height > Self.Height))
   then
      raise EArgumentException.Create('Crop rectangle does not fit within image data.');
 
-  croppedLuminances := TArray<Byte>.Create();
   SetLength(croppedLuminances, (width * height));
   oldLuminances := Self.Matrix;
   oldWidth := Self.Width;
-  oldRightBound := left + width;
   oldBottomBound := top + height;
   ynew := 0;
-  for yold := top to Pred(oldBottomBound) do
-  begin
-    xnew := 0;
-    for xold := left to Pred(oldRightBound) do
-      croppedLuminances[ynew * width + xnew] := oldLuminances[yold * oldWidth + xold];
-    Inc(ynew);
-  end;
+  if (width > 0) then
+    for yold := top to Pred(oldBottomBound) do
+    begin
+      Move(oldLuminances[yold * oldWidth + left], croppedLuminances[ynew * width],
+        width);
+      Inc(ynew);
+    end;
 
   Result := CreateLuminanceSource(croppedLuminances, width, height);
 end;

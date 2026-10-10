@@ -40,7 +40,6 @@ type
 
      procedure setBulk(i, newBits: Integer);
      procedure setRange(start, ending: Integer);
-     procedure appendBit(bit: Boolean);
      procedure Reverse();
      procedure clear();
 

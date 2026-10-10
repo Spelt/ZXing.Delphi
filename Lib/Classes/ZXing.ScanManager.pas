@@ -305,8 +305,7 @@ begin
       luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
       width := width div DOWNSCALE_FACTOR;
       height := height div DOWNSCALE_FACTOR;
-      var layer := TRGBLuminanceSource.Create(luminances, width, height,
-        TBitmapFormat.Gray8);
+      var layer := TRGBLuminanceSource.CreateAdopting(luminances, width, height);
       var failedBefore := FailedCount;
       try
         Result := DecodeLayer(layer);
@@ -425,8 +424,7 @@ begin
         luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
         width := width div DOWNSCALE_FACTOR;
         height := height div DOWNSCALE_FACTOR;
-        var layer := TRGBLuminanceSource.Create(luminances, width, height,
-          TBitmapFormat.Gray8);
+        var layer := TRGBLuminanceSource.CreateAdopting(luminances, width, height);
         try
           scanLayer(layer, fullWidth / width);
         finally
