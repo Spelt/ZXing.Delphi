@@ -428,7 +428,8 @@ begin
   begin
     var matrix := image.BlackMatrix;
     if vertical then
-      matrix := Transposed(matrix);
+      // (made once, shared with the stacked reader, owned by the image)
+      matrix := image.BlackMatrixTransposed;
     try
       for var symbol in DetectPostalBars(matrix, rowStep, MIN_BARS) do
       begin
@@ -491,8 +492,6 @@ begin
           results.Add(r);
       end;
     finally
-      if vertical then
-        matrix.Free;
     end;
   end;
 end;

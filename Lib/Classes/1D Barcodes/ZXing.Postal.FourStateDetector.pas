@@ -92,11 +92,7 @@ type
 
 function Transposed(image: TBitMatrix): TBitMatrix;
 begin
-  Result := TBitMatrix.Create(image.Height, image.Width);
-  for var y := 0 to image.Height - 1 do
-    for var x := 0 to image.Width - 1 do
-      if image[x, y] then
-        Result[y, x] := true;
+  Result := image.Transposed;
 end;
 
 { TPostalNumber }

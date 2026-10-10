@@ -108,28 +108,34 @@ begin
       break;
     var matrix := image.BlackMatrix;
     if vertical then
-      matrix := Transposed(matrix);
+      // (made once, shared with the postal reader, owned by the image)
+      matrix := image.BlackMatrixTransposed;
     try
       for var reader in readers do
         reader.ClearRows;
-      var runs: TPatternRow;
+      var runs, forward, backward: TPatternRow;
       var y := 0;
       while (y < matrix.Height) do
       begin
+        // the vertical rows (columns) are not cached by the image: once per
+        // row, the reverse in a buffer used again
+        if vertical then
+        begin
+          GetPatternRow(matrix, y, forward);
+          var n := Length(forward);
+          if (Length(backward) < n) then
+            SetLength(backward, n);
+          for var i := 0 to n - 1 do
+            backward[n - 1 - i] := forward[i];
+        end;
         for var reversed in [false, true] do
         begin
           if vertical then
           begin
-            var forward: TPatternRow;
-            GetPatternRow(matrix, y, forward);
-            runs := forward;
             if reversed then
-            begin
-              runs := nil;
-              SetLength(runs, Length(forward));
-              for var i := 0 to High(forward) do
-                runs[High(forward) - i] := forward[i];
-            end;
+              runs := backward
+            else
+              runs := forward;
           end
           else
             runs := image.getPatternRow(y, reversed);
@@ -144,8 +150,6 @@ begin
     finally
       for var reader in readers do
         reader.ClearRows;
-      if vertical then
-        matrix.Free;
     end;
   end;
 end;
