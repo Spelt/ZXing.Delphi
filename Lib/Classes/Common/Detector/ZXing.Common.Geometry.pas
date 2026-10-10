@@ -60,6 +60,12 @@ function BresenhamDirection(const d: TPointD): TPointD; inline;
 function MainDirection(const d: TPointD): TPointD; inline;
 function RightOf(const d: TPointD): TPointD; inline;
 function LeftOf(const d: TPointD): TPointD; inline;
+/// <summary>Floor(x) as an Integer, much faster than Floor or Trunc on
+/// Win32 (those switch the FPU rounding mode twice per call; Round uses
+/// the current mode). Exact for every x in the Integer range.</summary>
+function FloorInt(x: Double): Integer; inline;
+/// <summary>Trunc(x) as an Integer, see FloorInt.</summary>
+function TruncInt(x: Double): Integer; inline;
 /// <summary>Center of the pixel the point is in.</summary>
 function Centered(const p: TPointD): TPointD; inline;
 /// <summary>Pixel coordinate as in C++ (int) conversion: truncated.</summary>
@@ -265,19 +271,38 @@ begin
   Result := PointD(d.Y, -d.X);
 end;
 
+function FloorInt(x: Double): Integer;
+var
+  r: Int64;
+begin
+  // Round is to nearest (even): one down when it rounded up
+  r := Round(x);
+  if (r > x) then
+    Dec(r);
+  Result := r;
+end;
+
+function TruncInt(x: Double): Integer;
+begin
+  if (x >= 0) then
+    Result := FloorInt(x)
+  else
+    Result := -FloorInt(-x);
+end;
+
 function Centered(const p: TPointD): TPointD;
 begin
-  Result := PointD(Floor(p.X) + 0.5, Floor(p.Y) + 0.5);
+  Result := PointD(FloorInt(p.X) + 0.5, FloorInt(p.Y) + 0.5);
 end;
 
 function PixelX(const p: TPointD): Integer;
 begin
-  Result := Trunc(p.X);
+  Result := TruncInt(p.X);
 end;
 
 function PixelY(const p: TPointD): Integer;
 begin
-  Result := Trunc(p.Y);
+  Result := TruncInt(p.Y);
 end;
 
 function IsInImage(const image: TBitMatrix; const p: TPointD): Boolean;
@@ -289,7 +314,8 @@ end;
 
 function BlackAtPoint(const image: TBitMatrix; const p: TPointD): Boolean;
 begin
-  Result := image[Trunc(p.X), Trunc(p.Y)];
+  // (inside the image, so not negative: floor is trunc)
+  Result := image[FloorInt(p.X), FloorInt(p.Y)];
 end;
 
 function RectangleF(width, height: Integer; margin: Double): TQuadrilateralF;

@@ -1134,7 +1134,7 @@ begin
     for var x := 0 to dimension - 1 do
     begin
       var px: Single := left + moduleSize / 2 + x * moduleSize;
-      if IsInImage(image, PointD(px, py)) and image[Trunc(px), Trunc(py)] then
+      if IsInImage(image, PointD(px, py)) and image[FloorInt(px), FloorInt(py)] then
         Result[x, y] := true;
     end;
   end;

@@ -173,8 +173,8 @@ end;
 
 function ToPointI(const p: TPointD): TPoint;
 begin
-  Result.X := Trunc(p.X);
-  Result.Y := Trunc(p.Y);
+  Result.X := TruncInt(p.X);
+  Result.Y := TruncInt(p.Y);
 end;
 
 { TBitMatrixCursorI }

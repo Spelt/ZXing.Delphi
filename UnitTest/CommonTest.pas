@@ -20,6 +20,8 @@ type
     [Test]
     procedure MathUtilsShifts;
     [Test]
+    procedure GeometryFloorInt;
+    [Test]
     procedure BitArrayGetSetNext;
     [Test]
     procedure BitArrayReverse;
@@ -43,6 +45,7 @@ uses
   System.SysUtils,
   System.Math,
   ZXing.Common.Detector.MathUtils,
+  ZXing.Common.Geometry,
   ZXing.Common.BitArray,
   ZXing.Common.BitMatrix,
   ZXing.Common.Pattern,
@@ -75,6 +78,28 @@ begin
   Assert.AreEqual(31, TMathUtils.TrailingZeros($80000000));
   for var i := 0 to 31 do
     Assert.AreEqual<Integer>(i, TMathUtils.TrailingZeros(Cardinal(1) shl i));
+end;
+
+procedure TCommonTest.GeometryFloorInt;
+begin
+  // the fast floor and trunc must be the same as Floor and Trunc: whole
+  // numbers, halves (Round is to even), values just below and above them,
+  // negative values
+  for var i := -2000 to 2000 do
+  begin
+    var x: Double := i / 4;
+    for var delta in [0.0, 1E-9, -1E-9, 0.1, -0.1, 0.49999, 0.5, 0.50001] do
+    begin
+      var v := x + delta;
+      Assert.AreEqual(Floor(v), FloorInt(v), 'floor ' + FloatToStr(v));
+      Assert.AreEqual(Trunc(v), TruncInt(v), 'trunc ' + FloatToStr(v));
+    end;
+  end;
+  var c := Centered(PointD(3.99, -0.5));
+  Assert.AreEqual(3.5, c.X, 1E-12);
+  Assert.AreEqual(-0.5, c.Y, 1E-12);
+  Assert.AreEqual(0, PixelX(PointD(-0.5, 0)));
+  Assert.AreEqual(7, PixelY(PointD(0, 7.999)));
 end;
 
 procedure TCommonTest.BitArrayGetSetNext;

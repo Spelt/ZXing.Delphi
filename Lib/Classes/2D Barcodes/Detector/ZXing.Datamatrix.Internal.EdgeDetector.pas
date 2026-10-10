@@ -1004,6 +1004,11 @@ begin
       t.p := lineL.Back;
     t.UpdateDirectionFromOrigin(tl);
     var up := t.Back;
+    // the left leg has to be at least 9 pixels long (lenL >= 8 below) and
+    // its corner is at most one step (sqrt 2) further: do not trace the
+    // bottom leg when it can not be
+    if (PointDistance(tl, t.p) < 7.5) then
+      continue;
     if not t.TraceCorner(t.Left, bl) then
       continue;
 
