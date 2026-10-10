@@ -34,9 +34,9 @@ uses
 type
   /// <summary>
   /// Decodes the Korea Post barcode: a postal code of 6 digits and a check
-  /// digit (checked, not in the text), each digit 4 narrow bars at their
-  /// own places, the last digit first. Only read when asked for (not in
-  /// Auto).
+  /// digit (checked, behind it in the text, as printed below the bars),
+  /// each digit 4 narrow bars at their own places, the last digit first.
+  /// Only read when asked for (not in Auto).
   /// </summary>
   TKoreaPostReader = class(TOneDReader)
   protected
@@ -51,8 +51,9 @@ type
       override;
   end;
 
-/// <summary>The postal code of the places of the bars (in modules from the
-/// first one, 28 bars); '' when they are none or the check digit is wrong.
+/// <summary>The postal code and the check digit of the places of the bars
+/// (in modules from the first one, 28 bars); '' when they are none or
+/// the check digit is wrong.
 /// </summary>
 function DecodeKoreaPost(const places: TArray<Integer>): string;
 
@@ -62,15 +63,21 @@ const
   DIGIT_COUNT = 7;
   BARS = 4 * DIGIT_COUNT;
   // the places of the 4 bars of the digits in modules and their widths (as
-  // zint: the 1 is 23 modules wide, the others 24)
-  DIGIT_PLACES: array [0 .. 9, 0 .. 3] of Integer = ((0, 4, 8, 20),
+  // zint: the 1 is 23 modules wide, the others 24); the last one the 1 as
+  // other encoders draw it: a module further, its bars on the places of the
+  // other digits (the next digit as far from its bars)
+  PATTERNS = 11;
+  DIGIT_PLACES: array [0 .. PATTERNS - 1, 0 .. 3] of Integer = ((0, 4, 8, 20),
     (7, 11, 15, 19), (4, 12, 16, 20), (0, 12, 16, 20), (4, 8, 16, 20),
     (0, 8, 16, 20), (0, 4, 16, 20), (4, 8, 12, 20), (0, 8, 12, 20),
-    (0, 4, 12, 20));
-  DIGIT_WIDTHS: array [0 .. 9] of Integer = (24, 23, 24, 24, 24, 24, 24,
-    24, 24, 24);
-  // the quiet zones in modules
-  QUIET_ZONE = 6;
+    (0, 4, 12, 20), (8, 12, 16, 20));
+  DIGIT_WIDTHS: array [0 .. PATTERNS - 1] of Integer = (24, 23, 24, 24, 24,
+    24, 24, 24, 24, 24, 24);
+  DIGIT_VALUES: array [0 .. PATTERNS - 1] of Integer = (0, 1, 2, 3, 4, 5, 6,
+    7, 8, 9, 1);
+  // the quiet zones in modules: wider than the narrowest spaces (3; the
+  // widest are 11: the 28 bars and the check digit tell the symbol)
+  QUIET_ZONE = 4;
 
 /// <summary>The digits of the bars from bar on, the digit there starting at
 /// module start (depth first: the places of different digits overlap).
@@ -80,7 +87,7 @@ function DecodeDigits(const places: TArray<Integer>; bar, start: Integer;
 begin
   if (bar = BARS) then
     exit(true);
-  for var d := 0 to 9 do
+  for var d := 0 to PATTERNS - 1 do
   begin
     var fits := true;
     for var j := 0 to 3 do
@@ -91,7 +98,7 @@ begin
       end;
     if fits then
     begin
-      digits := digits + Chr(Ord('0') + d);
+      digits := digits + Chr(Ord('0') + DIGIT_VALUES[d]);
       if DecodeDigits(places, bar + 4, start + DIGIT_WIDTHS[d], digits) then
         exit(true);
       SetLength(digits, Length(digits) - 1);
@@ -108,7 +115,7 @@ begin
   // the first digit: its first bar at the first place
   var digits := '';
   var found := false;
-  for var d := 0 to 9 do
+  for var d := 0 to PATTERNS - 1 do
     if not found and DecodeDigits(places, 0, places[0] - DIGIT_PLACES[d, 0],
       digits) then
       found := true;
@@ -122,7 +129,9 @@ begin
     Inc(sum, Ord(digits[i]) - Ord('0'));
   end;
   if ((10 - sum mod 10) mod 10 <> Ord(digits[DIGIT_COUNT]) - Ord('0')) then
-    Result := '';
+    exit('');
+  // the check digit in the text too (as printed below the bars)
+  Result := Result + digits[DIGIT_COUNT];
 end;
 
 /// <summary>The places of the bars of view (28 bars and the spaces between

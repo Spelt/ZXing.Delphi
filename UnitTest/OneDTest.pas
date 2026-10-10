@@ -936,9 +936,10 @@ end;
 
 /// <summary>The bars and spaces of a Korea Post of a postal code of 6
 /// digits (as zint: the last digit first, then the check digit, plus
-/// checkOffset).</summary>
-function KoreaPostWidths(const code: string; checkOffset: Integer = 0)
-  : TArray<Integer>;
+/// checkOffset; otherOne: the 1 a module further, as other encoders draw
+/// it).</summary>
+function KoreaPostWidths(const code: string; checkOffset: Integer = 0;
+  otherOne: Boolean = false): TArray<Integer>;
 const
   // bar, space, ... of the digits (0: no bar)
   TABLE: array [0 .. 9] of string = ('1313150613', '0713131313', '0417131313',
@@ -957,6 +958,9 @@ begin
   for var d in digits do
   begin
     var entry := TABLE[Ord(d) - Ord('0')];
+    // (the 1 as other encoders draw it: a module further)
+    if otherOne and (d = '1') then
+      entry := '0813131313';
     for var k := 1 to Length(entry) do
       modules := modules + StringOfChar(Chr(Ord('0') + Ord(Odd(k))),
         Ord(entry[k]) - Ord('0'));
@@ -1438,15 +1442,20 @@ end;
 
 procedure TOneDTest.KoreaPost;
 begin
-  // the check digit is checked, not in the text; also upside down
-  for var code in ['123456', '000000', '111111', '999999', '505050'] do
+  // the check digit is checked, behind the postal code in the text (as
+  // printed below the bars); also upside down, and the 1 as other encoders
+  // draw it (a module further)
+  for var code in ['1234569', '0000000', '1111114', '9999996',
+    '5050505'] do
     for var upsideDown in [false, true] do
-    begin
-      var widths := KoreaPostWidths(code);
-      if upsideDown then
-        widths := Reversed(widths);
-      CheckRead(widths, TBarcodeFormat.KOREA_POST, code, 'Korea Post ' + code);
-    end;
+      for var otherOne in [false, true] do
+      begin
+        var widths := KoreaPostWidths(code.Substring(0, 6), 0, otherOne);
+        if upsideDown then
+          widths := Reversed(widths);
+        CheckRead(widths, TBarcodeFormat.KOREA_POST, code, 'Korea Post ' +
+          code);
+      end;
   CheckRead(KoreaPostWidths('123456', 1), TBarcodeFormat.KOREA_POST, '',
     'Korea Post with a wrong check digit');
   // the encode tests of zint (verified against TEC-IT)
@@ -1454,14 +1463,46 @@ begin
     '100010001000000000001000100000000000100010001000000010000000' +
     '100010001000100010001000000000001000000000010001000100010001' +
     '00010001000000000001000000010001000000010001000'),
-    TBarcodeFormat.KOREA_POST, '010230',
+    TBarcodeFormat.KOREA_POST, '0102304',
     'Korea Post 010230 (zint)');
   CheckRead(ModuleWidths(
     '000010001000100000001000100000001000000010001000000010001000' +
     '000010001000100000000000100010001000000010000000100010001000' +
     '100010000000100000001000100010001000000000001000'),
-    TBarcodeFormat.KOREA_POST, '923457',
+    TBarcodeFormat.KOREA_POST, '9234570',
     'Korea Post 923457 (zint)');
+  // images (of other encoders: the 1 a module further; a quiet zone of 4
+  // modules, the frame of the window next to it), also with All; no FIM E
+  // in it (its bars are in a Korea Post: a bar, 3 modules, a bar, 7, a bar,
+  // 3, a bar)
+  for var code in ['4536787', '9234570', '1234569'] do
+  begin
+    var name := 'korea post ' + code;
+    if (code = '4536787') then
+      name := name + '.jpg'
+    else if (code = '9234570') then
+      name := name + '.png'
+    else
+      name := name + '.gif';
+    for var format in [TBarcodeFormat.KOREA_POST, TBarcodeFormat.All] do
+    begin
+      var r := Scan(name, format, nil);
+      try
+        Assert.IsNotNull(r, ' Nil result ' + name);
+        Assert.AreEqual(Ord(TBarcodeFormat.KOREA_POST), Ord(r.BarcodeFormat));
+        Assert.AreEqual(code, r.Text, name);
+      finally
+        r.Free;
+      end;
+    end;
+    var r := Scan(name, TBarcodeFormat.FIM, nil);
+    try
+      if (r <> nil) then
+        Assert.Fail(name + ' read as FIM ' + r.Text);
+    finally
+      r.Free;
+    end;
+  end;
 end;
 
 procedure TOneDTest.FIM;

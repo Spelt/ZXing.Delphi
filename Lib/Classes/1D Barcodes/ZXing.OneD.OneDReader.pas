@@ -360,10 +360,16 @@ begin
   threshold := (darkest + lightest + 1) div 2;
   var line: TArray<Boolean>;
   SetLength(line, count);
+  var darkCount := 0;
   for var j := 0 to count - 1 do
+  begin
     line[j] := Dark(j * stride, 0);
+    Inc(darkCount, Ord(line[j]));
+  end;
   // the rows like the scan line up (-1) and down (+1), each shifted along
-  // the line by up to 2 pixels from the one before (slanted bars)
+  // the line by up to 2 pixels from the one before (slanted bars): its dark
+  // pixels and its light ones each (else a white row is like the line of a
+  // code of thin bars far apart); in the image
   var extent: array [0 .. 1] of Integer;
   var shift: array [0 .. 1] of Integer;
   for var side := 0 to 1 do
@@ -372,16 +378,23 @@ begin
     extent[side] := 0;
     shift[side] := 0;
     var t := 1;
-    while (t <= n) and (t - extent[side] <= GAP) do
+    while (t <= n) and (t - extent[side] <= GAP) and
+      (x0 + sign * t * nx >= 0) and (x0 + sign * t * nx < width) and
+      (y0 + sign * t * ny >= 0) and (y0 + sign * t * ny < height) do
     begin
       // (the shift of the row before first)
       for var s in [0, -1, 1, -2, 2] do
       begin
-        var same := 0;
+        var sameDark := 0;
+        var sameLight := 0;
         for var j := 0 to count - 1 do
           if (Dark(j * stride + shift[side] + s, sign * t) = line[j]) then
-            Inc(same);
-        if (same >= ALIKE * count) then
+            if line[j] then
+              Inc(sameDark)
+            else
+              Inc(sameLight);
+        if (sameDark >= ALIKE * darkCount) and
+          (sameLight >= ALIKE * (count - darkCount)) then
         begin
           extent[side] := t;
           Inc(shift[side], s);

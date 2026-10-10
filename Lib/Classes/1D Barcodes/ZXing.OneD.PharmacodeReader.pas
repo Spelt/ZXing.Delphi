@@ -78,11 +78,23 @@ begin
   var height := image.Height;
   if (Length(p) < 4) or (Length(luminances) < width * height) then
     exit;
-  // the bars at least a tenth of the symbol high (they are some millimeters
-  // high, a part of the width of the symbol; else a row of thin lines)
+  // the number of bars (of the value)
+  var bars := 0;
+  var value := StrToIntDef(r.Text, 0) + 1;
+  while (value > 1) do
+  begin
+    Inc(bars);
+    value := value shr 1;
+  end;
+  if (bars < 1) then
+    exit;
+  // the bars at least a tenth of the symbol high and 1.5 pitches (they are
+  // 6 to 8 mm high, the pitch 1 to 3 mm; else a row of thin lines or a few
+  // dots)
   var symbolWidth := Hypot(p[1].X - p[0].X, p[1].Y - p[0].Y);
   var symbolHeight := Hypot(p[3].X - p[0].X, p[3].Y - p[0].Y);
-  if (symbolHeight < 0.1 * symbolWidth) then
+  if (symbolHeight < 0.1 * symbolWidth) or
+    (symbolHeight < 1.5 * symbolWidth / bars) then
     exit;
   // the luminances of the rows (from the left edge to the right one)
   var samples: array [0 .. 4, 0 .. COUNT - 1] of Integer;
@@ -124,15 +136,6 @@ begin
   // the quiet zones light over the whole height (else the scan line ran
   // out of the bars of a slanted symbol: only a part of it read): from 0.3
   // to 2 pitches beyond each end, the pitch from the number of bars
-  var bars := 0;
-  var value := StrToIntDef(r.Text, 0) + 1;
-  while (value > 1) do
-  begin
-    Inc(bars);
-    value := value shr 1;
-  end;
-  if (bars < 1) then
-    exit(false);
   var dx := (p[1].X - p[0].X) / bars;
   var dy := (p[1].Y - p[0].Y) / bars;
   var dark := 0;

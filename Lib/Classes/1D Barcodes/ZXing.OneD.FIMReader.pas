@@ -58,8 +58,10 @@ uses
   ZXing.Postal.FourStateDetector;
 
 const
-  // the quiet zones in modules (the clear zone of the USPS is much larger)
-  QUIET_ZONE = 6;
+  // the quiet zones in modules (the clear zone of the USPS is much larger;
+  // wider than the widest spaces of Korea Post, 11 modules: the bars of
+  // FIM E are in it)
+  QUIET_ZONE = 12;
   // the bars at least this many times as high as wide (the USPS: 20)
   MIN_HEIGHT = 10;
   // the bars and spaces of FIM A to E (each the same turned 180 degrees)
