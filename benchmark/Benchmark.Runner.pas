@@ -73,6 +73,7 @@ uses
   ZXing.ReadResult,
   ZXing.ResultMetadataType,
   ZXing.DecodeHintType,
+  ZXing.ReaderTimings,
   Benchmark.Images;
 
 procedure TModeStats.Add(const other: TModeStats);
@@ -272,6 +273,7 @@ begin
 
         // one result with Scan, all of them with ScanAll
         results := TObjectList<TReadResult>.Create(true);
+        ReaderTimingsMode := TestModeName(mode);
         sw := TStopwatch.StartNew;
         try
           if UseScanAll then

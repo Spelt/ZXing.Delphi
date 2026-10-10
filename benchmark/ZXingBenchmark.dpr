@@ -17,6 +17,11 @@ program ZXingBenchmark;
   *                     unitTest\ZXingCppSamplesTest.pas
   *   -all              read all symbols of an image (TScanManager.ScanAll)
   *                     instead of one (Scan)
+  *   -readers          after every folder (and in total) the time spent per
+  *                     reader: ms, calls and calls with a result per mode.
+  *                     The binarization of the whole image is listed
+  *                     separately; the black rows of the 1D readers count
+  *                     with the first 1D reader (TStackedReader in Auto)
   *
   * See Benchmark.Runner for the modes and how results are compared.
 }
@@ -30,6 +35,8 @@ uses
   System.Classes,
   System.IOUtils,
   System.Generics.Collections,
+  System.Generics.Defaults,
+  ZXing.ReaderTimings,
   Benchmark.Samples in 'Benchmark.Samples.pas',
   Benchmark.Images in 'Benchmark.Images.pas',
   Benchmark.Runner in 'Benchmark.Runner.pas';
@@ -38,6 +45,8 @@ var
   Verbose: Boolean;
   Modes: TTestModes;
   Thresholds: TStringList;
+  // -readers: the timings of all folders so far, by mode and reader
+  TotalTimings: TDictionary<string, TReaderTiming>;
 
 function StatsColumns(const s: TModeStats): string;
 begin
@@ -88,6 +97,115 @@ begin
       [stats[mode].ReadByDelphi, stats[mode].Wrong, stats[mode].Errors]);
   end;
   Thresholds.Add(line + ')),');
+end;
+
+/// <summary>Writes the time per reader, a row per reader (most expensive
+/// first) and the modes as column groups, with a sum row.</summary>
+procedure WriteReaderTimings(const title: string;
+  const timings: TArray<TReaderTiming>);
+type
+  TRow = record
+    Reader: string;
+    PerMode: array [TTestMode] of TReaderTiming;
+    Ticks: Int64;
+  end;
+var
+  rows: TList<TRow>;
+  row, sum: TRow;
+  mode: TTestMode;
+  line: string;
+  index: Integer;
+begin
+  if (Length(timings) = 0) then
+    exit;
+  rows := TList<TRow>.Create;
+  try
+    for var t in timings do
+    begin
+      index := -1;
+      for var i := 0 to rows.Count - 1 do
+        if (rows[i].Reader = t.Reader) then
+          index := i;
+      if (index < 0) then
+      begin
+        row := Default(TRow);
+        row.Reader := t.Reader;
+        index := rows.Add(row);
+      end;
+      row := rows[index];
+      for mode := Low(TTestMode) to High(TTestMode) do
+        if (t.Mode = TestModeName(mode)) then
+        begin
+          Inc(row.PerMode[mode].Calls, t.Calls);
+          Inc(row.PerMode[mode].Found, t.Found);
+          Inc(row.PerMode[mode].Ticks, t.Ticks);
+        end;
+      Inc(row.Ticks, t.Ticks);
+      rows[index] := row;
+    end;
+    rows.Sort(TComparer<TRow>.Construct(
+      function(const a, b: TRow): Integer
+      begin
+        if (a.Ticks > b.Ticks) then
+          Result := -1
+        else if (a.Ticks < b.Ticks) then
+          Result := 1
+        else
+          Result := CompareText(a.Reader, b.Reader);
+      end));
+
+    Writeln;
+    Writeln('  time per reader, ' + title + ':');
+    line := Format('  %-28s', ['reader']);
+    for mode := Low(TTestMode) to High(TTestMode) do
+      if (mode in Modes) then
+        line := line + ' | ' + Format('%-5s   ms  calls found', [TestModeName(mode)]);
+    Writeln(line);
+    sum := Default(TRow);
+    for row in rows do
+    begin
+      line := Format('  %-28s', [row.Reader]);
+      for mode := Low(TTestMode) to High(TTestMode) do
+        if (mode in Modes) then
+        begin
+          line := line + ' | ' + Format('%10.0f %6d %5d',
+            [row.PerMode[mode].Ms, row.PerMode[mode].Calls,
+            row.PerMode[mode].Found]);
+          Inc(sum.PerMode[mode].Calls, row.PerMode[mode].Calls);
+          Inc(sum.PerMode[mode].Found, row.PerMode[mode].Found);
+          Inc(sum.PerMode[mode].Ticks, row.PerMode[mode].Ticks);
+        end;
+      Writeln(line);
+    end;
+    line := Format('  %-28s', ['all readers']);
+    for mode := Low(TTestMode) to High(TTestMode) do
+      if (mode in Modes) then
+        line := line + ' | ' + Format('%10.0f %6d %5d', [sum.PerMode[mode].Ms,
+          sum.PerMode[mode].Calls, sum.PerMode[mode].Found]);
+    Writeln(line);
+  finally
+    rows.Free;
+  end;
+end;
+
+/// <summary>Adds the timings of a folder to TotalTimings.</summary>
+procedure AddToTotalTimings(const timings: TArray<TReaderTiming>);
+var
+  total: TReaderTiming;
+begin
+  for var t in timings do
+  begin
+    var key := t.Mode + #1 + t.Reader;
+    if not TotalTimings.TryGetValue(key, total) then
+      total := t
+    else
+    begin
+      Inc(total.Calls, t.Calls);
+      Inc(total.Found, t.Found);
+      Inc(total.Ticks, t.Ticks);
+    end;
+    TotalTimings.AddOrSetValue(key, total);
+  end;
 end;
 
 function GroupOf(const folderName: string): string;
@@ -169,6 +287,14 @@ begin
 
         WriteStats(folder.Name, folder.Images.Count, folderStats);
         AddThreshold(folder.Name, folderStats);
+        if ReaderTimingsEnabled then
+        begin
+          var timings := GetReaderTimings;
+          WriteReaderTimings(folder.Name, timings);
+          AddToTotalTimings(timings);
+          ClearReaderTimings;
+          Writeln;
+        end;
         AddStats(total, folderStats);
         Inc(totalImages, folder.Images.Count);
 
@@ -192,6 +318,8 @@ begin
     for group in groups do
       WriteStats(group, groupImages[group], groupStats[group]);
     WriteStats('total', totalImages, total);
+    if ReaderTimingsEnabled then
+      WriteReaderTimings('all folders', TotalTimings.Values.ToArray);
 
     for mode := Low(TTestMode) to High(TTestMode) do
       if (mode in Modes) and (total[mode].Errors > 0) then
@@ -216,6 +344,7 @@ var
 
 begin
   Thresholds := TStringList.Create;
+  TotalTimings := TDictionary<string, TReaderTiming>.Create;
   try
     try
       CoInitializeEx(nil, COINIT_APARTMENTTHREADED);
@@ -237,6 +366,8 @@ begin
           UseReturnErrors := true
         else if SameText(arg, '-all') then
           UseScanAll := true
+        else if SameText(arg, '-readers') then
+          ReaderTimingsEnabled := true
         else if arg.StartsWith('-samples=', true) then
           samplesDir := Copy(arg, 10, MaxInt)
         else if arg.StartsWith('-modes=', true) then
@@ -263,7 +394,7 @@ begin
       if not TDirectory.Exists(samplesDir) then
       begin
         Writeln('Samples folder not found: ' + samplesDir);
-        Writeln('Usage: ZXingBenchmark [folder prefixes] [-v] [-modes=slow,fast,pure] [-samples=<folder>] [-thresholds]');
+        Writeln('Usage: ZXingBenchmark [folder prefixes] [-v] [-modes=slow,fast,pure] [-samples=<folder>] [-thresholds] [-all] [-readers]');
         ExitCode := 1;
         exit;
       end;
@@ -289,6 +420,7 @@ begin
       end;
     end;
   finally
+    TotalTimings.Free;
     Thresholds.Free;
   end;
 end.

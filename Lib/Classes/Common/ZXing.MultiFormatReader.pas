@@ -25,6 +25,7 @@ interface
 uses
   System.SysUtils,
   System.Rtti,
+  System.Diagnostics,
   System.Generics.Collections,
   System.RegularExpressions,
   ZXing.ReadResult,
@@ -33,6 +34,7 @@ uses
   ZXing.BinaryBitmap,
   ZXing.BarcodeFormat,
   ZXing.ResultPoint,
+  ZXing.ReaderTimings,
 
   // 1D Barcodes
   ZXing.OneD.OneDReader,
@@ -101,6 +103,9 @@ type
     FAll: Boolean;
 
     function DecodeInternal(image: TBinaryBitmap): TReadResult;
+    /// <summary>With the reader timings: binarizes the whole image (once)
+    /// and adds its time; returns the time stamp after it.</summary>
+    function TimeBinarizer(image: TBinaryBitmap): Int64;
     procedure DecodeMultipleOfReaders(const image: TBinaryBitmap;
       results: TList<TReadResult>; maxCount: Integer);
     /// <summary>The linear components of the results from first on with
@@ -608,6 +613,11 @@ begin
     if ResultsFull(results, maxCount) then
       exit;
     reader.Reset();
+    // (the time per reader, only when the benchmark asks for it)
+    var start: Int64 := 0;
+    var before := results.Count;
+    if ReaderTimingsEnabled then
+      start := TimeBinarizer(image);
     var multiple: IMultipleReader;
     if Supports(reader, IMultipleReader, multiple) then
       multiple.decodeMultiple(image, FHints, results, maxCount)
@@ -620,7 +630,22 @@ begin
         else
           results.Add(r);
     end;
+    if ReaderTimingsEnabled then
+      AddReaderTiming((reader as TObject).ClassName,
+        TStopwatch.GetTimeStamp - start, results.Count > before);
   end;
+end;
+
+function TMultiFormatReader.TimeBinarizer(image: TBinaryBitmap): Int64;
+begin
+  // the black matrix is made on demand by the first 2D reader: make it
+  // here, so that its time is not counted with that reader
+  var start := TStopwatch.GetTimeStamp;
+  var matrix := image.BlackMatrix;
+  var stop := TStopwatch.GetTimeStamp;
+  if (stop - start > 0) then
+    AddReaderTiming(READER_TIMING_BINARIZER, stop - start, matrix <> nil);
+  Result := stop;
 end;
 
 function TMultiFormatReader.DecodeInternal(image: TBinaryBitmap): TReadResult;
@@ -649,7 +674,14 @@ begin
 
     Reader := readers[i];
     Reader.Reset();
+    // (the time per reader, only when the benchmark asks for it)
+    var start: Int64 := 0;
+    if ReaderTimingsEnabled then
+      start := TimeBinarizer(image);
     result := Reader.decode(image, FHints);
+    if ReaderTimingsEnabled then
+      AddReaderTiming((Reader as TObject).ClassName,
+        TStopwatch.GetTimeStamp - start, result <> nil);
     // the 2D component of a GS1 Composite above (or below) a linear one
     if (result <> nil) and FComposite and IsCompositeLinear(result) then
     begin
