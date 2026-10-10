@@ -666,6 +666,14 @@ begin
       r.Free;
     end;
   end;
+  // an image cut close: the bars up to its edges (not the digits below them)
+  var r := Scan('pharmacode 123456.gif', TBarcodeFormat.PHARMA_CODE, nil);
+  try
+    Assert.IsNotNull(r, ' Nil result ');
+    Assert.AreEqual('123456', r.Text);
+  finally
+    r.Free;
+  end;
 end;
 
 /// <summary>The bars and spaces of modules ('1' bar, '0' space; the spaces

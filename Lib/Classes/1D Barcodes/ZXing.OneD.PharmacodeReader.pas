@@ -79,15 +79,17 @@ const
 begin
   Result := nil;
 
-  // the first bar: with a quiet zone in front, the next space about as wide
-  // as a narrow bar is (1:2) or a wide one (3:2)
+  // the first bar: with a quiet zone in front (or white up to the edge of
+  // the image: an image cut close), the next space about as wide as a
+  // narrow bar is (1:2) or a wide one (3:2)
   next := FindLeftGuard(next, 2, 2 * MIN_BARS - 1,
     function(const window: TPatternView; spaceInPixel: Integer): Boolean
     begin
       var bar := window[0];
       var space := window[1];
       Result := (bar >= 0.25 * space) and (bar <= 2.2 * space) and
-        (spaceInPixel >= QUIET_ZONE * space);
+        ((spaceInPixel >= QUIET_ZONE * space) or
+        (spaceInPixel >= window.PixelsInFront));
     end);
   if not next.IsValid then
     exit;
@@ -101,8 +103,9 @@ begin
     bars := bars + [view[0]];
     if (Length(bars) > MAX_BARS) then
       exit;
-    // the space behind the bar: the end, or the next space
-    if not view.IsValid(2) or (view[1] >= QUIET_ZONE * space) then
+    // the space behind the bar: the end (a quiet zone, or white up to the
+    // edge of the image), or the next space
+    if not view.IsValid(3) or (view[1] >= QUIET_ZONE * space) then
       break;
     if (view[1] < 0.6 * space) or (view[1] > 1.6 * space) then
       exit;
