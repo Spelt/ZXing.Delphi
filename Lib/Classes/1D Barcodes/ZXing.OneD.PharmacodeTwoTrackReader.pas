@@ -199,9 +199,9 @@ end;
 procedure FindSymbols(matrix: TBitMatrix; rowStep: Integer;
   results: TList<TReadResult>; maxCount: Integer; vertical: Boolean);
 const
-  // the quiet zone in pitches (bar and space; the spec requires 6 mm, at
+  // the quiet zone in spaces between the bars (the spec requires 6 mm, at
   // least 3 bar widths)
-  QUIET_ZONE = 1.5;
+  QUIET_ZONE = 2.5;
 begin
   var y := rowStep div 2;
   while (y < matrix.Height) and not ResultsFull(results, maxCount) do
@@ -290,11 +290,21 @@ begin
         var pitch := 2.0 * (merged[first].Right - merged[first].Left + 1);
         if (count > 1) then
           pitch := (merged[last].Left - merged[first].Left) / (count - 1);
-        // quiet zones (or the edge of the image)
-        if ((first > 0) and (merged[first].Left - merged[first - 1].Right <
-          QUIET_ZONE * pitch)) or ((last < High(merged)) and
-          (merged[last + 1].Left - merged[last].Right < QUIET_ZONE * pitch))
-        then
+        // quiet zones, much wider than the spaces between the bars (also at
+        // the edge of the image: the white pixels there count, not the edge,
+        // a symbol can be cut off there)
+        var spaces := merged[last].Right - merged[first].Left + 1;
+        for var k := first to last do
+          Dec(spaces, merged[k].Right - merged[k].Left + 1);
+        var space := spaces / (count - 1);
+        var spaceBefore := merged[first].Left;
+        if (first > 0) then
+          spaceBefore := merged[first].Left - merged[first - 1].Right - 1;
+        var spaceAfter := matrix.Width - 1 - merged[last].Right;
+        if (last < High(merged)) then
+          spaceAfter := merged[last + 1].Left - merged[last].Right - 1;
+        if (spaceBefore < QUIET_ZONE * space) or
+          (spaceAfter < QUIET_ZONE * space) then
           continue;
 
         // the tracks of the bars, and their ends: the ones in the top track
@@ -381,16 +391,43 @@ begin
             middle + 2, bottom) then
             ok := false;
         end;
-        // white above and below the bars (a pitch)
+        // the quiet zones white over the whole height too (else the rows ran
+        // out of a track of a slanted symbol: a bar missed, the bars before
+        // or behind it read as a symbol of their own); half a space from
+        // the bars (a bar can be slanted a little)
+        var zone := Round(QUIET_ZONE * space);
+        if (merged[first].Left - zone < 0) or
+          (merged[last].Right + zone >= matrix.Width) then
+          ok := false;
+        for var d := Max(1, Round(space / 2)) to zone do
+          if ok and (not IsWhiteColumn(matrix, merged[first].Left - d, top,
+            bottom) or not IsWhiteColumn(matrix, merged[last].Right + d, top,
+            bottom)) then
+            ok := false;
+        // white above and below the bars: the rows next to them (2 rows
+        // away: a bar can be slanted a little; not the edge of the image),
+        // a pitch on one side at least (the digits of the value can be
+        // printed close to the other one)
         var margin := Round(pitch);
+        if (top - 2 < 0) or (bottom + 2 >= matrix.Height) then
+          ok := false;
+        var whiteAbove := ok and (top - margin >= 0);
+        var whiteBelow := ok and (bottom + margin < matrix.Height);
         for var x := Max(merged[first].Left - margin, 0) to
           Min(merged[last].Right + margin, matrix.Width - 1) do
-          if ok and (((top - margin >= 0) and not IsWhiteColumn(matrix, x,
-            top - margin, top - 2)) or ((bottom + margin < matrix.Height) and
-            not IsWhiteColumn(matrix, x, bottom + 2, bottom + margin)) or
-            (top - margin < 0) or (bottom + margin >= matrix.Height)) then
+        begin
+          if not ok then
+            break;
+          if matrix[x, top - 2] or matrix[x, bottom + 2] then
             ok := false;
-        if not ok then
+          if whiteAbove and not IsWhiteColumn(matrix, x, top - margin,
+            top - 2) then
+            whiteAbove := false;
+          if whiteBelow and not IsWhiteColumn(matrix, x, bottom + 2,
+            bottom + margin) then
+            whiteBelow := false;
+        end;
+        if not ok or not (whiteAbove or whiteBelow) then
           continue;
         var value := PharmacodeTwoTrackValue(bars);
         if (value < 0) then

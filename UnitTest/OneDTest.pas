@@ -1284,6 +1284,38 @@ begin
   finally
     r.Free;
   end;
+  // an image with the digits of the value just below the bars (once not
+  // read: the bars needed white below them)
+  for var format in [TBarcodeFormat.PHARMA_CODE_TWO_TRACK,
+    TBarcodeFormat.All] do
+  begin
+    r := Scan('pharmacode two-track 123456.png', format, nil);
+    try
+      Assert.IsNotNull(r, ' Nil result ');
+      Assert.AreEqual('123456', r.Text);
+    finally
+      r.Free;
+    end;
+  end;
+  // without a quiet zone: the bars up to the edge of the image (cut close,
+  // or half of the symbol in the image): not read, it can be a part of a
+  // symbol; slanted (once read as a part of it, 93): the whole symbol or
+  // nothing
+  for var name in ['pharmacode two-track 123456.gif',
+    'pharmacode two-track 123456 half.png',
+    'pharmacode two-track 123456 slanted.png'] do
+    for var format in [TBarcodeFormat.PHARMA_CODE_TWO_TRACK,
+      TBarcodeFormat.All] do
+    begin
+      r := Scan(name, format, nil);
+      try
+        if (r <> nil) and ((r.Text <> '123456') or
+          not name.Contains('slanted')) then
+          Assert.Fail(name + ': ' + r.Text);
+      finally
+        r.Free;
+      end;
+    end;
 end;
 
 procedure TOneDTest.ZintVectors;

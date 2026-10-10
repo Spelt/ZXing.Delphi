@@ -78,6 +78,12 @@ begin
   var height := image.Height;
   if (Length(p) < 4) or (Length(luminances) < width * height) then
     exit;
+  // the bars at least a tenth of the symbol high (they are some millimeters
+  // high, a part of the width of the symbol; else a row of thin lines)
+  var symbolWidth := Hypot(p[1].X - p[0].X, p[1].Y - p[0].Y);
+  var symbolHeight := Hypot(p[3].X - p[0].X, p[3].Y - p[0].Y);
+  if (symbolHeight < 0.1 * symbolWidth) then
+    exit;
   // the luminances of the rows (from the left edge to the right one)
   var samples: array [0 .. 4, 0 .. COUNT - 1] of Integer;
   var darkest := 255;
