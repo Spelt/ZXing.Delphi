@@ -521,11 +521,21 @@ begin
 
   // most windows have not enough white space in front: skip those without
   // calling IsPatternWidths (it rejects a window with a space smaller than
-  // minQuietZone * width / patternSum - 1)
-  var quickCheck := (minQuietZone > 0) and not e2e;
+  // minQuietZone * width / patternSum - 1; edge to edge: smaller than
+  // minQuietZone * widthSpace / patternSumSpace, the spaces alone)
+  var quickCheck := (minQuietZone > 0);
   var patternSum := 0;
-  for var p in pattern do
-    Inc(patternSum, p);
+  var patternSumSpace := 0;
+  for var i := 0 to len - 1 do
+  begin
+    Inc(patternSum, pattern[i]);
+    if Odd(i) then
+      Inc(patternSumSpace, pattern[i]);
+  end;
+  if e2e then
+    patternSum := patternSumSpace;
+  if (patternSum = 0) then
+    quickCheck := false;
 
   var row := window.FRow;
   var last := view.FData + view.FSize - minSize;
@@ -537,8 +547,18 @@ begin
     if quickCheck then
     begin
       var width := 0;
-      for var i := d to d + len - 1 do
-        Inc(width, row[i]);
+      if e2e then
+      begin
+        var i := d + 1;
+        while (i < d + len) do
+        begin
+          Inc(width, row[i]);
+          Inc(i, 2);
+        end;
+      end
+      else
+        for var i := d to d + len - 1 do
+          Inc(width, row[i]);
       enoughSpace := (space + 1) * patternSum >= minQuietZone * width;
     end;
     if enoughSpace and (IsPatternWidths(row, d, pattern, e2e, space,
