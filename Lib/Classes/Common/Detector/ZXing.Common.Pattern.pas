@@ -110,6 +110,11 @@ procedure GetPatternRow(const bits: IBitArray; width: Integer;
 /// 32 bits (bit 0 of the first word is x = 0).</summary>
 procedure GetPatternRow(words: PInteger; wordCount, width: Integer;
   var row: TPatternRow); overload;
+/// <summary>GetPatternRow into buffer (grown when needed, not shrunk, so
+/// that it can be used again for the next row): returns the number of runs
+/// in it.</summary>
+function GetPatternRowInto(words: PInteger; wordCount, width: Integer;
+  var buffer: TPatternRow): Integer;
 
 /// <summary>
 /// Whether the first Length(pattern) elements of view match pattern
@@ -335,12 +340,21 @@ end;
 procedure GetPatternRow(words: PInteger; wordCount, width: Integer;
   var row: TPatternRow);
 begin
-  SetLength(row, width + 2);
+  var count := GetPatternRowInto(words, wordCount, width, row);
+  SetLength(row, count);
+end;
+
+function GetPatternRowInto(words: PInteger; wordCount, width: Integer;
+  var buffer: TPatternRow): Integer;
+begin
+  // (only grown: a buffer used for row after row is not reallocated)
+  if (System.Length(buffer) < width + 2) then
+    SetLength(buffer, width + 2);
+  var row := buffer;
   if (width = 0) then
   begin
-    SetLength(row, 1);
     row[0] := 0;
-    exit;
+    exit(1);
   end;
 
   // jump from edge to edge through the words of the row: the next edge is
@@ -383,7 +397,7 @@ begin
     row[count] := 0;
     Inc(count);
   end;
-  SetLength(row, count);
+  Result := count;
 end;
 
 function IsPatternWidths(widths: PInteger; first: Integer;

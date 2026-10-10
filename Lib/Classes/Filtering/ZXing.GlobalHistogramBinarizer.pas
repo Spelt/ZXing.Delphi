@@ -71,7 +71,7 @@ function TGlobalHistogramBinarizer.GetBlackRow(y: Integer; row: IBitArray)
 var
   localLuminances: TArray<Byte>;
   localBuckets: TBuckets;
-  i, w, blackPoint, x, pixel, left, right, center, luminance: Integer;
+  w, blackPoint, x, left, right, center, luminance: Integer;
 begin
   w := width;
   if ((row = nil) or (row.Size < w)) then
@@ -83,11 +83,12 @@ begin
   localLuminances := LuminanceSource.getRow(y, luminances);
   localBuckets := buckets;
 
+  // (pointers through the row: this runs for every row of the image)
+  var pl: PByte := @localLuminances[0];
   for x := 0 to w - 1 do
   begin
-    pixel := localLuminances[x];
-    i := pixel shr LUMINANCE_SHIFT;
-    localBuckets[i] := localBuckets[i] + 1;
+    Inc(localBuckets[pl^ shr LUMINANCE_SHIFT]);
+    Inc(pl);
   end;
 
   if (not estimateBlackPoint(localBuckets, blackPoint)) then
@@ -107,13 +108,17 @@ begin
   begin
     left := localLuminances[0];
     center := localLuminances[1];
+    pl := @localLuminances[2];
 
-    // collect the bits per 32 and write them at once (the row is cleared)
+    // collect the bits per 32 and write them at once into the words of the
+    // row (the row is cleared)
+    var words := row.Bits;
     var word: Integer := 0;
     for x := 1 to w - 2 do
     begin
 
-      right := localLuminances[x + 1];
+      right := pl^;
+      Inc(pl);
       // A simple -1 4 -1 box filter with a weight of 2. A negative value is
       // always below the black point (which is not negative), otherwise
       // shr 1 is the same as the arithmetic shift of before.
@@ -122,14 +127,14 @@ begin
         word := word or (1 shl (x and $1F));
       if ((x and $1F) = $1F) then
       begin
-        row.setBulk(x, word);
+        words[x shr 5] := word;
         word := 0;
       end;
       left := center;
       center := right;
     end;
     if (word <> 0) then
-      row.setBulk(w - 2, word);
+      words[(w - 2) shr 5] := word;
   end;
 
   result := row;

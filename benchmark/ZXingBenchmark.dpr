@@ -20,8 +20,8 @@ program ZXingBenchmark;
   *   -readers          after every folder (and in total) the time spent per
   *                     reader: ms, calls and calls with a result per mode.
   *                     The binarization of the whole image is listed
-  *                     separately; the black rows of the 1D readers count
-  *                     with the first 1D reader (TStackedReader in Auto)
+  *                     separately, as are the black rows and pattern rows
+  *                     the 1D readers share (made by the first that asks)
   *
   * See Benchmark.Runner for the modes and how results are compared.
 }

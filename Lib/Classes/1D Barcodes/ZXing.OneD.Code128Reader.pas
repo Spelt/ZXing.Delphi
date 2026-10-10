@@ -28,6 +28,7 @@ uses
   ZXing.Helpers,
   ZXing.OneD.OneDReader,
   ZXing.Common.Pattern,
+  ZXing.Common.Geometry,
   ZXing.Common.BitArray,
   ZXing.ReadResult,
   ZXing.DecodeHintType,
@@ -138,6 +139,9 @@ var
   // and their edge to edge widths
   CodePatterns6: TOneDPatterns;
   CodeE2E: TArray<TArray<Integer>>;
+  // the code for the 4 edge to edge widths (each 0 to 15, 4 bits each),
+  // -1 for none: the lookup instead of a search through the 107 codes
+  CodeE2ELookup: TArray<SmallInt>;
 
 procedure InitPatterns(const patterns: TOneDPatterns);
 begin
@@ -149,6 +153,17 @@ begin
     SetLength(CodeE2E[k], CHAR_LEN - 2);
     for var i := 0 to CHAR_LEN - 3 do
       CodeE2E[k][i] := patterns[k][i] + patterns[k][i + 1];
+  end;
+  // the first code with the same widths wins, like the search did
+  SetLength(CodeE2ELookup, 1 shl 16);
+  for var i := 0 to High(CodeE2ELookup) do
+    CodeE2ELookup[i] := -1;
+  for var k := 0 to High(CodeE2E) do
+  begin
+    var key := CodeE2E[k][0] or (CodeE2E[k][1] shl 4) or (CodeE2E[k][2] shl 8)
+      or (CodeE2E[k][3] shl 12);
+    if (CodeE2ELookup[key] < 0) then
+      CodeE2ELookup[key] := k;
   end;
 end;
 
@@ -167,13 +182,20 @@ begin
   Result := -1;
   if (moduleSize > 0) then
   begin
-    var e2e: array [0 .. CHAR_LEN - 3] of Integer;
+    // (TruncInt: the fast Trunc, exact; the widths are not negative)
+    var key := 0;
+    var inRange := true;
     for var i := 0 to CHAR_LEN - 3 do
-      e2e[i] := Trunc((view[i] + view[i + 1]) / moduleSize + 0.5);
-    for var k := 0 to High(CodeE2E) do
-      if (CodeE2E[k][0] = e2e[0]) and (CodeE2E[k][1] = e2e[1]) and
-        (CodeE2E[k][2] = e2e[2]) and (CodeE2E[k][3] = e2e[3]) then
-        exit(k);
+    begin
+      var e2e := TruncInt((view[i] + view[i + 1]) / moduleSize + 0.5);
+      // no code has an edge to edge width outside 0 to 15
+      if (e2e < 0) or (e2e > 15) then
+        inRange := false
+      else
+        key := key or (e2e shl (4 * i));
+    end;
+    if inRange and (CodeE2ELookup[key] >= 0) then
+      exit(CodeE2ELookup[key]);
   end;
   // the reference algorithm fails: the one of before (needed for a few
   // samples)

@@ -26,7 +26,9 @@ uses
   ZXing.LuminanceSource,
   ZXing.Common.BitArray,
   ZXing.Common.BitMatrix,
-  ZXing.Common.Pattern;
+  ZXing.Common.Pattern,
+  System.Diagnostics,
+  ZXing.ReaderTimings;
 
 type
   TBinaryBitmap = class
@@ -47,6 +49,7 @@ type
     FPatternRowsReversed: TArray<TPatternRow>;
     FPatternState: TArray<Byte>; // 0 not calculated, 1 nil, 2 cached
     FPatternBits: IBitArray;
+    FPatternScratch: TPatternRow;
     // the image rotated by 90 degrees, made once for all readers that scan
     // it (the 1D readers with TRY_HARDER), owned by this bitmap
     FRotated: TBinaryBitmap;
@@ -165,7 +168,15 @@ begin
   if (FRowState[y] = 0) then
   begin
     // calculate the row once and keep a copy of its words
+    // (the time of the binarization of the rows is booked apart from the
+    // reader that asks for them first, when the benchmark measures)
+    var start: Int64 := 0;
+    if ReaderTimingsEnabled then
+      start := TStopwatch.GetTimeStamp;
     result := Binarizer.getBlackRow(y, row);
+    if ReaderTimingsEnabled then
+      AddNestedReaderTiming(READER_TIMING_BLACK_ROWS,
+        TStopwatch.GetTimeStamp - start);
     if (result = nil) then
       FRowState[y] := 1
     else
@@ -208,8 +219,19 @@ begin
       FPatternState[y] := 1
     else
     begin
-      ZXing.Common.Pattern.GetPatternRow(FPatternBits, Width, FPatternRows[y]);
+      // (the runs in a buffer used for every row, then a copy of the exact
+      // length: no zeroed array of the width and no reallocation per row)
+      var start: Int64 := 0;
+      if ReaderTimingsEnabled then
+        start := TStopwatch.GetTimeStamp;
+      var bits := FPatternBits.Bits;
+      var count := GetPatternRowInto(PInteger(bits), Length(bits), Width,
+        FPatternScratch);
+      FPatternRows[y] := Copy(FPatternScratch, 0, count);
       FPatternState[y] := 2;
+      if ReaderTimingsEnabled then
+        AddNestedReaderTiming(READER_TIMING_PATTERN_ROWS,
+          TStopwatch.GetTimeStamp - start);
     end;
   end;
   if not reversed then
@@ -249,24 +271,53 @@ begin
   result.FOwnsBinarizer := true;
 end;
 
+/// <summary>The time stamp when the benchmark measures, else 0.</summary>
+function TimingStart: Int64;
+begin
+  Result := 0;
+  if ReaderTimingsEnabled then
+    Result := TStopwatch.GetTimeStamp;
+end;
+
+/// <summary>Books the time since start (when the benchmark measures) as the
+/// shared work of turning the image, apart from the reader that asked.
+/// </summary>
+procedure TimingTurned(start: Int64);
+begin
+  if ReaderTimingsEnabled then
+    AddNestedReaderTiming(READER_TIMING_TURNED, TStopwatch.GetTimeStamp - start);
+end;
+
 function TBinaryBitmap.RotatedCounterClockwise: TBinaryBitmap;
 begin
   if (FRotated = nil) then
+  begin
+    var start := TimingStart;
     FRotated := rotateCounterClockwise;
+    TimingTurned(start);
+  end;
   Result := FRotated;
 end;
 
 function TBinaryBitmap.BlackMatrixRotated90: TBitMatrix;
 begin
   if (FMatrixRotated90 = nil) and (BlackMatrix <> nil) then
+  begin
+    var start := TimingStart;
     FMatrixRotated90 := BlackMatrix.Rotated90;
+    TimingTurned(start);
+  end;
   Result := FMatrixRotated90;
 end;
 
 function TBinaryBitmap.BlackMatrixTransposed: TBitMatrix;
 begin
   if (FMatrixTransposed = nil) and (BlackMatrix <> nil) then
+  begin
+    var start := TimingStart;
     FMatrixTransposed := BlackMatrix.Transposed;
+    TimingTurned(start);
+  end;
   Result := FMatrixTransposed;
 end;
 

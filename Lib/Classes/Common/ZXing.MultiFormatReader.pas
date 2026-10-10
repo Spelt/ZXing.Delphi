@@ -615,9 +615,13 @@ begin
     reader.Reset();
     // (the time per reader, only when the benchmark asks for it)
     var start: Int64 := 0;
+    var nested: Int64 := 0;
     var before := results.Count;
     if ReaderTimingsEnabled then
+    begin
       start := TimeBinarizer(image);
+      nested := ReaderTimingsNestedTicks;
+    end;
     var multiple: IMultipleReader;
     if Supports(reader, IMultipleReader, multiple) then
       multiple.decodeMultiple(image, FHints, results, maxCount)
@@ -631,8 +635,10 @@ begin
           results.Add(r);
     end;
     if ReaderTimingsEnabled then
+      // (without the rows binarized during the call, booked on their own)
       AddReaderTiming((reader as TObject).ClassName,
-        TStopwatch.GetTimeStamp - start, results.Count > before);
+        TStopwatch.GetTimeStamp - start - (ReaderTimingsNestedTicks - nested),
+        results.Count > before);
   end;
 end;
 
@@ -676,12 +682,18 @@ begin
     Reader.Reset();
     // (the time per reader, only when the benchmark asks for it)
     var start: Int64 := 0;
+    var nested: Int64 := 0;
     if ReaderTimingsEnabled then
+    begin
       start := TimeBinarizer(image);
+      nested := ReaderTimingsNestedTicks;
+    end;
     result := Reader.decode(image, FHints);
     if ReaderTimingsEnabled then
+      // (without the rows binarized during the call, booked on their own)
       AddReaderTiming((Reader as TObject).ClassName,
-        TStopwatch.GetTimeStamp - start, result <> nil);
+        TStopwatch.GetTimeStamp - start - (ReaderTimingsNestedTicks - nested),
+        result <> nil);
     // the 2D component of a GS1 Composite above (or below) a linear one
     if (result <> nil) and FComposite and IsCompositeLinear(result) then
     begin

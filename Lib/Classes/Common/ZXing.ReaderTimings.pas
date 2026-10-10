@@ -27,16 +27,30 @@ type
 
 const
   /// <summary>The "reader" name of the binarization of the whole image
-  /// (the black matrix the 2D readers share). The black rows of the 1D
-  /// readers are binarized on demand and counted with the first 1D reader
-  /// that asks for them.</summary>
+  /// (the black matrix the 2D readers share).</summary>
   READER_TIMING_BINARIZER = '(binarizer: black matrix)';
+  /// <summary>The black rows and their pattern rows (bars and spaces) the
+  /// 1D readers share: made on demand by the first reader that asks for a
+  /// row, booked apart from that reader (nested timings).</summary>
+  READER_TIMING_BLACK_ROWS = '(binarizer: black rows)';
+  READER_TIMING_PATTERN_ROWS = '(binarizer: pattern rows)';
+  /// <summary>The image rotated by 90 degrees (the luminances) and the
+  /// black matrix rotated or transposed, made once and shared.</summary>
+  READER_TIMING_TURNED = '(binarizer: turned image and matrices)';
 
 var
   ReaderTimingsEnabled: Boolean = false;
   ReaderTimingsMode: string = '';
+  /// <summary>The ticks of all nested timings so far: work done inside a
+  /// reader call that is booked on its own (the rows). The caller of a
+  /// reader subtracts the growth of this during the call from the time of
+  /// the reader.</summary>
+  ReaderTimingsNestedTicks: Int64 = 0;
 
 procedure AddReaderTiming(const reader: string; ticks: Int64; found: Boolean);
+/// <summary>AddReaderTiming for work inside a reader call that is booked
+/// apart from the reader (see ReaderTimingsNestedTicks).</summary>
+procedure AddNestedReaderTiming(const name: string; ticks: Int64);
 /// <summary>The timings added so far, by mode and then by time
 /// (descending).</summary>
 function GetReaderTimings: TArray<TReaderTiming>;
@@ -56,6 +70,12 @@ var
 function TReaderTiming.Ms: Double;
 begin
   Result := Ticks * 1000.0 / TStopwatch.Frequency;
+end;
+
+procedure AddNestedReaderTiming(const name: string; ticks: Int64);
+begin
+  AddReaderTiming(name, ticks, true);
+  Inc(ReaderTimingsNestedTicks, ticks);
 end;
 
 procedure AddReaderTiming(const reader: string; ticks: Int64; found: Boolean);
