@@ -45,6 +45,11 @@ type
     /// bottom.</summary>
     Uncertain: TArray<Integer>;
     FirstX, FirstY, LastX, LastY: Double;
+    /// <summary>Whether there is a quiet zone before the first bar and
+    /// behind the last one: 2 times the spaces between the bars, white
+    /// over the height of the bars (the edge of the image is none: there a
+    /// symbol can be cut off).</summary>
+    QuietZones: Boolean;
     /// <summary>The states reversed (read from the other end) and/or with
     /// ascenders and descenders swapped (seen from the other side): both
     /// for a barcode turned 180 degrees, one of them for a vertical one in
@@ -642,6 +647,62 @@ begin
   end;
 end;
 
+/// <summary>Whether the bars have a quiet zone at both ends: from half a
+/// space to 2 spaces beyond the end bars, white over the height of the
+/// bars at that end (along the slope; outside the image: no quiet zone).
+/// </summary>
+function HasQuietZones(image: TBitMatrix; const bars: TArray<TBar>;
+  barWidth, pitch: Double): Boolean;
+const
+  // (inside a symbol the spaces are all alike: a quiet zone of 2 spaces
+  // tells its end; labels have little more)
+  QUIET_ZONE = 2.0;
+  // the bars at an end whose height counts
+  WINDOW = 8;
+begin
+  Result := false;
+  var maxLength := 0.0;
+  for var bar in bars do
+    maxLength := Max(maxLength, bar.Bottom - bar.Top);
+  var slope := EstimateSlope(bars, 0.15 * maxLength);
+  var space := Max(pitch - barWidth, 1);
+  var n := Length(bars);
+  for var direction in [-1, 1] do
+  begin
+    var first := 0;
+    var last := Min(WINDOW, n) - 1;
+    var bar := bars[0];
+    if (direction > 0) then
+    begin
+      first := Max(n - WINDOW, 0);
+      last := n - 1;
+      bar := bars[n - 1];
+    end;
+    // the top and the bottom of the bars there, minus slope times x
+    var top := MaxDouble;
+    var bottom := -MaxDouble;
+    for var i := first to last do
+    begin
+      top := Min(top, bars[i].Top - slope * bars[i].X);
+      bottom := Max(bottom, bars[i].Bottom - slope * bars[i].X);
+    end;
+    var edge := bar.X + direction * barWidth / 2;
+    var d := space / 2;
+    while (d <= QUIET_ZONE * space) do
+    begin
+      var x := Floor(edge + direction * d);
+      if (x < 0) or (x >= image.Width) then
+        exit;
+      for var y := Max(Floor(top + slope * x), 0) to
+        Min(Ceil(bottom + slope * x) - 1, image.Height - 1) do
+        if image[x, y] then
+          exit;
+      d := d + 1;
+    end;
+  end;
+  Result := true;
+end;
+
 function DetectPostalBars(image: TBitMatrix; rowStep, minBars: Integer)
   : TArray<TPostalBars>;
 const
@@ -678,6 +739,7 @@ begin
           symbol.FirstY := bars[0].Y;
           symbol.LastX := bars[High(bars)].X;
           symbol.LastY := bars[High(bars)].Y;
+          symbol.QuietZones := HasQuietZones(image, bars, barWidth, pitch);
           Result := Result + [symbol];
           var top := MaxDouble;
           var bottom := -MaxDouble;

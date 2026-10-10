@@ -515,6 +515,29 @@ begin
   finally
     r.Free;
   end;
+  // half of the symbol in the image (the bars up to its edge, once read as
+  // 1231FZ): no quiet zone, not read (it has no start or stop)
+  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
+    '\..\..\images\postal\KIX half 1231FZ13XHS.png');
+  try
+    for var format in [TBarcodeFormat.KIX, TBarcodeFormat.All] do
+    begin
+      var scanManager := TScanManager.Create(format, nil);
+      try
+        r := scanManager.Scan(bmp);
+        try
+          if (r <> nil) then
+            Assert.Fail('half read: ' + r.Text);
+        finally
+          r.Free;
+        end;
+      finally
+        scanManager.Free;
+      end;
+    end;
+  finally
+    bmp.Free;
+  end;
 end;
 
 procedure TPostalTest.KIXUpsideDownAndVertical;

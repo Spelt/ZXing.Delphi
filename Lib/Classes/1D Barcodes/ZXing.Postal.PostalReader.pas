@@ -45,10 +45,12 @@ type
     FFormats: TArray<TBarcodeFormat>;
     function Wants(format: TBarcodeFormat): Boolean;
     /// <summary>The text of the bars in one of the formats asked for (only
-    /// the ones with a strong check: strongOnly); '' when none fits.
+    /// the ones with a strong check: strongOnly); '' when none fits. KIX
+    /// only with quiet zones (it has no start or stop: else a part of one,
+    /// cut off by the edge of the image, could be read).
     /// </summary>
-    function DecodeStates(const states: TArray<Byte>; strongOnly: Boolean;
-      out format: TBarcodeFormat): string;
+    function DecodeStates(const states: TArray<Byte>; strongOnly,
+      quietZones: Boolean; out format: TBarcodeFormat): string;
   public
     constructor Create(const formats: array of TBarcodeFormat);
     function decode(const image: TBinaryBitmap): TReadResult; overload;
@@ -330,7 +332,7 @@ begin
 end;
 
 function TPostalReader.DecodeStates(const states: TArray<Byte>;
-  strongOnly: Boolean; out format: TBarcodeFormat): string;
+  strongOnly, quietZones: Boolean; out format: TBarcodeFormat): string;
 begin
   Result := '';
   // RM4SCC first: its bars without start and stop could be a KIX
@@ -375,7 +377,8 @@ begin
     Result := DecodeIMb(states);
     format := TBarcodeFormat.IMB;
   end;
-  if not strongOnly and (Result = '') and Wants(TBarcodeFormat.KIX) then
+  if not strongOnly and quietZones and (Result = '') and
+    Wants(TBarcodeFormat.KIX) then
   begin
     Result := DecodeKIX(states);
     format := TBarcodeFormat.KIX;
@@ -435,11 +438,11 @@ begin
         // as found, or turned 180 degrees; vertical (transposed) mirrored or
         // reversed
         var text := DecodeStates(symbol.Variant(false, vertical), false,
-          format);
+          symbol.QuietZones, format);
         var turned := (text = '');
         if turned then
           text := DecodeStates(symbol.Variant(true, not vertical), false,
-            format);
+            symbol.QuietZones, format);
         // then with the least certain bars changed, for the formats with a
         // strong check
         var flipCount := Min(Length(symbol.Uncertain), MAX_FLIPS);
@@ -448,12 +451,12 @@ begin
         begin
           turned := false;
           text := DecodeStates(symbol.Variant(false, vertical, flips), true,
-            format);
+            false, format);
           if (text = '') then
           begin
             turned := true;
             text := DecodeStates(symbol.Variant(true, not vertical, flips),
-              true, format);
+              true, false, format);
           end;
           Inc(flips);
         end;
