@@ -806,6 +806,23 @@ begin
   finally
     r.Free;
   end;
+  // with All (POSTNET asked for too): each one as its own format
+  r := ReadBars(PostnetBars('12345678', false), TBarcodeFormat.All);
+  try
+    Assert.IsNotNull(r, ' Nil result (All) ');
+    Assert.AreEqual(Ord(TBarcodeFormat.CEPNET), Ord(r.BarcodeFormat));
+    Assert.AreEqual('12345678', r.Text);
+  finally
+    r.Free;
+  end;
+  r := ReadBars(PostnetBars('123456789', false), TBarcodeFormat.All);
+  try
+    Assert.IsNotNull(r, ' Nil result (All, POSTNET) ');
+    Assert.AreEqual(Ord(TBarcodeFormat.POSTNET), Ord(r.BarcodeFormat));
+    Assert.AreEqual('123456789', r.Text);
+  finally
+    r.Free;
+  end;
   // the encode tests of zint (the figures 8 and 10 of the guide of Correios)
   Assert.AreEqual('12345678', DecodePostnet(States(
     'ATTTAATTATATTAATTATTATATATTAATTATTTAATTATTATTAA'), false, true));
@@ -850,13 +867,14 @@ procedure TPostalTest.PostalSamples;
 const
   // the folders of the formats (images named format_number_text, '-' in the
   // text written as '_'): png the barcode alone, jpg on a photo, turned up
-  // to 10 degrees
-  FOLDERS: array [0 .. 7] of string = ('AustraliaPost', 'IMb', 'JapanPost',
-    'KIX', 'Mailmark', 'PLANET', 'POSTNET', 'RM4SCC');
-  FORMATS: array [0 .. 7] of TBarcodeFormat = (TBarcodeFormat.AUSTRALIA_POST,
+  // to 10 degrees; CEPNet: the figure of the guide of Correios (01) and the
+  // example of the barcode guide of Seagull Scientific (02)
+  FOLDERS: array [0 .. 8] of string = ('AustraliaPost', 'IMb', 'JapanPost',
+    'KIX', 'Mailmark', 'PLANET', 'POSTNET', 'RM4SCC', 'CEPNet');
+  FORMATS: array [0 .. 8] of TBarcodeFormat = (TBarcodeFormat.AUSTRALIA_POST,
     TBarcodeFormat.IMB, TBarcodeFormat.JAPAN_POST, TBarcodeFormat.KIX,
     TBarcodeFormat.MAILMARK_4STATE, TBarcodeFormat.PLANET,
-    TBarcodeFormat.POSTNET, TBarcodeFormat.RM4SCC);
+    TBarcodeFormat.POSTNET, TBarcodeFormat.RM4SCC, TBarcodeFormat.CEPNET);
 begin
   for var f := 0 to High(FOLDERS) do
     for var name in TDirectory.GetFiles(ExtractFileDir(ParamStr(0)) +
