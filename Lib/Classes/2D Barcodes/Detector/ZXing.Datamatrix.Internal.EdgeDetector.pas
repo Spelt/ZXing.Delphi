@@ -408,17 +408,22 @@ begin
 
         // found black pixel -> go 'outward' until we hit the b/w border
         var j := 0;
-        while (j < Max(maxStepSize, 3)) and IsInAt(pEdge) do
+        var maxJ := Max(maxStepSize, 3);
+        while (j < maxJ) and IsInAt(pEdge) do
         begin
-          if WhiteAt(pEdge) then
+          // (inside the image: the pixel of pEdge once, for the test, the
+          // centered position and the history)
+          var px := FloorInt(pEdge.X);
+          var py := FloorInt(pEdge.Y);
+          if not img[px, py] then
           begin
-            p := Centered(pEdge);
+            p := PointD(px + 0.5, py + 0.5);
 
             if (history <> nil) and (maxStepSize = 1) then
             begin
-              if (history.Get(PixelX(p), PixelY(p)) = state) then
+              if (history.Get(px, py) = state) then
                 exit(srClosedEnd);
-              history.SetState(PixelX(p), PixelY(p), state);
+              history.SetState(px, py, state);
             end;
 
             exit(srFound);
