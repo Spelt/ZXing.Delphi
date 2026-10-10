@@ -607,7 +607,8 @@ begin
   Result := (x >= 0) and (y >= 0) and (x < image.Width) and
     (y < image.Height);
   if Result then
-    dark := image[Trunc(x), Trunc(y)];
+    // (inside: the fast floor is trunc, and no second bounds check)
+    dark := image.GetUnchecked(FloorInt(x), FloorInt(y));
 end;
 
 function IsDarkAt(image: TBitMatrix; const p: TPointD;
