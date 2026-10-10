@@ -142,6 +142,11 @@ type
     /// skips EAN-13 symbols that are not a UPC-A (not starting with 0),
     /// like zxing-cpp, so that the search goes on.</summary>
     UPCAOnly: Boolean;
+    /// <summary>Readers of the other formats of the family (EAN-8, UPC-E)
+    /// that decodePattern tries at every start guard after the own format:
+    /// one scan of the rows for the whole family instead of one per reader.
+    /// Owned by this reader.</summary>
+    AlsoReaders: TArray<TUPCEANReader>;
     /// <summary>The decoder of zxing-cpp: from every start guard with a
     /// quiet zone of 6 modules, stricter checks of the module size of
     /// EAN-8 and UPC-E. Public for the UPC-A reader, that uses the one of
@@ -149,8 +154,17 @@ type
     function decodePattern(rowNumber: Integer; var next: TPatternView;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       override;
+    // (public for the UPC-A reader)
+    function DecodeRowLike(const r: TReadResult; rowNumber: Integer;
+      const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+      : TReadResult; override;
   protected
     function HasPatternDecoder: Boolean; override;
+    /// <summary>The symbol of this reader's format that starts with guard
+    /// (next: the guard, on success the end of the symbol).</summary>
+    function DecodeAtGuard(rowNumber: Integer; const guard: TPatternView;
+      var next: TPatternView; const hints: TDictionary<TDecodeHintType, TObject>)
+      : TReadResult;
 
     /// <summary>
     /// Decodes the end.
@@ -252,6 +266,8 @@ end;
 
 destructor TUPCEANReader.Destroy;
 begin
+  for var r in AlsoReaders do
+    r.Free;
   eanManSupport.Free;
   extensionReader.Free;
 
@@ -832,7 +848,33 @@ begin
   if not next.IsValid then
     exit;
 
+  // the own format, then the other formats of the family at the same guard
   var guard := next;
+  Result := DecodeAtGuard(rowNumber, guard, next, hints);
+  var i := 0;
+  while (Result = nil) and (i < Length(AlsoReaders)) do
+  begin
+    Result := AlsoReaders[i].DecodeAtGuard(rowNumber, guard, next, hints);
+    Inc(i);
+  end;
+end;
+
+function TUPCEANReader.DecodeRowLike(const r: TReadResult; rowNumber: Integer;
+  const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+begin
+  // the reader of the format of r (UPC-A is read by an EAN-13 reader)
+  for var other in AlsoReaders do
+    if (other.BarcodeFormat = r.BarcodeFormat) then
+      exit(other.decodeRow(rowNumber, row, hints));
+  Result := decodeRow(rowNumber, row, hints);
+end;
+
+function TUPCEANReader.DecodeAtGuard(rowNumber: Integer;
+  const guard: TPatternView; var next: TPatternView;
+  const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
+begin
+  Result := nil;
   var txt: string;
   var ending: TPatternView;
   var ok := false;

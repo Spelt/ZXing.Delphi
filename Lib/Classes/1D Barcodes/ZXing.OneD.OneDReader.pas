@@ -173,6 +173,12 @@ type
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
       virtual;
     function HasPatternDecoder: Boolean; virtual;
+    /// <summary>decodeRow to confirm the result r (read by decodePattern on
+    /// the same row): a reader that decodes several formats picks the one of
+    /// r.</summary>
+    function DecodeRowLike(const r: TReadResult; rowNumber: Integer;
+      const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+      : TReadResult; virtual;
     /// <summary>For readers that collect parts of a symbol over several
     /// rows (zxing-cpp's DecodingState, the DataBar readers): starts a new
     /// scan of an image (or of the image rotated).</summary>
@@ -885,6 +891,13 @@ begin
   Result := false;
 end;
 
+function TOneDReader.DecodeRowLike(const r: TReadResult; rowNumber: Integer;
+  const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+begin
+  Result := decodeRow(rowNumber, row, hints);
+end;
+
 procedure TOneDReader.ResetDecodingState;
 begin
   // no state
@@ -908,7 +921,7 @@ begin
   var other: TReadResult := nil;
   try
     try
-      other := decodeRow(rowNumber, FCheckRow, hints);
+      other := DecodeRowLike(r, rowNumber, FCheckRow, hints);
     except
       other := nil;
     end;

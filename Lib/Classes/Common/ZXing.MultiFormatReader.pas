@@ -458,11 +458,12 @@ begin
     // the UPC-A reader also returns the EAN-13 codes (its EAN-13 reader
     // finds them anyway), so no separate EAN-13 reader that would do the
     // same work again
+    // (with UPC-E and EAN-8 at the same start guards: one scan of the rows
+    // for the whole family)
     var upca := TUPCAReader.Create();
     upca.AlsoEAN13 := true;
+    upca.AddFamily;
     readers.Add(upca);
-    readers.Add(TUPCEReader.Create());
-    readers.Add(TEAN8Reader.Create());
     readers.Add(TCode93Reader.Create());
     // (All: Leitcode and Identcode before the ITF codes they are)
     if all then

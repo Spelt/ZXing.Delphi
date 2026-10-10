@@ -67,6 +67,12 @@ type
     /// <summary>Whether also EAN-13 codes that are not a UPC-A are returned
     /// (as EAN-13) by decodePattern; decodeRow always does.</summary>
     property AlsoEAN13: Boolean write SetAlsoEAN13;
+    /// <summary>Also EAN-8 and UPC-E, at the start guards this reader finds
+    /// anyway (for Auto: one reader for the whole UPC/EAN family).</summary>
+    procedure AddFamily;
+    function DecodeRowLike(const r: TReadResult; rowNumber: Integer;
+      const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+      : TReadResult; override;
     // (public like in TUPCEANReader)
     function decodePattern(rowNumber: Integer; var next: TPatternView;
       const hints: TDictionary<TDecodeHintType, TObject>): TReadResult;
@@ -74,6 +80,10 @@ type
   end;
 
 implementation
+
+uses
+  ZXing.OneD.UPCEReader,
+  ZXing.OneD.EAN8Reader;
 
 { TUPCAReader }
 
@@ -133,6 +143,21 @@ begin
   EAN13Reader.UPCAOnly := not value;
 end;
 
+procedure TUPCAReader.AddFamily;
+begin
+  for var r in EAN13Reader.AlsoReaders do
+    r.Free;
+  EAN13Reader.AlsoReaders := [TUPCEReader.Create, TEAN8Reader.Create];
+end;
+
+function TUPCAReader.DecodeRowLike(const r: TReadResult; rowNumber: Integer;
+  const row: IBitArray; const hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+begin
+  Result := maybeReturnResult(EAN13Reader.DecodeRowLike(r, rowNumber, row,
+    hints));
+end;
+
 function TUPCAReader.BarcodeFormat: TBarcodeFormat;
 begin
   result := TBarcodeFormat.UPC_A;
@@ -144,7 +169,9 @@ begin
     Exit(nil);
 
 {$ZEROBASEDSTRINGS ON}
-  if (copy(pResult.text, 0, 1) = '0') then
+  // (only an EAN-13 can be a UPC-A, not the other formats of the family)
+  if (pResult.BarcodeFormat = TBarcodeFormat.EAN_13) and
+    (copy(pResult.text, 0, 1) = '0') then
   begin
     pResult.text := copy(pResult.text, 2, length(pResult.text));
     pResult.BarcodeFormat := TBarcodeFormat.UPC_A;
