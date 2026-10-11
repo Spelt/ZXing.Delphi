@@ -190,7 +190,7 @@ function TBitMatrix.closed(radius: Integer): TBitMatrix;
 var
   n: Integer;
   padMask: Cardinal; // the bits of the last word of a row beyond the width
-  src, line, shifted: TArray<Cardinal>;
+  src, line, shifted, res: TArray<Cardinal>;
 
   // shifted[i] := line shifted by k bits towards higher x (up) or lower x,
   // with fill for the bits coming from outside the row
@@ -228,7 +228,8 @@ var
       fill := $FFFFFFFF;
       line[n - 1] := line[n - 1] or padMask;
     end;
-    var res := Copy(line);
+    for var i := 0 to n - 1 do
+      res[i] := line[i];
     for var k := 1 to radius do
       for var up := false to true do
       begin
@@ -283,6 +284,7 @@ begin
     src[i] := Cardinal(Fbits[i]);
   SetLength(line, n);
   SetLength(shifted, n);
+  SetLength(res, n);
 
   // grow: horizontally then vertically (a square is separable)
   for var y := 0 to Fheight - 1 do

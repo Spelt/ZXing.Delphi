@@ -382,50 +382,93 @@ end;
 
 function TEdgeTracer.TraceStep(dEdge: TPointD; maxStepSize: Integer;
   goodDirection: Boolean): TStepResult;
+var
+  maxBreadth, breadth, stepNr, i, offset, j, maxJ, px, py, cPix, cLimit,
+    vLimit: Integer;
+  pEdge, base: TPointD;
+  alongX, cIn, black: Boolean;
+  e, cBase, vBase, v: Double;
 begin
   dEdge := MainDirection(dEdge);
-  var maxBreadth: Integer;
   if (maxStepSize = 1) then
     maxBreadth := 2
   else if goodDirection then
     maxBreadth := 1
   else
     maxBreadth := 3;
-
-  for var breadth := 1 to maxBreadth do
-    for var stepNr := 1 to maxStepSize do
-      for var i := 0 to 2 * (stepNr div 4 + 1) * breadth do
+  maxJ := Max(maxStepSize, 3);
+  // The probes of one step lie on a line along dEdge, which has one
+  // component 0: the other coordinate is the same for all of them, so its
+  // bounds test and pixel are computed once per step instead of once per
+  // probe (this is the innermost loop of the detector). The probe is
+  // pEdge + dEdge with pEdge = p + stepNr * d + offset * dEdge, evaluated in
+  // the same order of operations, so the pixels are exactly those of the
+  // vector expression.
+  alongX := (dEdge.Y = 0);
+  if alongX then
+  begin
+    e := dEdge.X;
+    cLimit := img.Height;
+    vLimit := img.Width;
+  end
+  else
+  begin
+    e := dEdge.Y;
+    cLimit := img.Width;
+    vLimit := img.Height;
+  end;
+  for breadth := 1 to maxBreadth do
+    for stepNr := 1 to maxStepSize do
+    begin
+      base := p + stepNr * d;
+      if alongX then
       begin
-        var offset: Integer;
+        cBase := base.Y;
+        vBase := base.X;
+      end
+      else
+      begin
+        cBase := base.X;
+        vBase := base.Y;
+      end;
+      // (also false for NaN, like IsInImage)
+      cIn := (cBase >= 0) and (cBase < cLimit);
+      cPix := 0;
+      if cIn then
+        cPix := FloorInt(cBase);
+      for i := 0 to 2 * (stepNr div 4 + 1) * breadth do
+      begin
         if Odd(i) then
           offset := (i + 1) div 2
         else
           offset := -(i div 2);
-        var pEdge := p + stepNr * d + offset * dEdge;
-
-        if not BlackAt(pEdge + dEdge) then
+        v := (vBase + offset * e) + e;
+        black := cIn and (v >= 0) and (v < vLimit);
+        if black then
+          if alongX then
+            black := img.GetUnchecked(FloorInt(v), cPix)
+          else
+            black := img.GetUnchecked(cPix, FloorInt(v));
+        if not black then
           continue;
-
+        pEdge := base + offset * dEdge;
         // found black pixel -> go 'outward' until we hit the b/w border
-        var j := 0;
-        var maxJ := Max(maxStepSize, 3);
+        j := 0;
         while (j < maxJ) and IsInAt(pEdge) do
         begin
           // (inside the image: the pixel of pEdge once, for the test, the
           // centered position and the history)
-          var px := FloorInt(pEdge.X);
-          var py := FloorInt(pEdge.Y);
+          px := FloorInt(pEdge.X);
+          py := FloorInt(pEdge.Y);
           if not img.GetUnchecked(px, py) then
           begin
             p := PointD(px + 0.5, py + 0.5);
-
             if (history <> nil) and (maxStepSize = 1) then
             begin
               if (history.Get(px, py) = state) then
                 exit(srClosedEnd);
               history.SetState(px, py, state);
             end;
-
             exit(srFound);
           end;
           pEdge := pEdge - dEdge;
@@ -436,6 +479,7 @@ begin
         // no valid b/w border found within reasonable range
         exit(srClosedEnd);
       end;
+    end;
   Result := srOpenEnd;
 end;
 
