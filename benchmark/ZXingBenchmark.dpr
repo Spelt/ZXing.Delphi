@@ -18,6 +18,7 @@ program ZXingBenchmark;
   *   -all              read all symbols of an image (TScanManager.ScanAll)
   *                     instead of one (Scan)
   *   -readers          after every folder (and in total) the time spent per
+  *   -sequential       no tasks: ParallelDecoding off (default on with more than one processor)
   *                     reader: ms, calls and calls with a result per mode.
   *                     The binarization of the whole image is listed
   *                     separately, as are the black rows and pattern rows
@@ -29,6 +30,7 @@ program ZXingBenchmark;
 {$APPTYPE CONSOLE}
 
 uses
+  ZXing.Parallel,
   Winapi.Windows,
   Winapi.ActiveX,
   System.SysUtils,
@@ -368,6 +370,8 @@ begin
           UseScanAll := true
         else if SameText(arg, '-readers') then
           ReaderTimingsEnabled := true
+        else if SameText(arg, '-sequential') then
+          ParallelDecoding := false
         else if arg.StartsWith('-samples=', true) then
           samplesDir := Copy(arg, 10, MaxInt)
         else if arg.StartsWith('-modes=', true) then

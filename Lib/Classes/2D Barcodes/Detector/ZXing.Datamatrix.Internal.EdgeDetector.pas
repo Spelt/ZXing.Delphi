@@ -71,6 +71,10 @@ implementation
 uses
   System.Types,
   System.Math,
+  System.Classes,
+  System.Threading,
+  ZXing.Parallel,
+  System.SyncObjs,
   System.Generics.Collections,
   ZXing.Common.LocalGrid,
   ZXing.Datamatrix.Internal.Version;
@@ -81,9 +85,13 @@ type
   THistory = class
   private
     FWidth: Integer;
+    FSize: Integer; // width * height, the part of FStates in use
     FStates: TArray<ShortInt>;
   public
     constructor Create(width, height: Integer);
+    /// <summary>For an image of this size, cleared; the states are kept
+    /// when they are large enough (a history of the pool).</summary>
+    procedure Prepare(width, height: Integer);
     procedure Clear;
     function Get(x, y: Integer): ShortInt; inline;
     procedure SetState(x, y: Integer; state: ShortInt); inline;
@@ -145,14 +153,66 @@ type
 constructor THistory.Create(width, height: Integer);
 begin
   inherited Create;
+  Prepare(width, height);
+end;
+
+procedure THistory.Prepare(width, height: Integer);
+begin
   FWidth := width;
-  SetLength(FStates, width * height);
+  FSize := width * height;
+  // (SetLength keeps the old states of the part that was there: clear all)
+  if (Length(FStates) < FSize) then
+    SetLength(FStates, FSize);
+  Clear;
 end;
 
 procedure THistory.Clear;
 begin
-  if (Length(FStates) > 0) then
-    FillChar(FStates[0], Length(FStates), 0);
+  if (FSize > 0) then
+    FillChar(FStates[0], FSize, 0);
+end;
+
+{ the histories kept for the next detection: an image-sized block, which is
+  expensive to allocate and zero (page by page) for every call and every
+  direction traced in a task }
+
+var
+  HistoryPoolLock: TCriticalSection;
+  HistoryPool: TList<THistory>;
+
+function AcquireHistory(width, height: Integer): THistory;
+begin
+  Result := nil;
+  HistoryPoolLock.Enter;
+  try
+    if (HistoryPool.Count > 0) then
+      Result := HistoryPool.ExtractAt(HistoryPool.Count - 1);
+  finally
+    HistoryPoolLock.Leave;
+  end;
+  if (Result = nil) then
+    Result := THistory.Create(width, height)
+  else
+    Result.Prepare(width, height);
+end;
+
+procedure ReleaseHistory(history: THistory);
+const
+  MAX_KEPT = 8;
+begin
+  if (history = nil) then
+    exit;
+  HistoryPoolLock.Enter;
+  try
+    if (HistoryPool.Count < MAX_KEPT) then
+    begin
+      HistoryPool.Add(history);
+      history := nil;
+    end;
+  finally
+    HistoryPoolLock.Leave;
+  end;
+  history.Free;
 end;
 
 function THistory.Get(x, y: Integer): ShortInt;
@@ -1015,7 +1075,7 @@ end;
 /// tries to trace a Data Matrix symbol from there. Returns true when
 /// onCandidate stopped the detection.</summary>
 function Scan(var startTracer: TEdgeTracer; const lines: TLines;
-  const onCandidate: TDataMatrixCandidate): Boolean;
+  const onCandidate: TDataMatrixCandidate; cancel: PBoolean = nil): Boolean;
 begin
   Result := false;
   var lineL := lines[0];
@@ -1025,6 +1085,9 @@ begin
 
   while startTracer.MoveToNextWhiteAfterBlack do
   begin
+    // (a direction traced in a task: stopped by the consumer)
+    if (cancel <> nil) and cancel^ then
+      exit(false);
     for var l in lines do
       l.Reset;
 
@@ -1298,6 +1361,208 @@ end;
 
 /// <summary>The edge tracing part of DetectDataMatrixByEdges. Returns true
 /// when onCandidate stopped the detection.</summary>
+{ the four directions in tasks (ParallelDecoding) }
+
+type
+  /// <summary>A candidate of a direction traced in a task, for the calling
+  /// thread: the sampled bits (a copy, freed by the consumer) and the
+  /// corners.</summary>
+  TDirectionCandidate = record
+    Bits: TBitMatrix;
+    Points: TArray<IResultPoint>;
+  end;
+
+  /// <summary>The stop flag the tasks read at every edge, in a cache line
+  /// of its own: next to the variables the consumer writes, every write
+  /// would take the line away from the tasks (false sharing).</summary>
+  TCancelFlag = record
+    Before: array [0 .. 63] of Byte;
+    Value: Boolean;
+    After: array [0 .. 63] of Byte;
+  end;
+
+  /// <summary>The candidates of a direction traced in a task, in the order
+  /// they were found, and the exception that ended the tracing, if any.
+  /// The task adds under the lock; the calling thread reads after the task
+  /// is done.</summary>
+  TDirectionResult = class
+  private
+    FLock: TCriticalSection;
+    FItems: TList<TDirectionCandidate>;
+    FError: Exception;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Add(const c: TDirectionCandidate);
+  end;
+
+constructor TDirectionResult.Create;
+begin
+  inherited Create;
+  FLock := TCriticalSection.Create;
+  FItems := TList<TDirectionCandidate>.Create;
+end;
+
+destructor TDirectionResult.Destroy;
+begin
+  // (the candidates not taken by the consumer)
+  for var c in FItems do
+    c.Bits.Free;
+  FItems.Free;
+  FLock.Free;
+  FError.Free;
+  inherited;
+end;
+
+procedure TDirectionResult.Add(const c: TDirectionCandidate);
+begin
+  FLock.Enter;
+  try
+    FItems.Add(c);
+  finally
+    FLock.Leave;
+  end;
+end;
+
+/// <summary>Traces the scan lines of direction k, every 16 pixels over the
+/// whole image (DetectByEdges with tryHarder), with a history and lines of
+/// its own, until onCandidate stops it (true), the lines are done or cancel
+/// is set.</summary>
+function TraceDirection(image: TBitMatrix; k: Integer;
+  const onCandidate: TDataMatrixCandidate; cancel: PBoolean): Boolean;
+const
+  MIN_SYMBOL_SIZE = 8 * 2;
+  DIRECTIONS: array [0 .. 3, 0 .. 1] of Integer = ((-1, 0), (1, 0), (0, -1),
+    (0, 1));
+var
+  floatMask: TFloatExceptionsMasked; // masked in this thread
+  history: THistory;
+  lines: TLines;
+begin
+  Result := false;
+  history := nil;
+  for var n := 0 to 3 do
+    lines[n] := nil;
+  try
+    history := AcquireHistory(image.Width, image.Height);
+    for var n := 0 to 3 do
+      lines[n] := TDMRegressionLine.Create;
+    var cx := image.Width div 2;
+    var cy := image.Height div 2;
+    var dir := PointD(DIRECTIONS[k, 0], DIRECTIONS[k, 1]);
+    // start at the image border opposite to dir, a bit inside
+    var startPos := Centered(PointD(cx - cx * DIRECTIONS[k, 0] +
+      (MIN_SYMBOL_SIZE div 2) * DIRECTIONS[k, 0], cy - cy * DIRECTIONS[k, 1] +
+      (MIN_SYMBOL_SIZE div 2) * DIRECTIONS[k, 1]));
+    var i := 1;
+    while not cancel^ do
+    begin
+      var tracer := TEdgeTracer.Create(image, startPos, dir);
+      // alternate lines left and right of the center line
+      var offset := (i div 2) * MIN_SYMBOL_SIZE;
+      if Odd(i) then
+        offset := -offset;
+      tracer.p := tracer.p + offset * tracer.Right;
+      tracer.history := history;
+      if not tracer.IsIn then
+        break;
+      if Scan(tracer, lines, onCandidate, cancel) then
+        exit(true);
+      Inc(i);
+    end;
+  finally
+    for var n := 0 to 3 do
+      lines[n].Free;
+    ReleaseHistory(history);
+  end;
+end;
+
+/// <summary>TraceDirection in a task of the decoding pool: every candidate
+/// goes to found, a copy of its bits (Scan frees its own).</summary>
+function StartTraceDirection(image: TBitMatrix; k: Integer;
+  found: TDirectionResult; cancel: PBoolean): ITask;
+begin
+  Result := TTask.Run(
+    procedure
+    begin
+      try
+        TraceDirection(image, k,
+          function(bits: TBitMatrix; const points: TArray<IResultPoint>)
+            : Boolean
+          var
+            c: TDirectionCandidate;
+          begin
+            c.Bits := TBitMatrix(bits.Clone);
+            c.Points := points;
+            found.Add(c);
+            // (stop when the consumer cancelled)
+            Result := cancel^;
+          end, cancel);
+      except
+        found.FError := Exception(AcquireExceptionObject);
+      end;
+    end, DecodingThreadPool);
+end;
+
+/// <summary>DetectByEdges with tryHarder and tryRotate, the directions side
+/// by side: the first one in the calling thread, the other three in tasks
+/// that collect their candidates. onCandidate gets the candidates in the
+/// calling thread, in the order of the sequential detection (direction by
+/// direction, line by line), so the results are the same. When it stops
+/// the detection, the directions behind the current one are cancelled; the
+/// ones before it were already done.</summary>
+function DetectByEdgesParallel(image: TBitMatrix;
+  const onCandidate: TDataMatrixCandidate): Boolean;
+var
+  found: array [1 .. 3] of TDirectionResult;
+  tasks: array [0 .. 2] of ITask;
+  cancelled: TCancelFlag;
+  pending: Exception;
+begin
+  Result := false;
+  cancelled.Value := false;
+  pending := nil;
+  for var k := 1 to 3 do
+    found[k] := nil;
+  try
+    for var k := 1 to 3 do
+      found[k] := TDirectionResult.Create;
+    try
+      for var k := 1 to 3 do
+        tasks[k - 1] := StartTraceDirection(image, k, found[k],
+          @cancelled.Value);
+      // direction 0 here, meanwhile
+      Result := TraceDirection(image, 0, onCandidate, @cancelled.Value);
+      if Result then
+        cancelled.Value := true;
+      for var k := 1 to 3 do
+      begin
+        tasks[k - 1].Wait;
+        if (found[k].FError <> nil) and (pending = nil) then
+        begin
+          pending := found[k].FError;
+          found[k].FError := nil;
+        end;
+        if not Result then
+          for var c in found[k].FItems do
+            if not Result and onCandidate(c.Bits, c.Points) then
+            begin
+              Result := true;
+              cancelled.Value := true;
+            end;
+      end;
+    finally
+      cancelled.Value := true;
+      TTask.WaitForAll(tasks);
+    end;
+  finally
+    for var k := 1 to 3 do
+      found[k].Free;
+  end;
+  if (pending <> nil) then
+    raise pending;
+end;
+
 function DetectByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
   const onCandidate: TDataMatrixCandidate): Boolean;
 const
@@ -1309,6 +1574,9 @@ var
   floatMask: TFloatExceptionsMasked; // masked until this function returns
 begin
   Result := false;
+  // all lines in all directions: the directions in tasks when allowed
+  if tryHarder and tryRotate and ParallelDecodingActive then
+    exit(DetectByEdgesParallel(image, onCandidate));
   var history: THistory := nil;
   var lines: TLines;
   for var k := 0 to 3 do
@@ -1317,7 +1585,7 @@ begin
     // a history to remember where the tracing already passed by, to prevent
     // a later trace from doing the same work twice
     if tryHarder then
-      history := THistory.Create(image.Width, image.Height);
+      history := AcquireHistory(image.Width, image.Height);
     for var k := 0 to 3 do
       lines[k] := TDMRegressionLine.Create;
 
@@ -1363,7 +1631,7 @@ begin
   finally
     for var k := 0 to 3 do
       lines[k].Free;
-    history.Free;
+    ReleaseHistory(history);
   end;
 end;
 
@@ -1404,5 +1672,17 @@ begin
     end);
   Result := (count > 0);
 end;
+
+initialization
+
+HistoryPoolLock := TCriticalSection.Create;
+HistoryPool := TList<THistory>.Create;
+
+finalization
+
+for var h in HistoryPool do
+  h.Free;
+HistoryPool.Free;
+HistoryPoolLock.Free;
 
 end.

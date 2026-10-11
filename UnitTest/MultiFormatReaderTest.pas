@@ -32,6 +32,10 @@ type
     procedure ScanAllAsyncCallsBackWithTheList;
     [Test]
     procedure ScanWithoutAScanManager;
+    /// <summary>The DataMatrix directions in tasks give the results of
+    /// the sequential detection.</summary>
+    [Test]
+    procedure ParallelDecodingSameResults;
   end;
 
 implementation
@@ -54,6 +58,8 @@ uses
   ZXing.BarcodeFormat,
   ZXing.ReadResult,
   ZXing.ScanManager,
+  ZXing.Parallel,
+  ZXing.DecodeHintType,
   Benchmark.Images;
 
 procedure TMultiFormatReaderTest.DecodeWithoutHints;
@@ -350,6 +356,57 @@ begin
   finally
     bitmap.Free;
   end;
+end;
+
+procedure TMultiFormatReaderTest.ParallelDecodingSameResults;
+const
+  // Data Matrix samples, also some that need the lines over the whole image
+  FILES: array [0 .. 5] of string = ('datamatrix-1\#378.png',
+    'datamatrix-1\0123456789.png', 'datamatrix-3\#749.png',
+    'datamatrix-3\#794.png', 'datamatrix-4\abcd-120x8.png', 'datamatrix-1\#378.png');
+
+  function ScanTexts(parallel: Boolean): string;
+  begin
+    Result := '';
+    var before := ParallelDecoding;
+    ParallelDecoding := parallel;
+    try
+      for var name in FILES do
+      begin
+        var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
+          '\..\..\Images\zxing-cpp\' + name);
+        try
+          var hints := TDictionary<TDecodeHintType, TObject>.Create;
+          hints.Add(TDecodeHintType.TRY_HARDER, nil);
+          var scanner: IScanManager := TScanManager.Create
+            (TBarcodeFormat.DATA_MATRIX, hints);
+          var all := scanner.ScanAll(bitmap);
+          try
+            for var r in all do
+              Result := Result + name + ': ' + r.Text + ' @' +
+                r.ResultPoints[0].ToString + #13#10;
+            if (all.Count = 0) then
+              Result := Result + name + ': -'#13#10;
+          finally
+            all.Free;
+          end;
+        finally
+          bitmap.Free;
+        end;
+      end;
+    finally
+      ParallelDecoding := before;
+    end;
+  end;
+
+begin
+  if (TThread.ProcessorCount < 2) then
+    exit;
+  var sequential := ScanTexts(false);
+  var parallel := ScanTexts(true);
+  Assert.AreNotEqual('', sequential);
+  Assert.IsFalse(sequential.Contains(': -'), 'all read: ' + sequential);
+  Assert.AreEqual(sequential, parallel);
 end;
 
 initialization
