@@ -40,9 +40,19 @@ type
     procedure SetTryDownscale(const AValue: Boolean);
     function GetReturnErrors: Boolean;
     procedure SetReturnErrors(const AValue: Boolean);
+    function GetScanning: Boolean;
     /// <summary>The first barcode in the bitmap, nil when there is none.
     /// The caller frees the result.</summary>
-    function Scan(const pBitmapForScan: TBitmap): TReadResult;
+    function Scan(const pBitmapForScan: TBitmap): TReadResult; overload;
+    /// <summary>The same for the pixels of a luminance source (e.g. the
+    /// frame of a camera), which the caller owns.</summary>
+    function Scan(const source: TLuminanceSource): TReadResult; overload;
+    /// <summary>Scan in a task, see TScanManager.ScanAsync.</summary>
+    function ScanAsync(const pBitmapForScan: TBitmap;
+      const OnCompleted: TProc<TReadResult>;
+      const OnException: TProc<Exception> = nil): Boolean;
+    /// <summary>True while a scan started with ScanAsync runs.</summary>
+    property Scanning: Boolean read GetScanning;
     /// <summary>All barcodes in the bitmap, see TScanManager.ScanAll.
     /// </summary>
     function ScanAll(const pBitmapForScan: TBitmap; maxCount: Integer = 0)
@@ -62,6 +72,8 @@ type
     FMultiFormatReader: TMultiFormatReader;
     listFormats: TList<TBarcodeFormat>;
     FReturnErrors: Boolean;
+    // 1 while a scan started with ScanAsync runs (TInterlocked)
+    FScanning: Integer;
     // during a scan with ReturnErrors: the symbols found but not read
     // (hint RETURN_ERRORS), in the coordinates of the full image after each
     // layer
@@ -86,16 +98,41 @@ type
     procedure SetTryDownscale(const AValue: Boolean);
     function GetReturnErrors: Boolean;
     procedure SetReturnErrors(const AValue: Boolean);
+    function GetScanning: Boolean;
     /// <summary>Decodes one image (layer), also inverted with
     /// ENABLE_INVERSION. Does not free source.</summary>
     function DecodeLayer(source: TLuminanceSource): TReadResult;
     /// <summary>Scan without the failed results: the full image, then the
     /// downscaled layers.</summary>
-    function ScanLayers(const pBitmapForScan: TBitmap): TReadResult;
+    function ScanLayers(const LuminanceSource: TLuminanceSource): TReadResult;
   public
     destructor Destroy; override;
 
-    function Scan(const pBitmapForScan: TBitmap): TReadResult;
+    /// <summary>The first barcode in the bitmap, nil when there is none.
+    /// The caller frees the result.</summary>
+    function Scan(const pBitmapForScan: TBitmap): TReadResult; overload;
+    /// <summary>The same for the pixels of a luminance source (e.g. the
+    /// frame of a camera as TPlanarYUVLuminanceSource), which the caller
+    /// owns.</summary>
+    function Scan(const source: TLuminanceSource): TReadResult; overload;
+    /// <summary>
+    /// Scan in a task of the thread pool: the pixels of the bitmap are taken
+    /// in the calling thread (the bitmap is free again when this returns),
+    /// the decoding runs in the task, and OnCompleted is called in the main
+    /// thread (TThread.Synchronize) with the first barcode, nil when there
+    /// is none; the receiver frees the result. An exception in the decoding
+    /// goes to OnException, also in the main thread, with an exception the
+    /// scan manager frees afterwards; without OnException it ends the scan
+    /// like nothing found: OnCompleted(nil). One scan at a time: while a
+    /// scan runs (Scanning), the call does nothing and returns False, e.g.
+    /// a camera frame is skipped. True when the scan was started. A scan
+    /// manager held as IScanManager stays alive until the task is done;
+    /// one held as TScanManager must not be freed before OnCompleted (its
+    /// destructor waits for the task).
+    /// </summary>
+    function ScanAsync(const pBitmapForScan: TBitmap;
+      const OnCompleted: TProc<TReadResult>;
+      const OnException: TProc<Exception> = nil): Boolean;
     /// <summary>
     /// All barcodes in the bitmap, at most maxCount (0: no limit), each one
     /// once. Scans all layers (normal, inverted with ENABLE_INVERSION and
@@ -132,12 +169,17 @@ type
     /// a valid size. Off by default.
     /// </summary>
     property ReturnErrors: Boolean read FReturnErrors write FReturnErrors;
+    /// <summary>True while a scan started with ScanAsync runs.</summary>
+    property Scanning: Boolean read GetScanning;
   end;
 
 implementation
 
 uses
   System.Math,
+  System.Classes,
+  System.SyncObjs,
+  System.Threading,
   ZXing.Reader;
 
 procedure ScaleResult(r: TReadResult; scale: Single); forward;
@@ -157,6 +199,13 @@ var
   hint: TPair<TDecodeHintType, TObject>;
   o: TObject;
 begin
+  // a scan of ScanAsync still running: wait for it (and let it call back
+  // when this is the main thread)
+  while (FScanning <> 0) do
+    if (TThread.CurrentThread.ThreadID = MainThreadID) then
+      CheckSynchronize(10)
+    else
+      Sleep(10);
   if Assigned(FHints) then
   begin
 
@@ -334,9 +383,20 @@ end;
 
 function TScanManager.Scan(const pBitmapForScan: TBitmap): TReadResult;
 begin
+  var source := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
+    pBitmapForScan.Width, pBitmapForScan.Height);
+  try
+    Result := Scan(source);
+  finally
+    source.Free;
+  end;
+end;
+
+function TScanManager.Scan(const source: TLuminanceSource): TReadResult;
+begin
   BeginFailed;
   try
-    Result := ScanLayers(pBitmapForScan);
+    Result := ScanLayers(source);
     // nothing read: the first symbol found but not read
     if (Result = nil) and (FailedCount > 0) then
       Result := FFailed.Extract(FFailed[0]);
@@ -345,11 +405,10 @@ begin
   end;
 end;
 
-function TScanManager.ScanLayers(const pBitmapForScan: TBitmap): TReadResult;
+function TScanManager.ScanLayers(const LuminanceSource: TLuminanceSource)
+  : TReadResult;
 begin
-  var LuminanceSource := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
-    pBitmapForScan.Width, pBitmapForScan.Height);
-  try
+  begin
     Result := DecodeLayer(LuminanceSource);
     if (Result <> nil) or not FTryDownscale then
       exit;
@@ -381,9 +440,70 @@ begin
         exit;
       end;
     end;
-  finally
-    LuminanceSource.Free;
   end;
+end;
+
+function TScanManager.GetScanning: Boolean;
+begin
+  Result := (FScanning <> 0);
+end;
+
+function TScanManager.ScanAsync(const pBitmapForScan: TBitmap;
+  const OnCompleted: TProc<TReadResult>;
+  const OnException: TProc<Exception>): Boolean;
+var
+  keep: IScanManager;
+  source: TLuminanceSource; // (not inline: captured by the task)
+begin
+  if not Assigned(OnCompleted) then
+    raise EArgumentNilException.Create('ScanAsync: OnCompleted');
+  // one scan at a time
+  if (TInterlocked.CompareExchange(FScanning, 1, 0) <> 0) then
+    exit(false);
+  // the pixels, taken in the calling thread: the caller may change or free
+  // the bitmap as soon as this returns
+  source := TRGBLuminanceSource.CreateFromBitmap(pBitmapForScan,
+    pBitmapForScan.Width, pBitmapForScan.Height);
+  // held by interface references (the count is 0 for a TScanManager that
+  // is freed by its owner): one more, so that it lives until the task is
+  // done
+  keep := nil;
+  if (RefCount > 0) then
+    keep := Self;
+  TTask.Run(
+    procedure
+    var
+      r: TReadResult;
+      e: Exception;
+    begin
+      r := nil;
+      e := nil;
+      try
+        try
+          r := Scan(source);
+        except
+          e := Exception(AcquireExceptionObject);
+        end;
+      finally
+        source.Free;
+      end;
+      TThread.Synchronize(nil,
+        procedure
+        begin
+          // done before the callback: it may start the next scan
+          FScanning := 0;
+          try
+            if (e <> nil) and Assigned(OnException) then
+              OnException(e)
+            else
+              OnCompleted(r); // (nil after an exception)
+          finally
+            e.Free;
+          end;
+        end);
+      keep := nil;
+    end);
+  Result := true;
 end;
 
 /// <summary>Scales the position and the result points of r, from a

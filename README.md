@@ -118,6 +118,7 @@ Only when asked for, not in Auto. The ones of bars that differ in height (4-stat
 - Next version (branch Development, not released yet)
 	- Requires Delphi 10.4 Sydney or newer. For XE7 - 10.3 use v3.13.1 or older.
 	- IScanManager: TScanManager implements this interface (it is a TInterfacedObject now). Hold it in a variable of type IScanManager and it is freed with the last reference, no try finally; a TScanManager variable with Free works as before (do not mix the two for one instance).
+	- TScanManager.ScanAsync(bitmap, OnCompleted, OnException = nil): scans in a task of the thread pool and calls OnCompleted in the main thread (TThread.Synchronize) with the result (nil when nothing was found; the receiver frees it). The pixels are taken in the calling thread, so the bitmap is free again when ScanAsync returns. An exception goes to OnException, also in the main thread; without it OnCompleted(nil) is called. One scan at a time: while Scanning is true the call returns False and does nothing (a camera frame is skipped). New too: Scan(source: TLuminanceSource) for callers with their own pixels, e.g. a camera frame as TPlanarYUVLuminanceSource.
 	- Data Matrix: port of the edge tracing detector of zxing-cpp, with DMRE (rectangular) sizes, mirrored codes, pure codes of 1 pixel per module, and corrections for not flat and curved symbols (LocalGrid and timing pattern correction). The old detector stays as fallback.
 	- QR Code: port of the finder pattern detector of zxing-cpp, which handles perspective and not flat symbols much better (alignment patterns located in the image, tiled sampling). The old detector stays as fallback.
 	- QR Code model 1 (the original QR Code of ISO 18004:2000 annex M) is read too, like zxing-cpp; its SymbologyIdentifier is ]Q0, the format stays QR_CODE.
@@ -343,6 +344,27 @@ var
 ...
 FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 FReadResult := FScanManager.Scan(scanBitmap);  // the result is still yours to free
+
+```
+
+For a camera, scan in the background and get the result in the main thread (the bitmap may be reused as soon as ScanAsync returns; a frame that arrives while a scan runs is skipped, ScanAsync returns False then):
+
+```Pascal
+
+FScanManager.ScanAsync(frameBitmap,
+  procedure(r: TReadResult)
+  begin
+    if (r <> nil) then
+    try
+      lblResult.Text := r.Text;
+    finally
+      r.Free;
+    end;
+  end,
+  procedure(e: Exception)
+  begin
+    lblResult.Text := e.Message;
+  end);
 
 ```
 

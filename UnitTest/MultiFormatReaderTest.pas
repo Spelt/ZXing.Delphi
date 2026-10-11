@@ -24,12 +24,17 @@ type
     /// asked for (Auto not).</summary>
     [Test]
     procedure AllReadsAllFormats;
+    /// <summary>ScanAsync scans in a task and calls back in the main
+    /// thread.</summary>
+    [Test]
+    procedure ScanAsyncCallsBackInTheMainThread;
   end;
 
 implementation
 
 uses
   System.SysUtils,
+  System.Classes,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
 {$ENDIF}
@@ -213,6 +218,52 @@ begin
     finally
       bitmap.Free;
     end;
+  end;
+end;
+
+procedure TMultiFormatReaderTest.ScanAsyncCallsBackInTheMainThread;
+var
+  scanner: IScanManager;
+  done: Boolean;
+  text: string;
+  format: TBarcodeFormat;
+  threadId: TThreadID;
+begin
+  var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
+    '\..\..\Images\zxing-cpp\qrcode-1\1.png');
+  try
+    scanner := TScanManager.Create(TBarcodeFormat.QR_CODE, nil);
+    done := false;
+    text := '';
+    threadId := 0;
+    Assert.IsTrue(scanner.ScanAsync(bitmap,
+      procedure(r: TReadResult)
+      begin
+        threadId := TThread.CurrentThread.ThreadID;
+        if (r <> nil) then
+        begin
+          text := r.Text;
+          format := r.BarcodeFormat;
+          r.Free;
+        end;
+        done := true;
+      end), 'started');
+    // the bitmap is free again: the pixels were taken
+    bitmap.Free;
+    bitmap := nil;
+    // the callback comes through Synchronize: wait in the main thread
+    var started := Now;
+    while not done and (Now - started < 20 / SecsPerDay) do
+      CheckSynchronize(10);
+    Assert.IsTrue(done, 'completed within 20 s');
+    Assert.IsTrue(threadId = MainThreadID, 'callback in the main thread');
+    Assert.IsFalse(scanner.Scanning, 'not scanning any more');
+    Assert.AreNotEqual('', text, 'a QR Code read');
+    Assert.AreEqual(Ord(TBarcodeFormat.QR_CODE), Ord(format));
+    // a second scan can be started from the main thread again
+    scanner := nil;
+  finally
+    bitmap.Free;
   end;
 end;
 
