@@ -75,7 +75,7 @@ var
   bitmap: TBitmap;
 
   ReadResult: TReadResult;
-  ScanManager: TScanManager;
+  ScanManager: IScanManager; // freed with the last reference
 begin
   bitmap := TBitmap.Create;
   try
@@ -90,7 +90,6 @@ begin
       if ReadResult<>nil then
         Memo1.Lines.Insert(0, FormatFloat('000', Memo1.Lines.Count+1) + ':  ' + ReadResult.text);
     finally
-      FreeAndNil(ScanManager);
       FreeAndNil(ReadResult);
     end;
   finally

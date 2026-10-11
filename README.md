@@ -333,12 +333,16 @@ FReadResult := FScanManager.Scan(scanBitmap);
 
 ```
 
-Or without having to free the scan manager: declare it as IScanManager, and it is freed with the last reference.
+Or without having to free the scan manager: declare the field or variable as IScanManager, and it is freed with the last reference (do not mix this with a TScanManager variable for the same instance).
 
 ```Pascal
 
-var scanner: IScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
-var r := scanner.Scan(scanBitmap);  // the result is still yours to free
+var
+  FScanManager: IScanManager;
+  FReadResult: TReadResult;
+...
+FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+FReadResult := FScanManager.Scan(scanBitmap);  // the result is still yours to free
 
 ```
 

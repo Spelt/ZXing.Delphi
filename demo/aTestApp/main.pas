@@ -80,7 +80,8 @@ type
     fPermissionCamera: String;
     fScanInProgress: Boolean;
     fFrameTake: Integer;
-    fScanManager: TScanManager;
+    // as an interface: freed with the form, no FreeAndNil
+    fScanManager: IScanManager;
     procedure ParseImage(const scanBitmap: TBitmap);
 {$IF CompilerVersion >= 35.0}
     // after Delphi 11 Alexandria
@@ -152,8 +153,6 @@ begin
   // Wait for a running scan; it calls Synchronize, so keep processing those.
   while fScanInProgress do
     CheckSynchronize(10);
-
-  FreeAndNil(fScanManager);
 end;
 
 {$IF CompilerVersion >= 35.0}

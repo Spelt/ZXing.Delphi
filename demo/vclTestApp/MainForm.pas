@@ -36,13 +36,12 @@ uses vcl.imaging.pngImage,
 
 procedure TmainFrm.btnLoadFromFileClick(Sender: TObject);
 var  ReadResult: TReadResult;
-     ScanManager: TScanManager;
+     ScanManager: IScanManager; // freed with the last reference
      bmp:VCL.Graphics.TBitmap; // just to be sure we are really using VCL bitmaps
 begin
   if not OpenDlg.Execute then exit;
   image.Picture.LoadFromFile(openDlg.FileName);
   ReadResult := nil;
-  ScanManager := nil;
   bmp := nil;
   try
     bmp:= TBitmap.Create;
@@ -56,7 +55,6 @@ begin
       log.Lines.Text := 'Unreadable!';
   finally
   	bmp.Free;
-    ScanManager.Free;
     ReadResult.Free;
   end;
 end;
