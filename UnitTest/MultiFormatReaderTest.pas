@@ -28,6 +28,8 @@ type
     /// thread.</summary>
     [Test]
     procedure ScanAsyncCallsBackInTheMainThread;
+    [Test]
+    procedure ScanAllAsyncCallsBackWithTheList;
   end;
 
 implementation
@@ -35,6 +37,7 @@ implementation
 uses
   System.SysUtils,
   System.Classes,
+  System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
 {$ENDIF}
@@ -263,6 +266,41 @@ begin
     Assert.AreEqual(Ord(TBarcodeFormat.QR_CODE), Ord(format));
     // a second scan can be started from the main thread again
     scanner := nil;
+  finally
+    bitmap.Free;
+  end;
+end;
+
+procedure TMultiFormatReaderTest.ScanAllAsyncCallsBackWithTheList;
+var
+  scanner: IScanManager;
+  done: Boolean;
+  count: Integer;
+  threadId: TThreadID;
+begin
+  var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
+    '\..\..\Images\zxing-cpp\qrcode-1\1.png');
+  try
+    scanner := TScanManager.Create(TBarcodeFormat.QR_CODE, nil);
+    done := false;
+    count := -1;
+    threadId := 0;
+    scanner.ScanAllAsync(bitmap,
+      procedure(results: TObjectList<TReadResult>)
+      begin
+        threadId := TThread.CurrentThread.ThreadID;
+        count := results.Count;
+        results.Free;
+        done := true;
+      end);
+    Assert.IsTrue(scanner.Scanning or done, 'scanning');
+    var started := Now;
+    while not done and (Now - started < 20 / SecsPerDay) do
+      CheckSynchronize(10);
+    Assert.IsTrue(done, 'completed within 20 s');
+    Assert.IsTrue(threadId = MainThreadID, 'callback in the main thread');
+    Assert.AreEqual(1, count, 'one QR Code');
+    Assert.IsFalse(scanner.Scanning);
   finally
     bitmap.Free;
   end;
