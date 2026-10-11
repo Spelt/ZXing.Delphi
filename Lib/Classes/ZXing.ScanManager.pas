@@ -174,6 +174,37 @@ type
     constructor Create(const format: TBarcodeFormat;
       Hints: TDictionary<TDecodeHintType, TObject>);
 
+    /// <summary>
+    /// The first barcode of the bitmap without a scan manager of your own
+    /// (nil when there is none; the caller frees the result): one is made
+    /// for the call, for the format (Auto: every format read by default)
+    /// and the hints, which it frees. For a camera, make one TScanManager
+    /// and keep it: the readers are set up on every call here.
+    /// </summary>
+    class function ReadBarcode(const pBitmapForScan: TBitmap;
+      format: TBarcodeFormat = TBarcodeFormat.Auto;
+      hints: TDictionary<TDecodeHintType, TObject> = nil): TReadResult; static;
+    /// <summary>All barcodes of the bitmap, see ScanAll, without a scan
+    /// manager of your own.</summary>
+    class function ReadBarcodes(const pBitmapForScan: TBitmap;
+      maxCount: Integer = 0; format: TBarcodeFormat = TBarcodeFormat.Auto;
+      hints: TDictionary<TDecodeHintType, TObject> = nil)
+      : TObjectList<TReadResult>; static;
+    /// <summary>ScanAsync without a scan manager of your own: the one made
+    /// for the call lives until OnCompleted or OnException was called.
+    /// </summary>
+    class procedure ReadBarcodeAsync(const pBitmapForScan: TBitmap;
+      const OnCompleted: TProc<TReadResult>;
+      const OnException: TProc<Exception> = nil;
+      format: TBarcodeFormat = TBarcodeFormat.Auto;
+      hints: TDictionary<TDecodeHintType, TObject> = nil); static;
+    /// <summary>ScanAllAsync without a scan manager of your own.</summary>
+    class procedure ReadBarcodesAsync(const pBitmapForScan: TBitmap;
+      const OnCompleted: TProc<TObjectList<TReadResult>>;
+      const OnException: TProc<Exception> = nil; maxCount: Integer = 0;
+      format: TBarcodeFormat = TBarcodeFormat.Auto;
+      hints: TDictionary<TDecodeHintType, TObject> = nil); static;
+
     property OnResultPoint: TResultPointCallback read FResultPointEvent
       write SetResultPointEvent;
 
@@ -603,6 +634,50 @@ begin
       points[i] := TResultPointHelpers.CreateResultPoint(points[i].x * scale,
         points[i].y * scale);
   r.resultPoints := points;
+end;
+
+{ the class methods: a scan manager for one call }
+
+class function TScanManager.ReadBarcode(const pBitmapForScan: TBitmap;
+  format: TBarcodeFormat; hints: TDictionary<TDecodeHintType, TObject>)
+  : TReadResult;
+var
+  scanner: IScanManager;
+begin
+  scanner := TScanManager.Create(format, hints);
+  Result := scanner.Scan(pBitmapForScan);
+end;
+
+class function TScanManager.ReadBarcodes(const pBitmapForScan: TBitmap;
+  maxCount: Integer; format: TBarcodeFormat;
+  hints: TDictionary<TDecodeHintType, TObject>): TObjectList<TReadResult>;
+var
+  scanner: IScanManager;
+begin
+  scanner := TScanManager.Create(format, hints);
+  Result := scanner.ScanAll(pBitmapForScan, maxCount);
+end;
+
+class procedure TScanManager.ReadBarcodeAsync(const pBitmapForScan: TBitmap;
+  const OnCompleted: TProc<TReadResult>; const OnException: TProc<Exception>;
+  format: TBarcodeFormat; hints: TDictionary<TDecodeHintType, TObject>);
+var
+  scanner: IScanManager;
+begin
+  // (held as an interface: the task keeps it until it has called back)
+  scanner := TScanManager.Create(format, hints);
+  scanner.ScanAsync(pBitmapForScan, OnCompleted, OnException);
+end;
+
+class procedure TScanManager.ReadBarcodesAsync(const pBitmapForScan: TBitmap;
+  const OnCompleted: TProc<TObjectList<TReadResult>>;
+  const OnException: TProc<Exception>; maxCount: Integer;
+  format: TBarcodeFormat; hints: TDictionary<TDecodeHintType, TObject>);
+var
+  scanner: IScanManager;
+begin
+  scanner := TScanManager.Create(format, hints);
+  scanner.ScanAllAsync(pBitmapForScan, OnCompleted, OnException, maxCount);
 end;
 
 function TScanManager.ScanAll(const pBitmapForScan: TBitmap; maxCount: Integer)

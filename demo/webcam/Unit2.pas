@@ -75,7 +75,6 @@ var
   bitmap: TBitmap;
 
   ReadResult: TReadResult;
-  ScanManager: IScanManager; // freed with the last reference
 begin
   bitmap := TBitmap.Create;
   try
@@ -85,8 +84,9 @@ begin
 
     // scan code
     try
-      ScanManager := TScanManager.Create(TBarcodeFormat.AUTO, nil);
-      ReadResult := ScanManager.Scan(bitmap);
+      // (one call per frame here; a scan manager kept in a field, with
+      // ScanAsync, would be faster)
+      ReadResult := TScanManager.ReadBarcode(bitmap);
       if ReadResult<>nil then
         Memo1.Lines.Insert(0, FormatFloat('000', Memo1.Lines.Count+1) + ':  ' + ReadResult.text);
     finally

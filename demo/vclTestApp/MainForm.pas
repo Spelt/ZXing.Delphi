@@ -36,7 +36,6 @@ uses vcl.imaging.pngImage,
 
 procedure TmainFrm.btnLoadFromFileClick(Sender: TObject);
 var  ReadResult: TReadResult;
-     ScanManager: IScanManager; // freed with the last reference
      bmp:VCL.Graphics.TBitmap; // just to be sure we are really using VCL bitmaps
 begin
   if not OpenDlg.Execute then exit;
@@ -47,8 +46,8 @@ begin
     bmp:= TBitmap.Create;
 
     bmp.assign (image.Picture.Graphic);
-    ScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
-    ReadResult := ScanManager.Scan(bmp);
+    // one call: the scan manager is made and freed by ReadBarcode
+    ReadResult := TScanManager.ReadBarcode(bmp);
     if ReadResult<>nil then
       log.Lines.Text := ReadResult.text
     else

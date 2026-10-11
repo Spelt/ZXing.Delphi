@@ -30,6 +30,8 @@ type
     procedure ScanAsyncCallsBackInTheMainThread;
     [Test]
     procedure ScanAllAsyncCallsBackWithTheList;
+    [Test]
+    procedure ReadBarcodeWithoutAScanManager;
   end;
 
 implementation
@@ -301,6 +303,50 @@ begin
     Assert.IsTrue(threadId = MainThreadID, 'callback in the main thread');
     Assert.AreEqual(1, count, 'one QR Code');
     Assert.IsFalse(scanner.Scanning);
+  finally
+    bitmap.Free;
+  end;
+end;
+
+procedure TMultiFormatReaderTest.ReadBarcodeWithoutAScanManager;
+var
+  done: Boolean;
+  text: string;
+begin
+  var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
+    '\..\..\Images\zxing-cpp\qrcode-1\1.png');
+  try
+    // one call, one result
+    var r := TScanManager.ReadBarcode(bitmap, TBarcodeFormat.QR_CODE);
+    try
+      Assert.IsNotNull(r);
+      Assert.AreNotEqual('', r.Text);
+      text := r.Text;
+    finally
+      r.Free;
+    end;
+    // all, with Auto
+    var all := TScanManager.ReadBarcodes(bitmap);
+    try
+      Assert.AreEqual(1, all.Count);
+      Assert.AreEqual(text, all[0].Text);
+    finally
+      all.Free;
+    end;
+    // in a task: the scan manager made for the call lives until the callback
+    done := false;
+    TScanManager.ReadBarcodeAsync(bitmap,
+      procedure(r: TReadResult)
+      begin
+        Assert.IsNotNull(r);
+        Assert.AreEqual(text, r.Text);
+        r.Free;
+        done := true;
+      end);
+    var started := Now;
+    while not done and (Now - started < 20 / SecsPerDay) do
+      CheckSynchronize(10);
+    Assert.IsTrue(done, 'completed within 20 s');
   finally
     bitmap.Free;
   end;
