@@ -23,9 +23,10 @@ uses
 
 var
   /// <summary>
-  /// Decode with tasks where the readers support it. On by default on the
-  /// desktop platforms with more than one processor, off on Android and iOS
-  /// (battery); an application sets it as it likes, before scanning.
+  /// Decode with tasks where the readers support it. On by default with
+  /// more than one processor on the desktop platforms, and with more than
+  /// two on Android and iOS (a phone with two cores keeps them for itself
+  /// and its battery); an application sets it as it likes, before scanning.
   /// </summary>
   ParallelDecoding: Boolean;
 
@@ -71,7 +72,7 @@ end;
 initialization
 
 {$IF defined(ANDROID) or defined(IOS)}
-  ParallelDecoding := false;
+  ParallelDecoding := (TThread.ProcessorCount > 2);
 {$ELSE}
   ParallelDecoding := (TThread.ProcessorCount > 1);
 {$ENDIF}
