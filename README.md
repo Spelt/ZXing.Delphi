@@ -119,7 +119,7 @@ Only when asked for, not in Auto. The ones of bars that differ in height (4-stat
 	- Requires Delphi 10.4 Sydney or newer. For XE7 - 10.3 use v3.13.1 or older.
 	- IScanManager: TScanManager implements this interface (it is a TInterfacedObject now). Hold it in a variable of type IScanManager and it is freed with the last reference, no try finally; a TScanManager variable with Free works as before (do not mix the two for one instance).
 	- TScanManager.ScanAsync(bitmap, OnCompleted, OnException = nil), a procedure: scans in a task of the thread pool and calls OnCompleted in the main thread (TThread.Synchronize) with the result (nil when nothing was found; the receiver frees it). The pixels are taken in the calling thread, so the bitmap is free again when ScanAsync returns. An exception goes to OnException, also in the main thread; without it OnCompleted(nil) is called. One scan at a time: while Scanning is true the call does nothing (a camera frame is skipped). ScanAllAsync(bitmap, OnCompleted, OnException = nil, maxCount = 0) does the same for ScanAll: OnCompleted gets the list of all barcodes (an empty list after an exception without OnException). New too: Scan(source: TLuminanceSource) for callers with their own pixels, e.g. a camera frame as TPlanarYUVLuminanceSource. ScanAll(source) too.
-	- Class methods for one call, without a scan manager of your own: TScanManager.ReadBarcode(bitmap, format = Auto, hints = nil), ReadBarcodes(bitmap, maxCount = 0, format, hints), ReadBarcodeAsync(bitmap, OnCompleted, OnException = nil, format, hints) and ReadBarcodesAsync. For a camera, keep one TScanManager: the readers are set up on every call of these.
+	- TScanner: scanning in one call, without a scan manager of your own: TScanner.Scan(bitmap, format = Auto, hints = nil), ScanAll(bitmap, maxCount = 0, format, hints), ScanAsync(bitmap, OnCompleted, OnException = nil, format, hints) and ScanAllAsync, the same as on TScanManager. For a camera, keep one TScanManager: the readers are set up on every call of these.
 	- Data Matrix: port of the edge tracing detector of zxing-cpp, with DMRE (rectangular) sizes, mirrored codes, pure codes of 1 pixel per module, and corrections for not flat and curved symbols (LocalGrid and timing pattern correction). The old detector stays as fallback.
 	- QR Code: port of the finder pattern detector of zxing-cpp, which handles perspective and not flat symbols much better (alignment patterns located in the image, tiled sampling). The old detector stays as fallback.
 	- QR Code model 1 (the original QR Code of ISO 18004:2000 annex M) is read too, like zxing-cpp; its SymbologyIdentifier is ]Q0, the format stays QR_CODE.
@@ -329,11 +329,11 @@ Include all the files in your project or use search path like included test appl
 
 ```Pascal
 
-var r := TScanManager.ReadBarcode(scanBitmap);  // nil when there is no barcode; free it
+var r := TScanner.Scan(scanBitmap);  // nil when there is no barcode; free it
 
 ```
 
-ReadBarcode makes a scan manager for the call (ReadBarcodes gives all barcodes, ReadBarcodeAsync and ReadBarcodesAsync do it in a task, see below). For a camera, make one scan manager and keep it for all frames:
+TScanner makes a scan manager for the call (TScanner.ScanAll gives all barcodes, ScanAsync and ScanAllAsync do it in a task, see below). For a camera, make one scan manager and keep it for all frames:
 
 ```Pascal
 

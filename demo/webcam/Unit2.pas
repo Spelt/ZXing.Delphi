@@ -86,7 +86,7 @@ begin
     try
       // (one call per frame here; a scan manager kept in a field, with
       // ScanAsync, would be faster)
-      ReadResult := TScanManager.ReadBarcode(bitmap);
+      ReadResult := TScanner.Scan(bitmap);
       if ReadResult<>nil then
         Memo1.Lines.Insert(0, FormatFloat('000', Memo1.Lines.Count+1) + ':  ' + ReadResult.text);
     finally
