@@ -138,8 +138,8 @@ begin
 
   var hints := TDictionary<TDecodeHintType, TObject>.Create();
   //hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);
-  hints.Add(TDecodeHintType.TRY_HARDER, nil);
-  fScanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
+ // hints.Add(TDecodeHintType.TRY_HARDER, nil);
+  fScanManager := TScanManager.Create(TBarcodeFormat.All, hints);
 
 {$IFDEF ANDROID}
   fPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
