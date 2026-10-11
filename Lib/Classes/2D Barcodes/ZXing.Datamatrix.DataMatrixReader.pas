@@ -48,9 +48,10 @@ type
   TDataMatrixReader = class(TInterfacedObject, IReader, IMultipleReader)
   private const
     /// <summary>
-    /// Finest grid of detector start points: 4 means start points every 1/4
-    /// of the image width and height. With TRY_HARDER a grid twice as fine is
-    /// used as well, which finds smaller codes but costs more time on images
+    /// Grid of detector start points: 4 means start points every 1/4 of the
+    /// image width and height, 10 with the center. A grid twice as fine (50
+    /// points, formerly with TRY_HARDER) read no more symbols in the
+    /// benchmark and cost a third of the time of this reader on images
     /// without a code.
     /// </summary>
     MAX_GRID_DIVISIONS = 4;
@@ -334,8 +335,6 @@ begin
       // which still reads a few codes the edge tracer misses, like dot-peen
       // codes, also outside the center of the image
       maxDivisions := MAX_GRID_DIVISIONS;
-      if tryHarder then
-        maxDivisions := MAX_GRID_DIVISIONS * 2;
 
       if (DecoderResult = nil) then
         DecoderResult := searchAndDecode(image.BlackMatrix, maxDivisions,
