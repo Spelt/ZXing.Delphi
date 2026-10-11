@@ -148,7 +148,7 @@ type
     /// </summary>
     procedure ScanAsync(const pBitmapForScan: TBitmap;
       const OnCompleted: TProc<TReadResult>;
-      const OnException: TProc<Exception> = nil);
+      const OnException: TProc<Exception> = nil); overload;
     /// <summary>
     /// All barcodes in the bitmap, at most maxCount (0: no limit), each one
     /// once. Scans all layers (normal, inverted with ENABLE_INVERSION and
@@ -171,6 +171,40 @@ type
     procedure ScanAllAsync(const pBitmapForScan: TBitmap;
       const OnCompleted: TProc<TObjectList<TReadResult>>;
       const OnException: TProc<Exception> = nil; maxCount: Integer = 0);
+      overload;
+
+    /// <summary>
+    /// The same in one call, without a scan manager of your own: the first
+    /// barcode of the bitmap (nil when there is none; the caller frees the
+    /// result). A scan manager is made for the call, for the format (Auto:
+    /// every format read by default, like Create) and the hints, which it
+    /// frees. The format is required here: it tells this call apart from
+    /// Scan(bitmap) of an instance. For a camera, make one TScanManager and
+    /// keep it: the readers are set up on every call of these.
+    /// </summary>
+    class function Scan(const pBitmapForScan: TBitmap;
+      format: TBarcodeFormat;
+      hints: TDictionary<TDecodeHintType, TObject> = nil): TReadResult;
+      overload; static;
+    /// <summary>ScanAll in one call, see Scan(bitmap, format).</summary>
+    class function ScanAll(const pBitmapForScan: TBitmap;
+      format: TBarcodeFormat; maxCount: Integer = 0;
+      hints: TDictionary<TDecodeHintType, TObject> = nil)
+      : TObjectList<TReadResult>; overload; static;
+    /// <summary>ScanAsync in one call, see Scan(bitmap, format): the scan
+    /// manager made for the call lives until OnCompleted or OnException was
+    /// called.</summary>
+    class procedure ScanAsync(const pBitmapForScan: TBitmap;
+      format: TBarcodeFormat; const OnCompleted: TProc<TReadResult>;
+      const OnException: TProc<Exception> = nil;
+      hints: TDictionary<TDecodeHintType, TObject> = nil); overload; static;
+    /// <summary>ScanAllAsync in one call, see Scan(bitmap, format).
+    /// </summary>
+    class procedure ScanAllAsync(const pBitmapForScan: TBitmap;
+      format: TBarcodeFormat;
+      const OnCompleted: TProc<TObjectList<TReadResult>>;
+      const OnException: TProc<Exception> = nil; maxCount: Integer = 0;
+      hints: TDictionary<TDecodeHintType, TObject> = nil); overload; static;
     constructor Create(const format: TBarcodeFormat;
       Hints: TDictionary<TDecodeHintType, TObject>);
 
@@ -201,42 +235,6 @@ type
     property ReturnErrors: Boolean read FReturnErrors write FReturnErrors;
     /// <summary>True while a scan started with ScanAsync runs.</summary>
     property Scanning: Boolean read GetScanning;
-  end;
-
-  /// <summary>
-  /// Scanning in one call, without a scan manager of your own: the same
-  /// Scan, ScanAll, ScanAsync and ScanAllAsync as TScanManager, with the
-  /// format (Auto: every format read by default) and the hints (freed) as
-  /// parameters. A scan manager is made for the call; the one of an
-  /// asynchronous call lives until OnCompleted or OnException was called.
-  /// For a camera, make one TScanManager and keep it: the readers are set
-  /// up on every call here.
-  /// </summary>
-  TScanner = class
-  public
-    /// <summary>The first barcode of the bitmap, nil when there is none;
-    /// the caller frees the result.</summary>
-    class function Scan(const pBitmapForScan: TBitmap;
-      format: TBarcodeFormat = TBarcodeFormat.Auto;
-      hints: TDictionary<TDecodeHintType, TObject> = nil): TReadResult; static;
-    /// <summary>All barcodes of the bitmap, see TScanManager.ScanAll.
-    /// </summary>
-    class function ScanAll(const pBitmapForScan: TBitmap;
-      maxCount: Integer = 0; format: TBarcodeFormat = TBarcodeFormat.Auto;
-      hints: TDictionary<TDecodeHintType, TObject> = nil)
-      : TObjectList<TReadResult>; static;
-    /// <summary>See TScanManager.ScanAsync.</summary>
-    class procedure ScanAsync(const pBitmapForScan: TBitmap;
-      const OnCompleted: TProc<TReadResult>;
-      const OnException: TProc<Exception> = nil;
-      format: TBarcodeFormat = TBarcodeFormat.Auto;
-      hints: TDictionary<TDecodeHintType, TObject> = nil); static;
-    /// <summary>See TScanManager.ScanAllAsync.</summary>
-    class procedure ScanAllAsync(const pBitmapForScan: TBitmap;
-      const OnCompleted: TProc<TObjectList<TReadResult>>;
-      const OnException: TProc<Exception> = nil; maxCount: Integer = 0;
-      format: TBarcodeFormat = TBarcodeFormat.Auto;
-      hints: TDictionary<TDecodeHintType, TObject> = nil); static;
   end;
 
 implementation
@@ -641,9 +639,9 @@ begin
   r.resultPoints := points;
 end;
 
-{ TScanner }
+{ the class methods: a scan manager for one call }
 
-class function TScanner.Scan(const pBitmapForScan: TBitmap;
+class function TScanManager.Scan(const pBitmapForScan: TBitmap;
   format: TBarcodeFormat; hints: TDictionary<TDecodeHintType, TObject>)
   : TReadResult;
 var
@@ -653,8 +651,8 @@ begin
   Result := scanner.Scan(pBitmapForScan);
 end;
 
-class function TScanner.ScanAll(const pBitmapForScan: TBitmap;
-  maxCount: Integer; format: TBarcodeFormat;
+class function TScanManager.ScanAll(const pBitmapForScan: TBitmap;
+  format: TBarcodeFormat; maxCount: Integer;
   hints: TDictionary<TDecodeHintType, TObject>): TObjectList<TReadResult>;
 var
   scanner: IScanManager;
@@ -663,9 +661,10 @@ begin
   Result := scanner.ScanAll(pBitmapForScan, maxCount);
 end;
 
-class procedure TScanner.ScanAsync(const pBitmapForScan: TBitmap;
-  const OnCompleted: TProc<TReadResult>; const OnException: TProc<Exception>;
-  format: TBarcodeFormat; hints: TDictionary<TDecodeHintType, TObject>);
+class procedure TScanManager.ScanAsync(const pBitmapForScan: TBitmap;
+  format: TBarcodeFormat; const OnCompleted: TProc<TReadResult>;
+  const OnException: TProc<Exception>;
+  hints: TDictionary<TDecodeHintType, TObject>);
 var
   scanner: IScanManager;
 begin
@@ -674,10 +673,10 @@ begin
   scanner.ScanAsync(pBitmapForScan, OnCompleted, OnException);
 end;
 
-class procedure TScanner.ScanAllAsync(const pBitmapForScan: TBitmap;
-  const OnCompleted: TProc<TObjectList<TReadResult>>;
+class procedure TScanManager.ScanAllAsync(const pBitmapForScan: TBitmap;
+  format: TBarcodeFormat; const OnCompleted: TProc<TObjectList<TReadResult>>;
   const OnException: TProc<Exception>; maxCount: Integer;
-  format: TBarcodeFormat; hints: TDictionary<TDecodeHintType, TObject>);
+  hints: TDictionary<TDecodeHintType, TObject>);
 var
   scanner: IScanManager;
 begin

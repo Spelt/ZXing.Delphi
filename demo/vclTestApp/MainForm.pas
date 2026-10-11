@@ -46,8 +46,8 @@ begin
     bmp:= TBitmap.Create;
 
     bmp.assign (image.Picture.Graphic);
-    // one call: TScanner makes and frees the scan manager
-    ReadResult := TScanner.Scan(bmp);
+    // one call: a scan manager is made and freed for it
+    ReadResult := TScanManager.Scan(bmp, TBarcodeFormat.Auto);
     if ReadResult<>nil then
       log.Lines.Text := ReadResult.text
     else

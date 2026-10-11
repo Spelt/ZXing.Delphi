@@ -317,7 +317,7 @@ begin
     '\..\..\Images\zxing-cpp\qrcode-1\1.png');
   try
     // one call, one result
-    var r := TScanner.Scan(bitmap, TBarcodeFormat.QR_CODE);
+    var r := TScanManager.Scan(bitmap, TBarcodeFormat.QR_CODE);
     try
       Assert.IsNotNull(r);
       Assert.AreNotEqual('', r.Text);
@@ -326,7 +326,7 @@ begin
       r.Free;
     end;
     // all, with Auto
-    var all := TScanner.ScanAll(bitmap);
+    var all := TScanManager.ScanAll(bitmap, TBarcodeFormat.Auto);
     try
       Assert.AreEqual(1, all.Count);
       Assert.AreEqual(text, all[0].Text);
@@ -335,7 +335,7 @@ begin
     end;
     // in a task: the scan manager made for the call lives until the callback
     done := false;
-    TScanner.ScanAsync(bitmap,
+    TScanManager.ScanAsync(bitmap, TBarcodeFormat.QR_CODE,
       procedure(r: TReadResult)
       begin
         Assert.IsNotNull(r);
