@@ -113,7 +113,7 @@ begin
     try
       for var reader in readers do
         reader.ClearRows;
-      var runs, forward, backward: TPatternRow;
+      var runs, forward, backward, scratch: TPatternRow;
       var y := 0;
       while (y < matrix.Height) do
       begin
@@ -121,10 +121,13 @@ begin
         // row, the reverse in a buffer used again
         if vertical then
         begin
-          GetPatternRow(matrix, y, forward);
-          var n := Length(forward);
-          if (Length(backward) < n) then
-            SetLength(backward, n);
+          // (the runs in a buffer used for every column, then copies of the
+          // exact length: the readers take the length of the row)
+          var n := GetPatternRowInto(matrix.RowWords(y), matrix.RowSize,
+            matrix.Width, scratch);
+          forward := Copy(scratch, 0, n);
+          runs := nil; // (so that backward is not copied when resized)
+          SetLength(backward, n);
           for var i := 0 to n - 1 do
             backward[n - 1 - i] := forward[i];
         end;
