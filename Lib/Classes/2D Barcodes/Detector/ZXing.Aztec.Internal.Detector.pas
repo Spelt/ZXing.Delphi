@@ -66,6 +66,7 @@ procedure DetectAztec(image: TBitMatrix; isPure, tryHarder: Boolean;
 implementation
 
 uses
+  ZXing.Parallel,
   System.Types,
   System.Math,
   System.Generics.Collections,
@@ -322,6 +323,9 @@ begin
     var y := margin;
     while (y < image.Height - margin) do
     begin
+      // (in a task: stopped when the result is not needed any more)
+      if DecodingCancelled then
+        break;
       GetPatternRow(image, y, row);
       var next := TPatternView.Create(row);
       // the center pattern starts with white and is 7 wide (compact code)

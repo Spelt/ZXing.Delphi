@@ -64,6 +64,7 @@ function RotatedBitMatrix180(image: TBitMatrix): TBitMatrix;
 implementation
 
 uses
+  ZXing.Parallel,
   System.Math,
   ZXing.Common.Pattern;
 
@@ -309,6 +310,9 @@ begin
   var foundBarcodeInRow := false;
   while (row < bitMatrix.Height) do
   begin
+    // (in a task: stopped when the result is not needed any more)
+    if DecodingCancelled then
+      break;
     var vertices := FindVertices(bitMatrix, row, column);
     if vertices[0].IsNone and vertices[3].IsNone then
     begin

@@ -69,6 +69,7 @@ function LocateQRAlignmentPattern(image: TBitMatrix; moduleSize: Double;
 implementation
 
 uses
+  ZXing.Parallel,
   System.Types,
   System.SysUtils,
   System.Math,
@@ -221,6 +222,9 @@ begin
     var y := skip - 1;
     while (y < height) do
     begin
+      // (in a task: stopped when the result is not needed any more)
+      if DecodingCancelled then
+        break;
       GetPatternRow(image, y, row);
       var next := TPatternView.Create(row);
 

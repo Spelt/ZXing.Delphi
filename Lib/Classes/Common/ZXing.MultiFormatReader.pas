@@ -225,12 +225,16 @@ type
       end;
       PReaderJob = ^TReaderJob;
   private
-    FJobs: TArray<TReaderJob>;
-    FCount: Integer;
+    FJobs: TList<PReaderJob>;
+    FStarted: Boolean;
     procedure CancelBehind(i: Integer);
     procedure WaitForTheTasks;
   public
+    constructor Create;
     destructor Destroy; override;
+    /// <summary>Starts the tasks of the jobs added so far; the jobs added
+    /// after it start at once.</summary>
+    procedure Start;
     /// <summary>The readers of multi for image, in their order. failed: the
     /// list for the failed results (RETURN_ERRORS) of the image, nil when
     /// they are not wanted.</summary>
@@ -896,6 +900,8 @@ function TMultiFormatReader.ParallelReaders: Boolean;
 begin
   // (the time per reader is measured one reader at a time; the result point
   // callback of an application is called in the thread of the application)
+  // (not with one reader: the tasks cost more than they bring on an image
+  // with a code, and the layers alone are too little work for them)
   Result := ParallelDecodingActive and not InParallelReader and
     not ReaderTimingsEnabled and (readers <> nil) and (readers.Count > 1) and
     ((FHints = nil) or
@@ -960,14 +966,20 @@ begin
     procedure
     begin
       InParallelReader := true;
+      CurrentCancel := @job.Token.Cancelled;
       try
         try
-          job.Reader.Reset;
-          job.Raw := job.Reader.decode(job.Image, job.Hints);
+          // (cancelled before it started: nothing to do)
+          if not job.Token.Cancelled then
+          begin
+            job.Reader.Reset;
+            job.Raw := job.Reader.decode(job.Image, job.Hints);
+          end;
         except
           job.Error := Exception(AcquireExceptionObject);
         end;
       finally
+        CurrentCancel := nil;
         InParallelReader := false;
       end;
     end, DecodingThreadPool);
@@ -975,29 +987,33 @@ end;
 
 { TReaderJobList }
 
+constructor TReaderJobList.Create;
+begin
+  inherited Create;
+  FJobs := TList<PReaderJob>.Create;
+end;
+
 destructor TReaderJobList.Destroy;
 begin
-  for var k := 0 to FCount - 1 do
-    with FJobs[k] do
-    begin
-      if (Token <> nil) then
-        Token.Cancelled := true;
-    end;
+  for var job in FJobs do
+    if (job.Token <> nil) then
+      job.Token.Cancelled := true;
   WaitForTheTasks;
-  for var k := 0 to FCount - 1 do
-    with FJobs[k] do
+  for var job in FJobs do
+  begin
+    if (job.Failed <> nil) then
     begin
-      if (Failed <> nil) then
-      begin
-        for var f in Failed do
-          f.Free;
-        Failed.Free;
-      end;
-      Raw.Free;
-      Error.Free;
-      Hints.Free;
-      Token.Free;
+      for var f in job.Failed do
+        f.Free;
+      job.Failed.Free;
     end;
+    job.Raw.Free;
+    job.Error.Free;
+    job.Hints.Free;
+    job.Token.Free;
+    Dispose(job);
+  end;
+  FJobs.Free;
   inherited;
 end;
 
@@ -1006,12 +1022,11 @@ procedure TReaderJobList.AddImage(owner: TMultiFormatReader;
 begin
   if (owner.readers = nil) then
     exit;
-  if (FCount + owner.readers.Count > Length(FJobs)) then
-    SetLength(FJobs, 2 * (FCount + owner.readers.Count));
   for var i := 0 to owner.readers.Count - 1 do
   begin
-    var job: PReaderJob := @FJobs[FCount];
-    Inc(FCount);
+    var job: PReaderJob;
+    New(job);
+    job^ := Default(TReaderJob);
     job.Owner := owner;
     job.Reader := owner.readers[i];
     job.ReaderIndex := i;
@@ -1033,18 +1048,31 @@ begin
     end
     else
       job.Hints.Remove(TDecodeHintType.RETURN_ERRORS);
+    FJobs.Add(job);
   end;
+  // (added after the start: on their way at once)
+  if FStarted then
+    Start;
+end;
+
+procedure TReaderJobList.Start;
+begin
+  FStarted := true;
+  for var job in FJobs do
+    if (job.Task = nil) then
+      job.Task := StartReaderJob(job);
 end;
 
 procedure TReaderJobList.CancelBehind(i: Integer);
 begin
   // the ones that were not done yet are decoded again when they are needed
-  for var j := i + 1 to FCount - 1 do
-    if (FJobs[j].Task <> nil) and not FJobs[j].Token.Cancelled then
-    begin
-      FJobs[j].Rerun := (FJobs[j].Task.Status <> TTaskStatus.Completed);
-      FJobs[j].Token.Cancelled := true;
-    end;
+  for var j := i + 1 to FJobs.Count - 1 do
+    with FJobs[j]^ do
+      if (Task <> nil) and not Token.Cancelled then
+      begin
+        Rerun := (Task.Status <> TTaskStatus.Completed);
+        Token.Cancelled := true;
+      end;
 end;
 
 procedure TReaderJobList.WaitForTheTasks;
@@ -1052,9 +1080,9 @@ var
   started: TArray<ITask>;
 begin
   started := nil;
-  for var j := 0 to FCount - 1 do
-    if (FJobs[j].Task <> nil) then
-      started := started + [FJobs[j].Task];
+  for var job in FJobs do
+    if (job.Task <> nil) then
+      started := started + [job.Task];
   if (Length(started) > 0) then
     TTask.WaitForAll(started);
 end;
@@ -1066,68 +1094,65 @@ begin
   Result := nil;
   layer := -1;
   winner := -1;
-  // (the pointers to the jobs stay valid: no more jobs from here on)
-  SetLength(FJobs, FCount);
   try
-    for var i := 0 to FCount - 1 do
-      FJobs[i].Task := StartReaderJob(@FJobs[i]);
-
+    Start;
     var i := 0;
-    while (i < FCount) do
+    while (i < FJobs.Count) do
     begin
-      if FJobs[i].Rerun then
+      var job := FJobs[i];
+      if job.Rerun then
       begin
         // cancelled before it was done, and needed after all: once more,
         // here (every task is done by now)
-        FJobs[i].Rerun := false;
-        FJobs[i].Token.Cancelled := false;
-        if (FJobs[i].Failed <> nil) then
+        job.Rerun := false;
+        job.Token.Cancelled := false;
+        if (job.Failed <> nil) then
         begin
-          for var f in FJobs[i].Failed do
+          for var f in job.Failed do
             f.Free;
-          FJobs[i].Failed.Clear;
+          job.Failed.Clear;
         end;
-        FreeAndNil(FJobs[i].Raw);
-        FJobs[i].Reader.Reset;
-        FJobs[i].Raw := FJobs[i].Reader.decode(FJobs[i].Image, FJobs[i].Hints);
+        FreeAndNil(job.Raw);
+        job.Reader.Reset;
+        job.Raw := job.Reader.decode(job.Image, job.Hints);
       end
       else
-        FJobs[i].Task.Wait;
-      if (FJobs[i].Error <> nil) then
+        job.Task.Wait;
+      if (job.Error <> nil) then
       begin
         // what the sequential order would have raised here
         CancelBehind(i);
         WaitForTheTasks;
-        var e := FJobs[i].Error;
-        FJobs[i].Error := nil;
+        var e := job.Error;
+        job.Error := nil;
         raise e;
       end;
-      if (FJobs[i].Raw <> nil) then
+      if (job.Raw <> nil) then
       begin
         // a result: the readers behind it are not needed, unless it is
         // rejected after all (the checks need the image for themselves)
         CancelBehind(i);
         WaitForTheTasks;
-        var r := FJobs[i].Raw;
-        FJobs[i].Raw := nil;
-        if FJobs[i].Owner.AcceptResult(r, FJobs[i].Image) then
+        var r := job.Raw;
+        job.Raw := nil;
+        if job.Owner.AcceptResult(r, job.Image) then
         begin
           Result := r;
           winner := i;
-          layer := FJobs[i].Layer;
+          layer := job.Layer;
           break;
         end;
       end;
       Inc(i);
     end;
   finally
-    for var k := 0 to FCount - 1 do
-      FJobs[k].Token.Cancelled := true;
+    for var job in FJobs do
+      job.Token.Cancelled := true;
     WaitForTheTasks;
     // the failed results of the readers that ran in the sequential order,
     // up to the winner, in that order, to the lists of their images; the
     // rest is dropped
-    var last := FCount - 1;
+    var last := FJobs.Count - 1;
     if (winner >= 0) then
       last := winner;
     for var k := 0 to last do
@@ -1137,7 +1162,7 @@ begin
         FJobs[k].Failed.Clear;
       end;
     if (winner >= 0) then
-      with FJobs[winner] do
+      with FJobs[winner]^ do
       begin
         // found a barcode, pushing the successful reader up front (as the
         // sequential order does)

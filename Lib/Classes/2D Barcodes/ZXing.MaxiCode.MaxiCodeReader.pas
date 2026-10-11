@@ -60,6 +60,7 @@ function DecodeMaxiCode(bits: TBitMatrix; out error: string): TDecoderResult;
 implementation
 
 uses
+  ZXing.Parallel,
   System.Math,
   System.Types,
   System.Generics.Defaults,
@@ -1286,6 +1287,9 @@ begin
   var y := rowStep div 2;
   while (y < image.Height) do
   begin
+    // (in a task: stopped when the result is not needed any more)
+    if DecodingCancelled then
+      break;
     GetPatternRow(image, y, runs);
     // the outer ring at a dark run: odd index
     var i := 1;

@@ -63,6 +63,7 @@ function MicroPDF417RAPIndex(const widths: array of Integer;
 implementation
 
 uses
+  ZXing.Parallel,
   System.Types,
   System.Math,
   ZXing.ResultPoint,
@@ -682,6 +683,9 @@ begin
   var y := margin;
   while (y < lastY) do
   begin
+    // (in a task: stopped when the result is not needed any more)
+    if DecodingCancelled then
+      break;
     var imageY := y;
     if reversed then
       imageY := height - 1 - y;

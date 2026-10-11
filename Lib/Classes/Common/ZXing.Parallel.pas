@@ -50,6 +50,10 @@ threadvar
   /// <summary>True in a task that runs a reader (TMultiFormatReader): a
   /// detector does not start tasks of its own then.</summary>
   InParallelReader: Boolean;
+  /// <summary>In a task that runs a reader: the flag of its cancel token,
+  /// for the loops of the detectors (DecodingCancelled); nil elsewhere.
+  /// </summary>
+  CurrentCancel: PBoolean;
 
 /// <summary>True when ParallelDecoding is on and there is more than one
 /// processor: the readers run their tasks then.</summary>
@@ -58,6 +62,10 @@ function ParallelDecodingActive: Boolean;
 /// <summary>The thread pool of the decoding tasks: made on first use, with
 /// as many worker threads as processors.</summary>
 function DecodingThreadPool: TThreadPool;
+
+/// <summary>True when the reader of this thread is not needed any more: the
+/// detectors stop at their next row, scan line or candidate.</summary>
+function DecodingCancelled: Boolean;
 
 /// <summary>The cancel token of the hints, nil without one.</summary>
 function CancelTokenOf(hints: TDictionary<TDecodeHintType, TObject>)
@@ -103,6 +111,11 @@ begin
       pool.Free;
   end;
   Result := FPool;
+end;
+
+function DecodingCancelled: Boolean;
+begin
+  Result := (CurrentCancel <> nil) and CurrentCancel^;
 end;
 
 function CancelTokenOf(hints: TDictionary<TDecodeHintType, TObject>)

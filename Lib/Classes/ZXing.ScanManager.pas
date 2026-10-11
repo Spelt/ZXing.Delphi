@@ -933,6 +933,34 @@ var
   levels: TArray<TPyramidLevel>;
   layers: TArray<TScanLayer>;
   n, resultLayer: Integer;
+
+  procedure AddLayer(const lv: TPyramidLevel; inverted: Boolean);
+  begin
+    layers[n].Scale := lv.Scale;
+    layers[n].Inverted := inverted;
+    if inverted then
+    begin
+      // (the inverted binarizer reuses the block statistics of the normal
+      // one, the layer before it, when that one has its matrix: it is
+      // made, or waited for, here)
+      MakeBlackMatrix(layers[n - 1].Bitmap);
+      layers[n].Source := lv.Source.invert;
+      layers[n].OwnsSource := true;
+      layers[n].Binarizer := THybridBinarizer.CreateInverted(layers[n].Source,
+        layers[n - 1].Binarizer);
+    end
+    else
+    begin
+      layers[n].Source := lv.Source;
+      layers[n].OwnsSource := lv.OwnsSource;
+      layers[n].Binarizer := THybridBinarizer.Create(lv.Source);
+    end;
+    layers[n].Bitmap := TBinaryBitmap.Create(layers[n].Binarizer);
+    if (FFailed <> nil) then
+      layers[n].Failed := TList<TReadResult>.Create;
+    Inc(n);
+  end;
+
 begin
   Result := nil;
   levels := PyramidLevels(source);
@@ -940,37 +968,29 @@ begin
   SetLength(layers, 2 * Length(levels));
   try
     // the layers in the sequential order: the normal and the inverted
-    // image of every level of the pyramid
-    for var lv in levels do
-    begin
-      layers[n].Source := lv.Source;
-      layers[n].OwnsSource := lv.OwnsSource;
-      layers[n].Scale := lv.Scale;
-      layers[n].Inverted := false;
-      layers[n].Binarizer := THybridBinarizer.Create(lv.Source);
-      layers[n].Bitmap := TBinaryBitmap.Create(layers[n].Binarizer);
-      Inc(n);
-      if FEnableInversion then
-      begin
-        MakeBlackMatrix(layers[n - 1].Bitmap);
-        layers[n].Source := lv.Source.invert;
-        layers[n].OwnsSource := true;
-        layers[n].Scale := lv.Scale;
-        layers[n].Inverted := true;
-        layers[n].Binarizer := THybridBinarizer.CreateInverted(layers[n].Source,
-          layers[n - 1].Binarizer);
-        layers[n].Bitmap := TBinaryBitmap.Create(layers[n].Binarizer);
-        Inc(n);
-      end;
-    end;
-    if (FFailed <> nil) then
-      for var k := 0 to n - 1 do
-        layers[k].Failed := TList<TReadResult>.Create;
-
+    // image of every level of the pyramid. The readers of the first layer
+    // start at once; the other layers are prepared while they run, so that
+    // an image with a code pays nothing for them
     var jobs := TReaderJobList.Create;
     try
-      for var k := 0 to n - 1 do
-        jobs.AddImage(LayerReader(k), layers[k].Bitmap, k, layers[k].Failed);
+      AddLayer(levels[0], false);
+      jobs.AddImage(LayerReader(0), layers[0].Bitmap, 0, layers[0].Failed);
+      jobs.Start;
+      for var k := 0 to High(levels) do
+      begin
+        if (k > 0) then
+        begin
+          AddLayer(levels[k], false);
+          jobs.AddImage(LayerReader(n - 1), layers[n - 1].Bitmap, n - 1,
+            layers[n - 1].Failed);
+        end;
+        if FEnableInversion then
+        begin
+          AddLayer(levels[k], true);
+          jobs.AddImage(LayerReader(n - 1), layers[n - 1].Bitmap, n - 1,
+            layers[n - 1].Failed);
+        end;
+      end;
       Result := jobs.Run(resultLayer);
     finally
       jobs.Free;
@@ -1007,6 +1027,10 @@ begin
       if layers[k].OwnsSource then
         layers[k].Source.Free;
     end;
+    // (the levels not used as layers: an exception while preparing)
+    for var k := n to High(levels) do
+      if levels[k].OwnsSource then
+        levels[k].Source.Free;
   end;
 end;
 
