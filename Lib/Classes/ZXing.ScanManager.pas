@@ -5,6 +5,7 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
+  System.Threading,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
 {$ENDIF}
@@ -23,6 +24,27 @@ uses
   ZXing.DecodeHintType;
 
 type
+  /// <summary>A level of the image pyramid (for the layers in tasks).
+  /// </summary>
+  TPyramidLevel = record
+    Source: TLuminanceSource;
+    OwnsSource: Boolean;
+    Scale: Single;
+  end;
+
+  /// <summary>A layer of an image in tasks: the normal or the inverted
+  /// image of a level of the pyramid, with its binarizer and bitmap.
+  /// </summary>
+  TScanLayer = record
+    Source: TLuminanceSource;
+    OwnsSource: Boolean;
+    Scale: Single;
+    Inverted: Boolean;
+    Binarizer: THybridBinarizer;
+    Bitmap: TBinaryBitmap;
+    Failed: TList<TReadResult>;
+  end;
+
   /// <summary>
   /// The scanner as an interface: hold a TScanManager in a variable of this
   /// type and it is freed when the last reference goes out of scope, no
@@ -81,6 +103,12 @@ type
     FResultPointEvent: TResultPointCallback;
     FMultiFormatReader: TMultiFormatReader;
     listFormats: TList<TBarcodeFormat>;
+    FFormat: TBarcodeFormat;
+    // the readers of the other layers (the first layer uses
+    // FMultiFormatReader), with copies of the hints of their own, for the
+    // layers in tasks (ParallelDecoding)
+    FLayerReaders: TObjectList<TMultiFormatReader>;
+    FLayerHints: TObjectList<TDictionary<TDecodeHintType, TObject>>;
     FReturnErrors: Boolean;
     // 1 while a scan started with ScanAsync runs (TInterlocked)
     FScanning: Integer;
@@ -121,6 +149,19 @@ type
     /// <summary>Scan without the failed results: the full image, then the
     /// downscaled layers.</summary>
     function ScanLayers(const LuminanceSource: TLuminanceSource): TReadResult;
+    /// <summary>Whether the layers of an image are scanned in tasks
+    /// (ParallelDecoding, see ZXing.Parallel).</summary>
+    function ParallelLayers: Boolean;
+    /// <summary>The reader of layer k: the scan manager's own for the first
+    /// layer, one with a copy of the hints for every other.</summary>
+    function LayerReader(k: Integer): TMultiFormatReader;
+    /// <summary>The full image and, with TryDownscale, its downscaled
+    /// copies (owned, to be freed by the caller).</summary>
+    function PyramidLevels(const source: TLuminanceSource)
+      : TArray<TPyramidLevel>;
+    /// <summary>ScanLayers with the readers of all layers in tasks, the
+    /// result of the sequential order (see TReaderJobList).</summary>
+    function ScanLayersParallel(const source: TLuminanceSource): TReadResult;
   public
     destructor Destroy; override;
 
@@ -243,10 +284,12 @@ uses
   System.Math,
   System.Classes,
   System.SyncObjs,
-  System.Threading,
-  ZXing.Reader;
+  ZXing.Reader,
+  ZXing.Parallel;
 
 procedure ScaleResult(r: TReadResult; scale: Single); forward;
+procedure AdjustFailedList(list: TList<TReadResult>; first: Integer;
+  scale: Single; inverted: Boolean); forward;
 
 constructor TScanManager.Create(const format: TBarcodeFormat;
   Hints: TDictionary<TDecodeHintType, TObject>);
@@ -255,6 +298,7 @@ begin
   FEnableInversion := False;
   FTryDownscale := true;
   FHints := Hints;
+  FFormat := format;
   FMultiFormatReader := GetMultiFormatReader(format);
 end;
 
@@ -291,6 +335,8 @@ begin
   end;
 
   FreeAndNil(FMultiFormatReader);
+  FLayerReaders.Free;
+  FLayerHints.Free;
   inherited;
 end;
 
@@ -436,13 +482,7 @@ end;
 procedure TScanManager.AdjustFailed(first: Integer; scale: Single;
   inverted: Boolean);
 begin
-  for var i := first to FailedCount - 1 do
-  begin
-    if (scale <> 1) then
-      ScaleResult(FFailed[i], scale);
-    if inverted then
-      FFailed[i].IsInverted := true;
-  end;
+  AdjustFailedList(FFailed, first, scale, inverted);
 end;
 
 function TScanManager.Scan(const pBitmapForScan: TBitmap): TReadResult;
@@ -460,7 +500,10 @@ function TScanManager.Scan(const source: TLuminanceSource): TReadResult;
 begin
   BeginFailed;
   try
-    Result := ScanLayers(source);
+    if ParallelLayers then
+      Result := ScanLayersParallel(source)
+    else
+      Result := ScanLayers(source);
     // nothing read: the first symbol found but not read
     if (Result = nil) and (FailedCount > 0) then
       Result := FFailed.Extract(FFailed[0]);
@@ -799,6 +842,172 @@ begin
   end;
   EndFailed;
   Result := all;
+end;
+
+{ the layers in tasks (ParallelDecoding) }
+
+procedure AdjustFailedList(list: TList<TReadResult>; first: Integer;
+  scale: Single; inverted: Boolean);
+begin
+  if (list = nil) then
+    exit;
+  for var i := first to list.Count - 1 do
+  begin
+    if (scale <> 1) then
+      ScaleResult(list[i], scale);
+    if inverted then
+      list[i].IsInverted := true;
+  end;
+end;
+
+function TScanManager.ParallelLayers: Boolean;
+begin
+  Result := FMultiFormatReader.CanRunInTasks;
+end;
+
+function TScanManager.LayerReader(k: Integer): TMultiFormatReader;
+begin
+  if (k = 0) then
+    exit(FMultiFormatReader);
+  if (FLayerReaders = nil) then
+  begin
+    FLayerReaders := TObjectList<TMultiFormatReader>.Create(true);
+    FLayerHints := TObjectList < TDictionary < TDecodeHintType,
+      TObject >>.Create(true);
+  end;
+  while (FLayerReaders.Count < k) do
+  begin
+    // a copy of the hints of its own: the failed results of a layer go
+    // into a list of the layer (RETURN_ERRORS is set per call)
+    var hints := TDictionary<TDecodeHintType, TObject>.Create(FHints);
+    hints.Remove(TDecodeHintType.RETURN_ERRORS);
+    FLayerHints.Add(hints);
+    var reader := TMultiFormatReader.Create;
+    reader.hints := hints;
+    FLayerReaders.Add(reader);
+  end;
+  Result := FLayerReaders[k - 1];
+end;
+
+function TScanManager.PyramidLevels(const source: TLuminanceSource)
+  : TArray<TPyramidLevel>;
+var
+  level: TPyramidLevel;
+begin
+  level.Source := source;
+  level.OwnsSource := false;
+  level.Scale := 1;
+  Result := [level];
+  if not FTryDownscale then
+    exit;
+  // the downscaled layers of the image pyramid
+  var fullWidth := source.Width;
+  var luminances := source.Matrix;
+  var width := source.Width;
+  var height := source.Height;
+  while (Max(width, height) > DOWNSCALE_THRESHOLD) and
+    (Min(width, height) >= DOWNSCALE_FACTOR) do
+  begin
+    luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
+    width := width div DOWNSCALE_FACTOR;
+    height := height div DOWNSCALE_FACTOR;
+    level.Source := TRGBLuminanceSource.CreateAdopting(luminances, width,
+      height);
+    level.OwnsSource := true;
+    level.Scale := fullWidth / width;
+    Result := Result + [level];
+  end;
+end;
+
+procedure MakeBlackMatrix(bitmap: TBinaryBitmap);
+begin
+  // (the inverted binarizer of a layer reuses the block statistics of the
+  // normal one when that one has its matrix: faster with the same result)
+  if (bitmap.BlackMatrix = nil) then
+    exit;
+end;
+
+function TScanManager.ScanLayersParallel(const source: TLuminanceSource)
+  : TReadResult;
+var
+  levels: TArray<TPyramidLevel>;
+  layers: TArray<TScanLayer>;
+  n, resultLayer: Integer;
+begin
+  Result := nil;
+  levels := PyramidLevels(source);
+  n := 0;
+  SetLength(layers, 2 * Length(levels));
+  try
+    // the layers in the sequential order: the normal and the inverted
+    // image of every level of the pyramid
+    for var lv in levels do
+    begin
+      layers[n].Source := lv.Source;
+      layers[n].OwnsSource := lv.OwnsSource;
+      layers[n].Scale := lv.Scale;
+      layers[n].Inverted := false;
+      layers[n].Binarizer := THybridBinarizer.Create(lv.Source);
+      layers[n].Bitmap := TBinaryBitmap.Create(layers[n].Binarizer);
+      Inc(n);
+      if FEnableInversion then
+      begin
+        MakeBlackMatrix(layers[n - 1].Bitmap);
+        layers[n].Source := lv.Source.invert;
+        layers[n].OwnsSource := true;
+        layers[n].Scale := lv.Scale;
+        layers[n].Inverted := true;
+        layers[n].Binarizer := THybridBinarizer.CreateInverted(layers[n].Source,
+          layers[n - 1].Binarizer);
+        layers[n].Bitmap := TBinaryBitmap.Create(layers[n].Binarizer);
+        Inc(n);
+      end;
+    end;
+    if (FFailed <> nil) then
+      for var k := 0 to n - 1 do
+        layers[k].Failed := TList<TReadResult>.Create;
+
+    var jobs := TReaderJobList.Create;
+    try
+      for var k := 0 to n - 1 do
+        jobs.AddImage(LayerReader(k), layers[k].Bitmap, k, layers[k].Failed);
+      Result := jobs.Run(resultLayer);
+    finally
+      jobs.Free;
+    end;
+    if (Result <> nil) then
+    begin
+      if layers[resultLayer].Inverted then
+        Result.IsInverted := true;
+      // back to the coordinates of the full image
+      if (layers[resultLayer].Scale <> 1) then
+        ScaleResult(Result, layers[resultLayer].Scale);
+    end;
+    // the failed results, in the order of the layers, in the coordinates of
+    // the full image
+    for var k := 0 to n - 1 do
+      if (layers[k].Failed <> nil) then
+      begin
+        AdjustFailedList(layers[k].Failed, 0, layers[k].Scale,
+          layers[k].Inverted);
+        FFailed.AddRange(layers[k].Failed);
+        layers[k].Failed.Clear;
+      end;
+  finally
+    for var k := 0 to n - 1 do
+    begin
+      if (layers[k].Failed <> nil) then
+      begin
+        for var f in layers[k].Failed do
+          f.Free;
+        layers[k].Failed.Free;
+      end;
+      layers[k].Bitmap.Free;
+      layers[k].Binarizer.Free;
+      if layers[k].OwnsSource then
+        layers[k].Source.Free;
+    end;
+  end;
 end;
 
 function TScanManager.DecodeLayer(source: TLuminanceSource): TReadResult;
