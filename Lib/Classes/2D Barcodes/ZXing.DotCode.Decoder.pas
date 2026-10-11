@@ -180,8 +180,6 @@ function DotCodeCodewords(const dots: TArray<Boolean>;
   width, height: Integer): TArray<Integer>;
 begin
   Result := nil;
-  if (PatternValues[0] = 0) then
-    InitPatternValues;
   var places := DotPlaces(width, height);
   if (places = nil) or (Length(dots) <> width * height) then
     exit;
@@ -792,5 +790,11 @@ begin
     end;
   end;
 end;
+
+initialization
+
+// (the table once, at the start: readers in tasks must not build it at the
+// same time)
+InitPatternValues;
 
 end.

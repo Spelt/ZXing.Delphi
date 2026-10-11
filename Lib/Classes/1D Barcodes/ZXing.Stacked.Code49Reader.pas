@@ -613,6 +613,7 @@ var
   // the symbol characters (the even ones, the odd ones + 2401) by their edge
   // to edge widths (7 of 4 bits)
   Characters: TDictionary<Cardinal, TArray<Integer>>;
+  InitLock: TObject;
 
 function Code49CharacterPattern(value: Integer; even: Boolean): Word;
 begin
@@ -805,7 +806,16 @@ procedure ReadRows(const runs: TPatternRow; y, width: Integer;
   reversed: Boolean; rows: TList<TCode49Reader.TRow>);
 begin
   if (Characters = nil) then
-    InitCharacters;
+  begin
+    // (two readers in tasks at once: one builds the table)
+    TMonitor.Enter(InitLock);
+    try
+      if (Characters = nil) then
+        InitCharacters;
+    finally
+      TMonitor.Exit(InitLock);
+    end;
+  end;
   var view := TPatternView.Create(runs);
   view := view.SubView(0, ROW_LEN);
   while view.IsValid do
@@ -1025,8 +1035,10 @@ end;
 
 
 initialization
+  InitLock := TObject.Create;
 
 finalization
   Characters.Free;
+  InitLock.Free;
 
 end.

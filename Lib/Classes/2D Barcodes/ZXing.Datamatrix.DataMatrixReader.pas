@@ -61,6 +61,8 @@ type
     MAX_CLOSING_RADIUS = 2;
   private
     FDecoder: TDataMatrixDecoder;
+    // the cancel flag of the hints during a decode (ZXing.Parallel)
+    FCancel: PBoolean;
     NO_POINTS: TArray<IResultPoint>;
 
     /// <summary>decode, with or without the edge tracing detector of
@@ -128,7 +130,7 @@ type
   end;
 
 implementation
-uses ZXing.ByteSegments;
+uses ZXing.ByteSegments, ZXing.Parallel;
 
 { TDataMatrixReader }
 
@@ -214,6 +216,7 @@ begin
     remaining := 0;
     if (maxCount > 0) then
       remaining := maxCount - results.Count;
+    FCancel := CancelFlagOf(hints);
     // every symbol found by the edge tracing detector of zxing-cpp
     DetectDataMatrixByEdges(image.BlackMatrix, tryHarder, tryHarder,
       function(bits: TBitMatrix; const candidatePoints: TArray<IResultPoint>)
@@ -243,7 +246,7 @@ begin
         finally
           decoded.Free;
         end;
-      end, remaining);
+      end, remaining, FCancel);
   end;
 
   // nothing found: the pure detectors or the old detector, for one symbol
@@ -289,6 +292,7 @@ begin
   Result := nil;
   DecoderResult := nil;
   assumeGS1 := (hints <> nil) and hints.ContainsKey(TDecodeHintType.ASSUME_GS1);
+  FCancel := CancelFlagOf(hints);
 
   // no black matrix, e.g. a tiny image without contrast
   if (image = nil) or (image.BlackMatrix = nil) then
@@ -347,6 +351,8 @@ begin
       begin
         for radius := 1 to MAX_CLOSING_RADIUS do
         begin
+          if (FCancel <> nil) and FCancel^ then
+            break;
           closedMatrix := image.BlackMatrix.closed(radius);
           try
             DecoderResult := searchAndDecode(closedMatrix, MAX_GRID_DIVISIONS,
@@ -398,7 +404,7 @@ begin
       else
         AddFailedResult(hints, decoder.LastError, TBarcodeFormat.DATA_MATRIX,
           candidatePoints, nil);
-    end);
+    end, 1, FCancel);
 
   Result := decoded;
   if (Result <> nil) then
@@ -421,6 +427,8 @@ begin
     begin
       for gridX := 1 to Pred(divisions) do
       begin
+        if (FCancel <> nil) and FCancel^ then
+          exit;
         // points with both coordinates even were tried on the coarser grid
         if (not Odd(gridX)) and (not Odd(gridY)) then
           continue;

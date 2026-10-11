@@ -22,6 +22,7 @@ unit ZXing.OneD.OneDReader;
 interface
 
 uses
+  ZXing.Parallel,
   System.SysUtils,
   System.Generics.Collections,
   Math,
@@ -225,6 +226,8 @@ type
     FTryHarder: Boolean;
     FCheckRow: IBitArray;
     FUsePattern: Boolean;
+    // the cancel token of the hints during doDecode (ZXing.Parallel)
+    FCancel: TCancelToken;
     /// <summary>Whether decodeRow (the decoder of before, a different
     /// algorithm) reads the same text as r on the same row: then r counts
     /// as confirmed, also when no other row can be read.</summary>
@@ -712,6 +715,7 @@ var
 begin
   needsCallBack := (hints <> nil) and (hints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK));
   FTryHarder := (hints <> nil) and hints.ContainsKey(ZXing.DecodeHintType.TRY_HARDER);
+  FCancel := CancelTokenOf(hints);
   width := image.width;
   height := image.height;
   row := TBitArrayHelpers.CreateBitArray(width);
@@ -738,6 +742,9 @@ begin
   X := -1;
   while true do
   begin
+    // (in a task: stopped when the result is not needed any more)
+    if (FCancel <> nil) and FCancel.Cancelled then
+      break;
     var isCheckRow := (Length(checkRows) > 0);
     if isCheckRow then
     begin

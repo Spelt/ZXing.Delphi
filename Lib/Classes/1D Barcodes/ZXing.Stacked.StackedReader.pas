@@ -87,6 +87,7 @@ procedure ScanStacked(const image: TBinaryBitmap;
 implementation
 
 uses
+  ZXing.Parallel,
   ZXing.Common.BitMatrix,
   ZXing.Postal.FourStateDetector;
 
@@ -97,6 +98,7 @@ begin
   if (image = nil) or (image.BlackMatrix = nil) or
     ResultsFull(results, maxCount) then
     exit;
+  var cancel := CancelTokenOf(hints);
   var tryHarder := (hints <> nil) and
     hints.ContainsKey(TDecodeHintType.TRY_HARDER);
   var rowStep := 4;
@@ -117,6 +119,8 @@ begin
       var y := 0;
       while (y < matrix.Height) do
       begin
+        if (cancel <> nil) and cancel.Cancelled then
+          break;
         // the vertical rows (columns) are not cached by the image: once per
         // row, the reverse in a buffer used again
         if vertical then

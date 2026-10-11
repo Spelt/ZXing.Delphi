@@ -129,7 +129,14 @@ type
     /// found but could not read (with Error set). The caller owns the list
     /// and its results.
     /// </summary>
-    RETURN_ERRORS
+    RETURN_ERRORS,
+    /// <summary>
+    /// Internal: a TCancelToken (ZXing.Parallel), set by TMultiFormatReader
+    /// in the hints of a reader that runs in a task. The readers that support
+    /// it stop at their next row, scan line or candidate when it is
+    /// cancelled. Not for applications.
+    /// </summary>
+    CANCEL_TOKEN
     );
 
   /// <summary>

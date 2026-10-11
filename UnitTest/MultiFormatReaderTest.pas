@@ -360,11 +360,24 @@ end;
 
 procedure TMultiFormatReaderTest.ParallelDecodingSameResults;
 const
-  // Data Matrix samples, also some that need the lines over the whole image
-  FILES: array [0 .. 5] of string = ('datamatrix-1\#378.png',
+  // Data Matrix samples that need the scan lines over the whole image, a QR
+  // Code, a 1D code and an image without a code
+  FILES: array [0 .. 6] of string = ('datamatrix-1\#378.png',
     'datamatrix-1\0123456789.png', 'datamatrix-3\#749.png',
-    'datamatrix-3\#794.png', 'datamatrix-4\abcd-120x8.png', 'datamatrix-1\#378.png');
+    'datamatrix-3\#794.png', 'datamatrix-4\abcd-120x8.png', 'qrcode-1\1.png',
+    'code128-1\1.png');
 
+  function Describe(r: TReadResult): string;
+  begin
+    if (r = nil) then
+      exit('-');
+    Result := r.Text + ' ' + r.Error + ' @';
+    for var p in r.Position do
+      Result := Result + p.ToString;
+  end;
+
+  // Scan (the readers in tasks with ParallelDecoding) and ScanAll of every
+  // file, with Auto, TRY_HARDER and ReturnErrors
   function ScanTexts(parallel: Boolean): string;
   begin
     Result := '';
@@ -378,15 +391,19 @@ const
         try
           var hints := TDictionary<TDecodeHintType, TObject>.Create;
           hints.Add(TDecodeHintType.TRY_HARDER, nil);
-          var scanner: IScanManager := TScanManager.Create
-            (TBarcodeFormat.DATA_MATRIX, hints);
+          var scanner: IScanManager := TScanManager.Create(TBarcodeFormat.Auto,
+            hints);
+          scanner.ReturnErrors := true;
+          var r := scanner.Scan(bitmap);
+          try
+            Result := Result + name + ': ' + Describe(r) + #13#10;
+          finally
+            r.Free;
+          end;
           var all := scanner.ScanAll(bitmap);
           try
-            for var r in all do
-              Result := Result + name + ': ' + r.Text + ' @' +
-                r.ResultPoints[0].ToString + #13#10;
-            if (all.Count = 0) then
-              Result := Result + name + ': -'#13#10;
+            for var a in all do
+              Result := Result + '  all: ' + Describe(a) + #13#10;
           finally
             all.Free;
           end;

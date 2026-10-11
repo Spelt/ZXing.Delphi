@@ -65,6 +65,8 @@ uses
   ZXing.Stacked.Code49Reader,
   ZXing.Stacked.StackedReader,
   ZXing.Composite.Linker,
+  ZXing.Parallel,
+  System.Threading,
   ZXing.DotCode.DotCodeReader,
   ZXing.HanXin.HanXinReader,
   ZXing.OneD.PharmacodeReader,
@@ -103,6 +105,14 @@ type
     FAll: Boolean;
 
     function DecodeInternal(image: TBinaryBitmap): TReadResult;
+    function DecodeInternalSequential(image: TBinaryBitmap): TReadResult;
+    function DecodeInternalParallel(image: TBinaryBitmap): TReadResult;
+    /// <summary>The checks on the result of a reader: the 2D component of
+    /// a GS1 Composite, the position of a 1D code, plausibility. False (r
+    /// freed) when it is no result after all.</summary>
+    function AcceptResult(var r: TReadResult; image: TBinaryBitmap): Boolean;
+    /// <summary>Whether the readers run in tasks for this image.</summary>
+    function ParallelReaders: Boolean;
     /// <summary>With the reader timings: binarizes the whole image (once)
     /// and adds its time; returns the time stamp after it.</summary>
     function TimeBinarizer(image: TBinaryBitmap): Int64;
@@ -655,30 +665,63 @@ begin
   Result := stop;
 end;
 
+function TMultiFormatReader.AcceptResult(var r: TReadResult;
+  image: TBinaryBitmap): Boolean;
+begin
+  Result := false;
+  if (r = nil) then
+    exit;
+  // the 2D component of a GS1 Composite above (or below) a linear one
+  if FComposite and IsCompositeLinear(r) then
+  begin
+    var component := FindCompositeComponent(image, r, FHints);
+    if (component <> '') then
+      r := MakeComposite(r, component)
+    else if FOnlyComposite then
+    begin
+      FreeAndNil(r);
+      exit;
+    end;
+  end;
+  // the position of a 1D code: the height of its bars too
+  SetLinearPosition(r, image);
+  if not Plausible(r, image, FAll) then
+  begin
+    FreeAndNil(r);
+    exit;
+  end;
+  Result := true;
+end;
+
+function TMultiFormatReader.ParallelReaders: Boolean;
+begin
+  // (the time per reader is measured one reader at a time; the result point
+  // callback of an application is called in the thread of the application)
+  Result := ParallelDecodingActive and not InParallelReader and
+    not ReaderTimingsEnabled and (readers <> nil) and (readers.Count > 1) and
+    ((FHints = nil) or
+    not FHints.ContainsKey(TDecodeHintType.NEED_RESULT_POINT_CALLBACK));
+end;
+
 function TMultiFormatReader.DecodeInternal(image: TBinaryBitmap): TReadResult;
+begin
+  if (readers = nil) then
+    exit(nil);
+  if ParallelReaders then
+    Result := DecodeInternalParallel(image)
+  else
+    Result := DecodeInternalSequential(image);
+end;
+
+function TMultiFormatReader.DecodeInternalSequential(image: TBinaryBitmap)
+  : TReadResult;
 var
-  rpCallBack: TResultPointCallback;
   i: integer;
   Reader: IReader;
 begin
-
   result := nil;
-  if (readers = nil) then
-  begin
-    Exit;
-  end;
-
-  rpCallBack := nil;
-  if ((FHints <> nil) and
-    (FHints.ContainsKey(ZXing.DecodeHintType.NEED_RESULT_POINT_CALLBACK))) then
-  begin
-    // rpCallBack := FHints[DecodeHintType.NEED_RESULT_POINT_CALLBACK]
-    // as TResultPointCallback(nil);
-  end;
-
   for i := 0 to readers.Count - 1 do
   begin
-
     Reader := readers[i];
     Reader.Reset();
     // (the time per reader, only when the benchmark asks for it)
@@ -695,43 +738,215 @@ begin
       AddReaderTiming((Reader as TObject).ClassName,
         TStopwatch.GetTimeStamp - start - (ReaderTimingsNestedTicks - nested),
         result <> nil);
-    // the 2D component of a GS1 Composite above (or below) a linear one
-    if (result <> nil) and FComposite and IsCompositeLinear(result) then
+    if AcceptResult(result, image) then
     begin
-      var component := FindCompositeComponent(image, result, FHints);
-      if (component <> '') then
-        result := MakeComposite(result, component)
-      else if FOnlyComposite then
-      begin
-        FreeAndNil(result);
-        continue;
-      end;
-    end;
-    if result <> nil then
-    begin
-      // the position of a 1D code: the height of its bars too
-      SetLinearPosition(result, image);
-      if not Plausible(result, image, FAll) then
-      begin
-        FreeAndNil(result);
-        continue;
-      end;
-
       // found a barcode, pushing the successful reader up front
       // I assume that the same type of barcode is read multiple times
       // so the reordering of the readers list should speed up the next reading
       // a little bit
-
       readers.Delete(i);
       readers.Insert(0, Reader);
       Exit;
     end;
+  end;
+end;
 
-    // if rpCallBack <> nil then
-    // rpCallBack(nil)
+{ the readers in tasks (ParallelDecoding) }
 
+type
+  PReaderJob = ^TReaderJob;
+
+  /// <summary>A reader in a task: its own copy of the hints with its cancel
+  /// token (and its own list for RETURN_ERRORS), and what came out.
+  /// </summary>
+  TReaderJob = record
+    Reader: IReader;
+    Task: ITask;
+    Token: TCancelToken;
+    Hints: TDictionary<TDecodeHintType, TObject>;
+    Failed: TList<TReadResult>; // nil without the hint RETURN_ERRORS
+    Raw: TReadResult;
+    Error: Exception;
+    Rerun: Boolean; // cancelled before it was done: decoded again when needed
   end;
 
+/// <summary>Reset and decode in a task of the decoding pool; the result or
+/// the exception goes into the job.</summary>
+function StartReaderJob(job: PReaderJob; image: TBinaryBitmap): ITask;
+begin
+  Result := TTask.Run(
+    procedure
+    begin
+      InParallelReader := true;
+      try
+        try
+          job.Reader.Reset;
+          job.Raw := job.Reader.decode(image, job.Hints);
+        except
+          job.Error := Exception(AcquireExceptionObject);
+        end;
+      finally
+        InParallelReader := false;
+      end;
+    end, DecodingThreadPool);
+end;
+
+/// <summary>
+/// The readers side by side, each in a task with a copy of the hints, and
+/// the result of the sequential order: the first reader (in the order of
+/// the list) whose result is accepted. When a reader has a result, the
+/// readers behind it are cancelled (their tokens); the ones before it
+/// finish, they may have a result with a higher priority. A cancelled
+/// reader whose result is needed after all (the one before it was rejected)
+/// is decoded again, in this thread. The failed results (RETURN_ERRORS) of
+/// the readers that ran in the sequential order are kept, in that order.
+/// </summary>
+function TMultiFormatReader.DecodeInternalParallel(image: TBinaryBitmap)
+  : TReadResult;
+var
+  jobs: TArray<TReaderJob>;
+  failedList: TList<TReadResult>;
+  o: TObject;
+  n, winner: Integer;
+
+  // the readers behind i: stopped; the ones that were not done yet are
+  // decoded again when they are needed
+  procedure CancelBehind(i: Integer);
+  begin
+    for var j := i + 1 to n - 1 do
+      if (jobs[j].Task <> nil) and not jobs[j].Token.Cancelled then
+      begin
+        jobs[j].Rerun := (jobs[j].Task.Status <> TTaskStatus.Completed);
+        jobs[j].Token.Cancelled := true;
+      end;
+  end;
+
+  procedure WaitForTheTasks;
+  var
+    started: TArray<ITask>;
+  begin
+    started := nil;
+    for var j := 0 to n - 1 do
+      if (jobs[j].Task <> nil) then
+        started := started + [jobs[j].Task];
+    if (Length(started) > 0) then
+      TTask.WaitForAll(started);
+  end;
+
+begin
+  Result := nil;
+  n := readers.Count;
+  winner := -1;
+  failedList := nil;
+  if (FHints <> nil) and FHints.TryGetValue(TDecodeHintType.RETURN_ERRORS, o)
+  then
+    failedList := TList<TReadResult>(o);
+  SetLength(jobs, n);
+  // the black matrix first, in this thread; the rows and the turned images
+  // are made under the lock of the image by the first reader that asks
+  TimeBinarizer(image);
+  try
+    for var i := 0 to n - 1 do
+    begin
+      jobs[i].Reader := readers[i];
+      jobs[i].Token := TCancelToken.Create;
+      if (FHints <> nil) then
+        jobs[i].Hints := TDictionary<TDecodeHintType, TObject>.Create(FHints)
+      else
+        jobs[i].Hints := TDictionary<TDecodeHintType, TObject>.Create;
+      jobs[i].Hints.AddOrSetValue(TDecodeHintType.CANCEL_TOKEN, jobs[i].Token);
+      if (failedList <> nil) then
+      begin
+        jobs[i].Failed := TList<TReadResult>.Create;
+        jobs[i].Hints.AddOrSetValue(TDecodeHintType.RETURN_ERRORS,
+          jobs[i].Failed);
+      end;
+    end;
+    for var i := 0 to n - 1 do
+      jobs[i].Task := StartReaderJob(@jobs[i], image);
+
+    var i := 0;
+    while (i < n) do
+    begin
+      if jobs[i].Rerun then
+      begin
+        // cancelled before it was done, and needed after all: once more,
+        // here (every task is done by now)
+        jobs[i].Rerun := false;
+        jobs[i].Token.Cancelled := false;
+        if (jobs[i].Failed <> nil) then
+        begin
+          for var f in jobs[i].Failed do
+            f.Free;
+          jobs[i].Failed.Clear;
+        end;
+        FreeAndNil(jobs[i].Raw);
+        jobs[i].Reader.Reset;
+        jobs[i].Raw := jobs[i].Reader.decode(image, jobs[i].Hints);
+      end
+      else
+        jobs[i].Task.Wait;
+      if (jobs[i].Error <> nil) then
+      begin
+        // what the sequential order would have raised here
+        CancelBehind(i);
+        WaitForTheTasks;
+        var e := jobs[i].Error;
+        jobs[i].Error := nil;
+        raise e;
+      end;
+      if (jobs[i].Raw <> nil) then
+      begin
+        // a result: the readers behind it are not needed, unless it is
+        // rejected after all (the checks need the image for themselves)
+        CancelBehind(i);
+        WaitForTheTasks;
+        var r := jobs[i].Raw;
+        jobs[i].Raw := nil;
+        if AcceptResult(r, image) then
+        begin
+          Result := r;
+          winner := i;
+          break;
+        end;
+      end;
+      Inc(i);
+    end;
+  finally
+    for var k := 0 to n - 1 do
+      if (jobs[k].Token <> nil) then
+        jobs[k].Token.Cancelled := true;
+    WaitForTheTasks;
+    // the failed results of the readers that ran in the sequential order,
+    // up to the winner, in that order; the rest is dropped
+    var last := n - 1;
+    if (winner >= 0) then
+      last := winner;
+    for var k := 0 to n - 1 do
+    begin
+      if (jobs[k].Failed <> nil) then
+      begin
+        if (k <= last) and (failedList <> nil) then
+          failedList.AddRange(jobs[k].Failed)
+        else
+          for var f in jobs[k].Failed do
+            f.Free;
+        jobs[k].Failed.Free;
+      end;
+      jobs[k].Raw.Free;
+      jobs[k].Error.Free;
+      jobs[k].Hints.Free;
+      jobs[k].Token.Free;
+    end;
+    if (winner >= 0) then
+    begin
+      // found a barcode, pushing the successful reader up front (as the
+      // sequential order does)
+      var reader := readers[winner];
+      readers.Delete(winner);
+      readers.Insert(0, reader);
+    end;
+  end;
 end;
 
 end.

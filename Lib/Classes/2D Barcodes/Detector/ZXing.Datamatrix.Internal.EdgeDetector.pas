@@ -56,7 +56,8 @@ type
 /// one candidate was decoded.
 /// </summary>
 function DetectDataMatrixByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
-  const onCandidate: TDataMatrixCandidate; maxSymbols: Integer = 1): Boolean;
+  const onCandidate: TDataMatrixCandidate; maxSymbols: Integer = 1;
+  cancel: PBoolean = nil): Boolean;
 
 /// <summary>Detects a code in a "pure" image: an unrotated, unskewed code with
 /// only a white border around it (zxing-cpp's DetectPure). Also handles codes
@@ -1075,7 +1076,8 @@ end;
 /// tries to trace a Data Matrix symbol from there. Returns true when
 /// onCandidate stopped the detection.</summary>
 function Scan(var startTracer: TEdgeTracer; const lines: TLines;
-  const onCandidate: TDataMatrixCandidate; cancel: PBoolean = nil): Boolean;
+  const onCandidate: TDataMatrixCandidate; cancel: PBoolean = nil;
+  cancel2: PBoolean = nil): Boolean;
 begin
   Result := false;
   var lineL := lines[0];
@@ -1086,7 +1088,7 @@ begin
   while startTracer.MoveToNextWhiteAfterBlack do
   begin
     // (a direction traced in a task: stopped by the consumer)
-    if (cancel <> nil) and cancel^ then
+    if (cancel <> nil) and cancel^ or (cancel2 <> nil) and cancel2^ then
       exit(false);
     for var l in lines do
       l.Reset;
@@ -1429,7 +1431,7 @@ end;
 /// its own, until onCandidate stops it (true), the lines are done or cancel
 /// is set.</summary>
 function TraceDirection(image: TBitMatrix; k: Integer;
-  const onCandidate: TDataMatrixCandidate; cancel: PBoolean): Boolean;
+  const onCandidate: TDataMatrixCandidate; cancel, cancel2: PBoolean): Boolean;
 const
   MIN_SYMBOL_SIZE = 8 * 2;
   DIRECTIONS: array [0 .. 3, 0 .. 1] of Integer = ((-1, 0), (1, 0), (0, -1),
@@ -1455,7 +1457,7 @@ begin
       (MIN_SYMBOL_SIZE div 2) * DIRECTIONS[k, 0], cy - cy * DIRECTIONS[k, 1] +
       (MIN_SYMBOL_SIZE div 2) * DIRECTIONS[k, 1]));
     var i := 1;
-    while not cancel^ do
+    while not (cancel^ or (cancel2 <> nil) and cancel2^) do
     begin
       var tracer := TEdgeTracer.Create(image, startPos, dir);
       // alternate lines left and right of the center line
@@ -1466,7 +1468,7 @@ begin
       tracer.history := history;
       if not tracer.IsIn then
         break;
-      if Scan(tracer, lines, onCandidate, cancel) then
+      if Scan(tracer, lines, onCandidate, cancel, cancel2) then
         exit(true);
       Inc(i);
     end;
@@ -1480,7 +1482,7 @@ end;
 /// <summary>TraceDirection in a task of the decoding pool: every candidate
 /// goes to found, a copy of its bits (Scan frees its own).</summary>
 function StartTraceDirection(image: TBitMatrix; k: Integer;
-  found: TDirectionResult; cancel: PBoolean): ITask;
+  found: TDirectionResult; cancel, cancel2: PBoolean): ITask;
 begin
   Result := TTask.Run(
     procedure
@@ -1496,8 +1498,8 @@ begin
             c.Points := points;
             found.Add(c);
             // (stop when the consumer cancelled)
-            Result := cancel^;
-          end, cancel);
+            Result := cancel^ or (cancel2 <> nil) and cancel2^;
+          end, cancel, cancel2);
       except
         found.FError := Exception(AcquireExceptionObject);
       end;
@@ -1512,7 +1514,7 @@ end;
 /// the detection, the directions behind the current one are cancelled; the
 /// ones before it were already done.</summary>
 function DetectByEdgesParallel(image: TBitMatrix;
-  const onCandidate: TDataMatrixCandidate): Boolean;
+  const onCandidate: TDataMatrixCandidate; cancel: PBoolean): Boolean;
 var
   found: array [1 .. 3] of TDirectionResult;
   tasks: array [0 .. 2] of ITask;
@@ -1530,9 +1532,10 @@ begin
     try
       for var k := 1 to 3 do
         tasks[k - 1] := StartTraceDirection(image, k, found[k],
-          @cancelled.Value);
+          @cancelled.Value, cancel);
       // direction 0 here, meanwhile
-      Result := TraceDirection(image, 0, onCandidate, @cancelled.Value);
+      Result := TraceDirection(image, 0, onCandidate, @cancelled.Value,
+        cancel);
       if Result then
         cancelled.Value := true;
       for var k := 1 to 3 do
@@ -1564,7 +1567,7 @@ begin
 end;
 
 function DetectByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
-  const onCandidate: TDataMatrixCandidate): Boolean;
+  const onCandidate: TDataMatrixCandidate; cancel: PBoolean): Boolean;
 const
   // minimum realistic size in pixel: 8 modules x 2 pixels per module
   MIN_SYMBOL_SIZE = 8 * 2;
@@ -1575,8 +1578,9 @@ var
 begin
   Result := false;
   // all lines in all directions: the directions in tasks when allowed
-  if tryHarder and tryRotate and ParallelDecodingActive then
-    exit(DetectByEdgesParallel(image, onCandidate));
+  if tryHarder and tryRotate and ParallelDecodingActive and not InParallelReader
+  then
+    exit(DetectByEdgesParallel(image, onCandidate, cancel));
   var history: THistory := nil;
   var lines: TLines;
   for var k := 0 to 3 do
@@ -1605,6 +1609,8 @@ begin
       var i := 1;
       while true do
       begin
+        if (cancel <> nil) and cancel^ then
+          exit(false);
         var tracer := TEdgeTracer.Create(image, startPos, dir);
         // alternate lines left and right of the center line
         var offset := (i div 2) * MIN_SYMBOL_SIZE;
@@ -1617,7 +1623,7 @@ begin
         if not tracer.IsIn then
           break;
 
-        if Scan(tracer, lines, onCandidate) then
+        if Scan(tracer, lines, onCandidate, cancel) then
           exit(true);
 
         if not tryHarder then
@@ -1636,7 +1642,8 @@ begin
 end;
 
 function DetectDataMatrixByEdges(image: TBitMatrix; tryHarder, tryRotate: Boolean;
-  const onCandidate: TDataMatrixCandidate; maxSymbols: Integer): Boolean;
+  const onCandidate: TDataMatrixCandidate; maxSymbols: Integer;
+  cancel: PBoolean): Boolean;
 var
   count: Integer;
   pureBits: TBitMatrix;
@@ -1669,7 +1676,7 @@ begin
         Inc(count);
         Result := (maxSymbols > 0) and (count >= maxSymbols);
       end;
-    end);
+    end, cancel);
   Result := (count > 0);
 end;
 

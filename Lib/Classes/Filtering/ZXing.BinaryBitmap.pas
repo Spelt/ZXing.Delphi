@@ -28,6 +28,7 @@ uses
   ZXing.Common.BitMatrix,
   ZXing.Common.Pattern,
   System.Diagnostics,
+  System.SyncObjs,
   ZXing.ReaderTimings;
 
 type
@@ -58,6 +59,11 @@ type
     // postal codes), owned by this bitmap
     FMatrixRotated90: TBitMatrix;
     FMatrixTransposed: TBitMatrix;
+    // the lock of the caches above: readers in tasks share the image
+    FLock: TCriticalSection;
+    function DoGetBlackRow(y: Integer; row: IBitArray): IBitArray;
+    function RowFromCache(y: Integer; row: IBitArray): IBitArray;
+    function DoGetPatternRow(y: Integer; reversed: Boolean): TPatternRow;
     function GetWidth: Integer;
     function GetHeight: Integer;
     function GetBlackMatrix: TBitMatrix;
@@ -124,11 +130,20 @@ begin
   end;
 
   Self.Binarizer := Binarizer;
+  FLock := TCriticalSection.Create;
+  // (the caches of the rows, for all rows from the start: the readers test
+  // their states without the lock)
+  SetLength(FRowState, Height);
+  SetLength(FRowCache, Height);
+  SetLength(FPatternState, Height);
+  SetLength(FPatternRows, Height);
+  SetLength(FPatternRowsReversed, Height);
 
 end;
 
 destructor TBinaryBitmap.Destroy;
 begin
+  FLock.Free;
   FRotated.Free;
   FMatrixRotated90.Free;
   FMatrixTransposed.Free;
@@ -145,48 +160,47 @@ end;
 
 function TBinaryBitmap.GetBlackMatrix: TBitMatrix;
 begin
-  if (Matrix = nil) then
+  // (made once, under the lock; then without it, readers in tasks ask for
+  // it all the time)
+  Result := Matrix;
+  if (Result <> nil) then
   begin
-    Matrix := Binarizer.BlackMatrix();
+    MemoryBarrier;
+    exit;
   end;
-
-  result := Matrix;
-
+  FLock.Enter;
+  try
+    if (Matrix = nil) then
+    begin
+      var m := Binarizer.BlackMatrix();
+      MemoryBarrier;
+      Matrix := m;
+    end;
+    result := Matrix;
+  finally
+    FLock.Leave;
+  end;
 end;
 
 function TBinaryBitmap.getBlackRow(y: Integer; row: IBitArray): IBitArray;
 begin
-  if (y < 0) or (y >= Height) then
-    exit(Binarizer.getBlackRow(y, row));
-
-  if (FRowState = nil) then
+  // a row in the cache without the lock (readers in tasks ask for the same
+  // rows): its state is published after its words, see DoGetBlackRow
+  if (y >= 0) and (y < Height) and (FRowState[y] <> 0) then
   begin
-    SetLength(FRowState, Height);
-    SetLength(FRowCache, Height);
+    MemoryBarrier;
+    exit(RowFromCache(y, row));
   end;
-
-  if (FRowState[y] = 0) then
-  begin
-    // calculate the row once and keep a copy of its words
-    // (the time of the binarization of the rows is booked apart from the
-    // reader that asks for them first, when the benchmark measures)
-    var start: Int64 := 0;
-    if ReaderTimingsEnabled then
-      start := TStopwatch.GetTimeStamp;
-    result := Binarizer.getBlackRow(y, row);
-    if ReaderTimingsEnabled then
-      AddNestedReaderTiming(READER_TIMING_BLACK_ROWS,
-        TStopwatch.GetTimeStamp - start);
-    if result.IsEmpty then
-      FRowState[y] := 1
-    else
-    begin
-      FRowCache[y] := Copy(result.Bits, 0, (Width + 31) shr 5);
-      FRowState[y] := 2;
-    end;
-    exit;
+  FLock.Enter;
+  try
+    Result := DoGetBlackRow(y, row);
+  finally
+    FLock.Leave;
   end;
+end;
 
+function TBinaryBitmap.RowFromCache(y: Integer; row: IBitArray): IBitArray;
+begin
   // from the cache, in the row the caller passed, like the binarizer does
   var w := Width;
   if row.IsEmpty or (row.Size < w) then
@@ -202,21 +216,74 @@ begin
   result := row;
 end;
 
+function TBinaryBitmap.DoGetBlackRow(y: Integer; row: IBitArray): IBitArray;
+begin
+  if (y < 0) or (y >= Height) then
+    exit(Binarizer.getBlackRow(y, row));
+
+  if (FRowState[y] = 0) then
+  begin
+    // calculate the row once and keep a copy of its words
+    // (the time of the binarization of the rows is booked apart from the
+    // reader that asks for them first, when the benchmark measures)
+    var start: Int64 := 0;
+    if ReaderTimingsEnabled then
+      start := TStopwatch.GetTimeStamp;
+    result := Binarizer.getBlackRow(y, row);
+    if ReaderTimingsEnabled then
+      AddNestedReaderTiming(READER_TIMING_BLACK_ROWS,
+        TStopwatch.GetTimeStamp - start);
+    if result.IsEmpty then
+    begin
+      MemoryBarrier;
+      FRowState[y] := 1;
+    end
+    else
+    begin
+      FRowCache[y] := Copy(result.Bits, 0, (Width + 31) shr 5);
+      // (the words before the state, for the readers without the lock)
+      MemoryBarrier;
+      FRowState[y] := 2;
+    end;
+    exit;
+  end;
+  Result := RowFromCache(y, row);
+end;
+
 function TBinaryBitmap.getPatternRow(y: Integer; reversed: Boolean)
   : TPatternRow;
 begin
   if (y < 0) or (y >= Height) then
     exit(nil);
-  if (FPatternState = nil) then
+  // a row in the cache without the lock, see getBlackRow
+  if (FPatternState[y] <> 0) then
   begin
-    SetLength(FPatternState, Height);
-    SetLength(FPatternRows, Height);
+    MemoryBarrier;
+    if not reversed then
+      exit(FPatternRows[y]);
+    Result := FPatternRowsReversed[y];
+    if (Result <> nil) or (FPatternState[y] = 1) then
+      exit;
   end;
+  FLock.Enter;
+  try
+    Result := DoGetPatternRow(y, reversed);
+  finally
+    FLock.Leave;
+  end;
+end;
+
+function TBinaryBitmap.DoGetPatternRow(y: Integer; reversed: Boolean)
+  : TPatternRow;
+begin
   if (FPatternState[y] = 0) then
   begin
     FPatternBits := getBlackRow(y, FPatternBits);
     if FPatternBits.IsEmpty then
-      FPatternState[y] := 1
+    begin
+      MemoryBarrier;
+      FPatternState[y] := 1;
+    end
     else
     begin
       // (the runs in a buffer used for every row, then a copy of the exact
@@ -228,6 +295,7 @@ begin
       var count := GetPatternRowInto(PInteger(bits), Length(bits), Width,
         FPatternScratch);
       FPatternRows[y] := Copy(FPatternScratch, 0, count);
+      MemoryBarrier;
       FPatternState[y] := 2;
       if ReaderTimingsEnabled then
         AddNestedReaderTiming(READER_TIMING_PATTERN_ROWS,
@@ -238,17 +306,19 @@ begin
     exit(FPatternRows[y]);
 
   // the row from right to left: the widths in reverse order
-  if (FPatternRowsReversed = nil) then
-    SetLength(FPatternRowsReversed, Height);
   Result := FPatternRowsReversed[y];
   if (Result = nil) and (FPatternRows[y] <> nil) then
   begin
     var row := FPatternRows[y];
     var n := Length(row);
-    SetLength(Result, n);
+    var rev: TPatternRow;
+    SetLength(rev, n);
     for var i := 0 to n - 1 do
-      Result[i] := row[n - 1 - i];
-    FPatternRowsReversed[y] := Result;
+      rev[i] := row[n - 1 - i];
+    // (the values before the array, for the readers without the lock)
+    MemoryBarrier;
+    FPatternRowsReversed[y] := rev;
+    Result := rev;
   end;
 end;
 
@@ -290,35 +360,74 @@ end;
 
 function TBinaryBitmap.RotatedCounterClockwise: TBinaryBitmap;
 begin
-  if (FRotated = nil) then
-  begin
-    var start := TimingStart;
-    FRotated := rotateCounterClockwise;
-    TimingTurned(start);
-  end;
   Result := FRotated;
+  if (Result <> nil) then
+  begin
+    MemoryBarrier;
+    exit;
+  end;
+  FLock.Enter;
+  try
+    if (FRotated = nil) then
+    begin
+      var start := TimingStart;
+      var turned := rotateCounterClockwise;
+      TimingTurned(start);
+      MemoryBarrier;
+      FRotated := turned;
+    end;
+    Result := FRotated;
+  finally
+    FLock.Leave;
+  end;
 end;
 
 function TBinaryBitmap.BlackMatrixRotated90: TBitMatrix;
 begin
-  if (FMatrixRotated90 = nil) and (BlackMatrix <> nil) then
-  begin
-    var start := TimingStart;
-    FMatrixRotated90 := BlackMatrix.Rotated90;
-    TimingTurned(start);
-  end;
   Result := FMatrixRotated90;
+  if (Result <> nil) then
+  begin
+    MemoryBarrier;
+    exit;
+  end;
+  FLock.Enter;
+  try
+    if (FMatrixRotated90 = nil) and (BlackMatrix <> nil) then
+    begin
+      var start := TimingStart;
+      var turned := BlackMatrix.Rotated90;
+      TimingTurned(start);
+      MemoryBarrier;
+      FMatrixRotated90 := turned;
+    end;
+    Result := FMatrixRotated90;
+  finally
+    FLock.Leave;
+  end;
 end;
 
 function TBinaryBitmap.BlackMatrixTransposed: TBitMatrix;
 begin
-  if (FMatrixTransposed = nil) and (BlackMatrix <> nil) then
-  begin
-    var start := TimingStart;
-    FMatrixTransposed := BlackMatrix.Transposed;
-    TimingTurned(start);
-  end;
   Result := FMatrixTransposed;
+  if (Result <> nil) then
+  begin
+    MemoryBarrier;
+    exit;
+  end;
+  FLock.Enter;
+  try
+    if (FMatrixTransposed = nil) and (BlackMatrix <> nil) then
+    begin
+      var start := TimingStart;
+      var turned := BlackMatrix.Transposed;
+      TimingTurned(start);
+      MemoryBarrier;
+      FMatrixTransposed := turned;
+    end;
+    Result := FMatrixTransposed;
+  finally
+    FLock.Leave;
+  end;
 end;
 
 function TBinaryBitmap.Luminances: TArray<Byte>;
