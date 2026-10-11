@@ -99,13 +99,24 @@ object MainForm: TMainForm
         OnClick = btnStartCameraClick
       end
       object chkScanAll: TCheckBox
-        Align = Client
+        Align = Left
         Margins.Left = 12.000000000000000000
-        Size.Width = 404.000000000000000000
+        Position.X = 334.000000000000000000
+        Size.Width = 190.000000000000000000
         Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
         Text = 'All codes (ScanAll)'
+      end
+      object chkParallel: TCheckBox
+        Align = Client
+        Margins.Left = 12.000000000000000000
+        Size.Width = 214.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 4
+        Text = 'Parallel'
+        OnChange = chkParallelChange
       end
     end
     object Camera1: TCamera
