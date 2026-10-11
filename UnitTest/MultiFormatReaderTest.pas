@@ -236,7 +236,8 @@ begin
     done := false;
     text := '';
     threadId := 0;
-    Assert.IsTrue(scanner.ScanAsync(bitmap,
+    Assert.IsFalse(scanner.Scanning, 'idle before');
+    scanner.ScanAsync(bitmap,
       procedure(r: TReadResult)
       begin
         threadId := TThread.CurrentThread.ThreadID;
@@ -247,7 +248,7 @@ begin
           r.Free;
         end;
         done := true;
-      end), 'started');
+      end);
     // the bitmap is free again: the pixels were taken
     bitmap.Free;
     bitmap := nil;
