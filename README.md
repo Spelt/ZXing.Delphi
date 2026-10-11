@@ -117,6 +117,7 @@ Only when asked for, not in Auto. The ones of bars that differ in height (4-stat
 ### Changes
 - Next version (branch Development, not released yet)
 	- Requires Delphi 10.4 Sydney or newer. For XE7 - 10.3 use v3.13.1 or older.
+	- IScanManager: TScanManager implements this interface (it is a TInterfacedObject now). Hold it in a variable of type IScanManager and it is freed with the last reference, no try finally; a TScanManager variable with Free works as before (do not mix the two for one instance).
 	- Data Matrix: port of the edge tracing detector of zxing-cpp, with DMRE (rectangular) sizes, mirrored codes, pure codes of 1 pixel per module, and corrections for not flat and curved symbols (LocalGrid and timing pattern correction). The old detector stays as fallback.
 	- QR Code: port of the finder pattern detector of zxing-cpp, which handles perspective and not flat symbols much better (alignment patterns located in the image, tiled sampling). The old detector stays as fallback.
 	- QR Code model 1 (the original QR Code of ISO 18004:2000 annex M) is read too, like zxing-cpp; its SymbologyIdentifier is ]Q0, the format stays QR_CODE.
@@ -329,6 +330,15 @@ Include all the files in your project or use search path like included test appl
 
 FScanManager := TScanManager.Create(TBarcodeFormat.CODE_128, nil);
 FReadResult := FScanManager.Scan(scanBitmap);
+
+```
+
+Or without having to free the scan manager: declare it as IScanManager, and it is freed with the last reference.
+
+```Pascal
+
+var scanner: IScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+var r := scanner.Scan(scanBitmap);  // the result is still yours to free
 
 ```
 

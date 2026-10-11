@@ -23,7 +23,37 @@ uses
   ZXing.DecodeHintType;
 
 type
-  TScanManager = class
+  /// <summary>
+  /// The scanner as an interface: hold a TScanManager in a variable of this
+  /// type and it is freed when the last reference goes out of scope, no
+  /// try finally needed:
+  ///   var scanner: IScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+  /// A TScanManager variable with Free works as before. Do not mix the two
+  /// for one instance: an interface reference frees the object when it is
+  /// the last one, also when an object variable still points to it.
+  /// </summary>
+  IScanManager = interface
+    ['{5B9C1F3A-2D4E-4F6A-9B8C-7D1E2F3A4B5C}']
+    function GetOnResultPoint: TResultPointCallback;
+    procedure SetResultPointEvent(const AValue: TResultPointCallback);
+    function GetTryDownscale: Boolean;
+    procedure SetTryDownscale(const AValue: Boolean);
+    function GetReturnErrors: Boolean;
+    procedure SetReturnErrors(const AValue: Boolean);
+    /// <summary>The first barcode in the bitmap, nil when there is none.
+    /// The caller frees the result.</summary>
+    function Scan(const pBitmapForScan: TBitmap): TReadResult;
+    /// <summary>All barcodes in the bitmap, see TScanManager.ScanAll.
+    /// </summary>
+    function ScanAll(const pBitmapForScan: TBitmap; maxCount: Integer = 0)
+      : TObjectList<TReadResult>;
+    property OnResultPoint: TResultPointCallback read GetOnResultPoint
+      write SetResultPointEvent;
+    property TryDownscale: Boolean read GetTryDownscale write SetTryDownscale;
+    property ReturnErrors: Boolean read GetReturnErrors write SetReturnErrors;
+  end;
+
+  TScanManager = class(TInterfacedObject, IScanManager)
   private
     FEnableInversion: Boolean;
     FTryDownscale: Boolean;
@@ -51,6 +81,11 @@ type
       : TMultiFormatReader;
 
     procedure SetResultPointEvent(const AValue: TResultPointCallback);
+    function GetOnResultPoint: TResultPointCallback;
+    function GetTryDownscale: Boolean;
+    procedure SetTryDownscale(const AValue: Boolean);
+    function GetReturnErrors: Boolean;
+    procedure SetReturnErrors(const AValue: Boolean);
     /// <summary>Decodes one image (layer), also inverted with
     /// ENABLE_INVERSION. Does not free source.</summary>
     function DecodeLayer(source: TLuminanceSource): TReadResult;
@@ -144,6 +179,31 @@ begin
 
   FreeAndNil(FMultiFormatReader);
   inherited;
+end;
+
+function TScanManager.GetOnResultPoint: TResultPointCallback;
+begin
+  Result := FResultPointEvent;
+end;
+
+function TScanManager.GetTryDownscale: Boolean;
+begin
+  Result := FTryDownscale;
+end;
+
+procedure TScanManager.SetTryDownscale(const AValue: Boolean);
+begin
+  FTryDownscale := AValue;
+end;
+
+function TScanManager.GetReturnErrors: Boolean;
+begin
+  Result := FReturnErrors;
+end;
+
+procedure TScanManager.SetReturnErrors(const AValue: Boolean);
+begin
+  FReturnErrors := AValue;
 end;
 
 procedure TScanManager.SetResultPointEvent(const AValue: TResultPointCallback);

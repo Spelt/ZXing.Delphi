@@ -122,7 +122,9 @@ begin
   begin
     var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
       '\..\..\Images\zxing-cpp\' + s.FileName);
-    var scanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
+    // (as an interface: freed with the last reference, no Free)
+    var scanManager: IScanManager := TScanManager.Create(TBarcodeFormat.Auto,
+      nil);
     try
       var r := scanManager.Scan(bitmap);
       try
@@ -134,7 +136,6 @@ begin
         r.Free;
       end;
     finally
-      scanManager.Free;
       bitmap.Free;
     end;
   end;
