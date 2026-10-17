@@ -20,8 +20,9 @@ ZXing.Delphi 4.0 is by far the biggest step since the port began. The library gr
 
 The QR Code and Data Matrix detectors are ports of zxing-cpp, so perspective, curved and dot-peen codes that 3.x missed are read now, and an image pyramid catches the large and blurry ones. It is also much faster: the luminance conversion, binarizer and 1D readers were rewritten, and the readers run side by side in the tasks of a thread pool, so a frame is decoded on all cores. The API grew with it: one ScanAsync call scans a camera frame in the background and hands the result to the main thread, IScanManager frees itself, every result has the four corners of its code, and codes that are seen but not readable can be reported too. 
 
-There is a new demo app that shows all of it: a scanner with tracked outlines and a settings screen, built with the standard FMX components only. It is also much faster then the previous version: on the same images 4.0 scans about five times faster than 3.x on a single core, while trying five times as many formats, and on large camera frames the readers decode side by side on all cores. 
+It is also much faster then the previous version: on the same images 4.0 scans about five times faster than 3.x on a single core, while trying five times as many formats, and on large camera frames the readers decode side by side on all cores. 
 
+There is a new demo app that shows all of it: a scanner with tracked outlines and a settings screen, built with the standard FMX components only. 
 
 
 
