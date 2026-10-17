@@ -114,6 +114,8 @@ type
     // the opacity of the pill as designed: it fades with its code
     fPillOpacity: Single;
     fCopiedWatch: TStopwatch;
+    // the "Copied" beside the copy button of a row, while it shows
+    fRowCopied: TLabel;
     // the time of the scans: the last one and the average
     fScanWatch: TStopwatch;
     fScanCount: Integer;
@@ -619,6 +621,12 @@ begin
     else
       lblTime.Text := Format('%d s ago', [fShownWatch.ElapsedMilliseconds div 1000]);
   end;
+  // the "Copied" beside a copy button goes after a while
+  if (fRowCopied <> nil) and (fCopiedWatch.ElapsedMilliseconds >= 1500) then
+  begin
+    fRowCopied.Visible := False;
+    fRowCopied := nil;
+  end;
 end;
 
 { the frame and the outlines }
@@ -914,6 +922,8 @@ begin
   // a button that copies the text
   layResults.BeginUpdate;
   try
+    // (the rows go, with the "Copied" that may be on one of them)
+    fRowCopied := nil;
     while layResults.ControlsCount > 0 do
       layResults.Controls[0].Free;
     for var i := 0 to High(fShown) do
@@ -955,6 +965,17 @@ begin
       icon.Align := TAlignLayout.Contents;
       icon.Margins.Rect := TRectF.Create(13, 13, 13, 13);
       SetIcon(icon, icoCopy, clTextMuted);
+      // "Copied" beside the button, shown when it is tapped
+      var copied := TLabel.Create(row);
+      copied.Parent := row;
+      copied.Align := TAlignLayout.Right;
+      copied.Width := 56;
+      copied.Margins.Right := 2;
+      copied.TextSettings.HorzAlign := TTextAlign.Trailing;
+      copied.Text := 'Copied';
+      copied.Visible := False;
+      StyleLabel(copied, 12, clAccent, True);
+      copy.TagObject := copied;
 
       var texts := TLayout.Create(row);
       texts.Parent := row;
@@ -1059,8 +1080,17 @@ end;
 procedure TMainForm.RowCopyClick(Sender: TObject);
 begin
   var i := TComponent(Sender).Tag;
-  if (i >= 0) and (i <= High(fShown)) then
-    Copied(fShown[i].Text);
+  if (i < 0) or (i > High(fShown)) then
+    exit;
+  Copied(fShown[i].Text);
+  // "Copied" beside this button (the one of another row goes), fading in;
+  // the timer takes it away after a while
+  if fRowCopied <> nil then
+    fRowCopied.Visible := False;
+  fRowCopied := TFmxObject(Sender).TagObject as TLabel;
+  fRowCopied.Opacity := 0;
+  fRowCopied.Visible := True;
+  TAnimator.AnimateFloat(fRowCopied, 'Opacity', 1, 0.15);
 end;
 
 procedure TMainForm.lblCopyAllClick(Sender: TObject);
