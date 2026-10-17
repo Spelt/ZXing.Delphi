@@ -1,6 +1,6 @@
 ![ZXing.Delphi: scan almost all barcodes and 2D codes super fast and in parallel, in pure Object Pascal](docs/hero.png)
 
-# What is it?
+## What is it?
 ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port was based on .Net ZXing and the Java one. From v4 it is based of the C++ port which had lots of better and faster scan strategies. See features and highlights. It is aimed at all of the FireMonkey platforms and, starting from v3.1, it fully supports also Windows VCL applications.
 
 With this library you can scan with native compiled speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast. Its compatible with Delphi 10.4 Sydney - 13.x Florence (**for XE7 - 10.3 use v3.13.1**) and tested with the latest IOS, Android 32/64, Windows 32/64 and OSX.  
@@ -15,21 +15,104 @@ Just include the source files and add it in your existing projects and build the
 - Test projects provided
 
 
-# What new in 4.0
+## What new in 4.0
 ZXing.Delphi 4.0 is by far the biggest step since the port began. The library grew from 10 symbologies to 52: Aztec, PDF417 and MicroPDF417, Micro QR and rMQR, MaxiCode, the GS1 DataBar family and GS1 Composite, DotCode and Han Xin, the stacked codes Codablock F, Code 16K and Code 49, and the postal barcodes from KIX to Intelligent Mail, several of which no other ZXing port reads at all. The QR Code and Data Matrix detectors are ports of zxing-cpp, so perspective, curved and dot-peen codes that 3.x missed are read now, and an image pyramid catches the large and blurry ones. It is also much faster: the luminance conversion, binarizer and 1D readers were rewritten, and the readers run side by side in the tasks of a thread pool, so a frame is decoded on all cores. The API grew with it: one ScanAsync call scans a camera frame in the background and hands the result to the main thread, IScanManager frees itself, every result has the four corners of its code, and codes that are seen but not readable can be reported too. And there is a new demo app that shows all of it: a scanner with tracked outlines and a settings screen, built with the standard FMX components only. It is also much faster then the previous version: on the same images 4.0 scans about five times faster than 3.x on a single core, while trying five times as many formats, and on large camera frames the readers decode side by side on all cores. 
 
-# Tips and tricks - How to optimize an already fast library.
-- Try not to scan every incoming frame. 
+
+
+
+## Usage
+
+If you use a Delphi older then 11.1 then you NEED to set a compiler Define in your 'project options->Delphi compiler->Conditional defines'. Set this in your target platforms or All platforms.  See demo applications.
+- FRAMEWORK_VCL - this predefined variable is set to true if the project uses the VCL framework
+- FRAMEWORK_FMX - this predefined variable is set to true if the project uses the FireMonkey (FMX) framework
+
+The simplest example of using ZXing.Delphi looks something like this:
+
+![Quick start: add the source folders to the search path, create a TScanManager, feed it a bitmap or a camera frame](docs/quickstart.png)
+
+
+![Quick start, async: one TScanManager, ScanAsync for every camera frame, the result in the callback](docs/quickstart-async.png)
+
+Create the scan manager once and use it for all frames; it is not meant to be used by two threads at the same time. Hints are passed as a dictionary, which the scan manager frees:
+
+```Pascal
+
+var hints := TDictionary<TDecodeHintType, TObject>.Create;
+hints.Add(TDecodeHintType.TRY_HARDER, nil);        // slower, finds more (also rotated 1D codes)
+hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);  // also light codes on a dark background
+FScanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
+
+```
+
+For a camera, scan in the background and get the result in the main thread (the bitmap may be reused as soon as ScanAsync returns; a frame that arrives while a scan runs is skipped; Scanning tells whether a scan runs):
+
+```Pascal
+
+FScanManager.ScanAsync(frameBitmap,
+  procedure(r: TReadResult)
+  begin
+    if (r <> nil) then
+    try
+      lblResult.Text := r.Text;
+    finally
+      r.Free;
+    end;
+  end,
+  procedure(e: Exception)
+  begin
+    lblResult.Text := e.Message;
+  end);
+
+```
+
+All barcodes in an image, with the extra information of a result:
+
+```Pascal
+
+var list := FScanManager.ScanAll(scanBitmap);  // a TObjectList: frees the results
+try
+  for var r in list do
+  begin
+    Memo1.Lines.Add(r.SymbologyIdentifier + ' ' + r.Text);
+    // r.Position: the 4 corners in the image, r.Orientation: the rotation in degrees
+    if r.IsGS1 then
+      Memo1.Lines.Add(r.GS1HRI);  // e.g. (01)05909990329717(17)270430(10)NE76571
+  end;
+finally
+  list.Free;
+end;
+
+```
+
+A QR Code or Data Matrix that was found but could not be read:
+
+```Pascal
+
+FScanManager.ReturnErrors := true;
+var r := FScanManager.Scan(scanBitmap);
+if (r <> nil) and (r.Error <> '') then
+  // r.Text is empty, r.Position is where the code is: e.g. ask to hold the camera still or closer
+  lblStatus.Text := 'Barcode found, but not readable (' + r.Error + ')';
+
+```
+
+Ofcourse the real world is not that simple. See the Demo app for a real world example. 
+
+Andrea Magni also has a very nice blog post about an Android ZXing example from a training excerise of his. You can find it [here](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/). 
+
+
+### Tips and tricks - How to optimize an already fast library.
 - Use autoformat scanning with care, with automatic on, every frame is passed to every barcode format. For example: If you want to scan only EAN-8, set the scan format for only EAN-8. 
-- For mobile: try not to scan every frame, skip every n frame. Scanning 4 frames in a second should be good for most purposes. Safes CPU and battery.
-- For mobile: try setting your camera not to a high resolution. 640x480 is for most purposes perfect. More resolutions means more pixels to scan means slower. Saves CPU and battery. 
+- For mobile: try not to scan every frame, skip every n frame. Scanning 4 frames in a second should be good for most purposes. Safes CPU and battery. Look at the FMX example.
+- For mobile: try setting your camera not to a high resolution. 640x480 is for most purposes perfect. More resolutions means more pixels to scan means slower. Saves CPU and battery.
 
 
-# Supported Formats
+## Supported Formats
 
 All formats are read with TBarcodeFormat.Auto, except the ones marked "only when asked for" (choose them as TScanManager format or in the hint POSSIBLE_FORMATS).
 
-## 2D
+### 2D
 
 | Format | TBarcodeFormat | Also | Notes
 | ------ | -------------- | ---- | -----
@@ -44,7 +127,7 @@ All formats are read with TBarcodeFormat.Auto, except the ones marked "only when
 | DotCode | DOTCODE | all code sets, binary, macros 05/06/12, ECI, GS1 (]J1) | only when asked for (not in Auto); the dots found as blobs, the grid fitted to them: rotated, mirrored and in perspective (camera)
 | Han Xin Code | HAN_XIN | versions 1 to 84, all data modes (numeric, text, binary, the Chinese regions and GB 18030 2- and 4-byte), ECI | only when asked for (not in Auto); with detector: anywhere in the image, rotated, mirrored and in perspective (camera)
 
-## 1D
+### 1D
 
 | Format | TBarcodeFormat | Also | Notes
 | ------ | -------------- | ---- | -----
@@ -74,7 +157,7 @@ All formats are read with TBarcodeFormat.Auto, except the ones marked "only when
 | Matrix 2 of 5 | MATRIX_2_OF_5 | check digit in the text | also called Standard 2 of 5; only when asked for
 | Datalogic 2 of 5 | DATALOGIC_2_OF_5 | check digit in the text | only when asked for
 
-## Stacked
+### Stacked
 
 Rows of 1D characters, read in Auto with one scan for all of them. Horizontal, also upside down; vertical with TRY_HARDER (like the 1D codes).
 
@@ -84,7 +167,7 @@ Rows of 1D characters, read in Auto with one scan for all of them. Horizontal, a
 | Code 16K | CODE_16K | 2 to 16 rows of 5 Code 128 characters, the row numbers in the start and stop patterns, 2 check characters (modulo 107); GS1 (FNC1 first: ]K1)
 | Code 49 | CODE_49 | 2 to 8 rows of 4 symbol characters, the row numbers in the parity, row checks and the symbol checks X, Y, Z; alphanumeric, shifts (ASCII) and numeric; GS1 (FNC1 first)
 
-## GS1 Composite
+### GS1 Composite
 
 In Auto, or asked for as GS1_COMPOSITE (then only composites).
 
@@ -93,7 +176,7 @@ In Auto, or asked for as GS1_COMPOSITE (then only composites).
 | GS1 Composite | GS1_COMPOSITE | the 2D component CC-A, CC-B (MicroPDF417) or CC-C (PDF417, with GS1-128) above an EAN-13, EAN-8, UPC-A, UPC-E, GS1 DataBar (Omnidirectional, Limited, Expanded) or GS1-128; also upside down; text: the linear text, '|' and the GS1 text of the 2D component (encodation methods 0, 10 and 11). Asking for the linear format only returns the linear text, as before
 
 
-## Postal
+### Postal
 
 Only when asked for, not in Auto. The ones of bars that differ in height (4-state, and POSTNET, PLANET and CEPNet): horizontal and vertical, upside down, slanted and in perspective.
 
@@ -114,11 +197,11 @@ Only when asked for, not in Auto. The ones of bars that differ in height (4-stat
 | Deutsche Post Identcode | DP_IDENTCODE | ITF of 12 digits, check digit (weights 4 and 9) checked, in the text; Auto: ITF
 
 	
-## Other barcodes?
+### Other barcodes?
 Let me know ! 
 
 
-# Changes
+### Changes
 - 4.0.0
    	- New version, based on C++ ZXing, more then 50 decoders including postal barcodes, parallel decoding, it is also much faster: on the same images 4.0 scans about five times faster than 3.x on a single core, while trying five times as many formats, and on large camera frames the readers decode side by side on all cores
 - v3.12.0
@@ -233,139 +316,6 @@ Let me know !
  	- Implemented Code 128 + unit test.
 
 
-	
-	
-
-The base classes are already implemented so if you need to have another Barcode like Code39 (already done :-) ) you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy (or just ask and I convert the raw classes for you). 
-
-
-**If you want to help:** Let us/me know which barcode you planning to implement. There is no point in converting barcodes multiple times :-)
-
-
-### 'What is different compared to the original source and what do I need to know if I implement a barcode?' How did you do it?
-- I convert C# files to pascal via: 
-	- Build it in .NET
-	- Decompile it with 'Reflector 6' (which has a Delphi decompile function) to Delphi.NET 
-	- Copy and paste the files to the project.
-	- Convert the source from Delphi.Net	
-- I made use of generic array lists. This is easier and strongly typed.
-- I stayed at the architecture and directory structure as implemented in the .Net source.  
-- There is a lot of bit shifting going around. Left bit shifting is the same as in C# but right bit shifing is not! I made a helper for this: TMathUtils.Asr 
-
-
-### Unit tests
-The tests (DUnitX) are in unitTest. On Windows: dUnitXTest.dproj, a console runner (or TestInsight in the IDE), the images in unitTestimages. On a device (Android, iOS): DUnitXTestMobile.dproj, the same tests with the mobile GUI of DUnitX; run unitTestimages.cmd first, it packs the images into images.zip, which the project deploys with the app (TestImages.pas unpacks it in the documents folder of the app).
-
-### Usage
-If you use a Delphi older then 11.1 then you NEED to set a compiler Define in your 'project options->Delphi compiler->Conditional defines'. Set this in your target platforms or All platforms.  See demo applications.
-- FRAMEWORK_VCL - this predefined variable is set to true if the project uses the VCL framework
-- FRAMEWORK_FMX - this predefined variable is set to true if the project uses the FireMonkey (FMX) framework
-
-
-The simplest example of using ZXing.Delphi looks something like this:
-
-![Quick start: add the source folders to the search path, create a TScanManager, feed it a bitmap or a camera frame](docs/quickstart.png)
-
-Include all the files in your project or use search path like included test application
-- Add uses: ZXing.ScanManager, ZXing.BarcodeFormat, ZXing.ReadResult.
-
-```Pascal
-
-var r := TScanManager.Scan(scanBitmap, TBarcodeFormat.Auto);  // nil when there is no barcode; free it
-
-```
-
-This makes a scan manager for the call (TScanManager.ScanAll(bitmap, format) gives all barcodes, ScanAsync(bitmap, format, ...) and ScanAllAsync do it in a task, see below). For a camera, make one scan manager and keep it for all frames:
-
-```Pascal
-
-FScanManager := TScanManager.Create(TBarcodeFormat.CODE_128, nil);
-FReadResult := FScanManager.Scan(scanBitmap);
-
-```
-
-Or without having to free the scan manager: declare the field or variable as IScanManager, and it is freed with the last reference (do not mix this with a TScanManager variable for the same instance).
-
-```Pascal
-
-var
-  FScanManager: IScanManager;
-  FReadResult: TReadResult;
-...
-FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
-FReadResult := FScanManager.Scan(scanBitmap);  // the result is still yours to free
-
-```
-
-![Quick start, async: one TScanManager, ScanAsync for every camera frame, the result in the callback](docs/quickstart-async.png)
-
-For a camera, scan in the background and get the result in the main thread (the bitmap may be reused as soon as ScanAsync returns; a frame that arrives while a scan runs is skipped; Scanning tells whether a scan runs):
-
-```Pascal
-
-FScanManager.ScanAsync(frameBitmap,
-  procedure(r: TReadResult)
-  begin
-    if (r <> nil) then
-    try
-      lblResult.Text := r.Text;
-    finally
-      r.Free;
-    end;
-  end,
-  procedure(e: Exception)
-  begin
-    lblResult.Text := e.Message;
-  end);
-
-```
-
-Create the scan manager once and use it for all frames; it is not meant to be used by two threads at the same time. Hints are passed as a dictionary, which the scan manager frees:
-
-```Pascal
-
-var hints := TDictionary<TDecodeHintType, TObject>.Create;
-hints.Add(TDecodeHintType.TRY_HARDER, nil);        // slower, finds more (also rotated 1D codes)
-hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);  // also light codes on a dark background
-FScanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
-
-```
-
-All barcodes in an image (next version), with the extra information of a result:
-
-```Pascal
-
-var list := FScanManager.ScanAll(scanBitmap);  // a TObjectList: frees the results
-try
-  for var r in list do
-  begin
-    Memo1.Lines.Add(r.SymbologyIdentifier + ' ' + r.Text);
-    // r.Position: the 4 corners in the image, r.Orientation: the rotation in degrees
-    if r.IsGS1 then
-      Memo1.Lines.Add(r.GS1HRI);  // e.g. (01)05909990329717(17)270430(10)NE76571
-  end;
-finally
-  list.Free;
-end;
-
-```
-
-A QR Code or Data Matrix that was found but could not be read (next version, off by default):
-
-```Pascal
-
-FScanManager.ReturnErrors := true;
-var r := FScanManager.Scan(scanBitmap);
-if (r <> nil) and (r.Error <> '') then
-  // r.Text is empty, r.Position is where the code is: e.g. ask to hold the camera still or closer
-  lblStatus.Text := 'Barcode found, but not readable (' + r.Error + ')';
-
-```
-
-Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. The demo app demo\ZXingScanner shows how: one TScanManager, ScanAsync per camera frame, the result back in the main thread (see its README.md). The resolution of the camera is set to medium (TVideoCaptureQuality.MediumQuality): the higher the resolution, the more time a scan takes.
-
-Andrea Magni has a very nice blog post about an Android ZXing example from a training excerise of his. You can find it [here](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/).
-
 ### Thanks
 ZXing.Delphi is a project that I've put together with the work of others.  So naturally, I'd like to thank everyone who's helped out in any way.  Those of you I know have helped I'm listing here, but anyone else that was involved, please let me know!
 
@@ -376,19 +326,23 @@ ZXing.Delphi is a project that I've put together with the work of others.  So na
 - Kai Gossens
 - Raphael Büchler
 - Nano103
+- René Hoffmann
+- C. Pradelli
+- E. van Bilsen
+- igorbastosib
+- Patrick Prémartin)
 
+Did I miss anyone? Let me know!
 
 ### ZXing.Delphi
 ZXing.Delphi is released under the Apache 2.0 license.
 ZXing.Delphi can be found here:https://github.com/Spelt/ZXing.Delphi
 A copy of the Apache 2.0 license can be found here: http://www.apache.org/licenses/LICENSE-2.0
 
-
 ### ZXing
 ZXing is released under the Apache 2.0 license.
 ZXing can be found here: http://code.google.com/p/zxing/
 A copy of the Apache 2.0 license can be found here: http://www.apache.org/licenses/LICENSE-2.0
-
 
 ### ZXing.Net
 ZXing.Net is released under the Apache 2.0 license.
