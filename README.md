@@ -99,7 +99,11 @@ if (r <> nil) and (r.Error <> '') then
 
 ```
 
-Ofcourse the real world is not that simple. See the Demo app for a real world example. 
+<p>
+<img src="/demo/zxingscanner/docs/settings.png" width="250" hspace="12" alt="The settings screen: the decoding switches and the formats">
+</p>
+
+Ofcourse the real world is not that simple. [See the Demo app for a real world example.](/demo/ZXingScanner)
 
 Andrea Magni also has a very nice blog post about an Android ZXing example from a training excerise of his. You can find it [here](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/). 
 
