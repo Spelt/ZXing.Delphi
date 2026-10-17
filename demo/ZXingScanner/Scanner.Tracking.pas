@@ -60,6 +60,9 @@ const
   /// <summary>The fade in and the fade out, in ms.</summary>
   FadeIn = 150;
   FadeOut = 300;
+  /// <summary>The change of color when a code that was found gets read,
+  /// in ms.</summary>
+  ReadBlendMs = 200;
 
 type
   /// <summary>A barcode found in a frame, as the screen keeps it: the
@@ -105,6 +108,10 @@ type
     /// <summary>How fast the target moved at the last hit, in pixels of
     /// the frame per ms: the easing follows it.</summary>
     Speed: Single;
+    /// <summary>0 for a code that was found but not read, 1 for a read
+    /// code; on its way from 0 to 1 when an unread code gets read (the
+    /// color of the outline follows it).</summary>
+    ReadBlend: Single;
     function Ease: Single;
     function Readable: Boolean;
     function IsUrl: Boolean;
@@ -266,25 +273,23 @@ var
 begin
   Result := nil;
   if hit.Error = '' then
-  begin
     // a read code: the one with the same text
     for var code in FCodes do
       if (code.Text = hit.Text) and (code.Format = hit.Format) then
         exit(code);
-  end
-  else
+  // a code that was found but not read has no text: the nearest code, when
+  // it is close enough; for a read code only one that is not read yet (it
+  // becomes this one: the camera held still)
+  nearest := FFrameWidth / 8;
+  for var code in FCodes do
   begin
-    // a code that was found but not read has no text: the nearest code,
-    // when it is close enough
-    nearest := FFrameWidth / 8;
-    for var code in FCodes do
+    if (hit.Error = '') and code.Readable then
+      continue;
+    var d := code.Center.Distance(hit.Center);
+    if d < nearest then
     begin
-      var d := code.Center.Distance(hit.Center);
-      if d < nearest then
-      begin
-        nearest := d;
-        Result := code;
-      end;
+      nearest := d;
+      Result := code;
     end;
   end;
 end;
@@ -325,6 +330,7 @@ begin
       begin
         Inc(FNext);
         code.Number := FNext;
+        code.ReadBlend := 1;
       end;
       code.LastSeen := TStopwatch.StartNew;
       FCodes.Add(code);
@@ -334,6 +340,20 @@ begin
     end
     else
     begin
+      if (hit.Error = '') and not code.Readable then
+      begin
+        // a code that was found but not read is read now: the same code,
+        // with its text and a number; its outline changes color
+        code.Text := hit.Text;
+        code.Format := hit.Format;
+        code.GS1 := hit.GS1;
+        code.Error := '';
+        Inc(FNext);
+        code.Number := FNext;
+        added := True;
+        if Assigned(FOnAppeared) then
+          FOnAppeared(Self);
+      end;
       // seen again: a new target, unless it hardly moved; its speed from
       // how far it went since the last hit
       if not InDeadZone(code, hit.Corners) then
@@ -411,6 +431,12 @@ begin
     else if code.Opacity < 1 then
     begin
       code.Opacity := Min(1, code.Opacity + dt / FadeIn);
+      moved := True;
+    end;
+    // the color of a code that got read, from white to the outline color
+    if code.Readable and (code.ReadBlend < 1) then
+    begin
+      code.ReadBlend := Min(1, code.ReadBlend + dt / ReadBlendMs);
       moved := True;
     end;
   end;

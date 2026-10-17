@@ -23,7 +23,8 @@ outlines are numbered, and the sheet lists them, with a copy button per code
 and *Copy all*.
 
 A code that is there but can not be read (too far, not sharp, moving) gets a
-grey dashed outline and the sheet asks to hold the camera still.
+white outline and the sheet asks to hold the camera still; once it is read,
+the same outline takes the outline color.
 
 On the desktop the button at the top left opens an image instead of the
 camera; an image can also be dropped on the window or given on the command

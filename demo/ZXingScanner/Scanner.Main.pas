@@ -195,6 +195,8 @@ const
   HintScanning = 'Scanning' + #8230;
   HintNothing = 'No barcode in this image';
   HintNoFormats = 'No format chosen: pick one in the settings';
+  // the corners of the outline are rounded with this radius (points)
+  OutlineRadius = 15;
 
 { TMainForm }
 
@@ -661,23 +663,29 @@ var
   path: TPathData;
   color: TAlphaColor;
 
-  // the corner at a, with its legs towards p and q
+  // the corner at a, with its legs towards p and q, the corner itself
+  // rounded with the radius
   procedure Bracket(const a, p, q: TPointF);
-    function Leg(const towards: TPointF): TPointF;
+    // the point on the leg towards the corner, at the length
+    function Along(const towards: TPointF; length: Single): TPointF;
     var
       d: Single;
     begin
       d := a.Distance(towards);
       if d < 1 then
         exit(a);
-      Result := a + (towards - a) * (Min(d * 0.3, 34) / d);
+      Result := a + (towards - a) * (Min(length, d) / d);
     end;
 
+  var
+    leg: Single;
   begin
+    leg := Min(a.Distance(p) * 0.3, 34);
     path.Clear;
-    path.MoveTo(Leg(p));
-    path.LineTo(a);
-    path.LineTo(Leg(q));
+    path.MoveTo(Along(p, leg));
+    path.LineTo(Along(p, OutlineRadius));
+    path.QuadCurveTo(a, Along(q, OutlineRadius));
+    path.LineTo(Along(q, Min(a.Distance(q) * 0.3, 34)));
     Canvas.DrawPath(path, code.Opacity);
   end;
 
@@ -697,18 +705,14 @@ begin
     pts[i] := ToView(code.Corners[i] + away);
   end;
 
-  if code.Error = '' then
-    color := fConfig.TrackColor
-  else
-    color := clError;
+  // white for a code that was found but not read, the outline color for a
+  // read one; from the one to the other when it gets read
+  color := BlendColor(clUnread, fConfig.TrackColor, code.ReadBlend);
   Canvas.Stroke.Kind := TBrushKind.Solid;
   Canvas.Stroke.Color := color;
   Canvas.Stroke.Cap := TStrokeCap.Round;
   Canvas.Stroke.Join := TStrokeJoin.Round;
-  if code.Error = '' then
-    Canvas.Stroke.Dash := TStrokeDash.Solid
-  else
-    Canvas.Stroke.Dash := TStrokeDash.Dash;
+  Canvas.Stroke.Dash := TStrokeDash.Solid;
   if fConfig.MultiResult then
     Canvas.Stroke.Thickness := 3
   else

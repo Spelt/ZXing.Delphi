@@ -37,7 +37,7 @@ const
   clTextFaint = TAlphaColor($FF8C929C);
   clTextDark = TAlphaColor($FF111214);
   clAccent = TAlphaColor($FF3EBDE4);
-  clError = TAlphaColor($FFB0B6C0); // the outline of a code found but not read
+  clUnread = TAlphaColor($FFFFFFFF); // the outline of a code found but not read
 
   // the colors to choose from for the outline of a found code
   TrackColors: array [0 .. 3] of TAlphaColor = ($FFFF7F50, $FF3EBDE4,
@@ -127,12 +127,16 @@ function MeasureText(lbl: TLabel; const text: string; maxWidth: Single;
 /// layout (TouchTargetExpansion).</summary>
 procedure MakeLink(lbl: TLabel; size: Single; color: TAlphaColor);
 
+/// <summary>The color between a and b: a for t = 0, b for t = 1.</summary>
+function BlendColor(a, b: TAlphaColor; t: Single): TAlphaColor;
+
 /// <summary>Puts the text on the clipboard of the platform.</summary>
 procedure CopyToClipboard(const text: string);
 
 implementation
 
 uses
+  System.Math,
   System.Rtti,
   FMX.Types,
   FMX.Platform,
@@ -205,6 +209,20 @@ begin
   StyleLabel(lbl, size, color, True);
   lbl.HitTest := True;
   lbl.TouchTargetExpansion.Rect := TRectF.Create(12, 14, 12, 14);
+end;
+
+function BlendColor(a, b: TAlphaColor; t: Single): TAlphaColor;
+  function Mix(x, y: Byte): Byte;
+  begin
+    Result := Round(x + (y - x) * t);
+  end;
+
+begin
+  t := Min(1, Max(0, t));
+  TAlphaColorRec(Result).A := Mix(TAlphaColorRec(a).A, TAlphaColorRec(b).A);
+  TAlphaColorRec(Result).R := Mix(TAlphaColorRec(a).R, TAlphaColorRec(b).R);
+  TAlphaColorRec(Result).G := Mix(TAlphaColorRec(a).G, TAlphaColorRec(b).G);
+  TAlphaColorRec(Result).B := Mix(TAlphaColorRec(a).B, TAlphaColorRec(b).B);
 end;
 
 procedure CopyToClipboard(const text: string);
