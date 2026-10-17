@@ -1105,9 +1105,9 @@ begin
       var r := scanManager.Scan(bmp);
       try
         Assert.IsNotNull(r, ' Nil result');
-        Assert.AreEqual(2, Length(r.ResultPoints));
+        Assert.AreEqual(2, Integer(Length(r.ResultPoints)));
         var position := r.Position;
-        Assert.AreEqual(4, Length(position));
+        Assert.AreEqual(4, Integer(Length(position)));
         // the corners at the ends of the scan line, above and below it
         var top := Min(position[0].Y, position[3].Y);
         var bottom := Max(position[0].Y, position[3].Y);

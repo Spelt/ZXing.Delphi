@@ -179,7 +179,7 @@ begin
   // 4 QR Codes of a structured append sequence
   var list := ScanAll('zxing-cpp\qrcode-2\StructApp.webp', TBarcodeFormat.Auto);
   try
-    Assert.AreEqual(4, list.Count);
+    Assert.AreEqual(4, Integer(list.Count));
     for var r in list do
       Assert.AreEqual(Ord(TBarcodeFormat.QR_CODE), Ord(r.BarcodeFormat));
   finally
@@ -192,7 +192,7 @@ begin
   // a QR Code and an EAN-13 (also read as UPC-A, but only once)
   var list := ScanAll('zxing-cpp\multi-1\ean+qr.png', TBarcodeFormat.Auto);
   try
-    Assert.AreEqual(2, list.Count);
+    Assert.AreEqual(2, Integer(list.Count));
     var qr := 0;
     var ean := 0;
     for var r in list do
@@ -218,7 +218,7 @@ begin
   var list := ScanAll('zxing-cpp\qrcode-2\StructApp.webp',
     TBarcodeFormat.QR_CODE, 2);
   try
-    Assert.AreEqual(2, list.Count);
+    Assert.AreEqual(2, Integer(list.Count));
   finally
     list.Free;
   end;
@@ -229,7 +229,7 @@ begin
   // two different Code 128 close to each other, one above the other
   var list := ScanAll('two-code128-stacked.png', TBarcodeFormat.Auto);
   try
-    Assert.AreEqual(2, list.Count);
+    Assert.AreEqual(2, Integer(list.Count));
     var texts := '';
     for var r in list do
     begin
@@ -254,7 +254,7 @@ begin
   var scanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
   var list := scanManager.ScanAll(bmp);
   try
-    Assert.AreEqual(4, list.Count);
+    Assert.AreEqual(4, Integer(list.Count));
     var texts := '';
     for var r in list do
       texts := texts + '[' + r.Text + ']';

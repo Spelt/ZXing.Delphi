@@ -334,7 +334,7 @@ begin
     // all, with Auto
     var all := TScanManager.ScanAll(bitmap, TBarcodeFormat.Auto);
     try
-      Assert.AreEqual(1, all.Count);
+      Assert.AreEqual(1, Integer(all.Count));
       Assert.AreEqual(text, all[0].Text);
     finally
       all.Free;

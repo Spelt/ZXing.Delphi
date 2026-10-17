@@ -89,7 +89,7 @@ begin
     Assert.AreEqual(Ord(TBarcodeFormat.AZTEC), Ord(r.BarcodeFormat));
     Assert.AreEqual('Code 2D!', r.Text);
     Assert.AreEqual(']z0', r.SymbologyIdentifier);
-    Assert.AreEqual(4, Length(r.Position));
+    Assert.AreEqual(4, Integer(Length(r.Position)));
   finally
     r.Free;
   end;
@@ -164,7 +164,7 @@ begin
   var r := Scan('mixed-ecis-41x41.png');
   try
     Assert.IsNotNull(r, ' Nil result ');
-    Assert.AreEqual(Length(EXPECTED), Length(r.RawBytes), 'length');
+    Assert.AreEqual(Length(EXPECTED), Integer(Length(r.RawBytes)), 'length');
     for var i := 0 to High(EXPECTED) do
       Assert.AreEqual(EXPECTED[i], r.RawBytes[i], 'byte ' + IntToStr(i));
     Assert.IsTrue(r.Text.StartsWith(#$E1#$A1#$126#$401), r.Text);

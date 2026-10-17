@@ -222,7 +222,7 @@ begin
   try
     scanManager.ReturnErrors := true;
     list := scanManager.ScanAll(bmp);
-    Assert.AreEqual(4, list.Count);
+    Assert.AreEqual(4, Integer(list.Count));
     for var r in list do
       Assert.AreEqual('', r.Error);
   finally
@@ -238,7 +238,7 @@ begin
   try
     scanManager.ReturnErrors := true;
     list := scanManager.ScanAll(bmp);
-    Assert.AreEqual(1, list.Count);
+    Assert.AreEqual(1, Integer(list.Count));
     Assert.AreEqual('Checksum', list[0].Error);
   finally
     list.Free;
