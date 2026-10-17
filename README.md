@@ -31,9 +31,6 @@ The simplest example of using ZXing.Delphi looks something like this:
 
 ![Quick start: add the source folders to the search path, create a TScanManager, feed it a bitmap or a camera frame](docs/quickstart.png)
 
-
-![Quick start, async: one TScanManager, ScanAsync for every camera frame, the result in the callback](docs/quickstart-async.png)
-
 Create the scan manager once and use it for all frames; it is not meant to be used by two threads at the same time. Hints are passed as a dictionary, which the scan manager frees:
 
 ```Pascal
@@ -44,6 +41,11 @@ hints.Add(TDecodeHintType.ENABLE_INVERSION, nil);  // also light codes on a dark
 FScanManager := TScanManager.Create(TBarcodeFormat.Auto, hints);
 
 ```
+
+
+
+![Quick start, async: one TScanManager, ScanAsync for every camera frame, the result in the callback](docs/quickstart-async.png)
+
 
 For a camera, scan in the background and get the result in the main thread (the bitmap may be reused as soon as ScanAsync returns; a frame that arrives while a scan runs is skipped; Scanning tells whether a scan runs):
 
