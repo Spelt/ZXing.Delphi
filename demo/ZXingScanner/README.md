@@ -10,8 +10,8 @@ built with the standard components only. There is no third party code and no
 custom style: the dark look is made of rectangles, circles, paths and labels.
 
 <p>
-<img src="docs/scan.png" width="300" alt="The scan screen on an iPhone: a Data Matrix in the outline, its text in the pill and in the sheet">
-<img src="docs/settings.png" width="300" alt="The settings screen: the decoding switches and the formats">
+<img src="docs/scan.png" width="300" hspace="12" alt="The scan screen on an iPhone: a Data Matrix in the outline, its text in the pill and in the sheet">
+<img src="docs/settings.png" width="300" hspace="12" alt="The settings screen: the decoding switches and the formats">
 </p>
 
 ## The scan screen
