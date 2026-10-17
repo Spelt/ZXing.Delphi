@@ -3,16 +3,10 @@
         <ProjectGuid>{72263279-BD40-4924-B404-E92C43F54569}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="UnitTest\dUnitXTest.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="MemLeakTest\Leaktest.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="demo\aTestApp\FmxTestApp.dproj">
-            <Dependencies/>
-        </Projects>
         <Projects Include="demo\ZXingScanner\ZXingScanner.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="UnitTest\dUnitXTest.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="demo\vclTestApp\vclTestApp.dproj">
@@ -29,33 +23,6 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="dUnitXTest">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
-    </Target>
-    <Target Name="dUnitXTest:Clean">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="dUnitXTest:Make">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="Leaktest">
-        <MSBuild Projects="MemLeakTest\Leaktest.dproj"/>
-    </Target>
-    <Target Name="Leaktest:Clean">
-        <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="Leaktest:Make">
-        <MSBuild Projects="MemLeakTest\Leaktest.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="FmxTestApp">
-        <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj"/>
-    </Target>
-    <Target Name="FmxTestApp:Clean">
-        <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="FmxTestApp:Make">
-        <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj" Targets="Make"/>
-    </Target>
     <Target Name="ZXingScanner">
         <MSBuild Projects="demo\ZXingScanner\ZXingScanner.dproj"/>
     </Target>
@@ -64,6 +31,15 @@
     </Target>
     <Target Name="ZXingScanner:Make">
         <MSBuild Projects="demo\ZXingScanner\ZXingScanner.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="dUnitXTest">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
+    </Target>
+    <Target Name="dUnitXTest:Clean">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dUnitXTest:Make">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
     </Target>
     <Target Name="vclTestApp">
         <MSBuild Projects="demo\vclTestApp\vclTestApp.dproj"/>
@@ -84,13 +60,13 @@
         <MSBuild Projects="demo\webcam\Webcam.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="dUnitXTest;Leaktest;FmxTestApp;ZXingScanner;vclTestApp;Webcam"/>
+        <CallTarget Targets="ZXingScanner;dUnitXTest;vclTestApp;Webcam"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="dUnitXTest:Clean;Leaktest:Clean;FmxTestApp:Clean;ZXingScanner:Clean;vclTestApp:Clean;Webcam:Clean"/>
+        <CallTarget Targets="ZXingScanner:Clean;dUnitXTest:Clean;vclTestApp:Clean;Webcam:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="dUnitXTest:Make;Leaktest:Make;FmxTestApp:Make;ZXingScanner:Make;vclTestApp:Make;Webcam:Make"/>
+        <CallTarget Targets="ZXingScanner:Make;dUnitXTest:Make;vclTestApp:Make;Webcam:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
