@@ -434,11 +434,9 @@
         </DelphiCompile>
         <DCCReference Include="Scanner.Main.pas">
             <Form>MainForm</Form>
-            <FormType>fmx</FormType>
         </DCCReference>
         <DCCReference Include="Scanner.Settings.pas">
             <Form>SettingsForm</Form>
-            <FormType>fmx</FormType>
         </DCCReference>
         <DCCReference Include="Scanner.Config.pas"/>
         <DCCReference Include="Scanner.Formats.pas"/>

@@ -160,6 +160,10 @@ that the project uses are in `ZXingScanner.Artwork`.
 
 ## Platforms
 
+The app renders with Skia (`GlobalUseSkia`), on Metal on iOS and macOS and on
+Vulkan on Android (`GlobalUseMetal`, `GlobalUseVulkan` in the project source),
+and runs in portrait.
+
 - **Windows and macOS**: the camera of the computer, or an image (the
   button, drag and drop, the command line). No vibration.
 - **Android**: the permissions `CAMERA` and `VIBRATE` are set in the project
