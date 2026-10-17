@@ -1,10 +1,7 @@
 ﻿﻿# ZXing.Delphi
 ZXing Barcode Scanning Library for Delphi 10.4 Sydney to 13 Florence. 
 
-<img align="right" src="https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing-logo.png"/>
-
-
-![ZXing.Delphi Logo](https://github.com/Spelt/ZXing.Delphi/blob/v_3.0/zxing.Delphi.picture2.png )
+![ZXing.Delphi: scan almost all barcodes and 2D codes super fast and in parallel, in pure Object Pascal](docs/hero.png)
 
 ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib. It is aimed at all of the FireMonkey mobile platforms and, starting from v3.1, it fully supports also Windows VCL applications (no dependencies on FMX.Graphics unit).
 
@@ -329,6 +326,8 @@ If you use a Delphi older then 11.1 then you NEED to set a compiler Define in yo
 
 The simplest example of using ZXing.Delphi looks something like this:
 
+![Quick start: add the source folders to the search path, create a TScanManager, feed it a bitmap or a camera frame](docs/quickstart.png)
+
 Include all the files in your project or use search path like included test application
 - Add uses: ZXing.ScanManager, ZXing.BarcodeFormat, ZXing.ReadResult.
 
@@ -359,6 +358,8 @@ FScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 FReadResult := FScanManager.Scan(scanBitmap);  // the result is still yours to free
 
 ```
+
+![Quick start, async: one TScanManager, ScanAsync for every camera frame, the result in the callback](docs/quickstart-async.png)
 
 For a camera, scan in the background and get the result in the main thread (the bitmap may be reused as soon as ScanAsync returns; a frame that arrives while a scan runs is skipped; Scanning tells whether a scan runs):
 
