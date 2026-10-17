@@ -51,6 +51,9 @@ type
 
 implementation
 
+uses
+  ZXing.Common.BufferPool;
+
 { TInvertedLuminanceSource }
 
 /// <summary>
@@ -69,6 +72,8 @@ destructor TInvertedLuminanceSource.Destroy;
 begin
   if ownDelegate then
     FreeAndNil(delegate);
+  // (the inverted copy back to the pool, see ZXing.Common.BufferPool)
+  ReleaseBytes(invertedMatrix);
   inherited;
 end;
   
@@ -115,8 +120,8 @@ begin
   begin
     matrixArray := delegate.Matrix;
     len := Self.Width * Self.Height;
-    invertedMatrix := TArray<Byte>.Create();
-    SetLength(invertedMatrix, len);
+    // (every pixel is written: a buffer of the pool, not cleared)
+    invertedMatrix := AcquireBytes(len);
     for i := 0 to Pred(len) do
       invertedMatrix[i] := (255 - (matrixArray[i] and $FF));
   end;

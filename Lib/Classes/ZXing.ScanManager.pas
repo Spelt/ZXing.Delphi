@@ -285,7 +285,8 @@ uses
   System.Classes,
   System.SyncObjs,
   ZXing.Reader,
-  ZXing.Parallel;
+  ZXing.Parallel,
+  ZXing.Common.BufferPool;
 
 procedure ScaleResult(r: TReadResult; scale: Single); forward;
 procedure AdjustFailedList(list: TList<TReadResult>; first: Integer;
@@ -430,15 +431,20 @@ const
   DOWNSCALE_FACTOR = 3;
   DOWNSCALE_THRESHOLD = 500;
 
-/// <summary>The luminances downscaled by factor (the rounded average of
-/// every factor x factor pixels).</summary>
-function Downscaled(const luminances: TArray<Byte>; width, height,
-  factor: Integer): TArray<Byte>;
+/// <summary>A new source with the luminances of source downscaled by factor
+/// (the rounded average of every factor x factor pixels). The caller frees
+/// it.</summary>
+function DownscaledSource(const source: TLuminanceSource; factor: Integer)
+  : TLuminanceSource;
 begin
+  var luminances := source.Matrix;
+  var width := source.Width;
   var newWidth := width div factor;
-  var newHeight := height div factor;
+  var newHeight := source.Height div factor;
   var area := factor * factor;
-  SetLength(Result, newWidth * newHeight);
+  // (every pixel is written: a buffer of the pool, not cleared; the new
+  // source adopts it, and gives it back when it is freed)
+  var scaled := AcquireBytes(newWidth * newHeight);
   for var dy := 0 to newHeight - 1 do
     for var dx := 0 to newWidth - 1 do
     begin
@@ -449,8 +455,17 @@ begin
         for var tx := 0 to factor - 1 do
           Inc(sum, luminances[offset + tx]);
       end;
-      Result[dy * newWidth + dx] := sum div area;
+      scaled[dy * newWidth + dx] := sum div area;
     end;
+  Result := TRGBLuminanceSource.CreateAdopting(scaled, newWidth, newHeight);
+end;
+
+/// <summary>Whether the pyramid has a level below one of width x height.
+/// </summary>
+function CanDownscale(width, height: Integer): Boolean;
+begin
+  Result := (Max(width, height) > DOWNSCALE_THRESHOLD) and
+    (Min(width, height) >= DOWNSCALE_FACTOR);
 end;
 
 procedure TScanManager.BeginFailed;
@@ -520,32 +535,31 @@ begin
     if (Result <> nil) or not FTryDownscale then
       exit;
 
-    // nothing found: try the downscaled layers of the image pyramid
+    // nothing found: try the downscaled layers of the image pyramid (each
+    // one made from the one before it, which is then freed)
     var fullWidth := LuminanceSource.Width;
-    var luminances := LuminanceSource.Matrix;
-    var width := LuminanceSource.Width;
-    var height := LuminanceSource.Height;
-    while (Max(width, height) > DOWNSCALE_THRESHOLD) and
-      (Min(width, height) >= DOWNSCALE_FACTOR) do
-    begin
-      luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
-      width := width div DOWNSCALE_FACTOR;
-      height := height div DOWNSCALE_FACTOR;
-      var layer := TRGBLuminanceSource.CreateAdopting(luminances, width, height);
-      var failedBefore := FailedCount;
-      try
-        Result := DecodeLayer(layer);
-      finally
-        layer.Free;
-      end;
-      AdjustFailed(failedBefore, fullWidth / width, false);
-
-      if (Result <> nil) then
+    var layer := LuminanceSource;
+    try
+      while CanDownscale(layer.Width, layer.Height) do
       begin
-        // back to the coordinates of the full image
-        ScaleResult(Result, fullWidth / width);
-        exit;
+        var next := DownscaledSource(layer, DOWNSCALE_FACTOR);
+        if (layer <> LuminanceSource) then
+          layer.Free;
+        layer := next;
+        var failedBefore := FailedCount;
+        Result := DecodeLayer(layer);
+        AdjustFailed(failedBefore, fullWidth / layer.Width, false);
+
+        if (Result <> nil) then
+        begin
+          // back to the coordinates of the full image
+          ScaleResult(Result, fullWidth / layer.Width);
+          exit;
+        end;
       end;
+    finally
+      if (layer <> LuminanceSource) then
+        layer.Free;
     end;
   end;
 end;
@@ -806,24 +820,23 @@ begin
     begin
       scanLayer(LuminanceSource, 1);
 
-      // the downscaled layers of the image pyramid
+      // the downscaled layers of the image pyramid (each one made from the
+      // one before it, which is then freed)
       var fullWidth := LuminanceSource.Width;
-      var luminances := LuminanceSource.Matrix;
-      var width := LuminanceSource.Width;
-      var height := LuminanceSource.Height;
-      while FTryDownscale and not ResultsFull(all, maxCount) and
-        (Max(width, height) > DOWNSCALE_THRESHOLD) and
-        (Min(width, height) >= DOWNSCALE_FACTOR) do
-      begin
-        luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
-        width := width div DOWNSCALE_FACTOR;
-        height := height div DOWNSCALE_FACTOR;
-        var layer := TRGBLuminanceSource.CreateAdopting(luminances, width, height);
-        try
-          scanLayer(layer, fullWidth / width);
-        finally
-          layer.Free;
+      var layer := LuminanceSource;
+      try
+        while FTryDownscale and not ResultsFull(all, maxCount) and
+          CanDownscale(layer.Width, layer.Height) do
+        begin
+          var next := DownscaledSource(layer, DOWNSCALE_FACTOR);
+          if (layer <> LuminanceSource) then
+            layer.Free;
+          layer := next;
+          scanLayer(layer, fullWidth / layer.Width);
         end;
+      finally
+        if (layer <> LuminanceSource) then
+          layer.Free;
       end;
     end;
 
@@ -900,21 +913,14 @@ begin
   Result := [level];
   if not FTryDownscale then
     exit;
-  // the downscaled layers of the image pyramid
+  // the downscaled layers of the image pyramid, each one made from the one
+  // before it
   var fullWidth := source.Width;
-  var luminances := source.Matrix;
-  var width := source.Width;
-  var height := source.Height;
-  while (Max(width, height) > DOWNSCALE_THRESHOLD) and
-    (Min(width, height) >= DOWNSCALE_FACTOR) do
+  while CanDownscale(level.Source.Width, level.Source.Height) do
   begin
-    luminances := Downscaled(luminances, width, height, DOWNSCALE_FACTOR);
-    width := width div DOWNSCALE_FACTOR;
-    height := height div DOWNSCALE_FACTOR;
-    level.Source := TRGBLuminanceSource.CreateAdopting(luminances, width,
-      height);
+    level.Source := DownscaledSource(level.Source, DOWNSCALE_FACTOR);
     level.OwnsSource := true;
-    level.Scale := fullWidth / width;
+    level.Scale := fullWidth / level.Source.Width;
     Result := Result + [level];
   end;
 end;
@@ -1024,9 +1030,13 @@ begin
       end;
       layers[k].Bitmap.Free;
       layers[k].Binarizer.Free;
+    end;
+    // the sources after all binarizers: an inverted binarizer refers to the
+    // luminances of the layer before it, and a source gives its luminances
+    // back to the pool only when nothing else refers to them
+    for var k := 0 to n - 1 do
       if layers[k].OwnsSource then
         layers[k].Source.Free;
-    end;
     // (the levels not used as layers: an exception while preparing)
     for var k := n to High(levels) do
       if levels[k].OwnsSource then

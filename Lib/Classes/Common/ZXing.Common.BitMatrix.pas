@@ -121,7 +121,8 @@ type
 implementation
 
 uses
-  System.Math;
+  System.Math,
+  ZXing.Common.BufferPool;
 
 { TBitMatrix }
 
@@ -383,16 +384,9 @@ begin
 end;
 
 procedure TBitMatrix.clear;
-var
-  max, i: Integer;
 begin
-  max := Length(Fbits);
-  i := 0;
-  while ((i < max)) do
-  begin
-    Fbits[i] := 0;
-    Inc(i);
-  end;
+  if (Length(Fbits) > 0) then
+    FillChar(Fbits[0], Length(Fbits) * SizeOf(Integer), 0);
 end;
 
 function TBitMatrix.Clone: TObject;
@@ -423,8 +417,10 @@ begin
   Self.Fwidth := width;
   Self.Fheight := height;
   Self.FrowSize := (width + $1F) shr 5;
-  // (SetLength clears the new array)
-  SetLength(Self.Fbits, Self.FrowSize * height);
+  // the words of an image-sized matrix come from the pool (see
+  // ZXing.Common.BufferPool), cleared: the binarizer only sets the bits of
+  // the pixels, and the padding bits of a row must stay 0
+  Self.Fbits := AcquireWords(Self.FrowSize * height, true);
 end;
 
 constructor TBitMatrix.Create(const dimension: Integer);
@@ -434,7 +430,8 @@ end;
 
 destructor TBitMatrix.Destroy;
 begin
-  Self.Fbits := nil;
+  // (back to the pool when nothing else refers to the words)
+  ReleaseWords(Self.Fbits);
   inherited;
 end;
 

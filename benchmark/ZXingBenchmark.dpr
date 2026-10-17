@@ -23,6 +23,11 @@ program ZXingBenchmark;
   *                     The binarization of the whole image is listed
   *                     separately, as are the black rows and pattern rows
   *                     the 1D readers share (made by the first that asks)
+  *   -nopool           no pool of the image-sized buffers
+  *                     (ZXing.Common.BufferPool.BufferPooling off)
+  *   -frames[=N]       instead of the samples: camera-like frames (1080p and
+  *                     720p, with and without a QR Code), N (200) scans
+  *                     each, with and without the pool, see Benchmark.Frames
   *
   * See Benchmark.Runner for the modes and how results are compared.
 }
@@ -39,9 +44,11 @@ uses
   System.Generics.Collections,
   System.Generics.Defaults,
   ZXing.ReaderTimings,
+  ZXing.Common.BufferPool,
   Benchmark.Samples in 'Benchmark.Samples.pas',
   Benchmark.Images in 'Benchmark.Images.pas',
-  Benchmark.Runner in 'Benchmark.Runner.pas';
+  Benchmark.Runner in 'Benchmark.Runner.pas',
+  Benchmark.Frames in 'Benchmark.Frames.pas';
 
 var
   Verbose: Boolean;
@@ -342,7 +349,7 @@ var
   samplesDir, arg, m: string;
   prefixes: TArray<string>;
   writeThresholds: Boolean;
-  i: Integer;
+  i, frames: Integer;
 
 begin
   Thresholds := TStringList.Create;
@@ -354,6 +361,7 @@ begin
       SetTextCodePage(Output, CP_UTF8);
       Verbose := false;
       writeThresholds := false;
+      frames := 0;
       Modes := [tmSlow, tmFast, tmPure];
       samplesDir := TPath.GetFullPath(ExtractFilePath(ParamStr(0)) +
         '..\..\..\unitTest\Images\zxing-cpp');
@@ -372,6 +380,12 @@ begin
           ReaderTimingsEnabled := true
         else if SameText(arg, '-sequential') then
           ParallelDecoding := false
+        else if SameText(arg, '-nopool') then
+          BufferPooling := false
+        else if SameText(arg, '-frames') then
+          frames := 200
+        else if arg.StartsWith('-frames=', true) then
+          frames := StrToIntDef(Copy(arg, 9, MaxInt), 200)
         else if arg.StartsWith('-samples=', true) then
           samplesDir := Copy(arg, 10, MaxInt)
         else if arg.StartsWith('-modes=', true) then
@@ -398,8 +412,14 @@ begin
       if not TDirectory.Exists(samplesDir) then
       begin
         Writeln('Samples folder not found: ' + samplesDir);
-        Writeln('Usage: ZXingBenchmark [folder prefixes] [-v] [-modes=slow,fast,pure] [-samples=<folder>] [-thresholds] [-all] [-readers]');
+        Writeln('Usage: ZXingBenchmark [folder prefixes] [-v] [-modes=slow,fast,pure] [-samples=<folder>] [-thresholds] [-all] [-readers] [-sequential] [-nopool] [-frames[=N]]');
         ExitCode := 1;
+        exit;
+      end;
+
+      if (frames > 0) then
+      begin
+        RunFrames(samplesDir, frames);
         exit;
       end;
 

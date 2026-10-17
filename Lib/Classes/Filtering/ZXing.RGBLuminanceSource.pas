@@ -171,12 +171,20 @@ var
   r, g, b : Byte;
   currentData: TBitmapData;
 begin
-  Self.Create(width, height);
+  // (the luminance of every pixel is written below: a buffer of the pool as
+  // it is, see ZXing.Common.BufferPool)
+  inherited CreateUncleared(width, height);
 
   // In order to measure pure decoding speed, we convert the entire image to a greyscale array
   // up front, which is the same as the Y channel of the YUVLuminanceSource in the real app.
 
-  if (sourceBitmap.Map(TMapAccess.Read, currentData)) then
+  if not sourceBitmap.Map(TMapAccess.Read, currentData) then
+  begin
+    // (no pixels: all black, like before)
+    if (Length(luminances) > 0) then
+      FillChar(luminances[0], Length(luminances), 0);
+  end
+  else
   begin
     try
       case currentData.PixelFormat of
@@ -243,7 +251,13 @@ var
   P: pRGBTripleArray;
 
 begin
-  Self.Create(width, height);
+  // (the luminance of every pixel is written below: a buffer of the pool as
+  // it is, see ZXing.Common.BufferPool; cleared when the bitmap does not
+  // cover it, like before)
+  inherited CreateUncleared(width, height);
+  if ((sourceBitmap.Width <> width) or (sourceBitmap.Height <> height)) and
+    (Length(luminances) > 0) then
+    FillChar(luminances[0], Length(luminances), 0);
   if (sourceBitmap.PixelFormat = pf32bit) then
   begin
     // read 32 bit bitmaps directly, without converting (and changing) the

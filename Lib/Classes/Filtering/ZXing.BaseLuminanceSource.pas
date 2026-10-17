@@ -50,10 +50,17 @@ type
 	  
     function CreateLuminanceSource(const newLuminances: TArray<Byte>;
       const width, height: Integer): TLuminanceSource; virtual; abstract;
+    /// <summary>Create(width, height) with the luminances not cleared (a
+    /// buffer of the pool as it is): for a constructor that writes every
+    /// pixel afterwards, like CreateFromBitmap.</summary>
+    constructor CreateUncleared(const width, height: Integer);
   public
-    
+
     // added the "reintroduce" keyword to shut off the "method hides another method with the same name in the base class"
     constructor Create(const width, height: Integer);  reintroduce; overload;
+    /// <summary>Gives the luminances back to the pool
+    /// (ZXing.Common.BufferPool).</summary>
+    destructor Destroy; override;
     constructor Create(const luminanceArray: TArray<Byte>; const width, height: Integer);  reintroduce; overload;
     /// <summary>A source that uses luminanceArray itself (no copy): for an
     /// array made for this source, like the ones of crop, rotate and the
@@ -77,14 +84,31 @@ type
 
 implementation
 
+uses
+  ZXing.Common.BufferPool;
+
 { TBaseLuminanceSource }
 
 constructor TBaseLuminanceSource.Create(const width, height: Integer);
 begin
   inherited Create(width, height);
-  
-  luminances := TArray<Byte>.Create();
-  SetLength(luminances, (width * height));
+  // (an image-sized buffer of the pool, zero like after SetLength: the
+  // converters of the raw formats do not write every pixel of a short array)
+  luminances := AcquireBytes(width * height, true);
+end;
+
+constructor TBaseLuminanceSource.CreateUncleared(const width, height: Integer);
+begin
+  inherited Create(width, height);
+  luminances := AcquireBytes(width * height, false);
+end;
+
+destructor TBaseLuminanceSource.Destroy;
+begin
+  // (back to the pool when nothing else refers to the array, e.g. an
+  // inverted binarizer that kept the luminances of the original image)
+  ReleaseBytes(luminances);
+  inherited;
 end;
 
 /// <summary>
@@ -159,7 +183,8 @@ var
   ynew, xnew, xold, oldWidth, offset: Integer;
   src: PByte;
 begin
-  SetLength(rotatedLuminances, (Width * Height));
+  // (every pixel is written: a buffer of the pool, not cleared)
+  rotatedLuminances := AcquireBytes(Width * Height);
 
   newWidth := Height;
   newHeight := Width;
@@ -225,7 +250,8 @@ begin
   then
      raise EArgumentException.Create('Crop rectangle does not fit within image data.');
 
-  SetLength(croppedLuminances, (width * height));
+  // (every pixel is written: a buffer of the pool, not cleared)
+  croppedLuminances := AcquireBytes(width * height);
   oldLuminances := Self.Matrix;
   oldWidth := Self.Width;
   oldBottomBound := top + height;
