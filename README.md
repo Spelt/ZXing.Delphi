@@ -1,23 +1,50 @@
-﻿﻿# ZXing.Delphi
-ZXing Barcode Scanning Library for Delphi 10.4 Sydney to 13 Florence. 
-
 ![ZXing.Delphi: scan almost all barcodes and 2D codes super fast and in parallel, in pure Object Pascal](docs/hero.png)
 
+# What is it?
 ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port was based on .Net ZXing and the Java one. From v4 it is based of the C++ port which had lots of better and faster scan strategies. See features and highlights. It is aimed at all of the FireMonkey platforms and, starting from v3.1, it fully supports also Windows VCL applications.
 
-With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast. Its compatible with Delphi 10.4 Sydney - 13.x Florence (**for XE7 - 10.3 use v3.13.1**) and tested with the latest IOS, Android 32/64, Windows 32/64 and OSX. 
+With this library you can scan with native compiled speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast. Its compatible with Delphi 10.4 Sydney - 13.x Florence (**for XE7 - 10.3 use v3.13.1**) and tested with the latest IOS, Android 32/64, Windows 32/64 and OSX.  
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
-## What new in 4.0
-ZXing.Delphi 4.0 is by far the biggest step since the port began. The library grew from 10 symbologies to 52: Aztec, PDF417 and MicroPDF417, Micro QR and rMQR, MaxiCode, the GS1 DataBar family and GS1 Composite, DotCode and Han Xin, the stacked codes Codablock F, Code 16K and Code 49, and the postal barcodes from KIX to Intelligent Mail, several of which no other ZXing port reads at all. The QR Code and Data Matrix detectors are ports of zxing-cpp, so perspective, curved and dot-peen codes that 3.x missed are read now, and an image pyramid catches the large and blurry ones. It is also much faster: the luminance conversion, binarizer and 1D readers were rewritten, and the readers run side by side in the tasks of a thread pool, so a frame is decoded on all cores. The API grew with it: one ScanAsync call scans a camera frame in the background and hands the result to the main thread, IScanManager frees itself, every result has the four corners of its code, and codes that are seen but not readable can be reported too. And there is a new demo app that shows all of it: a scanner with tracked outlines and a settings screen, built with the standard FMX components only.
+- Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
+- 100% free. No license fees. Just free.
+- Speed
+- Simple API
+- Unit tests provided
+- Test projects provided
 
 
-## Supported Formats
+# What new in 4.0
+ZXing.Delphi 4.0 is by far the biggest step since the port began. The library grew from 10 symbologies to 52: Aztec, PDF417 and MicroPDF417, Micro QR and rMQR, MaxiCode, the GS1 DataBar family and GS1 Composite, DotCode and Han Xin, the stacked codes Codablock F, Code 16K and Code 49, and the postal barcodes from KIX to Intelligent Mail, several of which no other ZXing port reads at all. The QR Code and Data Matrix detectors are ports of zxing-cpp, so perspective, curved and dot-peen codes that 3.x missed are read now, and an image pyramid catches the large and blurry ones. It is also much faster: the luminance conversion, binarizer and 1D readers were rewritten, and the readers run side by side in the tasks of a thread pool, so a frame is decoded on all cores. The API grew with it: one ScanAsync call scans a camera frame in the background and hands the result to the main thread, IScanManager frees itself, every result has the four corners of its code, and codes that are seen but not readable can be reported too. And there is a new demo app that shows all of it: a scanner with tracked outlines and a settings screen, built with the standard FMX components only. It is also much faster then the previous version: on the same images 4.0 scans about five times faster than 3.x on a single core, while trying five times as many formats, and on large camera frames the readers decode side by side on all cores. 
+
+# Tips and tricks - How to optimize an already fast library.
+- Try not to scan every incoming frame. 
+- Use autoformat scanning with care, with automatic on, every frame is passed to every barcode format. For example: If you want to scan only EAN-8, set the scan format for only EAN-8. 
+- For mobile: try not to scan every frame, skip every n frame. Scanning 4 frames in a second should be good for most purposes. Safes CPU and battery.
+- For mobile: try setting your camera not to a high resolution. 640x480 is for most purposes perfect. More resolutions means more pixels to scan means slower. Saves CPU and battery. 
+
+
+# Supported Formats
 
 All formats are read with TBarcodeFormat.Auto, except the ones marked "only when asked for" (choose them as TScanManager format or in the hint POSSIBLE_FORMATS).
 
-### 1D
+## 2D
+
+| Format | TBarcodeFormat | Also | Notes
+| ------ | -------------- | ---- | -----
+| QR Code | QR_CODE | Model 1 and 2, ECI, GS1, Structured Append | perspective and not flat symbols
+| Micro QR Code | MICRO_QR_CODE | M1 to M4 |
+| rMQR Code | RMQR_CODE | ECI, GS1 | rectangular Micro QR Code
+| Data Matrix | DATA_MATRIX | square, rectangular and DMRE sizes, ECI, GS1, mirrored | dot-peen codes with TRY_HARDER
+| Aztec | AZTEC | compact and full range, Aztec Runes, ECI, GS1, Structured Append, mirrored |
+| PDF417 | PDF_417 | Compact PDF417, Macro PDF417, ECI |
+| MicroPDF417 | MICRO_PDF417 | Macro PDF417, ECI |
+| MaxiCode | MAXICODE | modes 2 to 6, ECI, Structured Append | with detector: anywhere in the image, rotated and in perspective (camera)
+| DotCode | DOTCODE | all code sets, binary, macros 05/06/12, ECI, GS1 (]J1) | only when asked for (not in Auto); the dots found as blobs, the grid fitted to them: rotated, mirrored and in perspective (camera)
+| Han Xin Code | HAN_XIN | versions 1 to 84, all data modes (numeric, text, binary, the Chinese regions and GB 18030 2- and 4-byte), ECI | only when asked for (not in Auto); with detector: anywhere in the image, rotated, mirrored and in perspective (camera)
+
+## 1D
 
 | Format | TBarcodeFormat | Also | Notes
 | ------ | -------------- | ---- | -----
@@ -47,7 +74,7 @@ All formats are read with TBarcodeFormat.Auto, except the ones marked "only when
 | Matrix 2 of 5 | MATRIX_2_OF_5 | check digit in the text | also called Standard 2 of 5; only when asked for
 | Datalogic 2 of 5 | DATALOGIC_2_OF_5 | check digit in the text | only when asked for
 
-### Stacked
+## Stacked
 
 Rows of 1D characters, read in Auto with one scan for all of them. Horizontal, also upside down; vertical with TRY_HARDER (like the 1D codes).
 
@@ -57,7 +84,7 @@ Rows of 1D characters, read in Auto with one scan for all of them. Horizontal, a
 | Code 16K | CODE_16K | 2 to 16 rows of 5 Code 128 characters, the row numbers in the start and stop patterns, 2 check characters (modulo 107); GS1 (FNC1 first: ]K1)
 | Code 49 | CODE_49 | 2 to 8 rows of 4 symbol characters, the row numbers in the parity, row checks and the symbol checks X, Y, Z; alphanumeric, shifts (ASCII) and numeric; GS1 (FNC1 first)
 
-### GS1 Composite
+## GS1 Composite
 
 In Auto, or asked for as GS1_COMPOSITE (then only composites).
 
@@ -65,22 +92,8 @@ In Auto, or asked for as GS1_COMPOSITE (then only composites).
 | ------ | -------------- | -----
 | GS1 Composite | GS1_COMPOSITE | the 2D component CC-A, CC-B (MicroPDF417) or CC-C (PDF417, with GS1-128) above an EAN-13, EAN-8, UPC-A, UPC-E, GS1 DataBar (Omnidirectional, Limited, Expanded) or GS1-128; also upside down; text: the linear text, '|' and the GS1 text of the 2D component (encodation methods 0, 10 and 11). Asking for the linear format only returns the linear text, as before
 
-### 2D
 
-| Format | TBarcodeFormat | Also | Notes
-| ------ | -------------- | ---- | -----
-| QR Code | QR_CODE | Model 1 and 2, ECI, GS1, Structured Append | perspective and not flat symbols
-| Micro QR Code | MICRO_QR_CODE | M1 to M4 |
-| rMQR Code | RMQR_CODE | ECI, GS1 | rectangular Micro QR Code
-| Data Matrix | DATA_MATRIX | square, rectangular and DMRE sizes, ECI, GS1, mirrored | dot-peen codes with TRY_HARDER
-| Aztec | AZTEC | compact and full range, Aztec Runes, ECI, GS1, Structured Append, mirrored |
-| PDF417 | PDF_417 | Compact PDF417, Macro PDF417, ECI |
-| MicroPDF417 | MICRO_PDF417 | Macro PDF417, ECI |
-| MaxiCode | MAXICODE | modes 2 to 6, ECI, Structured Append | with detector: anywhere in the image, rotated and in perspective (camera)
-| DotCode | DOTCODE | all code sets, binary, macros 05/06/12, ECI, GS1 (]J1) | only when asked for (not in Auto); the dots found as blobs, the grid fitted to them: rotated, mirrored and in perspective (camera)
-| Han Xin Code | HAN_XIN | versions 1 to 84, all data modes (numeric, text, binary, the Chinese regions and GB 18030 2- and 4-byte), ECI | only when asked for (not in Auto); with detector: anywhere in the image, rotated, mirrored and in perspective (camera)
-
-### Postal
+## Postal
 
 Only when asked for, not in Auto. The ones of bars that differ in height (4-state, and POSTNET, PLANET and CEPNet): horizontal and vertical, upside down, slanted and in perspective.
 
@@ -100,80 +113,14 @@ Only when asked for, not in Auto. The ones of bars that differ in height (4-stat
 | Deutsche Post Leitcode | DP_LEITCODE | ITF of 14 digits, check digit (weights 4 and 9) checked, in the text; Auto: ITF
 | Deutsche Post Identcode | DP_IDENTCODE | ITF of 12 digits, check digit (weights 4 and 9) checked, in the text; Auto: ITF
 
-### Features
-- Native compiled barcode scanning for all VCL and FireMonkey platforms (IOS/Android/Windows/OSX).
-- 100% free. No license fees. Just free.
-- Speed
-- Simple API
-- Unit tests provided
-- Test projects provided
 	
+## Other barcodes?
+Let me know ! 
 
-### Changes
-- Next version (branch Development, not released yet)
-	- New demo app demo\ZXingScanner (FMX, standard components only): the camera full screen, an outline at the corners of a found code (TReadResult.Position), its text in a sheet, every code in the frame with ScanAllAsync, a settings screen for the hints, the formats, TryDownscale, ReturnErrors and ParallelDecoding, an image instead of the camera on the desktop. See its README.md.
-	- Requires Delphi 10.4 Sydney or newer. For XE7 - 10.3 use v3.13.1 or older.
-	- IScanManager: TScanManager implements this interface (it is a TInterfacedObject now). Hold it in a variable of type IScanManager and it is freed with the last reference, no try finally; a TScanManager variable with Free works as before (do not mix the two for one instance).
-	- TScanManager.ScanAsync(bitmap, OnCompleted, OnException = nil), a procedure: scans in a task of the thread pool and calls OnCompleted in the main thread (TThread.Synchronize) with the result (nil when nothing was found; the receiver frees it). The pixels are taken in the calling thread, so the bitmap is free again when ScanAsync returns. An exception goes to OnException, also in the main thread; without it OnCompleted(nil) is called. One scan at a time: while Scanning is true the call does nothing (a camera frame is skipped). ScanAllAsync(bitmap, OnCompleted, OnException = nil, maxCount = 0) does the same for ScanAll: OnCompleted gets the list of all barcodes (an empty list after an exception without OnException). New too: Scan(source: TLuminanceSource) for callers with their own pixels, e.g. a camera frame as TPlanarYUVLuminanceSource. ScanAll(source) too.
-	- Scanning in one call, without a scan manager of your own: the class methods TScanManager.Scan(bitmap, format, hints = nil), ScanAll(bitmap, format, maxCount = 0, hints), ScanAsync(bitmap, format, OnCompleted, OnException = nil, hints) and ScanAllAsync(bitmap, format, OnCompleted, OnException = nil, maxCount = 0, hints). The format is required (Auto: every format read by default): it tells them apart from the methods of an instance. For a camera, keep one TScanManager: the readers are set up on every call of these.
-	- ParallelDecoding (unit ZXing.Parallel, on by default with more than one processor on the desktop platforms and with more than two on Android and iOS): the readers that support it decode with tasks of a thread pool of the library. The readers of TMultiFormatReader (more than one: a scan for a single format stays sequential, the tasks would cost more than they bring) run side by side, each in a task with its own copy of the hints: the result is the one of the sequential order (the first reader in the list whose result is accepted), the readers behind it are stopped at their next row, scan line or candidate, and the results are the same as without tasks. The layers of an image (normal, inverted, the downscaled copies of the pyramid) go into the same row of tasks in their order, so the cores start on the next layer while the longest reader of the previous one still runs; ScanAll runs the readers of every layer in tasks too, their barcodes taken in the order of the readers. The four directions of the edge tracing Data Matrix detector with TRY_HARDER run side by side too (when the reader itself is not in a task). The caches of TBinaryBitmap (black matrix, rows, pattern rows, turned images) are shared under a lock. Not with the result point callback (it would be called from tasks) and not for the time per reader of the benchmark; the benchmark has -sequential to compare. The thread pool of the library has a worker per processor, and the first parallel decode sets System.NeverSleepOnMMThreadContention (the memory manager spins instead of sleeping when the tasks contend for it; with the sleeps the tasks were four times slower than the sequential readers).
-	- Data Matrix: port of the edge tracing detector of zxing-cpp, with DMRE (rectangular) sizes, mirrored codes, pure codes of 1 pixel per module, and corrections for not flat and curved symbols (LocalGrid and timing pattern correction). The old detector stays as fallback.
-	- QR Code: port of the finder pattern detector of zxing-cpp, which handles perspective and not flat symbols much better (alignment patterns located in the image, tiled sampling). The old detector stays as fallback.
-	- QR Code model 1 (the original QR Code of ISO 18004:2000 annex M) is read too, like zxing-cpp; its SymbologyIdentifier is ]Q0, the format stays QR_CODE.
-	- QR Code: a symbol whose format information is readable but which can not be read is sampled once more half a pixel beside in each direction. Helps for small modules, round dots and wrinkled codes (no extra time on images without a code).
-	- Faster: luminance conversion (FMX and VCL), binarizer, inversion, closing for dot-peen codes and the 1D readers (a row cache shared by the readers). Results are unchanged.
-	- Image pyramid: when nothing is found, also downscaled copies of the image are scanned (TScanManager.TryDownscale, on by default). Helps for large, blurry and dot-peen codes.
-	- New formats: Codabar (without the start and stop characters A-D, unless RETURN_CODABAR_START_END) and Telepen (full ASCII and compressed numeric, TBarcodeFormat.TELEPEN).
-	- New format: Aztec (TBarcodeFormat.AZTEC), port of the Aztec reader of zxing-cpp: compact and full range symbols (with the reference grid for large ones), Aztec Runes (the text is the value as 3 digits), mirrored symbols, ECI, GS1 (FNC1) and Structured Append (STRUCTURED_APPEND_SEQUENCE like QR Code: index in the high nibble, count - 1 in the low one).
-	- New formats: GS1 DataBar, port of the DataBar readers of zxing-cpp: DataBar Omnidirectional, Truncated and Stacked (TBarcodeFormat.RSS_14), DataBar Expanded and Expanded Stacked (RSS_EXPANDED) and DataBar Limited (new: RSS_LIMITED). The text is the GS1 data without parentheses (GS between variable length fields), SymbologyIdentifier ]e0; IsGS1 and GS1HRI give the readable form like (01)04412345678909. Stacked symbols have a Position with 4 corners.
-	- New formats: PDF417 (TBarcodeFormat.PDF_417) and MicroPDF417 (new: MICRO_PDF417), port of the readers of zxing-cpp: the PDF417 detector of start and stop patterns (Compact PDF417 too: its right row indicator is missing) (also several symbols, 90/180/270 degrees with TRY_HARDER) and its pure detector, the MicroPDF417 detector of row address patterns, Reed-Solomon in GF(929) with erasures, text, byte and numeric compaction, ECI (]L1), Reader Initialisation, Macro PDF417 / Structured Append and the Macro 05/06 headers of MicroPDF417. The Macro PDF417 data (segment index and count, file id, file name, ...) is in the metadata PDF417_EXTRA_METADATA (IPDF417ResultMetadata).
-	- New formats: Micro QR Code (new: MICRO_QR_CODE, M1 to M4) and rMQR Code (new: RMQR_CODE, the rectangular Micro QR Code of ISO/IEC 23941), port of the readers of zxing-cpp: found by their finder pattern (also several in an image) or as pure symbol, numeric, alphanumeric, byte and Kanji segments, and ECI and FNC1 (GS1) for rMQR. The QR Code reader no longer raises an exception on a pure symbol smaller than a QR Code.
-	- New format: MaxiCode (TBarcodeFormat.MAXICODE), port of the reader of zxing-cpp: all modes (2 to 6), the Structured Carrier Message, ECI and Structured Append (STRUCTURED_APPEND_SEQUENCE). zxing-cpp only reads symbols that fill the image (a "pure" image); ZXing.Delphi also has a detector of its own that finds the symbol anywhere in the image by its bullseye, so it works with the camera too: rotated, skewed and in perspective (the grid is fitted to the edges between the modules), also several symbols with ScanAll. It reads all 4 photos of shipping labels of the zxing-cpp samples (zxing-cpp none of them).
-	- New format: DX Film Edge (new: DX_FILM_EDGE), the DX code on the edge of 35 mm film, port of the reader of zxing-cpp: the text is the product and generation number and, when there, the frame number, like 115-10/11A.
-	- New formats: Code 32 (new: CODE_32, the Italian pharmacy code, text 'A' and 9 digits) and PZN (new: PZN, the German Pharmazentralnummer), both Code 39 codes, port of zxing-cpp. Only when asked for (TScanManager format or POSSIBLE_FORMATS): Auto returns them as CODE_39 like before, so nothing changes for applications that read them as Code 39.
-	- New formats: MSI (MSI), Plessey (PLESSEY) and Pharmacode (new: PHARMA_CODE). zxing-cpp and ZXing Java have none of them: MSI and Pharmacode after the readers of ZXing.Net, Plessey new (with its CRC checked), the patterns as in zint. MSI with the hint ASSUME_MSI_CHECK_DIGIT checks the modulo 10 check digit (it stays in the text). MSI reads 5 of the 6 MSI test images of ZXing.Net (like ZXing.Net), also upside down. Only when asked for, not in Auto: MSI and Pharmacode have no check against false positives. Pharmacode is read left to right; upside down it is a different value.
-	- New formats: Code 11 (new: CODE_11), Industrial, IATA, Matrix and Datalogic 2 of 5 (new: INDUSTRIAL_2_OF_5, IATA_2_OF_5, MATRIX_2_OF_5, DATALOGIC_2_OF_5) and Pharmacode two-track (new: PHARMA_CODE_TWO_TRACK). zxing-cpp, ZXing Java and ZXing.Net have none of them: the patterns as in zint, verified against its test vectors. Code 11 requires its check digit C (or C and K); they stay in the text. The 2 of 5 variants have no check digit of their own: an optional one stays in the text. Pharmacode two-track: the two tracks of the bars are combined, horizontal and vertical; upside down it is a different value. Only when asked for, not in Auto.
-	- New postal formats: CEPNet (new: CEPNET, Brazil: POSTNET of 8 digits), Korea Post (new: KOREA_POST), USPS FIM (new: FIM, Facing Identification Mark) and Deutsche Post Leitcode and Identcode (new: DP_LEITCODE, DP_IDENTCODE: ITF of 14 and 12 digits with their own check digit). zxing-cpp, ZXing Java and ZXing.Net have none of them (they read Leitcode and Identcode as ITF, like Auto); the encodings as in zint, tested with its encode vectors. Only when asked for, not in Auto.
-	- New formats, stacked: Codablock F (new: CODABLOCK_F), Code 16K (new: CODE_16K) and Code 49 (new: CODE_49), in Auto, read with one scan of the rows for all of them. zxing-cpp, ZXing Java and ZXing.Net have none of them: the rows of Code 128 characters (the decoder of the Code 128 reader) or of Code 49 characters (edge to edge widths) put together by their row numbers, the check characters checked; the encodings as in zint, tested with its encode vectors and the examples of Wikipedia. Before Code 128 in Auto: otherwise a row would be read as Code 128. Auto in the benchmark about as fast as before (without TRY_HARDER the rows of the 1D readers, every 4th; with TRY_HARDER every 2nd and the image turned).
-	- New format: GS1 Composite (new: GS1_COMPOSITE), in Auto. zxing-cpp, ZXing Java and ZXing.Net have none: after a linear component (EAN/UPC, GS1 DataBar, GS1-128) its 2D component above (or below) it is looked for: CC-A (a new reader of its rows), CC-B (the MicroPDF417 reader, fine rows in that area) or CC-C (the PDF417 reader, with GS1-128 only). The PDF417 and MicroPDF417 readers decode the data behind codeword 920 as ISO/IEC 24723 has it (symbology identifier ]e1). Tested with 48 symbols of the tests of zint (all its 150 non-stacked ones read). Auto is not slower in the benchmark.
-	- New format: DotCode (new: DOTCODE), only when asked for. zxing-cpp, ZXing Java and ZXing.Net have none: the dots are found as compact blobs of about one size, their grid from the directions to the nearest neighbours (the diagonals), placed from neighbour to neighbour and a projective map fitted to them, so rotated, mirrored and tilted symbols are read; the decoder (Reed-Solomon in GF(113) with erasures, interleaved blocks, all code sets, binary, macros and ECI) after zint. Tested with the 39 symbols of the tests of zint (drawn as dots: turned, in perspective, damaged) and the CC0 examples of Wikimedia Commons. Not in Auto: on images without a barcode it would cost about 10% more time (fast) in the benchmark.
-	- New format: Han Xin Code (new: HAN_XIN), only when asked for. zxing-cpp, ZXing Java and ZXing.Net have none: the cores of the 4 finder patterns (3 x 3 modules, a light ring around them) are found as blobs, their 2 thin sides (the L-shaped bars) by rays, which corner each one is from those; 2 to 4 of them give the symbol (projective with 4), the version from its function information, the grid refined by the finder and alignment patterns. Rotated, mirrored and tilted symbols are read; the decoder (all data modes, ECI) after zint. Tested with the 81 symbols of the tests of zint (up to version 84, also drawn: turned, in perspective, mirrored, damaged) and the CC0 examples of Wikimedia Commons (version 1 to 84). Not in Auto: on images without a barcode it would cost about 30% more time (fast) in the benchmark.
-	- Character sets of ECI 31 (GBK), 32 (GB 18030), 33 (UTF-16LE), 34 and 35 (UTF-32BE and LE) added. ECI 12, 16 and 18 were read as ISO-8859-4, -1 and -3; now as ISO-8859-10, -14 and -16. These and ISO-8859-11 (ECI 13, Thai) have tables of their own where the platform does not have them (Windows), UTF-32 too; for all formats with ECI (QR Code, Data Matrix, Aztec, PDF417, MaxiCode, DotCode, Han Xin Code). DotCode skipped its ECIs before (the bytes as ISO-8859-1).
-	- Position of a 1D code (issue #183): the 4 corners of its bars, the scanned line widened to the height of the bars (the bars followed when slanted), instead of the scanned line twice. ResultPoints stay the 2 ends of the scanned line, as in ZXing.
-	- New: TBarcodeFormat.All, all formats: those of Auto and those only read when asked for (MSI, Plessey, Pharmacode and Pharmacode two-track, Code 11, the 2 of 5 codes, the postal barcodes, DotCode, Han Xin Code, Code 32, PZN, Leitcode and Identcode), for testing or when anything can come. Pharmacode, which has no check, only with 5 bars or more and when its bars are alike over their height (else almost any bars are one). Of a code that is a kind of another one the specific format is returned. Slower than Auto on images without a barcode (above all the postal barcodes); no false positives on the images without a barcode of zxing-cpp and ZXing.Net.
-	- Code 39 Full ASCII is read without the hint USE_CODE_39_EXTENDED_MODE too, like zxing-cpp: when the text has shift characters ($ % / +) that make valid full ASCII ('Aa-1234' instead of 'A+A-1234', symbology identifier ]A4); else the text as it is. With the hint as before (only full ASCII). Note: a standard Code 39 with such pairs (e.g. '/C') is read as full ASCII now.
-	- Pharmacode: a quiet zone on both sides (2.5 times the spaces between the bars; the edge of the image is none), so no part of a symbol half in the image and not an image cut close (the bars up to its edges). Only when it looks like one (also when asked for): its rows alike over the height of the bars and the quiet zones light over that height, so no part of a slanted symbol (that a row ran out of) and fewer false positives. The bars at least a tenth of the symbol high (not a row of thin lines).
-	- Pharmacode two-track: also read with the digits of the value just below or above the bars (white needed on one side only). A quiet zone on both sides (2.5 times the spaces between the bars, white over the whole height; the edge of the image is none), so no part of a symbol half in the image or slanted, and not an image cut close.
-	- KIX: a quiet zone on both sides (2 times the spaces between the bars, white over the height of the bars; the edge of the image is none). KIX has no start or stop: half of a symbol in the image was read as a shorter KIX.
-	- Korea Post: the text with the check digit behind the postal code, as printed below the bars (was without it). Also the 1 as other encoders draw it (a module further than zint, its bars on the places of the other digits). A quiet zone of 4 modules (was 6: an image cut close to the bars).
-	- FIM: a clear zone of 12 modules (was 6): FIM E was read inside a Korea Post (its bars and spaces are in it).
-	- The position of a 1D code (the height of the bars) for a code of thin bars far apart (like Korea Post): a white row was taken as a part of it, up to far outside the image. Pharmacode: the bars at least 1.5 pitches high too.
-	- New formats, the postal barcodes: KIX (new: KIX), RM4SCC (new: RM4SCC), USPS Intelligent Mail Barcode (new: IMB), POSTNET and PLANET (new: POSTNET, PLANET), Japan Post (new: JAPAN_POST), Australia Post (new: AUSTRALIA_POST) and Royal Mail Mailmark 4-state (new: MAILMARK_4STATE). zxing-cpp and ZXing Java have none of them: a detector of its own finds the rows of bars (also vertical, upside down, slanted, curved and in perspective) and the heights of the bars, the encodings as in zint. IMb reads 9 of the 10 test images of ZXing.Net (ZXing.Net 1, with TRY_HARDER 7); with a strong check (IMb) the least certain bars are tried the other way too. Only when asked for, not in Auto.
-	- Auto (TBarcodeFormat.Auto) reads all formats, also the new ones (Codabar, Telepen, Aztec, GS1 DataBar, PDF417, MicroPDF417, Micro QR Code, rMQR Code, MaxiCode, DX Film Edge), as users expect. On images without a barcode this costs more time than before: about 60% with TRY_HARDER and about 2 times without (a few milliseconds per camera image): choose the formats you need for the best speed.
-	- TScanManager.ScanAll: a result whose position was the same array as its result points (Aztec, and the symbols found but not read) got its position scaled twice in the downscaled layers.
-	- 1D: port of the row decoders of zxing-cpp for EAN/UPC, Code 128, Code 39, Code 93 and ITF (any even ITF length from 6 digits). A code counts when it is read on 2 rows, so a false positive no longer stops the search; with TRY_HARDER small images are scanned row by row. A code read on one row only counts when the decoder of before reads the same on that row. The decoders of before are no longer used as fallback for these formats (they only added false positives): no false positives on the test images without barcode, and TRY_HARDER is as fast as before on images without barcode.
-	- Hints ALLOWED_EAN_EXTENSIONS and ALLOWED_LENGTHS: use TIntegerArrayHint.Create([2, 5]) as value; TScanManager frees it. Before, these hints made TScanManager crash when it freed them (an array cast to TObject still works, but is not freed). ALLOWED_EAN_EXTENSIONS now really requires an add-on: the search goes on until a code with add-on is found.
-	- Code 128: extended characters (FNC4) in code set A were all returned as character 160.
-	- QR Code: segments in Kanji mode made the decoding fail. The application indicator after FNC1 in second position (AIM) is read, and an unknown ECI no longer stops the decoding (the default character set is used, like zxing-cpp).
-	- Code 93: the right result point (and so Position and Orientation) was wrong.
-	- TBitArray.setRange set the wrong bits.
-	- IByteSegmentsMetadata had the GUID of IIntegerMetadata: Supports could return the wrong one of both (and Value garbage).
-	- Reed-Solomon (QR Code, Data Matrix, Aztec): more errors than can be corrected no longer give a wrongly "corrected" codeword. The result is checked again, and with an odd number of error correction codewords one error too many was accepted (like zxing-cpp).
-	- TScanManager.ScanAll: all barcodes in an image (QR Code, Data Matrix and 1D on different rows, also vertical ones with TRY_HARDER).
-	- TReadResult: Position (4 corners), Orientation, IsInverted, IsMirrored, SymbologyIdentifier (like ]Q1, ]d2, ]C1), IsGS1 and GS1HRI (the human readable form of GS1 data, like (01)...(17)...(10)...).
-	- TScanManager.ReturnErrors (off by default): also QR Codes, Micro QR Codes, rMQR Codes, Data Matrix, Aztec, PDF417 and MicroPDF417 codes that were found but could not be read, with TReadResult.Error ('Checksum' or 'Format') and their position, e.g. to tell the user to hold the camera still or closer. Scan returns one only when nothing could be read.
-	- On the black box test images of zxing-cpp (benchmark\, compared with zxing-cpp): Data Matrix 365 of 366, QR Code 515 of 525, 1D 368 of 362 (with TRY_HARDER and inversion); without hints Data Matrix 93 of 92, QR Code 299 of 304, 1D 234 of 226.
-- v3.13.0
-	- Fixes thanks to Robert Jędrzejczyk. https://github.com/Spelt/ZXing.Delphi/issues/170, https://github.com/Spelt/ZXing.Delphi/issues/171, https://github.com/Spelt/ZXing.Delphi/issues/172 
-	- 1D with TRY_HARDER: results were lost and memory leaked (#170). Codes are now also searched rotated by 90 degrees, as intended.
-	- Images smaller than 40 pixels: 2D codes are now decoded (global histogram fallback) and Data Matrix no longer raises an access violation.
-	- Memory leaks fixed in the Data Matrix decoder (blocks after a failed error correction) and in QR Kanji/Hanzi and Data Matrix Base256 decoding.
-	- Code 39: the check digit (ASSUME_CODE_39_CHECK_DIGIT) works, and the Full ASCII characters %K to %Z are correct.
-	- Code 93: Full ASCII characters (lower case, punctuation) are correct; they were returned twice or cut off the text.
-	- Data Matrix: ECI is supported (the character set of the text after it), and the 05/06 macro header and trailer are correct.
-	- TMultiFormatReader.decode without hints no longer raises an access violation.
-	- EAN/UPC: with ALLOWED_EAN_EXTENSIONS a code without extension is rejected, as documented.
-	- New regression tests on the black box test images of zxing-cpp (unitTest\Images\zxing-cpp) and a benchmark that compares with zxing-cpp (benchmark\).
+
+# Changes
+- 4.0.0
+   	- New version, based on C++ ZXing, more then 50 decoders including postal barcodes, parallel decoding, it is also much faster: on the same images 4.0 scans about five times faster than 3.x on a single core, while trying five times as many formats, and on large camera frames the readers decode side by side on all cores
 - v3.12.0
 	- Data Matrix: rotated codes are read much more reliably. The number of modules is now counted through the centers of the outer modules instead of along the edge.
 	- Data Matrix: better reading of dot-peen codes (codes made of separate dots). With TRY_HARDER the dots are merged as a last attempt; this is slower on images without a code.
@@ -285,16 +232,9 @@ Only when asked for, not in Auto. The ones of bars that differ in height (4-stat
  	- Base classes 1D barcode implemented.	
  	- Implemented Code 128 + unit test.
 
-### Tips - How to optimize an already fast library.
-- Try not to scan every incoming frame. 
-- Use autoformat scanning with care, with automatic on every frame is passed to every barcode format. For example: If you want to scan only EAN-8, set the scan format for only EAN-8. 
-- For mobile: try not to scan every frame, skip every n frame. Scanning 4 frames in a second should be good for most purposes. Safes CPU and battery.
-- For mobile: try setting your camera not to a high resolution. 640x480 is for most purposes perfect. More resolutions means more pixels to scan means slower. Saves CPU and battery. 
+
 	
 	
-	
-### Other barcodes?
-Although it works extremely well, we still miss a few barcodes.For me there is no immediate need yet for me to implement more types but I like to add all of them! For that I need your help! 
 
 The base classes are already implemented so if you need to have another Barcode like Code39 (already done :-) ) you can see the C# source here: https://github.com/Redth/ZXing.Net.Mobile/blob/master/src/ZXing.Net/oned/Code39Reader.cs and convert it to Pascal. It's pretty easy (or just ask and I convert the raw classes for you). 
 
