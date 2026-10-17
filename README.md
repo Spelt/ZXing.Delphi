@@ -100,7 +100,9 @@ if (r <> nil) and (r.Error <> '') then
 ```
 
 <p>
-<img src="/demo/zxingscanner/docs/settings.png" width="250" hspace="12" alt="The settings screen: the decoding switches and the formats">
+<img src="/demo/ZXingScanner/docs/settings.png" width="250" hspace="12" alt="The settings screen: the decoding switches">
+<img src="/demo/ZXingScanner/docs/settings-formats.png" width="250" hspace="12" alt="The settings screen: the formats, read by default and only when asked for">
+<img src="/demo/ZXingScanner/docs/settings-hit.png" width="250" hspace="12" alt="The settings screen: the rest of the formats, the outline color, haptic feedback and beep">
 </p>
 
 Ofcourse the real world is not that simple. [See the Demo app for a real world example.](/demo/ZXingScanner)
