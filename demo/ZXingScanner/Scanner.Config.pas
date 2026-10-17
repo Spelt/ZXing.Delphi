@@ -44,6 +44,9 @@ type
     /// <summary>Also show codes found but not read, to hold the camera
     /// still (TScanManager.ReturnErrors).</summary>
     ShowErrors: Boolean;
+    /// <summary>While nothing is in view, scan only every IdleScanStep-th
+    /// frame of the camera; every frame once a code is in view.</summary>
+    BatterySaver: Boolean;
     // on a hit
     TrackColor: TAlphaColor;
     Haptic: Boolean;
@@ -100,6 +103,7 @@ begin
   Downscale := True;
   Parallel := TThread.ProcessorCount > 1;
   ShowErrors := True;
+  BatterySaver := True;
   TrackColor := TrackColors[3]; // yellow
   Haptic := True;
   Beep := False;
@@ -210,6 +214,7 @@ begin
     Downscale := json.GetValue<Boolean>('downscale', Downscale);
     Parallel := json.GetValue<Boolean>('parallel', Parallel);
     ShowErrors := json.GetValue<Boolean>('showErrors', ShowErrors);
+    BatterySaver := json.GetValue<Boolean>('batterySaver', BatterySaver);
     TrackColor := TAlphaColor(json.GetValue<Cardinal>('trackColor', TrackColor));
     Haptic := json.GetValue<Boolean>('haptic', Haptic);
     Beep := json.GetValue<Boolean>('beep', Beep);
@@ -238,6 +243,7 @@ begin
     json.AddPair('downscale', TJSONBool.Create(Downscale));
     json.AddPair('parallel', TJSONBool.Create(Parallel));
     json.AddPair('showErrors', TJSONBool.Create(ShowErrors));
+    json.AddPair('batterySaver', TJSONBool.Create(BatterySaver));
     json.AddPair('trackColor', TJSONNumber.Create(Int64(TrackColor)));
     json.AddPair('haptic', TJSONBool.Create(Haptic));
     json.AddPair('beep', TJSONBool.Create(Beep));

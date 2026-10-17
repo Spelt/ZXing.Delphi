@@ -120,6 +120,8 @@ type
     fScanWatch: TStopwatch;
     fScanCount: Integer;
     fScanMs: Double;
+    // the frames of the camera, for the battery saver
+    fFrameCount: Integer;
     // the frame on the screen: frame * scale + offset
     fScale: Single;
     fOffset: TPointF;
@@ -197,6 +199,8 @@ const
   HintScanning = 'Scanning' + #8230;
   HintNothing = 'No barcode in this image';
   HintNoFormats = 'No format chosen: pick one in the settings';
+  // with the battery saver: while nothing is in view, every n-th frame
+  IdleScanStep = 4;
   // the corners of the outline are rounded with this radius (points)
   OutlineRadius = 15;
 
@@ -465,6 +469,13 @@ begin
   // frame is free again when ScanAsync returns; the decoding runs in a
   // task and the callback comes in the main thread.
   if (fScanManager = nil) or fScanManager.Scanning or fFrame.IsEmpty then
+    exit;
+  // Battery saver: while nothing is in view only every IdleScanStep-th
+  // frame is scanned; once a code is in view every frame, so that it is
+  // followed closely (a still image is always scanned)
+  Inc(fFrameCount);
+  if fConfig.BatterySaver and not fStill and (fTracker.Codes.Count = 0) and
+    (fFrameCount mod IdleScanStep <> 0) then
     exit;
   // (without a format the library would read every format of Auto)
   if fConfig.Formats.Count = 0 then

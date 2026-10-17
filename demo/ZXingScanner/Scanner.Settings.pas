@@ -34,7 +34,7 @@ uses
 
 type
   TSettingKind = (skInverted, skTryHarder, skMulti, skDownscale, skParallel,
-    skErrors, skHaptic, skBeep);
+    skErrors, skBatterySaver, skHaptic, skBeep);
 
   TSettingsForm = class(TForm)
     layHeader: TLayout;
@@ -154,6 +154,8 @@ begin
     'The readers side by side in the tasks of a thread pool (ParallelDecoding)');
   AddSwitchRow(cardDecoding, skErrors, icoErrors, 'Show unreadable codes',
     'Outline a code that was found but not read, to hold still (ReturnErrors)');
+  AddSwitchRow(cardDecoding, skBatterySaver, icoBattery, 'Battery saver',
+    'Scan every 4th frame while nothing is in view, every frame once a code is');
   AddChips(flowAuto, True);
   AddChips(flowExtra, False);
   AddDots;
@@ -301,6 +303,8 @@ begin
       FConfig.Parallel := on;
     skErrors:
       FConfig.ShowErrors := on;
+    skBatterySaver:
+      FConfig.BatterySaver := on;
     skHaptic:
       FConfig.Haptic := on;
     skBeep:
@@ -467,6 +471,7 @@ begin
     fSwitches[skDownscale].IsChecked := FConfig.Downscale;
     fSwitches[skParallel].IsChecked := FConfig.Parallel;
     fSwitches[skErrors].IsChecked := FConfig.ShowErrors;
+    fSwitches[skBatterySaver].IsChecked := FConfig.BatterySaver;
     fSwitches[skHaptic].IsChecked := FConfig.Haptic;
     fSwitches[skBeep].IsChecked := FConfig.Beep;
     for var i := 0 to flowAuto.ControlsCount - 1 do

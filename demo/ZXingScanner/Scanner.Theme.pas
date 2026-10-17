@@ -93,6 +93,8 @@ const
   icoParallel = 'M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7' +
     'c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2' +
     'v-2h-2v-2h2zm-4 6H7V7h10v10z';
+  icoBattery = 'M16,4h-2V2h-4v2H8C7.45,4,7,4.45,7,5v16c0,0.55,0.45,1,1,1h8c0.55,0,1-0.45,1-1V5' +
+    'C17,4.45,16.55,4,16,4z M15,14h-2v2h-2v-2H9v-2h2v-2h2v2h2V14z';
   icoErrors = 'M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z M13,16L11,16L11,18L13,18z' +
     ' M13,10L11,10L11,15L13,15z';
   icoHaptic = 'M0 15h2V9H0v6zm3 2h2V7H3v10zm19-8v6h2V9h-2zm-3 8h2V7h-2v10zM16.5 3h-9' +

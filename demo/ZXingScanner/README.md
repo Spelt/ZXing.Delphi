@@ -48,6 +48,7 @@ What the scanner does, in the words of the library:
 | Downscaled copies | `TScanManager.TryDownscale`: when nothing is found, smaller copies of the frame are scanned too (large, blurry and dot-peen codes) |
 | Parallel decoding | `ZXing.Parallel.ParallelDecoding`: the readers decode side by side in the tasks of a thread pool |
 | Show unreadable codes | `TScanManager.ReturnErrors`: a code that was found but not read is returned with its position |
+| Battery saver | while nothing is in view only every 4th frame of the camera is scanned; once a code is in view every frame, so that it is followed closely |
 | Formats | `TBarcodeFormat.Auto`, `TBarcodeFormat.All`, or the chosen ones as the hint `POSSIBLE_FORMATS` |
 
 The formats come in two groups: the ones read by default (`Auto`), and the
