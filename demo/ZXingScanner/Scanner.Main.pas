@@ -678,31 +678,44 @@ var
     end;
 
   var
-    leg: Single;
+    legP, legQ, radius: Single;
   begin
-    leg := Min(a.Distance(p) * 0.3, 34);
+    // the legs: a part of the side, so that the two corners of a short
+    // side (a flat code) keep room between them; the radius no more than
+    // the shorter leg
+    legP := Min(a.Distance(p) * 0.3, 34);
+    legQ := Min(a.Distance(q) * 0.3, 34);
+    radius := Min(OutlineRadius, Min(legP, legQ));
     path.Clear;
-    path.MoveTo(Along(p, leg));
-    path.LineTo(Along(p, OutlineRadius));
-    path.QuadCurveTo(a, Along(q, OutlineRadius));
-    path.LineTo(Along(q, Min(a.Distance(q) * 0.3, 34)));
+    path.MoveTo(Along(p, legP));
+    path.LineTo(Along(p, radius));
+    path.QuadCurveTo(a, Along(q, radius));
+    path.LineTo(Along(q, legQ));
     Canvas.DrawPath(path, code.Opacity);
   end;
 
 begin
   if Length(code.Corners) < 2 then
     exit;
-  // the corners on the screen, the padding away from the center of the code
-  var center := TPointF.Zero;
-  for var c in code.Corners do
-    center := center + c / Length(code.Corners);
-  SetLength(pts, Length(code.Corners));
-  for var i := 0 to High(pts) do
+  // the corners on the screen, each moved the padding outward along both
+  // of its sides (so a flat code gets the same room above and below as at
+  // its ends)
+  var n := Length(code.Corners);
+  SetLength(pts, n);
+  for var i := 0 to n - 1 do
   begin
-    var away := code.Corners[i] - center;
-    if away.Length > 0.5 then
-      away := away.Normalize * (OutlinePadding * 1.4142);
-    pts[i] := ToView(code.Corners[i] + away);
+    var c := code.Corners[i];
+    var away := TPointF.Zero;
+    if n >= 3 then
+    begin
+      var fromPrev := c - code.Corners[(i + n - 1) mod n];
+      var fromNext := c - code.Corners[(i + 1) mod n];
+      if fromPrev.Length > 0.5 then
+        away := away + fromPrev.Normalize * OutlinePadding;
+      if fromNext.Length > 0.5 then
+        away := away + fromNext.Normalize * OutlinePadding;
+    end;
+    pts[i] := ToView(c + away);
   end;
 
   // white for a code that was found but not read, the outline color for a
