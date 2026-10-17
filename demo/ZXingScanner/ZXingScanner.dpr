@@ -1,0 +1,25 @@
+program ZXingScanner;
+
+{
+  ZXing Scanner: the demo app of ZXing.Delphi. Two screens, the scan
+  screen and its settings, with the standard FMX components only.
+  See README.md.
+}
+
+uses
+  System.StartUpCopy,
+  FMX.Forms,
+  Scanner.Main in 'Scanner.Main.pas' {MainForm},
+  Scanner.Settings in 'Scanner.Settings.pas' {SettingsForm},
+  Scanner.Config in 'Scanner.Config.pas',
+  Scanner.Formats in 'Scanner.Formats.pas',
+  Scanner.Theme in 'Scanner.Theme.pas',
+  Scanner.Feedback in 'Scanner.Feedback.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.CreateForm(TMainForm, MainForm);
+  Application.Run;
+end.

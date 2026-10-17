@@ -1,0 +1,383 @@
+object SettingsForm: TSettingsForm
+  Left = 0
+  Top = 0
+  Caption = 'Scanner settings'
+  ClientHeight = 760
+  ClientWidth = 400
+  Fill.Color = xFF0B0D10
+  Fill.Kind = Solid
+  Position = MainFormCenter
+  SystemStatusBar.BackgroundColor = xFF0B0D10
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnClose = FormClose
+  OnKeyUp = FormKeyUp
+  OnResize = FormResize
+  OnShow = FormShow
+  DesignerMasterStyle = 0
+  object layHeader: TLayout
+    Align = Top
+    Margins.Left = 20.000000000000000000
+    Margins.Top = 12.000000000000000000
+    Margins.Right = 20.000000000000000000
+    Position.X = 20.000000000000000000
+    Position.Y = 12.000000000000000000
+    Size.Width = 360.000000000000000000
+    Size.Height = 72.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object btnDone: TRectangle
+      Align = Right
+      Fill.Color = xFF3EBDE4
+      Margins.Top = 14.000000000000000000
+      Margins.Bottom = 14.000000000000000000
+      Position.X = 276.000000000000000000
+      Position.Y = 14.000000000000000000
+      Size.Width = 84.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      XRadius = 22.000000000000000000
+      YRadius = 22.000000000000000000
+      OnClick = btnDoneClick
+      object lblDone: TLabel
+        Align = Client
+        StyledSettings = []
+        Size.Width = 84.000000000000000000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 15.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = xFF111214
+        TextSettings.HorzAlign = Center
+        Text = 'Done'
+        TabOrder = 0
+      end
+    end
+    object layTitles: TLayout
+      Align = Client
+      Size.Width = 276.000000000000000000
+      Size.Height = 72.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      object lblKicker: TLabel
+        Align = Top
+        StyledSettings = []
+        Size.Width = 276.000000000000000000
+        Size.Height = 20.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = xFFA3A9B3
+        Text = 'ZXING '#183' DELPHI'
+        TabOrder = 0
+      end
+      object lblTitle: TLabel
+        Align = Client
+        StyledSettings = []
+        Size.Width = 276.000000000000000000
+        Size.Height = 52.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 28.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = claWhite
+        Text = 'Scanner'
+        TabOrder = 1
+      end
+    end
+  end
+  object scroll: TVertScrollBox
+    Align = Client
+    Margins.Left = 20.000000000000000000
+    Margins.Top = 8.000000000000000000
+    Margins.Right = 20.000000000000000000
+    Size.Width = 360.000000000000000000
+    Size.Height = 668.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    ShowScrollBars = False
+    Viewport.Width = 360.000000000000000000
+    Viewport.Height = 668.000000000000000000
+    object lblDecoding: TLabel
+      Align = Top
+      StyledSettings = []
+      Margins.Left = 4.000000000000000000
+      Margins.Bottom = 8.000000000000000000
+      Position.X = 4.000000000000000000
+      Size.Width = 356.000000000000000000
+      Size.Height = 18.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      TextSettings.FontColor = xFFA3A9B3
+      Text = 'DECODING'
+      TabOrder = 0
+    end
+    object cardDecoding: TRectangle
+      Align = Top
+      Fill.Color = xFF15171B
+      Position.Y = 26.000000000000000000
+      Size.Width = 360.000000000000000000
+      Size.Height = 200.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      XRadius = 18.000000000000000000
+      YRadius = 18.000000000000000000
+    end
+    object layFormatsHeader: TLayout
+      Align = Top
+      Margins.Left = 4.000000000000000000
+      Margins.Top = 22.000000000000000000
+      Margins.Bottom = 8.000000000000000000
+      Position.X = 4.000000000000000000
+      Position.Y = 248.000000000000000000
+      Size.Width = 356.000000000000000000
+      Size.Height = 18.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      object lblFormats: TLabel
+        Align = Left
+        StyledSettings = []
+        Size.Width = 100.000000000000000000
+        Size.Height = 18.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = xFFA3A9B3
+        Text = 'FORMATS'
+        TabOrder = 0
+      end
+      object lblReset: TLabel
+        Align = Right
+        StyledSettings = []
+        HitTest = True
+        Margins.Right = 14.000000000000000000
+        Position.X = 248.000000000000000000
+        Size.Width = 50.000000000000000000
+        Size.Height = 18.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = xFF3EBDE4
+        TextSettings.HorzAlign = Trailing
+        Text = 'Reset'
+        TabOrder = 1
+        OnClick = lblResetClick
+      end
+      object lblClear: TLabel
+        Align = Right
+        StyledSettings = []
+        HitTest = True
+        Position.X = 312.000000000000000000
+        Size.Width = 44.000000000000000000
+        Size.Height = 18.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = xFF3EBDE4
+        TextSettings.HorzAlign = Trailing
+        Text = 'Clear'
+        TabOrder = 3
+        OnClick = lblClearClick
+      end
+      object lblFormatCount: TLabel
+        Align = Right
+        StyledSettings = []
+        Margins.Right = 14.000000000000000000
+        Position.X = 154.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 18.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.FontColor = xFFA3A9B3
+        TextSettings.HorzAlign = Trailing
+        Text = '26 active'
+        TabOrder = 2
+      end
+    end
+    object cardFormats: TRectangle
+      Align = Top
+      Fill.Color = xFF15171B
+      Padding.Left = 14.000000000000000000
+      Padding.Top = 14.000000000000000000
+      Padding.Right = 14.000000000000000000
+      Padding.Bottom = 14.000000000000000000
+      Position.Y = 274.000000000000000000
+      Size.Width = 360.000000000000000000
+      Size.Height = 200.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      XRadius = 18.000000000000000000
+      YRadius = 18.000000000000000000
+      object lblAuto: TLabel
+        Align = Top
+        StyledSettings = []
+        Margins.Bottom = 8.000000000000000000
+        Position.X = 14.000000000000000000
+        Position.Y = 14.000000000000000000
+        Size.Width = 332.000000000000000000
+        Size.Height = 18.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = xFFA3A9B3
+        Text = 'Read by default (TBarcodeFormat.Auto)'
+        TabOrder = 0
+      end
+      object flowAuto: TFlowLayout
+        Align = Top
+        Position.X = 14.000000000000000000
+        Position.Y = 40.000000000000000000
+        Size.Width = 332.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Justify = Left
+        JustifyLastLine = Left
+        FlowDirection = LeftToRight
+        HorizontalGap = 8.000000000000000000
+        VerticalGap = 8.000000000000000000
+      end
+      object layExtraHeader: TLayout
+        Align = Top
+        Margins.Top = 16.000000000000000000
+        Margins.Bottom = 8.000000000000000000
+        Position.X = 14.000000000000000000
+        Position.Y = 136.000000000000000000
+        Size.Width = 332.000000000000000000
+        Size.Height = 18.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        object lblExtra: TLabel
+          Align = Client
+          StyledSettings = []
+          Size.Width = 244.000000000000000000
+          Size.Height = 18.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          TextSettings.FontColor = xFFA3A9B3
+          Text = 'Only when asked for'
+          TabOrder = 0
+        end
+        object lblExtraClear: TLabel
+          Align = Right
+          StyledSettings = []
+          HitTest = True
+          Position.X = 288.000000000000000000
+          Size.Width = 44.000000000000000000
+          Size.Height = 18.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 13.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          TextSettings.FontColor = xFF3EBDE4
+          TextSettings.HorzAlign = Trailing
+          Text = 'Clear'
+          TabOrder = 1
+          OnClick = lblExtraClearClick
+        end
+        object lblExtraAll: TLabel
+          Align = Right
+          StyledSettings = []
+          HitTest = True
+          Margins.Right = 14.000000000000000000
+          Position.X = 244.000000000000000000
+          Size.Width = 30.000000000000000000
+          Size.Height = 18.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 13.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          TextSettings.FontColor = xFF3EBDE4
+          TextSettings.HorzAlign = Trailing
+          Text = 'All'
+          TabOrder = 2
+          OnClick = lblExtraAllClick
+        end
+      end
+      object flowExtra: TFlowLayout
+        Align = Top
+        Position.X = 14.000000000000000000
+        Position.Y = 162.000000000000000000
+        Size.Width = 332.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Justify = Left
+        JustifyLastLine = Left
+        FlowDirection = LeftToRight
+        HorizontalGap = 8.000000000000000000
+        VerticalGap = 8.000000000000000000
+      end
+    end
+    object lblOnHit: TLabel
+      Align = Top
+      StyledSettings = []
+      Margins.Left = 4.000000000000000000
+      Margins.Top = 22.000000000000000000
+      Margins.Bottom = 8.000000000000000000
+      Position.X = 4.000000000000000000
+      Position.Y = 496.000000000000000000
+      Size.Width = 356.000000000000000000
+      Size.Height = 18.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      TextSettings.FontColor = xFFA3A9B3
+      Text = 'ON A HIT'
+      TabOrder = 4
+    end
+    object cardOnHit: TRectangle
+      Align = Top
+      Fill.Color = xFF15171B
+      Position.Y = 522.000000000000000000
+      Size.Width = 360.000000000000000000
+      Size.Height = 180.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      XRadius = 18.000000000000000000
+      YRadius = 18.000000000000000000
+      object layColors: TLayout
+        Align = Top
+        Size.Width = 360.000000000000000000
+        Size.Height = 52.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object lblColor: TLabel
+          Align = Client
+          StyledSettings = []
+          Margins.Left = 16.000000000000000000
+          Size.Width = 202.000000000000000000
+          Size.Height = 52.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 16.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          TextSettings.FontColor = claWhite
+          Text = 'Outline color'
+          TabOrder = 0
+        end
+        object layDots: TLayout
+          Align = Right
+          Margins.Right = 16.000000000000000000
+          Position.X = 218.000000000000000000
+          Size.Width = 126.000000000000000000
+          Size.Height = 52.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 1
+        end
+      end
+    end
+    object lblFooter: TLabel
+      Align = Top
+      StyledSettings = []
+      Margins.Top = 24.000000000000000000
+      Margins.Bottom = 32.000000000000000000
+      Position.Y = 726.000000000000000000
+      Size.Width = 360.000000000000000000
+      Size.Height = 40.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.FontColor = xFF8C929C
+      TextSettings.HorzAlign = Center
+      Text = 
+        'ZXing for Delphi '#183' Apache License 2.0'#13#10'github.com/Spelt/ZXing.De' +
+        'lphi'
+      TabOrder = 6
+    end
+  end
+end

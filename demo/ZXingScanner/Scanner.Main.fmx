@@ -1,0 +1,382 @@
+object MainForm: TMainForm
+  Left = 0
+  Top = 0
+  Caption = 'ZXing Scanner'
+  ClientHeight = 752
+  ClientWidth = 536
+  Fill.Color = xFF0B0D10
+  Fill.Kind = Solid
+  Position = ScreenCenter
+  SystemStatusBar.BackgroundColor = xFF0B0D10
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnResize = FormResize
+  OnShow = FormShow
+  DesignerMasterStyle = 0
+  object pbCamera: TPaintBox
+    Align = Contents
+    Size.Width = 536.000000000000000000
+    Size.Height = 752.000000000000000000
+    Size.PlatformDefault = False
+    OnDragOver = FormDragOver
+    OnDragDrop = FormDragDrop
+    OnPaint = pbCameraPaint
+  end
+  object layTop: TLayout
+    Align = Top
+    Margins.Left = 20.000000000000000000
+    Margins.Top = 10.000000000000000000
+    Margins.Right = 20.000000000000000000
+    Position.X = 20.000000000000000000
+    Position.Y = 10.000000000000000000
+    Size.Width = 496.000000000000000000
+    Size.Height = 44.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object btnLeft: TCircle
+      Align = Left
+      Fill.Color = x9E121418
+      Size.Width = 44.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      OnClick = btnLeftClick
+      object pthLeft: TPath
+        Align = Client
+        Fill.Kind = None
+        HitTest = False
+        Margins.Left = 12.000000000000000000
+        Margins.Top = 12.000000000000000000
+        Margins.Right = 12.000000000000000000
+        Margins.Bottom = 12.000000000000000000
+        Size.Width = 20.000000000000000000
+        Size.Height = 20.000000000000000000
+        Size.PlatformDefault = False
+        Stroke.Color = claWhite
+        Stroke.Thickness = 2.000000000000000000
+        WrapMode = Fit
+      end
+    end
+    object btnSettings: TCircle
+      Align = Right
+      Fill.Color = x9E121418
+      Position.X = 452.000000000000000000
+      Size.Width = 44.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      OnClick = btnSettingsClick
+      object pthSettings: TPath
+        Align = Client
+        Fill.Kind = None
+        HitTest = False
+        Margins.Left = 8.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Margins.Right = 8.000000000000000000
+        Margins.Bottom = 8.000000000000000000
+        Size.Width = 28.000000000000000000
+        Size.Height = 28.000000000000000000
+        Size.PlatformDefault = False
+        Stroke.Color = claWhite
+        Stroke.Thickness = 2.000000000000000000
+        WrapMode = Fit
+      end
+    end
+    object pillBrand: TRectangle
+      Align = Center
+      Fill.Color = x9E121418
+      HitTest = False
+      Size.Width = 150.000000000000000000
+      Size.Height = 36.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      XRadius = 18.000000000000000000
+      YRadius = 18.000000000000000000
+      object dotBrand: TCircle
+        Align = Left
+        Fill.Color = xFF3EBDE4
+        HitTest = False
+        Margins.Left = 14.000000000000000000
+        Margins.Top = 14.000000000000000000
+        Margins.Bottom = 14.000000000000000000
+        Position.X = 14.000000000000000000
+        Position.Y = 14.000000000000000000
+        Size.Width = 8.000000000000000000
+        Size.Height = 8.000000000000000000
+        Size.PlatformDefault = False
+        Stroke.Kind = None
+        object aniDot: TFloatAnimation
+          AutoReverse = True
+          Duration = 0.899999976158142100
+          Loop = True
+          PropertyName = 'Opacity'
+          StartValue = 1.000000000000000000
+          StopValue = 0.250000000000000000
+        end
+      end
+      object lblBrand: TLabel
+        Align = Client
+        StyledSettings = []
+        Margins.Left = 8.000000000000000000
+        Margins.Right = 14.000000000000000000
+        Size.Width = 106.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = claWhite
+        Text = 'ZXing '#183' Delphi'
+        TabOrder = 0
+      end
+    end
+  end
+  object pillResult: TRectangle
+    Fill.Color = claCoral
+    Opacity = 0.800000011920928900
+    Position.X = 60.000000000000000000
+    Position.Y = 380.000000000000000000
+    Size.Width = 240.000000000000000000
+    Size.Height = 40.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Kind = None
+    XRadius = 20.000000000000000000
+    YRadius = 20.000000000000000000
+    OnClick = pillResultClick
+    object pthKind: TPath
+      Align = Left
+      Fill.Kind = None
+      HitTest = False
+      Margins.Left = 12.000000000000000000
+      Margins.Top = 11.000000000000000000
+      Margins.Bottom = 11.000000000000000000
+      Position.X = 12.000000000000000000
+      Position.Y = 11.000000000000000000
+      Size.Width = 18.000000000000000000
+      Size.Height = 18.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Color = xFF111214
+      Stroke.Thickness = 2.000000000000000000
+      WrapMode = Fit
+    end
+    object pthGo: TPath
+      Align = Right
+      Fill.Kind = None
+      HitTest = False
+      Margins.Top = 10.000000000000000000
+      Margins.Right = 14.000000000000000000
+      Margins.Bottom = 10.000000000000000000
+      Position.X = 206.000000000000000000
+      Position.Y = 10.000000000000000000
+      Size.Width = 20.000000000000000000
+      Size.Height = 20.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Color = xFF111214
+      Stroke.Thickness = 2.000000000000000000
+      WrapMode = Fit
+    end
+    object lblHit: TLabel
+      Align = Client
+      StyledSettings = []
+      Margins.Left = 8.000000000000000000
+      Margins.Right = 6.000000000000000000
+      Size.Width = 162.000000000000000000
+      Size.Height = 40.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 15.000000000000000000
+      TextSettings.FontColor = xFF111214
+      Text = 'https://example.com'
+      TabOrder = 0
+    end
+  end
+  object sheet: TRectangle
+    Align = Bottom
+    Corners = [TopLeft, TopRight]
+    Fill.Color = xFF15171B
+    Padding.Left = 20.000000000000000000
+    Padding.Top = 10.000000000000000000
+    Padding.Right = 20.000000000000000000
+    Padding.Bottom = 24.000000000000000000
+    Position.Y = 592.000000000000000000
+    Size.Width = 536.000000000000000000
+    Size.Height = 160.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Kind = None
+    XRadius = 28.000000000000000000
+    YRadius = 28.000000000000000000
+    OnDragOver = FormDragOver
+    OnDragDrop = FormDragDrop
+    object layGrip: TLayout
+      Align = Top
+      Position.X = 20.000000000000000000
+      Position.Y = 10.000000000000000000
+      Size.Width = 496.000000000000000000
+      Size.Height = 5.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object grip: TRectangle
+        Align = Center
+        Fill.Color = xFF3A3E46
+        HitTest = False
+        Size.Width = 40.000000000000000000
+        Size.Height = 5.000000000000000000
+        Size.PlatformDefault = False
+        Stroke.Kind = None
+        XRadius = 2.500000000000000000
+        YRadius = 2.500000000000000000
+      end
+    end
+    object lblHint: TLabel
+      Align = Top
+      StyledSettings = []
+      Margins.Top = 14.000000000000000000
+      Position.X = 20.000000000000000000
+      Position.Y = 29.000000000000000000
+      Size.Width = 496.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 15.000000000000000000
+      TextSettings.FontColor = xFFA3A9B3
+      TextSettings.HorzAlign = Center
+      Text = 'Point the camera at a barcode'
+      TabOrder = 1
+    end
+    object layHeader: TLayout
+      Align = Top
+      Margins.Top = 14.000000000000000000
+      Position.X = 20.000000000000000000
+      Position.Y = 65.000000000000000000
+      Size.Width = 496.000000000000000000
+      Size.Height = 24.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      object chipFormat: TRectangle
+        Align = Left
+        Fill.Color = xFF262A31
+        HitTest = False
+        Size.Width = 80.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        Stroke.Kind = None
+        XRadius = 6.000000000000000000
+        YRadius = 6.000000000000000000
+        object lblFormat: TLabel
+          Align = Left
+          AutoSize = True
+          StyledSettings = []
+          Margins.Left = 9.000000000000000000
+          Position.X = 9.000000000000000000
+          Size.Width = 62.000000000000000000
+          Size.Height = 24.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.FontColor = xFF3EBDE4
+          Text = 'QR_CODE'
+          TabOrder = 0
+        end
+      end
+      object lblTime: TLabel
+        Align = Left
+        StyledSettings = []
+        Margins.Left = 8.000000000000000000
+        Position.X = 88.000000000000000000
+        Size.Width = 80.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.FontColor = xFFA3A9B3
+        Text = 'Just now'
+        TabOrder = 1
+      end
+      object lblCount: TLabel
+        Align = Left
+        StyledSettings = []
+        Position.X = 168.000000000000000000
+        Size.Width = 130.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 17.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = claWhite
+        Text = '3 codes found'
+        TabOrder = 2
+      end
+      object lblSpeed: TLabel
+        Align = Right
+        StyledSettings = []
+        Position.X = 376.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.FontColor = xFFA3A9B3
+        TextSettings.HorzAlign = Trailing
+        TabOrder = 3
+      end
+      object lblCopyAll: TLabel
+        Align = Right
+        StyledSettings = []
+        HitTest = True
+        Margins.Right = 12.000000000000000000
+        Position.X = 306.000000000000000000
+        Size.Width = 58.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        TextSettings.FontColor = claWhite
+        TextSettings.HorzAlign = Trailing
+        Text = 'Copy all'
+        TabOrder = 4
+        OnClick = lblCopyAllClick
+      end
+    end
+    object lblText: TLabel
+      Align = Top
+      StyledSettings = []
+      HitTest = True
+      Margins.Top = 14.000000000000000000
+      Position.X = 20.000000000000000000
+      Position.Y = 103.000000000000000000
+      Size.Width = 496.000000000000000000
+      Size.Height = 24.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 17.000000000000000000
+      TextSettings.FontColor = claWhite
+      TextSettings.VertAlign = Leading
+      Text = 'https://example.com/ticket/48213'
+      TabOrder = 3
+      OnClick = lblTextClick
+    end
+    object layResults: TLayout
+      Align = Top
+      Margins.Top = 12.000000000000000000
+      Position.X = 20.000000000000000000
+      Position.Y = 139.000000000000000000
+      Size.Width = 496.000000000000000000
+      Size.Height = 0.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+    end
+  end
+  object CameraComponent: TCameraComponent
+    OnSampleBufferReady = CameraComponentSampleBufferReady
+    Left = 24
+    Top = 64
+  end
+  object tmrTick: TTimer
+    Interval = 250
+    OnTimer = tmrTickTimer
+    Left = 24
+    Top = 120
+  end
+  object dlgOpen: TOpenDialog
+    Filter = 
+      'Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp;*.tif;*.tiff|All fi' +
+      'les|*.*'
+    Title = 'Open an image with a barcode'
+    Left = 24
+    Top = 176
+  end
+end

@@ -12,6 +12,9 @@
         <Projects Include="demo\aTestApp\FmxTestApp.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="demo\ZXingScanner\ZXingScanner.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="demo\vclTestApp\vclTestApp.dproj">
             <Dependencies/>
         </Projects>
@@ -53,6 +56,15 @@
     <Target Name="FmxTestApp:Make">
         <MSBuild Projects="demo\aTestApp\FmxTestApp.dproj" Targets="Make"/>
     </Target>
+    <Target Name="ZXingScanner">
+        <MSBuild Projects="demo\ZXingScanner\ZXingScanner.dproj"/>
+    </Target>
+    <Target Name="ZXingScanner:Clean">
+        <MSBuild Projects="demo\ZXingScanner\ZXingScanner.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ZXingScanner:Make">
+        <MSBuild Projects="demo\ZXingScanner\ZXingScanner.dproj" Targets="Make"/>
+    </Target>
     <Target Name="vclTestApp">
         <MSBuild Projects="demo\vclTestApp\vclTestApp.dproj"/>
     </Target>
@@ -72,13 +84,13 @@
         <MSBuild Projects="demo\webcam\Webcam.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="dUnitXTest;Leaktest;FmxTestApp;vclTestApp;Webcam"/>
+        <CallTarget Targets="dUnitXTest;Leaktest;FmxTestApp;ZXingScanner;vclTestApp;Webcam"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="dUnitXTest:Clean;Leaktest:Clean;FmxTestApp:Clean;vclTestApp:Clean;Webcam:Clean"/>
+        <CallTarget Targets="dUnitXTest:Clean;Leaktest:Clean;FmxTestApp:Clean;ZXingScanner:Clean;vclTestApp:Clean;Webcam:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="dUnitXTest:Make;Leaktest:Make;FmxTestApp:Make;vclTestApp:Make;Webcam:Make"/>
+        <CallTarget Targets="dUnitXTest:Make;Leaktest:Make;FmxTestApp:Make;ZXingScanner:Make;vclTestApp:Make;Webcam:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

@@ -116,6 +116,7 @@ Only when asked for, not in Auto. The ones of bars that differ in height (4-stat
 
 ### Changes
 - Next version (branch Development, not released yet)
+	- New demo app demo\ZXingScanner (FMX, standard components only): the camera full screen, an outline at the corners of a found code (TReadResult.Position), its text in a sheet, every code in the frame with ScanAllAsync, a settings screen for the hints, the formats, TryDownscale, ReturnErrors and ParallelDecoding, an image instead of the camera on the desktop. See its README.md. The old test app demoTestApp stays for now.
 	- Requires Delphi 10.4 Sydney or newer. For XE7 - 10.3 use v3.13.1 or older.
 	- IScanManager: TScanManager implements this interface (it is a TInterfacedObject now). Hold it in a variable of type IScanManager and it is freed with the last reference, no try finally; a TScanManager variable with Free works as before (do not mix the two for one instance).
 	- TScanManager.ScanAsync(bitmap, OnCompleted, OnException = nil), a procedure: scans in a task of the thread pool and calls OnCompleted in the main thread (TThread.Synchronize) with the result (nil when nothing was found; the receiver frees it). The pixels are taken in the calling thread, so the bitmap is free again when ScanAsync returns. An exception goes to OnException, also in the main thread; without it OnCompleted(nil) is called. One scan at a time: while Scanning is true the call does nothing (a camera frame is skipped). ScanAllAsync(bitmap, OnCompleted, OnException = nil, maxCount = 0) does the same for ScanAll: OnCompleted gets the list of all barcodes (an empty list after an exception without OnException). New too: Scan(source: TLuminanceSource) for callers with their own pixels, e.g. a camera frame as TPlanarYUVLuminanceSource. ScanAll(source) too.
@@ -419,7 +420,7 @@ if (r <> nil) and (r.Error <> '') then
 
 ```
 
-Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. I created a test app to show you how just to do that. Its included.  It makes use of the new Firemonkey parallel lib. In the testApp the resolution of the camera is set to medium (FMX.Media.TVideoCaptureQuality.MediumQuality) on my iPhone 6. Its also good to mention that how higher the resolution the more time it takes to scan a bitmap. Some scaling could probably work too.
+Of course the real world is not that simple.  To leave your app responsive while scanning you need to run things in parallel. The demo app demo\ZXingScanner shows how: one TScanManager, ScanAsync per camera frame, the result back in the main thread (see its README.md). The older test app demoTestApp does the same with less around it.  It makes use of the new Firemonkey parallel lib. In the testApp the resolution of the camera is set to medium (FMX.Media.TVideoCaptureQuality.MediumQuality) on my iPhone 6. Its also good to mention that how higher the resolution the more time it takes to scan a bitmap. Some scaling could probably work too.
 
 Andrea Magni has a very nice blog post about an Android ZXing example from a training excerise of his. You can find it [here](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/).
 
