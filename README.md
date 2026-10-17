@@ -3,17 +3,15 @@ ZXing Barcode Scanning Library for Delphi 10.4 Sydney to 13 Florence.
 
 ![ZXing.Delphi: scan almost all barcodes and 2D codes super fast and in parallel, in pure Object Pascal](docs/hero.png)
 
-ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port is based on .Net Redth port of ZXing and the Java one. This is I think the first native FireMonkey barcode lib. It is aimed at all of the FireMonkey mobile platforms and, starting from v3.1, it fully supports also Windows VCL applications (no dependencies on FMX.Graphics unit).
+ZXing.Delphi is a native Object Pascal library that is based on the well known open source Barcode Library: ZXing (Zebra Crossing). This port was based on .Net ZXing and the Java one. From v4 it is based of the C++ port which had lots of better and faster scan strategies. See features and highlights. It is aimed at all of the FireMonkey platforms and, starting from v3.1, it fully supports also Windows VCL applications.
 
-With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast.
-
-Its compatible with Delphi 10.4 Sydney - 13 Florence (for XE7 - 10.3 use v3.13.1 or older) and tested with IOS 8.x - 15.x, Android 32/64, Windows 32/64 and OSX. 
-The goal of ZXing.Delphi is to make scanning barcodes effortless, painless, fast and build within your FireMonkey or native Windows (VCL or Firemonkey) applications.  
+With this library you can scan with native speed without the use of linking in external libraries and avoid compatibility issues and dependencies. It is fast. Its compatible with Delphi 10.4 Sydney - 13.x Florence (**for XE7 - 10.3 use v3.13.1**) and tested with the latest IOS, Android 32/64, Windows 32/64 and OSX. 
 
 Just include the source files and add it in your existing projects and build the ZXing.Delphi source within your projects.
 
-## Camera 
-From Delphi 11 the standard camera component seems much improved.
+## What new in 4.0
+ZXing.Delphi 4.0 is by far the biggest step since the port began. The library grew from 10 symbologies to 52: Aztec, PDF417 and MicroPDF417, Micro QR and rMQR, MaxiCode, the GS1 DataBar family and GS1 Composite, DotCode and Han Xin, the stacked codes Codablock F, Code 16K and Code 49, and the postal barcodes from KIX to Intelligent Mail, several of which no other ZXing port reads at all. The QR Code and Data Matrix detectors are ports of zxing-cpp, so perspective, curved and dot-peen codes that 3.x missed are read now, and an image pyramid catches the large and blurry ones. It is also much faster: the luminance conversion, binarizer and 1D readers were rewritten, and the readers run side by side in the tasks of a thread pool, so a frame is decoded on all cores. The API grew with it: one ScanAsync call scans a camera frame in the background and hands the result to the main thread, IScanManager frees itself, every result has the four corners of its code, and codes that are seen but not readable can be reported too. And there is a new demo app that shows all of it: a scanner with tracked outlines and a settings screen, built with the standard FMX components only.
+
 
 ## Supported Formats
 
