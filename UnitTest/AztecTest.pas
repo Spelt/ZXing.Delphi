@@ -36,6 +36,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -52,8 +53,7 @@ uses
 
 function ImagePath(const fileName: string): string;
 begin
-  Result := ExtractFileDir(ParamStr(0)) + '\..\..\images\zxing-cpp\aztec-1\'
-    + fileName;
+  Result := TestImages.ImagePath('zxing-cpp\aztec-1\' + fileName);
 end;
 
 /// <summary>Scans the image with the hints (freed by the scan manager);

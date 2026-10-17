@@ -51,6 +51,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.IOUtils,
   System.Math,
   System.Generics.Collections,
@@ -517,8 +518,7 @@ begin
   end;
   // half of the symbol in the image (the bars up to its edge, once read as
   // 1231FZ): no quiet zone, not read (it has no start or stop)
-  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\images\postal\KIX half 1231FZ13XHS.png');
+  var bmp := LoadImage(TestImages.ImagePath('postal\KIX half 1231FZ13XHS.png'));
   try
     for var format in [TBarcodeFormat.KIX, TBarcodeFormat.All] do
     begin
@@ -633,8 +633,7 @@ end;
 procedure TPostalTest.PostnetPhoto;
 begin
   // the POSTNET below the IMb in a photo of ZXing.Net (ZIP+4 94704-9844)
-  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\images\zxing-net\imb-1\10.jpg');
+  var bmp := LoadImage(TestImages.ImagePath('zxing-net\imb-1\10.jpg'));
   var scanManager := TScanManager.Create(TBarcodeFormat.POSTNET, nil);
   try
     var r := scanManager.Scan(bmp);
@@ -838,7 +837,7 @@ begin
   for var name in ['01.png', '02.png', '03.png', '04.png', '05.gif', '06.png',
     '07.png', '08.jpg', '09.png', '10.jpg'] do
   begin
-    var path := ExtractFileDir(ParamStr(0)) + '\..\..\images\zxing-net\imb-1\';
+    var path := TestImages.ImagePath('zxing-net\imb-1\');
     var expected := Trim(TFile.ReadAllText(path + ChangeFileExt(name,
       '.txt')));
     var bmp := LoadImage(path + name);
@@ -877,8 +876,8 @@ const
     TBarcodeFormat.POSTNET, TBarcodeFormat.RM4SCC, TBarcodeFormat.CEPNET);
 begin
   for var f := 0 to High(FOLDERS) do
-    for var name in TDirectory.GetFiles(ExtractFileDir(ParamStr(0)) +
-      '\..\..\images\postal\' + FOLDERS[f], '*.*') do
+    for var name in TDirectory.GetFiles(TestImages.ImagePath('postal\' +
+      FOLDERS[f]), '*.*') do
     begin
       var base := TPath.GetFileNameWithoutExtension(name);
       // (the text: after the second _)

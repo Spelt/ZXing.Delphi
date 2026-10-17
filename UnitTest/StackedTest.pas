@@ -38,6 +38,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.Generics.Collections,
   ZXing.BarcodeFormat,
   ZXing.DecodeHintType,
@@ -686,8 +687,7 @@ procedure TStackedTest.CodablockFWikipedia;
 begin
   // the example of Wikipedia (Wikimedia Commons, public domain), asked for
   // and in Auto
-  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\images\stacked\codablock-f-wikipedia.png');
+  var bmp := LoadImage(TestImages.ImagePath('stacked\codablock-f-wikipedia.png'));
   try
     for var format in [TBarcodeFormat.CODABLOCK_F, TBarcodeFormat.Auto] do
     begin
@@ -775,8 +775,7 @@ procedure TStackedTest.Code16KWikipedia;
 begin
   // the example of Wikipedia (Wikimedia Commons, Barcodat GmbH, copyrighted
   // free use), asked for and in Auto
-  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\images\stacked\code16k-wikipedia.png');
+  var bmp := LoadImage(TestImages.ImagePath('stacked\code16k-wikipedia.png'));
   try
     for var format in [TBarcodeFormat.CODE_16K, TBarcodeFormat.Auto] do
     begin

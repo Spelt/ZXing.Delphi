@@ -6,13 +6,16 @@
         <Projects Include="demo\ZXingScanner\ZXingScanner.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="UnitTest\dUnitXTest.dproj">
-            <Dependencies/>
-        </Projects>
         <Projects Include="demo\vclTestApp\vclTestApp.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="demo\webcam\Webcam.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="UnitTest\dUnitXTest.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="unitTest\DUnitXTestMobile.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -32,15 +35,6 @@
     <Target Name="ZXingScanner:Make">
         <MSBuild Projects="demo\ZXingScanner\ZXingScanner.dproj" Targets="Make"/>
     </Target>
-    <Target Name="dUnitXTest">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
-    </Target>
-    <Target Name="dUnitXTest:Clean">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="dUnitXTest:Make">
-        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
-    </Target>
     <Target Name="vclTestApp">
         <MSBuild Projects="demo\vclTestApp\vclTestApp.dproj"/>
     </Target>
@@ -59,14 +53,32 @@
     <Target Name="Webcam:Make">
         <MSBuild Projects="demo\webcam\Webcam.dproj" Targets="Make"/>
     </Target>
+    <Target Name="dUnitXTest">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj"/>
+    </Target>
+    <Target Name="dUnitXTest:Clean">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dUnitXTest:Make">
+        <MSBuild Projects="UnitTest\dUnitXTest.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DUnitXTestMobile">
+        <MSBuild Projects="unitTest\DUnitXTestMobile.dproj"/>
+    </Target>
+    <Target Name="DUnitXTestMobile:Clean">
+        <MSBuild Projects="unitTest\DUnitXTestMobile.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DUnitXTestMobile:Make">
+        <MSBuild Projects="unitTest\DUnitXTestMobile.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="ZXingScanner;dUnitXTest;vclTestApp;Webcam"/>
+        <CallTarget Targets="ZXingScanner;vclTestApp;Webcam;dUnitXTest;DUnitXTestMobile"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ZXingScanner:Clean;dUnitXTest:Clean;vclTestApp:Clean;Webcam:Clean"/>
+        <CallTarget Targets="ZXingScanner:Clean;vclTestApp:Clean;Webcam:Clean;dUnitXTest:Clean;DUnitXTestMobile:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ZXingScanner:Make;dUnitXTest:Make;vclTestApp:Make;Webcam:Make"/>
+        <CallTarget Targets="ZXingScanner:Make;vclTestApp:Make;Webcam:Make;dUnitXTest:Make;DUnitXTestMobile:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

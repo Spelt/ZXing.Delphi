@@ -37,6 +37,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.Classes,
   System.Math,
   System.Generics.Collections,
@@ -71,7 +72,7 @@ var
 
 function ImagesDir: string;
 begin
-  Result := ExtractFileDir(ParamStr(0)) + '\..\..\images\';
+  Result := TestImages.ImagesFolder;
 end;
 
 /// <summary>The symbols of zint (hanxin\zint-vectors.txt), read once.

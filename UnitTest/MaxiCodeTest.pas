@@ -34,6 +34,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -52,8 +53,7 @@ uses
 function ScanImage(const fileName: string; quarterTurns: Integer = 0)
   : TReadResult;
 begin
-  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) + '\..\..\images\' +
-    fileName);
+  var bmp := LoadImage(TestImages.ImagePath(fileName));
   if (quarterTurns <> 0) then
   begin
     var rotated := RotateImage(bmp, quarterTurns);

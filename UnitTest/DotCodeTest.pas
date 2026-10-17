@@ -33,6 +33,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.Math,
   System.Generics.Collections,
   ZXing.BarcodeFormat,
@@ -630,7 +631,7 @@ end;
 /// frees the result.</summary>
 function ScanImage(const name: string; format: TBarcodeFormat): TReadResult;
 begin
-  var bmp := LoadImage(ExtractFileDir(ParamStr(0)) + '\..\..\images\' + name);
+  var bmp := LoadImage(TestImages.ImagePath(name));
   try
     var scanManager := TScanManager.Create(format, nil);
     try

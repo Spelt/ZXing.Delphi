@@ -277,6 +277,7 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="TestImages.pas"/>
         <DCCReference Include="Test.pas"/>
         <DCCReference Include="ZXingCppSamplesTest.pas"/>
         <DCCReference Include="OneDFullAsciiTest.pas"/>

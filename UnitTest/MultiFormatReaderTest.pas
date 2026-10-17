@@ -42,6 +42,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.Classes,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
@@ -72,7 +73,7 @@ var
   r: TReadResult;
   i: Integer;
 begin
-  bitmap := LoadImage(ExtractFileDir(ParamStr(0)) + '\..\..\Images\q33.png');
+  bitmap := LoadImage(TestImages.ImagePath('q33.png'));
   source := TRGBLuminanceSource.CreateFromBitmap(bitmap, bitmap.Width,
     bitmap.Height);
   binarizer := THybridBinarizer.Create(source);
@@ -136,8 +137,7 @@ const
 begin
   for var s in SAMPLES do
   begin
-    var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
-      '\..\..\Images\zxing-cpp\' + s.FileName);
+    var bitmap := LoadImage(TestImages.ImagePath('zxing-cpp\' + s.FileName));
     // (as an interface: freed with the last reference, no Free)
     var scanManager: IScanManager := TScanManager.Create(TBarcodeFormat.Auto,
       nil);
@@ -198,8 +198,7 @@ const
 begin
   for var s in SAMPLES do
   begin
-    var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) + '\..\..\Images\' +
-      s.FileName);
+    var bitmap := LoadImage(TestImages.ImagePath(s.FileName));
     try
       for var format in [TBarcodeFormat.All, TBarcodeFormat.Auto] do
       begin
@@ -240,8 +239,7 @@ var
   format: TBarcodeFormat;
   threadId: TThreadID;
 begin
-  var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\Images\zxing-cpp\qrcode-1\1.png');
+  var bitmap := LoadImage(TestImages.ImagePath('zxing-cpp\qrcode-1\1.png'));
   try
     scanner := TScanManager.Create(TBarcodeFormat.QR_CODE, nil);
     done := false;
@@ -286,8 +284,7 @@ var
   count: Integer;
   threadId: TThreadID;
 begin
-  var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\Images\zxing-cpp\qrcode-1\1.png');
+  var bitmap := LoadImage(TestImages.ImagePath('zxing-cpp\qrcode-1\1.png'));
   try
     scanner := TScanManager.Create(TBarcodeFormat.QR_CODE, nil);
     done := false;
@@ -319,8 +316,7 @@ var
   done: Boolean;
   text: string;
 begin
-  var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
-    '\..\..\Images\zxing-cpp\qrcode-1\1.png');
+  var bitmap := LoadImage(TestImages.ImagePath('zxing-cpp\qrcode-1\1.png'));
   try
     // one call, one result
     var r := TScanManager.Scan(bitmap, TBarcodeFormat.QR_CODE);
@@ -386,8 +382,7 @@ const
     try
       for var name in FILES do
       begin
-        var bitmap := LoadImage(ExtractFileDir(ParamStr(0)) +
-          '\..\..\Images\zxing-cpp\' + name);
+        var bitmap := LoadImage(TestImages.ImagePath('zxing-cpp\' + name));
         try
           var hints := TDictionary<TDecodeHintType, TObject>.Create;
           hints.Add(TDecodeHintType.TRY_HARDER, nil);

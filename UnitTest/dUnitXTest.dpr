@@ -15,6 +15,7 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
+  TestImages in 'TestImages.pas',
   Test in 'Test.pas',
   ZXingCppSamplesTest in 'ZXingCppSamplesTest.pas',
   OneDFullAsciiTest in 'OneDFullAsciiTest.pas',

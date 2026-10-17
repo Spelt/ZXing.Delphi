@@ -74,6 +74,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.IOUtils,
   System.Math,
   System.Generics.Collections,
@@ -103,7 +104,7 @@ type
 
 function ImagePath(const fileName: string): string;
 begin
-  Result := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + fileName;
+  Result := TestImages.ImagePath(fileName);
 end;
 
 /// <summary>Scans the image with the hints (freed by the scan manager);

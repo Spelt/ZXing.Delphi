@@ -318,6 +318,9 @@ The base classes are already implemented so if you need to have another Barcode 
 - There is a lot of bit shifting going around. Left bit shifting is the same as in C# but right bit shifing is not! I made a helper for this: TMathUtils.Asr 
 
 
+### Unit tests
+The tests (DUnitX) are in unitTest. On Windows: dUnitXTest.dproj, a console runner (or TestInsight in the IDE), the images in unitTestimages. On a device (Android, iOS): DUnitXTestMobile.dproj, the same tests with the mobile GUI of DUnitX; run unitTestimages.cmd first, it packs the images into images.zip, which the project deploys with the app (TestImages.pas unpacks it in the documents folder of the app).
+
 ### Usage
 If you use a Delphi older then 11.1 then you NEED to set a compiler Define in your 'project options->Delphi compiler->Conditional defines'. Set this in your target platforms or All platforms.  See demo applications.
 - FRAMEWORK_VCL - this predefined variable is set to true if the project uses the VCL framework

@@ -152,12 +152,15 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
+{$IFDEF MSWINDOWS}
   Winapi.ActiveX,
+{$ENDIF}
   Benchmark.Runner;
 
 function SamplesDir: string;
 begin
-  Result := ExtractFileDir(ParamStr(0)) + '\..\..\Images\zxing-cpp\';
+  Result := TestImages.ImagePath('zxing-cpp\');
 end;
 
 function FindLimits(const folderName: string; out limits: TFolderLimits): Boolean;
@@ -181,8 +184,10 @@ var
   mode: TTestMode;
   failures, measured: string;
 begin
+{$IFDEF MSWINDOWS}
   // WIC (used to load the images) needs COM; S_FALSE when already done
   CoInitializeEx(nil, COINIT_APARTMENTTHREADED);
+{$ENDIF}
 
   Assert.IsTrue(FindLimits(folderName, limits), 'No limits for ' + folderName);
 

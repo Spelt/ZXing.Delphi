@@ -46,6 +46,7 @@ implementation
 
 uses
   System.SysUtils,
+  TestImages,
   System.Generics.Collections,
 {$IFDEF FRAMEWORK_FMX}
   FMX.Graphics,
@@ -64,7 +65,7 @@ uses
 
 function ImagePath(const fileName: string): string;
 begin
-  Result := ExtractFileDir(ParamStr(0)) + '\..\..\images\' + fileName;
+  Result := TestImages.ImagePath(fileName);
 end;
 
 /// <summary>Scans the image rotated by quarterTurns * 90 degrees; nil when

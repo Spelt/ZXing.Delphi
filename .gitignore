@@ -148,3 +148,6 @@ obj/
 [Bb]in
 /research_notes/*
 /reports/*
+
+# the test images packed for the test app on a device (unitTest\images.cmd)
+unitTest/images.zip
