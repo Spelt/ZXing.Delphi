@@ -30,6 +30,8 @@ type
     [Test]
     procedure BitArrayRecord;
     [Test]
+    procedure ArrayCloneAndCopy;
+    [Test]
     procedure BitMatrixFlipAndOutside;
     [Test]
     procedure BitMatrixSetRegion;
@@ -62,6 +64,7 @@ uses
   ZXing.Common.BitArray,
   ZXing.Common.BitMatrix,
   ZXing.Common.Pattern,
+  ZXing.Helpers,
   ZXing.Common.ReedSolomon.GenericGF,
   ZXing.LuminanceSource,
   ZXing.RGBLuminanceSource,
@@ -657,6 +660,41 @@ begin
   Assert.IsTrue(bits[0] and same[0]); // (the same bits)
   same.clear;
   Assert.AreEqual(40, bits.getNextSet(0));
+end;
+
+procedure TCommonTest.ArrayCloneAndCopy;
+begin
+  // a copy of any length (the length went through a SmallInt before: more
+  // than 32767 elements failed or came back truncated)
+  var big: TArray<Integer>;
+  SetLength(big, 70000);
+  for var i := 0 to High(big) do
+    big[i] := i;
+  var cloned := ZXing.Helpers.TArray.Clone(big);
+  Assert.AreEqual(70000, Length(cloned));
+  Assert.AreEqual(69999, cloned[69999]);
+  cloned[0] := -1;
+  Assert.AreEqual(0, big[0]); // (a copy, not the same array)
+  Assert.AreEqual(0, Length(ZXing.Helpers.TArray.Clone(nil)));
+
+  // the elements 2 to 5 to the front, the rest as it was
+  var counters: TArray<Integer> := [10, 11, 12, 13, 14, 15, 16];
+  var shifted := ZXing.Helpers.TArray.CopyInSameArray(counters, 2, 4);
+  Assert.AreEqual(7, Length(shifted));
+  Assert.AreEqual(12, shifted[0]);
+  Assert.AreEqual(15, shifted[3]);
+  Assert.AreEqual(14, shifted[4]); // (not moved)
+  Assert.AreEqual(16, shifted[6]);
+  Assert.AreEqual(10, counters[0]);
+  // a range outside the array
+  var raised := false;
+  try
+    ZXing.Helpers.TArray.CopyInSameArray(counters, 4, 4);
+  except
+    on EArgumentOutOfRangeException do
+      raised := true;
+  end;
+  Assert.IsTrue(raised);
 end;
 
 initialization

@@ -17,46 +17,41 @@ unit ZXing.Helpers;
 
   * Implemented by E. Spelt for Delphi
 }
+
 interface
 
 type
   TArray = class
+    /// <summary>A copy of the array, of any length.</summary>
     class function Clone(original: TArray<Integer>): TArray<Integer>; static;
+    /// <summary>A copy of the whole array with the elements StartIndex to
+    /// StartIndex + Len - 1 moved to the front, the rest as it was (the
+    /// arraycopy of Java onto the same array).</summary>
     class function CopyInSameArray(const Input: TArray<Integer>;
       StartIndex: Integer; Len: Integer): TArray<Integer>; static;
   end;
 
 implementation
 
-class function TArray.Clone(original: TArray<Integer>): TArray<Integer>;
-var
-  i: Integer;
-  l: SmallInt;
-begin
-  l := Length(original);
-  Result := TArray<Integer>.Create();
-  SetLength(Result, l);
+uses
+  System.SysUtils;
 
-  for i := 0 to l - 1 do
-  begin
-    Result[i] := original[i];
-  end;
+class function TArray.Clone(original: TArray<Integer>): TArray<Integer>;
+begin
+  // (the length went through a SmallInt before: an array of more than
+  // 32767 elements failed or came back truncated)
+  Result := Copy(original);
 end;
 
 class function TArray.CopyInSameArray(const Input: TArray<Integer>;
   StartIndex: Integer; Len: Integer): TArray<Integer>;
-var
-  i, y: Integer;
 begin
-  Result := TArray.Clone(Input);
-
-  y := 0;
-  for i := StartIndex to (StartIndex + Len -1) do
-  begin
-    Result[y] := Input[i];
-    inc(y);
-  end;
-
+  if (StartIndex < 0) or (Len < 0) or (StartIndex + Len > Length(Input)) then
+    raise EArgumentOutOfRangeException.Create
+      ('CopyInSameArray: the range is outside the array');
+  Result := Copy(Input);
+  if (Len > 0) then
+    Move(Input[StartIndex], Result[0], Len * SizeOf(Integer));
 end;
 
 end.
