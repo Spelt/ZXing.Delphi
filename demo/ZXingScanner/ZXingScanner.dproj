@@ -6,10 +6,9 @@
         <MainSource>ZXingScanner.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release</Config>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Android64</Platform>
         <TargetedPlatforms>558098</TargetedPlatforms>
         <AppType>Application</AppType>
-        <ProjectName Condition="'$(ProjectName)'==''">ZXingScanner</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -408,6 +407,7 @@
         <DCCReference Include="Scanner.Formats.pas"/>
         <DCCReference Include="Scanner.Theme.pas"/>
         <DCCReference Include="Scanner.Feedback.pas"/>
+        <DCCReference Include="Scanner.Tracking.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

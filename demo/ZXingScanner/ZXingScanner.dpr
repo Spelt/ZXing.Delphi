@@ -14,7 +14,8 @@ uses
   Scanner.Config in 'Scanner.Config.pas',
   Scanner.Formats in 'Scanner.Formats.pas',
   Scanner.Theme in 'Scanner.Theme.pas',
-  Scanner.Feedback in 'Scanner.Feedback.pas';
+  Scanner.Feedback in 'Scanner.Feedback.pas',
+  Scanner.Tracking in 'Scanner.Tracking.pas';
 
 {$R *.res}
 

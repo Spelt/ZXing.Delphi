@@ -43,25 +43,10 @@ uses
   ZXing.ReadResult,
   ZXing.ScanManager,
   Scanner.Config,
-  Scanner.Settings;
+  Scanner.Settings,
+  Scanner.Tracking;
 
 type
-  /// <summary>A barcode found in a frame, as the screen keeps it: the
-  /// results of the library are freed after each scan.</summary>
-  THit = record
-    Text: string;
-    Format: string;
-    /// <summary>The human readable form of GS1 data, '' for other codes.
-    /// </summary>
-    GS1: string;
-    /// <summary>'' for a code that was read; else why it could not be
-    /// (TScanManager.ReturnErrors).</summary>
-    Error: string;
-    /// <summary>The corners in the frame.</summary>
-    Corners: TArray<TPointF>;
-    function IsUrl: Boolean;
-  end;
-
   TMainForm = class(TForm)
     pbCamera: TPaintBox;
     layTop: TLayout;
@@ -120,13 +105,14 @@ type
     fStill: Boolean;
     fCameraWanted: Boolean;
     fPermissionCamera: string;
-    // the codes of the last frame with codes (the outlines) and the codes
+    // the codes on the screen (the outlines, Scanner.Tracking) and the codes
     // that were read last (the sheet)
-    fHits: TArray<THit>;
-    fHitWatch: TStopwatch;
+    fTracker: TCodeTracker;
     fShown: TArray<THit>;
+    fShownKey: string;
     fShownWatch: TStopwatch;
-    fLastKey: string;
+    // the opacity of the pill as designed: it fades with its code
+    fPillOpacity: Single;
     fCopiedWatch: TStopwatch;
     // the time of the scans: the last one and the average
     fScanWatch: TStopwatch;
@@ -147,9 +133,13 @@ type
     procedure ShowResults(const results: TArray<TReadResult>);
     procedure ShowError(e: Exception);
     procedure Feedback;
+    procedure RefreshShown;
+    procedure TrackerMoved(Sender: TObject);
+    procedure TrackerListChanged(Sender: TObject);
+    procedure TrackerAppeared(Sender: TObject);
     procedure ComputeMapping;
     function ToView(const p: TPointF): TPointF;
-    procedure DrawOutline(Canvas: TCanvas; const hit: THit; number: Integer);
+    procedure DrawOutline(Canvas: TCanvas; const code: TTrackedCode);
     procedure UpdateLeftButton;
     procedure UpdateSheet;
     procedure LayoutSheet;
@@ -205,15 +195,6 @@ const
   HintScanning = 'Scanning' + #8230;
   HintNothing = 'No barcode in this image';
   HintNoFormats = 'No format chosen: pick one in the settings';
-  // after this many ms without the code in the frame its outline goes
-  OutlineLifetime = 800;
-
-{ THit }
-
-function THit.IsUrl: Boolean;
-begin
-  Result := Text.StartsWith('http://', True) or Text.StartsWith('https://', True);
-end;
 
 { TMainForm }
 
@@ -224,6 +205,14 @@ begin
   fConfig := TScannerConfig.Create;
   fConfig.Load;
   fFrame := TBitmap.Create;
+
+  // the codes on the screen: their outlines follow the hits with easing and
+  // fade when a code is gone (Scanner.Tracking); the pill follows its code
+  fTracker := TCodeTracker.Create(pbCamera);
+  fTracker.OnMoved := TrackerMoved;
+  fTracker.OnListChanged := TrackerListChanged;
+  fTracker.OnAppeared := TrackerAppeared;
+  fPillOpacity := pillResult.Opacity;
 
   fSettings := TSettingsForm.Create(Self);
   fSettings.Config := fConfig;
@@ -264,6 +253,7 @@ begin
   while (fScanManager <> nil) and fScanManager.Scanning do
     CheckSynchronize(10);
   fScanManager := nil;
+  fTracker.Free;
   fFrame.Free;
   fConfig.Free;
 end;
@@ -307,7 +297,6 @@ begin
   pillResult.Fill.Color := fConfig.TrackColor;
   fScanCount := 0;
   fScanMs := 0;
-  fLastKey := '';
 end;
 
 { the camera }
@@ -393,8 +382,10 @@ procedure TMainForm.ResumeCamera;
 begin
   fStill := False;
   fFrame.SetSize(0, 0);
-  fHits := nil;
+  fTracker.Clear;
+  fTracker.Frozen := False;
   fShown := nil;
+  fShownKey := '';
   pillResult.Visible := False;
   SetHint(HintCamera);
   UpdateSheet;
@@ -434,9 +425,11 @@ begin
   end;
   StopCamera;
   fStill := True;
-  fHits := nil;
+  // (the outlines of a still image stay: nothing fades)
+  fTracker.Clear;
+  fTracker.Frozen := True;
   fShown := nil;
-  fLastKey := '';
+  fShownKey := '';
   pillResult.Visible := False;
   SetHint(HintScanning);
   UpdateSheet;
@@ -505,8 +498,7 @@ end;
 
 procedure TMainForm.ShowResults(const results: TArray<TReadResult>);
 var
-  hits, shown: TArray<THit>;
-  key: string;
+  hits: TArray<THit>;
 begin
   // the time of this scan and the average
   var ms := fScanWatch.Elapsed.TotalMilliseconds;
@@ -535,44 +527,69 @@ begin
 
   if Length(hits) = 0 then
   begin
-    // nothing in this frame: the outline of the last one goes after a
-    // while (the timer), the sheet keeps the last code
+    // nothing in this frame: the outlines stay until their code has not
+    // been seen for a while (the tracker fades them), the sheet keeps the
+    // last code
     if fStill then
       SetHint(HintNothing);
     exit;
   end;
 
-  fHits := hits;
-  fHitWatch := TStopwatch.StartNew;
-
-  // the codes that were read, for the sheet; the others were found but
-  // not read (TScanManager.ReturnErrors): only their outline
-  shown := nil;
-  key := '';
+  // the tracker follows them: a known code gets a new target, a new one
+  // comes in; it calls back when the list changes
+  fTracker.Update(hits, fFrame.Width);
+  var anyRead := False;
   for var hit in hits do
     if hit.Error = '' then
-    begin
-      shown := shown + [hit];
-      key := key + hit.Format + ':' + hit.Text + #10;
-    end;
-  if Length(shown) > 0 then
+      anyRead := True;
+  if anyRead then
   begin
-    fShown := shown;
     fShownWatch := TStopwatch.StartNew;
     fCopiedWatch.Reset;
-    // a beep and a vibration once per code, not on every frame
-    if key <> fLastKey then
-    begin
-      fLastKey := key;
-      Feedback;
-    end;
+    RefreshShown;
   end
   else if Length(fShown) = 0 then
     SetHint(HintHoldStill);
-
-  UpdateSheet;
   UpdatePill;
   pbCamera.Repaint;
+end;
+
+procedure TMainForm.RefreshShown;
+begin
+  // the sheet shows the codes that were read, in the order of their
+  // numbers; it is rebuilt only when that set changes, not on every frame
+  var shown := fTracker.ReadableHits;
+  if Length(shown) = 0 then
+    exit;
+  var key := '';
+  for var hit in shown do
+    key := key + IntToStr(hit.Number) + ':' + hit.Format + ':' + hit.Text + #10;
+  if key = fShownKey then
+    exit;
+  fShownKey := key;
+  fShown := shown;
+  UpdateSheet;
+end;
+
+procedure TMainForm.TrackerMoved(Sender: TObject);
+begin
+  // an outline moved or faded: the frame again with the outlines, and the
+  // pill along with its code
+  UpdatePill;
+  pbCamera.Repaint;
+end;
+
+procedure TMainForm.TrackerListChanged(Sender: TObject);
+begin
+  RefreshShown;
+  UpdatePill;
+  pbCamera.Repaint;
+end;
+
+procedure TMainForm.TrackerAppeared(Sender: TObject);
+begin
+  // a code that was not on the screen yet: the beep and the vibration
+  Feedback;
 end;
 
 procedure TMainForm.ShowError(e: Exception);
@@ -599,14 +616,6 @@ begin
       lblTime.Text := 'Just now'
     else
       lblTime.Text := Format('%d s ago', [fShownWatch.ElapsedMilliseconds div 1000]);
-  end;
-  // the outline of a code that left the frame
-  if (Length(fHits) > 0) and not fStill and
-    (fHitWatch.ElapsedMilliseconds > OutlineLifetime) then
-  begin
-    fHits := nil;
-    pillResult.Visible := False;
-    pbCamera.Repaint;
   end;
 end;
 
@@ -642,12 +651,11 @@ begin
   Canvas.DrawBitmap(fFrame, TRectF.Create(0, 0, fFrame.Width, fFrame.Height),
     TRectF.Create(fOffset.X, fOffset.Y, fOffset.X + fFrame.Width * fScale,
     fOffset.Y + fFrame.Height * fScale), 1, True);
-  for var i := 0 to High(fHits) do
-    DrawOutline(Canvas, fHits[i], i + 1);
+  for var code in fTracker.Codes do
+    DrawOutline(Canvas, code);
 end;
 
-procedure TMainForm.DrawOutline(Canvas: TCanvas; const hit: THit;
-  number: Integer);
+procedure TMainForm.DrawOutline(Canvas: TCanvas; const code: TTrackedCode);
 var
   pts: TArray<TPointF>;
   path: TPathData;
@@ -670,17 +678,26 @@ var
     path.MoveTo(Leg(p));
     path.LineTo(a);
     path.LineTo(Leg(q));
-    Canvas.DrawPath(path, 1);
+    Canvas.DrawPath(path, code.Opacity);
   end;
 
 begin
-  SetLength(pts, Length(hit.Corners));
-  for var i := 0 to High(pts) do
-    pts[i] := ToView(hit.Corners[i]);
-  if Length(pts) < 2 then
+  if Length(code.Corners) < 2 then
     exit;
+  // the corners on the screen, the padding away from the center of the code
+  var center := TPointF.Zero;
+  for var c in code.Corners do
+    center := center + c / Length(code.Corners);
+  SetLength(pts, Length(code.Corners));
+  for var i := 0 to High(pts) do
+  begin
+    var away := code.Corners[i] - center;
+    if away.Length > 0.5 then
+      away := away.Normalize * (OutlinePadding * 1.4142);
+    pts[i] := ToView(code.Corners[i] + away);
+  end;
 
-  if hit.Error = '' then
+  if code.Error = '' then
     color := fConfig.TrackColor
   else
     color := clError;
@@ -688,7 +705,7 @@ begin
   Canvas.Stroke.Color := color;
   Canvas.Stroke.Cap := TStrokeCap.Round;
   Canvas.Stroke.Join := TStrokeJoin.Round;
-  if hit.Error = '' then
+  if code.Error = '' then
     Canvas.Stroke.Dash := TStrokeDash.Solid
   else
     Canvas.Stroke.Dash := TStrokeDash.Dash;
@@ -704,7 +721,7 @@ begin
       path.MoveTo(pts[0]);
       for var i := 1 to High(pts) do
         path.LineTo(pts[i]);
-      Canvas.DrawPath(path, 1);
+      Canvas.DrawPath(path, code.Opacity);
     end
     else
       // the 4 corners: top left, top right, bottom right, bottom left
@@ -715,18 +732,18 @@ begin
   end;
 
   // the number of the code, at its top left corner (multi result)
-  if fConfig.MultiResult and (hit.Error = '') then
+  if fConfig.MultiResult and (code.Error = '') then
   begin
     var r := TRectF.Create(pts[0].X - 11, pts[0].Y - 11, pts[0].X + 11,
       pts[0].Y + 11);
     Canvas.Fill.Kind := TBrushKind.Solid;
     Canvas.Fill.Color := color;
-    Canvas.FillEllipse(r, 1);
+    Canvas.FillEllipse(r, code.Opacity);
     Canvas.Fill.Color := clTextDark;
     Canvas.Font.Size := 12;
     Canvas.Font.Style := [TFontStyle.fsBold];
-    Canvas.FillText(r, IntToStr(number), False, 1, [], TTextAlign.Center,
-      TTextAlign.Center);
+    Canvas.FillText(r, IntToStr(code.Number), False, code.Opacity, [],
+      TTextAlign.Center, TTextAlign.Center);
   end;
 end;
 
@@ -788,8 +805,9 @@ procedure TMainForm.SettingsDone(Sender: TObject);
 begin
   fConfig.Save;
   ApplyConfig;
-  fHits := nil;
+  fTracker.Clear;
   fShown := nil;
+  fShownKey := '';
   pillResult.Visible := False;
   pbCamera.Repaint;
   if fStill then
@@ -900,7 +918,7 @@ begin
       number.Parent := badge;
       number.Align := TAlignLayout.Contents;
       number.TextSettings.HorzAlign := TTextAlign.Center;
-      number.Text := IntToStr(i + 1);
+      number.Text := IntToStr(fShown[i].Number);
       StyleLabel(number, 13, clTextDark, True);
 
       var copy := TRectangle.Create(row);
@@ -946,35 +964,39 @@ end;
 
 procedure TMainForm.UpdatePill;
 var
-  hit: THit;
+  code: TTrackedCode;
   w, top, left, minY, maxY, cx: Single;
 begin
-  // the text of the code, under its outline (single result)
-  if fConfig.MultiResult or (Length(fHits) = 0) or (fHits[0].Error <> '') or
-    fFrame.IsEmpty then
+  // the text of the code, under its outline (single result), as visible
+  // as the outline
+  code := fTracker.FirstReadable;
+  if fConfig.MultiResult or (code = nil) or fFrame.IsEmpty then
   begin
     pillResult.Visible := False;
     exit;
   end;
-  hit := fHits[0];
   ComputeMapping;
   minY := MaxSingle;
   maxY := -MaxSingle;
   cx := 0;
-  for var c in hit.Corners do
+  for var c in code.Corners do
   begin
     var p := ToView(c);
     minY := Min(minY, p.Y);
     maxY := Max(maxY, p.Y);
-    cx := cx + p.X / Length(hit.Corners);
+    cx := cx + p.X / Length(code.Corners);
   end;
+  // (the outline is the padding outside the corners)
+  minY := minY - OutlinePadding * fScale;
+  maxY := maxY + OutlinePadding * fScale;
+  pillResult.Opacity := fPillOpacity * code.Opacity;
 
-  if hit.IsUrl then
+  if code.IsUrl then
     SetIcon(pthKind, icoGlobe, clTextDark)
   else
     SetIcon(pthKind, icoText, clTextDark);
   // the first line of the text (the sheet has all of it)
-  var line := hit.Text;
+  var line := code.Text;
   var p := line.IndexOfAny([#10, #13]);
   if p >= 0 then
     line := line.Substring(0, p) + #8230;
@@ -1006,8 +1028,9 @@ end;
 
 procedure TMainForm.pillResultClick(Sender: TObject);
 begin
-  if Length(fHits) > 0 then
-    Copied(fHits[0].Text);
+  var code := fTracker.FirstReadable;
+  if code <> nil then
+    Copied(code.Text);
 end;
 
 procedure TMainForm.lblTextClick(Sender: TObject);

@@ -121,10 +121,19 @@ scanner.ReturnErrors := True;
 
 `TReadResult.Position` gives the 4 corners of a code in the frame (for a 1D
 code: the scanned line widened to the height of the bars). The scan screen
-keeps them, maps them to the screen (the frame is cropped to fill it, an
-image is fitted) and draws a bracket at each corner in `OnPaint` of the
-paint box that also draws the frame. The outline goes when the code has not
-been seen for a moment; the sheet keeps the last code.
+does not draw them as they come: the hits of the camera jump a little from
+frame to frame, and a frame may miss a code. `Scanner.Tracking` keeps a
+`TTrackedCode` per code on the screen, fed with the hits of every frame: a
+known code gets the corners of the hit as its target (unless they moved less
+than a few pixels: then the outline stays), a new code comes in
+where it was seen and fades in, and a code not seen for 2 seconds fades out.
+Every frame of the display (a `TAnimation` of FMX, which runs on the display
+link of the platform) the drawn corners ease towards the target: a part of
+the distance that is left per frame, small when the target hardly moves (so
+the noise of the detection is averaged out) and large when it moves fast (so
+the outline follows a moving camera at once), and it settles softly. The outline is drawn 20 pixels
+outside the corners, in `OnPaint` of the paint box that also draws the
+frame; the pill with the text follows its code, as visible as the outline.
 
 ### The look without a style
 
