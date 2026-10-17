@@ -102,7 +102,8 @@ begin
   for var i := -2000 to 2000 do
   begin
     var x: Double := i / 4;
-    for var delta in [0.0, 1E-9, -1E-9, 0.1, -0.1, 0.49999, 0.5, 0.50001] do
+    for var delta in TArray<Double>.Create(0.0, 1E-9, -1E-9, 0.1, -0.1,
+      0.49999, 0.5, 0.50001) do
     begin
       var v := x + delta;
       Assert.AreEqual<Integer>(Floor(v), FloorInt(v), 'floor ' + FloatToStr(v));
@@ -476,7 +477,7 @@ begin
       end;
       // getRow is a copy of the row
       var row := rotated.getRow(2, nil);
-      Assert.AreEqual(H, Length(row));
+      Assert.AreEqual(H, Integer(Length(row)));
       for var x := 0 to H - 1 do
         Assert.AreEqual(Integer(m[2 * H + x]), Integer(row[x]));
     finally
@@ -579,7 +580,7 @@ begin
         counts[q] := counts[q] + 1
       else
         counts.Add(q, 1);
-    Assert.AreEqual(2, counts.Count);
+    Assert.AreEqual(2, Integer(counts.Count));
     Assert.AreEqual(2, counts[TResultPoint.Create(1, 2)]);
     Assert.AreEqual(1, counts[TResultPoint.Create(3, 4)]);
   finally
@@ -627,7 +628,7 @@ begin
   bits := TBitArray.Create(40);
   Assert.IsFalse(bits.IsEmpty);
   Assert.AreEqual(40, bits.Size);
-  Assert.AreEqual(2, Length(bits.Bits));
+  Assert.AreEqual(2, Integer(Length(bits.Bits)));
   bits[-1] := true;
   bits[40] := true;
   bits[70] := true;

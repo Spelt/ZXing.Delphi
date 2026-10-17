@@ -675,7 +675,7 @@ procedure TDotCodeTest.Perspective;
 begin
   // the vectors of 13 x 10 and more dots
   for var v := 0 to High(DOTCODE_VECTORS) do
-    for var tilt in [-0.15, 0.1, 0.15] do
+    for var tilt in TArray<Double>.Create(-0.15, 0.1, 0.15) do
       CheckDrawn(v, ReadDrawn(v, 20, 6, tilt), 'tilt ' + FloatToStr(tilt));
 end;
 

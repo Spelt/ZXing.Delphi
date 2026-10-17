@@ -141,7 +141,7 @@ begin
   var r := Scan('mode4-mixed-ecis.png');
   try
     Assert.IsNotNull(r, ' Nil result ');
-    Assert.AreEqual(Length(EXPECTED), Length(r.RawBytes), 'length');
+    Assert.AreEqual(Length(EXPECTED), Integer(Length(r.RawBytes)), 'length');
     for var i := 0 to High(EXPECTED) do
       Assert.AreEqual(EXPECTED[i], r.RawBytes[i], 'byte ' + IntToStr(i));
   finally
@@ -158,7 +158,7 @@ begin
     Assert.AreEqual('[)>'#30'01'#29'96100110000'#29'840'#29'001'#29 +
       '1Z40411757'#29'UPSN'#29'661907'#29'100'#29#29'20/24'#29'20'#29'N'#29#29
       + 'NEW YORK'#29'NY'#30#4, r.Text);
-    Assert.AreEqual(4, Length(r.ResultPoints));
+    Assert.AreEqual(4, Integer(Length(r.ResultPoints)));
   finally
     r.Free;
   end;

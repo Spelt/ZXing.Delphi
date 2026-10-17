@@ -201,7 +201,7 @@ end;
 procedure THanXinTest.ZintVectors;
 begin
   var symbols := ZintSymbols;
-  Assert.AreEqual(81, Length(symbols));
+  Assert.AreEqual(81, Integer(Length(symbols)));
   for var i := 0 to High(symbols) do
   begin
     var decoded: THanXinResult;

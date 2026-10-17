@@ -89,7 +89,7 @@ begin
     Assert.IsNotNull(r, ' Nil result ');
     Assert.AreEqual('0100821935106427', r.Text);
     var p := r.Position;
-    Assert.AreEqual(4, Length(p));
+    Assert.AreEqual(4, Integer(Length(p)));
     Assert.IsTrue(p[3].Y > p[0].Y, 'bottom not below top');
   finally
     r.Free;

@@ -84,7 +84,7 @@ begin
     Assert.AreEqual(Ord(format), Ord(r.BarcodeFormat));
     Assert.AreEqual(text, r.Text);
     Assert.AreEqual(']Q1', r.SymbologyIdentifier);
-    Assert.AreEqual(4, Length(r.Position));
+    Assert.AreEqual(4, Integer(Length(r.Position)));
   finally
     r.Free;
   end;

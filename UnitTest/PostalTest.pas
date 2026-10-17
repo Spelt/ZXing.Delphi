@@ -688,7 +688,7 @@ begin
   begin
     var test := TESTS[t];
     var bars := AustraliaBars(test[0], test[1] + test[2], StrToInt(test[3]));
-    Assert.AreEqual(StrToInt(test[3]), Length(bars), 'bars');
+    Assert.AreEqual(StrToInt(test[3]), Integer(Length(bars)), 'bars');
     for var upsideDown in [false, true] do
     begin
       var r := ReadBars(bars, TBarcodeFormat.AUSTRALIA_POST, upsideDown,

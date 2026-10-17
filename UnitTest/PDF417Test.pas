@@ -90,7 +90,7 @@ begin
     Assert.AreEqual(Ord(TBarcodeFormat.PDF_417), Ord(r.BarcodeFormat));
     Assert.AreEqual('This is PDF417', r.Text);
     Assert.AreEqual(']L2', r.SymbologyIdentifier);
-    Assert.AreEqual(4, Length(r.Position));
+    Assert.AreEqual(4, Integer(Length(r.Position)));
     var md := Extra(r);
     Assert.IsNotNull(md, 'no PDF417 metadata');
     Assert.AreEqual(-1, md.SegmentIndex);
@@ -164,7 +164,7 @@ begin
     Assert.IsNotNull(r, ' Nil result ');
     Assert.AreEqual(Ord(TBarcodeFormat.MICRO_PDF417), Ord(r.BarcodeFormat));
     Assert.AreEqual('I have the best words.', r.Text);
-    Assert.AreEqual(4, Length(r.Position));
+    Assert.AreEqual(4, Integer(Length(r.Position)));
   finally
     r.Free;
   end;
