@@ -6,6 +6,7 @@ program DUnitXTestMobile;
   tests, a Run button, the results). The test images come along as
   images.zip (make it with images.cmd), see TestImages.pas.
 
+
   Also runs on Windows, as a FireMonkey app.
 }
 

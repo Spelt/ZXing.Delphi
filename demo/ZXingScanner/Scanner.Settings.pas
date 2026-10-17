@@ -95,7 +95,7 @@ type
     procedure StyleDots;
     procedure LoadValues;
     procedure UpdateFormatCount;
-    procedure SetExtraFormats(on: Boolean);
+    procedure SetGroup(inAuto, on: Boolean);
     procedure FitRows(width: Single);
     procedure FitFlow(flow: TFlowLayout; width: Single);
     procedure FitCard(card: TRectangle);
@@ -383,30 +383,29 @@ begin
   LoadValues;
 end;
 
-procedure TSettingsForm.lblClearClick(Sender: TObject);
+procedure TSettingsForm.SetGroup(inAuto, on: Boolean);
 begin
-  // no format at all (the scanner reads nothing then)
-  FConfig.Formats.Clear;
-  LoadValues;
-end;
-
-procedure TSettingsForm.SetExtraFormats(on: Boolean);
-begin
-  // the formats only read when asked for, all of them on or off
+  // the formats of one group, all of them on or off: the ones read by
+  // default (Auto) or the ones only read when asked for
   for var info in Formats do
-    if not info.InAuto then
+    if info.InAuto = inAuto then
       FConfig.SetFormat(info.Format, on);
   LoadValues;
 end;
 
+procedure TSettingsForm.lblClearClick(Sender: TObject);
+begin
+  SetGroup(True, False);
+end;
+
 procedure TSettingsForm.lblExtraClearClick(Sender: TObject);
 begin
-  SetExtraFormats(False);
+  SetGroup(False, False);
 end;
 
 procedure TSettingsForm.lblExtraAllClick(Sender: TObject);
 begin
-  SetExtraFormats(True);
+  SetGroup(False, True);
 end;
 
 procedure TSettingsForm.UpdateFormatCount;

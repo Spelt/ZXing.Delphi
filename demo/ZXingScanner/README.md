@@ -152,6 +152,12 @@ style would be needed to color it like the design, nothing else.
 The monospace font of the texts is the one of the platform (Consolas, Menlo,
 monospace).
 
+## The icon
+
+The icon of the app (the QR code between the brackets of the outline) is
+`resourceszxing-delphi-icon.svg`; the sets for Android, iOS, macOS and Windows
+that the project uses are in `ZXingScanner.Artwork`.
+
 ## Platforms
 
 - **Windows and macOS**: the camera of the computer, or an image (the

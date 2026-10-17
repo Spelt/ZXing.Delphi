@@ -9,6 +9,7 @@ program ZXingScanner;
 uses
   System.StartUpCopy,
   FMX.Forms,
+  FMX.Skia,
   Scanner.Main in 'Scanner.Main.pas' {MainForm},
   Scanner.Settings in 'Scanner.Settings.pas' {SettingsForm},
   Scanner.Config in 'Scanner.Config.pas',
@@ -20,7 +21,9 @@ uses
 {$R *.res}
 
 begin
+  GlobalUseSkia := True;
   Application.Initialize;
+  Application.FormFactor.Orientations := [TFormOrientation.Portrait];
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.
