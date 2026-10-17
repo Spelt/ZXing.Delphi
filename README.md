@@ -98,6 +98,9 @@ if (r <> nil) and (r.Error <> '') then
   lblStatus.Text := 'Barcode found, but not readable (' + r.Error + ')';
 
 ```
+<p>
+	Below the config screen of the demo app. 
+</p>
 
 <p>
 <img src="/demo/ZXingScanner/docs/settings.png" width="250" hspace="12" alt="The settings screen: the decoding switches">
@@ -105,7 +108,7 @@ if (r <> nil) and (r.Error <> '') then
 <img src="/demo/ZXingScanner/docs/settings-hit.png" width="250" hspace="12" alt="The settings screen: the rest of the formats, the outline color, haptic feedback and beep">
 </p>
 
-Ofcourse the real world is not that simple. [See the Demo app for a real world example.](/demo/ZXingScanner)
+[See the Demo app for a real world example.](/demo/ZXingScanner)
 
 Andrea Magni also has a very nice blog post about an Android ZXing example from a training excerise of his. You can find it [here](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/). 
 
