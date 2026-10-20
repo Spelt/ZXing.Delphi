@@ -115,7 +115,7 @@ if (r <> nil) and (r.Error <> '') then
 
 [See the Demo app for a real world example.](/demo/ZXingScanner)
 
-Andrea Magni also has a very nice blog post about an Android ZXing example from a training excerise of his. You can find it [here](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/). 
+Andrea Magni has a blog post about [ScannerMApp](https://github.com/andrea-magni/ScannerMApp), a QR code and barcode scanner app built with Delphi, ZXing.Delphi and TFrameStand: [ScannerMApp, nine years later: ZXing.Delphi 4, TFrameStand and Android intents](https://blog.andreamagni.eu/2026/10/scannermapp-nine-years-later-zxing-delphi-4-tframestand-and-android-intents/) covers the move to ZXing.Delphi 4, with background decoding (`ScanAsync`). The [original 2017 post](https://blog.andreamagni.eu/2017/06/scannermapp-a-qrbarcode-scanner-app-with-delphi-zxing-and-tframestand/) is still online.
 
 
 ### Tips and tricks - How to optimize an already fast library.
