@@ -14,6 +14,7 @@ Just include the source files and add it in your existing projects and build the
 - Unit tests provided
 - Test projects provided
 
+<a href="https://github.com/sponsors/Spelt"><img src="docs/images/coffeeBadge.png" alt="Buy me a coffee" width="500"></a>
 
 ## What new in 4.0
 ZXing.Delphi 4.0 is by far the biggest step since the port began. The library grew from 10 symbologies to 52: Aztec, PDF417 and MicroPDF417, Micro QR and rMQR, MaxiCode, the GS1 DataBar family and GS1 Composite, DotCode and Han Xin, the stacked codes Codablock F, Code 16K and Code 49, and the postal barcodes from KIX to Intelligent Mail, several of which no other ZXing port reads at all. 
@@ -122,6 +123,9 @@ Andrea Magni has a blog post about [ScannerMApp](https://github.com/andrea-magni
 - Use autoformat scanning with care, with automatic on, every frame is passed to every barcode format. For example: If you want to scan only EAN-8, set the scan format for only EAN-8. 
 - For mobile: try not to scan every frame, skip every n frame. Scanning 4 frames in a second should be good for most purposes. Safes CPU and battery. Look at the FMX example.
 - For mobile: try setting your camera not to a high resolution. 640x480 is for most purposes perfect. More resolutions means more pixels to scan means slower. Saves CPU and battery.
+
+
+<a href="https://github.com/sponsors/Spelt"><img src="docs/images/coffee.png" alt="Buy me a coffee" width="500"></a>
 
 
 ## Supported Formats
